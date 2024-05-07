@@ -1,0 +1,69 @@
+
+# Template 8: Error Page Detection
+id: aadhar-pan-scanner-errors
+
+info:
+  name: Indian Identity Cards in Error Pages
+  author: gigachad80
+  severity: medium
+  description: Detects Aadhar and PAN cards leaked in error messages and debug pages
+  classification:
+    cve-id: N/A
+    cwe-id: CWE-200
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:M/I:N/A:N
+    cvss-score: 5.3
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: N/A
+  tags: exposure,aadhar,pan,pii,india,sensitive-data,error,debug
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/debug"
+      - "{{BaseURL}}/error"
+      - "{{BaseURL}}/test"
+      - "{{BaseURL}}/dev"
+      - "{{BaseURL}}/logs"
+      - "{{BaseURL}}/trace"
+      - "{{BaseURL}}/exception"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        name: error-identity-data
+        regex:
+          - "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}"
+          - "[2-9]{1}[0-9]{11}"
+          - "[A-Z]{5}[0-9]{4}[A-Z]{1}"
+        part: body
+
+      - type: word
+        words:
+          - "error"
+          - "exception"
+          - "debug"
+          - "trace"
+          - "stacktrace"
+          - "warning"
+        part: body
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+          - 500
+          - 400
+          - 403
+          - 404
+
+    extractors:
+      - type: regex
+        name: error-exposed-data
+        regex:
+          - "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}"
+          - "[2-9]{1}[0-9]{11}"
+          - "[A-Z]{5}[0-9]{4}[A-Z]{1}"
+        part: body

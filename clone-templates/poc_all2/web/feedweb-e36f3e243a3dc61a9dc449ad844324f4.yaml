@@ -1,0 +1,58 @@
+id: feedweb-e36f3e243a3dc61a9dc449ad844324f4
+
+info:
+  name: "Feedweb <= 3.0.7 - SQL Injection"
+  author: topscoder
+  severity: critical
+  description: "The Feedweb plugin for WordPress is vulnerable to SQL Injection via the ‘id’ parameter in versions up to, and including, 3.0.7 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database."
+  reference:
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-feedweb-unspecified-vulnerability-3-0-7/
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=1040037%40feedweb&new=1040037%40feedweb&sfp_email=&sfph_mail=
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=1037588%40feedweb&new=1037588%40feedweb&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/feedweb/"
+    google-query: inurl:"/wp-content/plugins/feedweb/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,feedweb,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/feedweb/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "feedweb"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.7')

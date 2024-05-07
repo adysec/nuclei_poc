@@ -1,0 +1,60 @@
+id: my-calendar-67109c5e41d13671b58a5aed4e6925d9
+
+info:
+  name: "My Calendar <= 2.3.29 - Path Traversal to Remote Code Execution"
+  author: topscoder
+  severity: critical
+  description: "The My Calendar plugin for WordPress is vulnerable to Path Traversal in versions up to, and including, 2.3.29 via the  'edit_my_calendar_styles' function in the 'my-calendar-styles.php' file. This allows unauthenticated attackers to overwrite the contents of all files the vulnerable service has access to, including adding executable PHP to PHP files."
+  reference:
+    - https://blog.sucuri.net/2015/04/security-advisory-xss-vulnerability-affecting-multiple-wordpress-plugins.html
+    - https://www.joedolson.com/2015/04/important-security-fix-for-my-calendar/
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-my-calendar-multiple-vulnerabilities-2-3-29/
+    - https://web.archive.org/web/20160314072602/https%3A//software-talk.org/blog/2015/05/arbitrary-file-override-reflected-xss-vulnerability-my-calendar/
+    - https://wpscan.com/vulnerability/39459852-324e-4e8d-93d1-18fb3f41f749
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/my-calendar/"
+    google-query: inurl:"/wp-content/plugins/my-calendar/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,my-calendar,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/my-calendar/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "my-calendar"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3.29')

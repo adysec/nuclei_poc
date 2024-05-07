@@ -1,0 +1,86 @@
+# gap: kafka-connect-rest-api-anonymous-connectors
+id: kafka-connect-rest-api-anonymous-connectors
+
+info:
+  name: Kafka Connect REST API Anonymous Connector Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Kafka Connect deployment where the REST API
+    (/connectors, /connector-plugins, /connectors/<name>/config) is
+    reachable without an Authorization header, returning the connector
+    catalog and configuration. Class signal: response is a JSON array
+    of connector-name strings on /connectors, or a JSON array of
+    plugin objects on /connector-plugins (each with `class`, `type`,
+    `version`).
+
+    Anonymous Kafka Connect REST access leaks the entire data
+    integration surface and is materially worse than read-only
+    exposure because the same endpoint accepts POST /connectors
+    (creating a new connector) and PUT /connectors/<name>/config
+    (rewriting an existing connector). Connector configuration
+    typically embeds in-memory secrets in cleartext —
+    `kafka.connect.s3.access.key.id`, `jdbc.url` with embedded
+    user:password, `snowflake.private.key`, `gcs.credentials.json` —
+    a single GET on /connectors/<name>/config discloses all of
+    them. Chains directly to arbitrary attacker connector deployment
+    (e.g. FileStreamSink writing arbitrary attacker payload to disk)
+    that bypasses authentication of the data integration plane.
+    Class detection — keys on Connect REST response shape, not
+    vendor banner. Complements upstream `kafka-connect-ui`.
+  reference:
+    - https://kafka.apache.org/documentation/#connect_rest
+    - https://docs.confluent.io/platform/current/connect/security.html
+  tags: custom,exposures,kafka,connect,streaming,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/connectors"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '^\s*\[("[a-zA-Z0-9_\-\.]+"(\s*,)?)*\s*\]'
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/connector-plugins"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"class"\s*:\s*"org\.apache\.kafka\.connect\.'
+      - type: word
+        part: body
+        words:
+          - '"type":"source"'
+          - '"type":"sink"'
+          - '"type":"transformation"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: connector-plugin-classes
+        regex:
+          - '"class"\s*:\s*"([^"]+)"'
+        group: 1

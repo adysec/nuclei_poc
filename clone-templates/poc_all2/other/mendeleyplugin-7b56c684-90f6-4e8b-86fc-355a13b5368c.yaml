@@ -1,0 +1,59 @@
+id: mendeleyplugin-7b56c684-90f6-4e8b-86fc-355a13b5368c
+
+info:
+  name: >
+    Mendeley <= 1.3.4 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7b56c684-90f6-4e8b-86fc-355a13b5368c?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mendeleyplugin/"
+    google-query: inurl:"/wp-content/plugins/mendeleyplugin/"
+    shodan-query: 'http.html:"wp-content/plugins/mendeleyplugin/"'
+  tags: cve,wordpress,wp-plugin,mendeleyplugin,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mendeleyplugin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mendeleyplugin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.4')

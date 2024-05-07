@@ -1,0 +1,59 @@
+id: wptouch-ee5acf1d-e405-4aa6-8355-b5aebbbb1d1d
+
+info:
+  name: >
+    WPtouch <= 3.4.2 - Arbitrary File Upload
+  author: topscoder
+  severity: low
+  description: >
+    The WPtouch plugin for WordPress is vulnerable to arbitrary file upload in versions up to, and including, 3.4.2. This is due to the 'admin_initialize()' method being called by the 'admin_init' hook and a lack of capability checks on the function. This makes it possible for authenticated attackers to upload a backdoor, they can then use it to take complete control of the website.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ee5acf1d-e405-4aa6-8355-b5aebbbb1d1d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 9.9
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wptouch/"
+    google-query: inurl:"/wp-content/plugins/wptouch/"
+    shodan-query: 'http.html:"wp-content/plugins/wptouch/"'
+  tags: cve,wordpress,wp-plugin,wptouch,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wptouch/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wptouch"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.4.2')

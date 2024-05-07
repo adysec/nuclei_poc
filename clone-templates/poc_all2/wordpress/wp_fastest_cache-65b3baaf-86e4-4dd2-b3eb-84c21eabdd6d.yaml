@@ -1,0 +1,59 @@
+id: wp_fastest_cache-65b3baaf-86e4-4dd2-b3eb-84c21eabdd6d
+
+info:
+  name: >
+    WP Fastest Cache <= 0.8.7.4 - SQL Injection
+  author: topscoder
+  severity: high
+  description: >
+    The WP Fastest Cache plugin for WordPress is vulnerable to blind SQL Injection via the ‘$comment_id’ parameter in versions up to, and including, 0.8.7.4 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for subscriber-level attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/65b3baaf-86e4-4dd2-b3eb-84c21eabdd6d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 7.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-fastest-cache/"
+    google-query: inurl:"/wp-content/plugins/wp-fastest-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-fastest-cache/"'
+  tags: cve,wordpress,wp-plugin,wp-fastest-cache,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-fastest-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-fastest-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.8.7.4')

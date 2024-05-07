@@ -1,0 +1,59 @@
+id: relevanssi_premium-8e12d132-c036-4665-bb8d-e31e2b155fbd
+
+info:
+  name: >
+    Relevanssi - A Better Search Free & Premium <= 2.16.3 & 4.14.3 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Relevanssi - A Better Search Free & Premium plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘$query_link ’ parameter in versions up to, and including, 2.16.3 & 4.14.3 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8e12d132-c036-4665-bb8d-e31e2b155fbd?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/relevanssi-premium/"
+    google-query: inurl:"/wp-content/plugins/relevanssi-premium/"
+    shodan-query: 'http.html:"wp-content/plugins/relevanssi-premium/"'
+  tags: cve,wordpress,wp-plugin,relevanssi-premium,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/relevanssi-premium/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "relevanssi-premium"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.16.3')

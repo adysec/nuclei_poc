@@ -1,0 +1,62 @@
+
+id: drupal_module-drd_agent-php-object-injection
+info:
+  name: drupal_module-drd_agent-php-object-injection
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to monitor and manage any number of remote Drupal sites and aggregate useful information for administrators in a central dashboard. The modules (DRD and DRD Agent) encrypt the data which is exchanged between them but in order to do so, they use the PHP serialize/unserialize functions instead of the json_encode/json_decode combination. As the unserialize function is called on unauthenticated content, this introduces a PHP object injection vulnerability."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-022
+  metadata:
+    security-risk: "Critical 15∕25 AC:None/A:None/CI:None/II:Some/E:Theoretical/TD:All"
+    vulnerability: "php-object-injection"
+    fofa-query: "/sites/all/modules/drd_agent/"
+    google-query: "inurl:'/sites/all/modules/drd_agent/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/drd_agent/drd_agent.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'drd_agent'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-3.6')
+         - compare_versions(version, '8.x-3.5')
+         - compare_versions(version, '8.x-3.4')
+         - compare_versions(version, '8.x-3.3')
+         - compare_versions(version, '8.x-3.2')
+         - compare_versions(version, '8.x-3.1')
+         - compare_versions(version, '8.x-3.0')
+         - compare_versions(version, '7.x-3.4')
+         - compare_versions(version, '7.x-3.3')
+         - compare_versions(version, '7.x-3.2')
+         - compare_versions(version, '7.x-3.1')
+         - compare_versions(version, '7.x-3.0')

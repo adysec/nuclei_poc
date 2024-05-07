@@ -1,0 +1,59 @@
+id: formidable-c0e6f20a-3a5c-4782-9852-9891b93d765f
+
+info:
+  name: >
+    Formidable Form Builder < 2.05.03 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Formidable Form Builder plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'before_html' parameter passed through the frm_forms_preview AJAX action in versions before 2.05.03 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser whenever they successfully trick a victim into performing an action like clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c0e6f20a-3a5c-4782-9852-9891b93d765f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/formidable/"
+    google-query: inurl:"/wp-content/plugins/formidable/"
+    shodan-query: 'http.html:"wp-content/plugins/formidable/"'
+  tags: cve,wordpress,wp-plugin,formidable,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/formidable/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "formidable"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.05.03')

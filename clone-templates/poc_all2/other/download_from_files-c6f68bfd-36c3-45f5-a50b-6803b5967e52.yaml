@@ -1,0 +1,59 @@
+id: download_from_files-c6f68bfd-36c3-45f5-a50b-6803b5967e52
+
+info:
+  name: >
+    Download from files <= 1.48 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Download from files plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'download_from_files_617_fileupload' AJAX action in versions up to, and including, 1.48. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c6f68bfd-36c3-45f5-a50b-6803b5967e52?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/download-from-files/"
+    google-query: inurl:"/wp-content/plugins/download-from-files/"
+    shodan-query: 'http.html:"wp-content/plugins/download-from-files/"'
+  tags: cve,wordpress,wp-plugin,download-from-files,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-from-files/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-from-files"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.48')

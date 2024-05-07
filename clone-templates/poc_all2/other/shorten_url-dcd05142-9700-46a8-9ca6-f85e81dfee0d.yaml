@@ -1,0 +1,59 @@
+id: shorten_url-dcd05142-9700-46a8-9ca6-f85e81dfee0d
+
+info:
+  name: >
+    Short URL <= 1.6.7 - Missing Authorization via multiple AJAX functions
+  author: topscoder
+  severity: low
+  description: >
+    The Short URL plugin for WordPress is vulnerable to unauthorized access of data, modification of data, and loss of data due to a missing capability check on multiple AJAX functions in versions up to, and including, 1.6.7. This makes it possible for authenticated attackers such as subscribers to validate, reset, and delete links.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dcd05142-9700-46a8-9ca6-f85e81dfee0d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/shorten-url/"
+    google-query: inurl:"/wp-content/plugins/shorten-url/"
+    shodan-query: 'http.html:"wp-content/plugins/shorten-url/"'
+  tags: cve,wordpress,wp-plugin,shorten-url,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/shorten-url/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "shorten-url"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.7')

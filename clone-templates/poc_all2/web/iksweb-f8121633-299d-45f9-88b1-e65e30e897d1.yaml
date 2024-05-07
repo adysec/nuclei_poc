@@ -1,0 +1,59 @@
+id: iksweb-f8121633-299d-45f9-88b1-e65e30e897d1
+
+info:
+  name: >
+    Старт <= 3.7 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f8121633-299d-45f9-88b1-e65e30e897d1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/iksweb/"
+    google-query: inurl:"/wp-content/plugins/iksweb/"
+    shodan-query: 'http.html:"wp-content/plugins/iksweb/"'
+  tags: cve,wordpress,wp-plugin,iksweb,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/iksweb/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "iksweb"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.7')

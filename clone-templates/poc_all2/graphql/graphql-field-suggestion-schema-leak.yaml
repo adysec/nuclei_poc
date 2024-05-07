@@ -1,0 +1,47 @@
+# gap: graphql-field-suggestion-schema-leak
+id: graphql-field-suggestion-schema-leak
+
+info:
+  name: GraphQL Field Suggestion Leaks Schema Without Introspection
+  author: TyrusRC
+  severity: low
+  description: |
+    Detects GraphQL endpoints that return "Did you mean" field suggestions
+    when an unknown field is queried. The suggestion mechanism reveals valid
+    type and field names, enabling schema enumeration even when introspection
+    has been explicitly disabled.
+
+    Coverage note: detection is specific to graphql-js, Apollo, and Ariadne
+    (Python) servers that emit "Did you mean" suggestions. graphql-go,
+    gqlgen, juniper, and Hot Chocolate do not emit this phrase and will
+    not be detected.
+  reference:
+    - https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/GraphQL%20Injection/README.md
+    - https://blog.yeswehack.com/yeswerhackers/how-exploit-graphql-endpoint-bug-bounty/
+  tags: custom,misconfig,graphql,owasp
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/graphql/v1"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/api/v1/graphql"
+      - "{{BaseURL}}/query"
+      - "{{BaseURL}}/gql"
+    stop-at-first-match: true
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    body: '{"query":"{thisdefinitelydoesnotexist}"}'
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Did you mean"
+      - type: word
+        part: body
+        words:
+          - '"errors"'

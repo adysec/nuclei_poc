@@ -1,0 +1,59 @@
+id: sintic_gallery-3d438d11-df72-431e-8956-6a7b316a6dc3
+
+info:
+  name: >
+    sintic_gallery (All Known Versions) - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The sintic_gallery plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the uploadify.php file in all known versions. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3d438d11-df72-431e-8956-6a7b316a6dc3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sintic_gallery/"
+    google-query: inurl:"/wp-content/plugins/sintic_gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/sintic_gallery/"'
+  tags: cve,wordpress,wp-plugin,sintic_gallery,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sintic_gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sintic_gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

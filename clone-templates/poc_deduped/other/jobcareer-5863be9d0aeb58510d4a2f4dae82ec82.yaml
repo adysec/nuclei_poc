@@ -1,0 +1,59 @@
+id: jobcareer-5863be9d0aeb58510d4a2f4dae82ec82
+
+info:
+  name: >
+    JobCareer <= 3.4 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The JobCareer plugin for WordPress is vulnerable to Cross-Site Scripting via the 'job_title', 'specialisms', and 'location' parameters and address textfield in versions up to, and including, 3.4 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6bbb0e81-8edd-44fa-9588-16c163a82ed1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/jobcareer/"
+    google-query: inurl:"/wp-content/plugins/jobcareer/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,jobcareer,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jobcareer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jobcareer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.4')

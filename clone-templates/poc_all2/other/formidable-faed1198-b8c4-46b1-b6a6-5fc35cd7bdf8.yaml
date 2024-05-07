@@ -1,0 +1,59 @@
+id: formidable-faed1198-b8c4-46b1-b6a6-5fc35cd7bdf8
+
+info:
+  name: >
+    Formidable Form Builder <= 2.0.21 - Missing Authorization Checks
+  author: topscoder
+  severity: high
+  description: >
+    The Formidable Form Builder plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 2.0.21. This is due to missing nonce and capability checks on the 'frm_fill_licenses' and 'frm_ajax' AJAX actions. This makes it possible for unauthenticated attackers to access leaked nonces and modify form fields.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/faed1198-b8c4-46b1-b6a6-5fc35cd7bdf8?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 9.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/formidable/"
+    google-query: inurl:"/wp-content/plugins/formidable/"
+    shodan-query: 'http.html:"wp-content/plugins/formidable/"'
+  tags: cve,wordpress,wp-plugin,formidable,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/formidable/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "formidable"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.21')

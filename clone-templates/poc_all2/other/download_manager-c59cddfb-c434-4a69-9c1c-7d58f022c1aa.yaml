@@ -1,0 +1,59 @@
+id: download_manager-c59cddfb-c434-4a69-9c1c-7d58f022c1aa
+
+info:
+  name: >
+    Download Manager <= 2.8.7 - Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    The Download Manager plugin for WordPress is vulnerable to Privilege Escalation in versions up to, and including, 2.8.7. This is due to unchecked use of the extract() function which makes it possible for authenticated attackers, with subscriber-level permissions and above, to edit user metadata, including their role.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c59cddfb-c434-4a69-9c1c-7d58f022c1aa?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/download-manager/"
+    google-query: inurl:"/wp-content/plugins/download-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/download-manager/"'
+  tags: cve,wordpress,wp-plugin,download-manager,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.8.8')

@@ -1,0 +1,49 @@
+id: wordpress-w3-total-cache
+
+info:
+  name: W3 Total Cache Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/w3-total-cache/
+  metadata:
+    plugin_namespace: w3-total-cache
+    wpscan: https://wpscan.com/plugin/w3-total-cache
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/w3-total-cache/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/w3-total-cache.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022024e86d1f15aa805f5e496d16b493b3238ab62ed0facecce10536d028f2e68e88022100c9eef50fda7a6ef783e157bce44554a6169742236046c06a6fb1343eb3025d2e:922c64590222798bb761d5b6d8e72950

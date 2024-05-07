@@ -1,0 +1,59 @@
+id: buddypress-402bbe9c-cf4d-457c-97ac-149e14ea6f47
+
+info:
+  name: >
+    BuddyPress <= 7.2.1 - Missing Authorization to Private Post Activity
+  author: topscoder
+  severity: low
+  description: >
+    The BuddyPress plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 7.2.1. This is due to missing authorization validation on the activity REST-API Endpoint. This makes it possible for authenticated attackers to favorite private and hidden activity they are not authorized to access.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/402bbe9c-cf4d-457c-97ac-149e14ea6f47?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/buddypress/"
+    google-query: inurl:"/wp-content/plugins/buddypress/"
+    shodan-query: 'http.html:"wp-content/plugins/buddypress/"'
+  tags: cve,wordpress,wp-plugin,buddypress,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/buddypress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "buddypress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.2.1')

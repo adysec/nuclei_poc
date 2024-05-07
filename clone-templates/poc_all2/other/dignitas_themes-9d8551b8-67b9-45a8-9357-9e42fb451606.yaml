@@ -1,0 +1,59 @@
+id: dignitas_themes-9d8551b8-67b9-45a8-9357-9e42fb451606
+
+info:
+  name: >
+    Ya'aburnee <= 1.0.7 and Dignitas <= 1.1.9 - Privilege Escalation
+  author: topscoder
+  severity: critical
+  description: >
+    The Ya'aburnee and Dignitas themes for WordPress are vulnerable to Privilege Escalation in versions up to, and including, 1.0.7 and 1.1.9 via the 'df_save_options' function. This makes it possible for unauthenticated attackers to escalate their privileges on the vulnerable service and gain otherwise restricted access to Admin actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9d8551b8-67b9-45a8-9357-9e42fb451606?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/dignitas-themes/"
+    google-query: inurl:"/wp-content/themes/dignitas-themes/"
+    shodan-query: 'http.html:"wp-content/themes/dignitas-themes/"'
+  tags: cve,wordpress,wp-theme,dignitas-themes,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/dignitas-themes/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dignitas-themes"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.9')

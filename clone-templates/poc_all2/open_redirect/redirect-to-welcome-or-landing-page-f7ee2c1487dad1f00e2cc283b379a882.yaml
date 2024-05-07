@@ -1,0 +1,59 @@
+id: redirect-to-welcome-or-landing-page-f7ee2c1487dad1f00e2cc283b379a882
+
+info:
+  name: >
+    Redirect wordpress to welcome or landing page <= 2.0 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c5ffe80a-edd3-4369-a5bc-ce7c9b259416?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/redirect-to-welcome-or-landing-page/"
+    google-query: inurl:"/wp-content/plugins/redirect-to-welcome-or-landing-page/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,redirect-to-welcome-or-landing-page,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/redirect-to-welcome-or-landing-page/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "redirect-to-welcome-or-landing-page"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0')

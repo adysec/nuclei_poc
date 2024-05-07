@@ -1,0 +1,59 @@
+id: mainwp_child-f83f878d-b708-4677-929a-e1ced535d99f
+
+info:
+  name: >
+    MainWP Child < 3.4.5 - Authentication Bypass
+  author: topscoder
+  severity: high
+  description: >
+    The MainWP Child plugin for WordPress is vulnerable to authentication bypass due to insufficient validation on the check_login function in versions up to, and including, 3.4.4. This makes it possible for attackers to become administrative users and take full control of the affected website.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f83f878d-b708-4677-929a-e1ced535d99f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mainwp-child/"
+    google-query: inurl:"/wp-content/plugins/mainwp-child/"
+    shodan-query: 'http.html:"wp-content/plugins/mainwp-child/"'
+  tags: cve,wordpress,wp-plugin,mainwp-child,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mainwp-child/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mainwp-child"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.4.5')

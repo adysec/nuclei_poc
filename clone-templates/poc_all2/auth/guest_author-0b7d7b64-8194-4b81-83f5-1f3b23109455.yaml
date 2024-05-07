@@ -1,0 +1,59 @@
+id: guest_author-0b7d7b64-8194-4b81-83f5-1f3b23109455
+
+info:
+  name: >
+    Guest Author <= 2.3 - Authenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Guest Author plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the plugin's guest author parameters in all versions up to, and including, 2.3 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0b7d7b64-8194-4b81-83f5-1f3b23109455?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/guest-author/"
+    google-query: inurl:"/wp-content/plugins/guest-author/"
+    shodan-query: 'http.html:"wp-content/plugins/guest-author/"'
+  tags: cve,wordpress,wp-plugin,guest-author,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/guest-author/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "guest-author"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3')

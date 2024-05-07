@@ -1,0 +1,53 @@
+
+id: drupal_module-next-access-bypass
+info:
+  name: drupal_module-next-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "The Next.js module provides an inline preview for content. Authenticated requests are made to Drupal to fetch JSON:API content and render them in an iframe from the decoupled Next.js site. The current implementation doesn’t sufficiently check access for fetching data. All requests made to Drupal are authenticated using a single scope with elevated content access. Users without access to content could be exposed to unauthorized content."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-054
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/next/"
+    google-query: "inurl:'/sites/all/modules/next/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/next/next.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'next'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '1.2.0')
+         - compare_versions(version, '1.1.0')
+         - compare_versions(version, '1.0.0')

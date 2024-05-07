@@ -1,0 +1,59 @@
+id: floating_action_button-74841c33-83fa-465e-a5a9-88c34bbc9f6c
+
+info:
+  name: >
+    Floating Action Button <= 1.2 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Floating Action Button plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 1.2 due to a missing capability check and nonce validation on the fz_fab_settings_save() function that is called via an AJAX action (including a nopriv action). This makes it possible for unauthenticated attackers to modify the plugin's settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/74841c33-83fa-465e-a5a9-88c34bbc9f6c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/floating-action-button/"
+    google-query: inurl:"/wp-content/plugins/floating-action-button/"
+    shodan-query: 'http.html:"wp-content/plugins/floating-action-button/"'
+  tags: cve,wordpress,wp-plugin,floating-action-button,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/floating-action-button/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "floating-action-button"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2')

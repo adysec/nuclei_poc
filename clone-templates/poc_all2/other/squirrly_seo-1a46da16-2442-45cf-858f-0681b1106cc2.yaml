@@ -1,0 +1,59 @@
+id: squirrly_seo-1a46da16-2442-45cf-858f-0681b1106cc2
+
+info:
+  name: >
+    SEO Plugin by Squirrly SEO < 6.1.5 - Directory Traversal
+  author: topscoder
+  severity: high
+  description: >
+    The SEO Plugin by Squirrly SEO plugin for WordPress is vulnerable to Directory Traversal in versions up to 6.1.5 via the sq_size parameter. This allows unauthenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1a46da16-2442-45cf-858f-0681b1106cc2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/squirrly-seo/"
+    google-query: inurl:"/wp-content/plugins/squirrly-seo/"
+    shodan-query: 'http.html:"wp-content/plugins/squirrly-seo/"'
+  tags: cve,wordpress,wp-plugin,squirrly-seo,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/squirrly-seo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "squirrly-seo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 6.1.5')

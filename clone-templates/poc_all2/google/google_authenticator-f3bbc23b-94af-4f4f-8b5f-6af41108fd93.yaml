@@ -1,0 +1,59 @@
+id: google_authenticator-f3bbc23b-94af-4f4f-8b5f-6af41108fd93
+
+info:
+  name: >
+    Google Authenticator <= 0.47 - Improper Authentication
+  author: topscoder
+  severity: low
+  description: >
+    The Google Authenticator plugin for WordPress is vulnerable to authentication bypass due to a missing capability check on the 'google-authenticator/trunk/google-authenticator.php' file in versions up to, and including, 0.47. This makes it possible for authenticated attackers to bypass 2FA when logging in with an email address and valid password.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f3bbc23b-94af-4f4f-8b5f-6af41108fd93?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/google-authenticator/"
+    google-query: inurl:"/wp-content/plugins/google-authenticator/"
+    shodan-query: 'http.html:"wp-content/plugins/google-authenticator/"'
+  tags: cve,wordpress,wp-plugin,google-authenticator,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/google-authenticator/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "google-authenticator"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.47')

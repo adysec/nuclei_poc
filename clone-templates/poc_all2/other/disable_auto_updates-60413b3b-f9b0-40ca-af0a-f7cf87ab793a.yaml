@@ -1,0 +1,59 @@
+id: disable_auto_updates-60413b3b-f9b0-40ca-af0a-f7cf87ab793a
+
+info:
+  name: >
+    Disable Auto Updates <= 1.4 - Cross-Site Request Forgery to Auto-update Disable
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/60413b3b-f9b0-40ca-af0a-f7cf87ab793a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/disable-auto-updates/"
+    google-query: inurl:"/wp-content/plugins/disable-auto-updates/"
+    shodan-query: 'http.html:"wp-content/plugins/disable-auto-updates/"'
+  tags: cve,wordpress,wp-plugin,disable-auto-updates,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/disable-auto-updates/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "disable-auto-updates"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4')

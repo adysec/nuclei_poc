@@ -1,0 +1,51 @@
+id: local_syndication-7774cdfd-622a-4608-9efd-273923a0d0aa
+
+info:
+  name: >
+    Local Syndication <= 1.5a - Authenticated (Contributor+) Server-Side Request Forgery via Shortcode
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7774cdfd-622a-4608-9efd-273923a0d0aa?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/local-syndication/"
+    google-query: inurl:"/wp-content/plugins/local-syndication/"
+    shodan-query: 'http.html:"wp-content/plugins/local-syndication/"'
+  tags: cve,wordpress,wp-plugin,local-syndication,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/local-syndication/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "local-syndication"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5a')

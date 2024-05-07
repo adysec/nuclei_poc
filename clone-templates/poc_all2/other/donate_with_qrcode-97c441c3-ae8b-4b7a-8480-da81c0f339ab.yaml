@@ -1,0 +1,59 @@
+id: donate_with_qrcode-97c441c3-ae8b-4b7a-8480-da81c0f339ab
+
+info:
+  name: >
+    Donate With QRCode <= 1.4.5 - Cross-Site Request Forgery to Settings Update
+  author: topscoder
+  severity: medium
+  description: >
+    The Donate With QRCode plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.4.5. This is due to missing or incorrect nonce validation when saving the plugin's settings. This makes it possible for unauthenticated attackers to update arbitrary plugin settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/97c441c3-ae8b-4b7a-8480-da81c0f339ab?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/donate-with-qrcode/"
+    google-query: inurl:"/wp-content/plugins/donate-with-qrcode/"
+    shodan-query: 'http.html:"wp-content/plugins/donate-with-qrcode/"'
+  tags: cve,wordpress,wp-plugin,donate-with-qrcode,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/donate-with-qrcode/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "donate-with-qrcode"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.5')

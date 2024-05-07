@@ -1,0 +1,51 @@
+
+id: drupal_module-config_perms-access-bypass
+info:
+  name: drupal_module-config_perms-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "Custom Permissions is a lightweight module that allows permissions to be created and managed through an administrative form. When this module is in use, any user who is able to perform an action which rebuilds some of Drupals caches can trigger a scenario in which certain pages protected by this modules custom permissions temporarily lose those custom access controls, thereby leading to an access bypass vulnerability."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-083
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/config_perms/"
+    google-query: "inurl:'/sites/all/modules/config_perms/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/config_perms/config_perms.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'config_perms'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.0')

@@ -1,0 +1,77 @@
+# gap: saml-relaystate-open-redirect
+id: saml-relaystate-open-redirect
+
+info:
+  name: SAML RelayState Parameter - Open Redirect (untrusted URL)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects SAML SSO endpoints that honor an attacker-controlled
+    `RelayState` value as a redirect target without hostname
+    validation. The `RelayState` parameter is opaque per the SAML
+    spec and is supposed to be either an internal identifier or
+    a relative path — many implementations naively pass it to
+    `response.redirect(relayState)` after SSO completion, yielding
+    a textbook open redirect. CVE-2023-1965 (GitLab) is the
+    canonical reference; the class persists across SP / IdP
+    implementations.
+
+    Probe is a 2-step differential:
+    (1) issue the SSO endpoint with `RelayState=https://attacker-domain.example.invalid` —
+        match `Location:` starting with the attacker host.
+    (2) FP-guard: re-issue with `RelayState=/dashboard-{{randstr}}` — if the
+        relative path is also reflected in `Location` (proving
+        the endpoint reflects RelayState at all), then the first
+        match is real (vs a coincidental `Location` from an
+        unrelated redirect that happened to contain the host).
+
+    Open SAML redirect class detection — the differential keeps
+    FP rate near-zero compared to grep-the-Location matchers.
+  reference:
+    - https://gitlab.com/gitlab-org/gitlab/-/issues/410062
+    - https://github.com/directus/directus/security/advisories/GHSA-3573-4c68-g8cc
+    - https://snyk.io/blog/common-saml-vulnerabilities-remediate/
+  tags: custom,vulnerabilities,saml,open-redirect,sso,owasp,cwe-601
+
+variables:
+  rs_canary: "{{rand_text_alpha(8)}}"
+  attacker: "nuclei-canary.example.invalid"
+
+http:
+  - raw:
+      - |
+        GET /saml/login?RelayState=https://{{attacker}}/{{rs_canary}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      - |
+        GET /sso/saml?RelayState=https://{{attacker}}/{{rs_canary}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      - |
+        GET /auth/saml?RelayState=https://{{attacker}}/{{rs_canary}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      - |
+        GET /saml/slo?RelayState=https://{{attacker}}/{{rs_canary}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 301 || status_code == 302 || status_code == 303 || status_code == 307 || status_code == 308'
+      - type: regex
+        part: header
+        regex:
+          - '(?i)location:\s*https?://nuclei-canary\.example\.invalid'
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - "Location"

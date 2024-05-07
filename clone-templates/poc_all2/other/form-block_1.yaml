@@ -1,0 +1,56 @@
+id: form-block
+
+info:
+  name: "Form Block <= 1.0.1 - Cross-Site Request Forgery"
+  author: topscoder
+  severity: medium
+  description: "The Form Block plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.0.1. This is due to missing or incorrect nonce validation on the get_requests() function. This makes it possible for unauthenticated attackers to submit forms on behalf of another user via a forged request granted they can trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset/2901777/form-block/tags/1.0.2/inc/form-data/class-data.php
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/form-block/"
+    google-query: inurl:"/wp-content/plugins/form-block/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,form-block,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/form-block/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "form-block"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.2')

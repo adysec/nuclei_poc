@@ -1,0 +1,59 @@
+id: selio-5d20eb50-3b54-475f-8a67-8ca61c0474cc
+
+info:
+  name: >
+    Selio - Real Estate Directory <= 1.1 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Selio - Real Estate Directory theme for WordPress is vulnerable to Stored Cross-Site Scripting via the message textfield in the 'ENQUIRY FORM'  in versions up to, and including, 1.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5d20eb50-3b54-475f-8a67-8ca61c0474cc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/selio/"
+    google-query: inurl:"/wp-content/themes/selio/"
+    shodan-query: 'http.html:"wp-content/themes/selio/"'
+  tags: cve,wordpress,wp-theme,selio,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/selio/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "selio"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1')

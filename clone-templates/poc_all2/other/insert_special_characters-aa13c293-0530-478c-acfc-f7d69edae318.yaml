@@ -1,0 +1,59 @@
+id: insert_special_characters-aa13c293-0530-478c-acfc-f7d69edae318
+
+info:
+  name: >
+    ansi-regex >=2.1.1 <3.0.1 >=4.0.0 <4.1.1 >=5.0.0 <5.0.1 >=6.0.0 <6.0.1 - Regular Expression Denial of Service (ReDoS)
+  author: topscoder
+  severity: high
+  description: >
+    ansi-regex is vulnerable to Inefficient Regular Expression Complexity. Some WordPress plugins and themes use this dependency though that doesn’t necessarily mean the plugin itself is vulnerable to exploitation.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/aa13c293-0530-478c-acfc-f7d69edae318?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/insert-special-characters/"
+    google-query: inurl:"/wp-content/plugins/insert-special-characters/"
+    shodan-query: 'http.html:"wp-content/plugins/insert-special-characters/"'
+  tags: cve,wordpress,wp-plugin,insert-special-characters,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/insert-special-characters/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "insert-special-characters"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.4')

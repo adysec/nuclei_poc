@@ -1,0 +1,59 @@
+id: gallery_plugin-2a6d72d0-f262-46a1-91c7-1c34ab995614
+
+info:
+  name: >
+    Gallery by BestWebSoft – Customizable Image and Photo Galleries for WordPress < 4.5.0 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Gallery by BestWebSoft plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘category’ parameter in versions before 4.5.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2a6d72d0-f262-46a1-91c7-1c34ab995614?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gallery-plugin/"
+    google-query: inurl:"/wp-content/plugins/gallery-plugin/"
+    shodan-query: 'http.html:"wp-content/plugins/gallery-plugin/"'
+  tags: cve,wordpress,wp-plugin,gallery-plugin,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gallery-plugin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gallery-plugin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.5.0')

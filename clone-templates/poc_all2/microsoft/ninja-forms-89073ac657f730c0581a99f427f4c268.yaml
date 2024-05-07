@@ -1,0 +1,59 @@
+id: ninja-forms-89073ac657f730c0581a99f427f4c268
+
+info:
+  name: "Ninja Forms Contact Form <= 2.9.21 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Ninja Forms Contact Form plugin for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 2.9.21 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://packetstormsecurity.com/files/132913/
+    - https://github.com/espreto/wpsploit/blob/master/modules/auxiliary/scanner/http/wp_ninja_forms_xss_scanner.rb
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-ninja-forms-contact-form-the-drag-and-drop-form-builder-for-wordpress-multiple-cross-site-scripting-vulnerabilities-2-9-21/
+    - https://wpscan.com/vulnerability/c84fa906-4d70-4d4d-990e-a0510bcf72ed
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/ninja-forms/"
+    google-query: inurl:"/wp-content/plugins/ninja-forms/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,ninja-forms,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ninja-forms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ninja-forms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.9.21')

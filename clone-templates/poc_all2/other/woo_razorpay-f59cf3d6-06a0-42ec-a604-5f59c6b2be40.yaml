@@ -1,0 +1,59 @@
+id: woo_razorpay-f59cf3d6-06a0-42ec-a604-5f59c6b2be40
+
+info:
+  name: >
+    Razorpay for WooCommerce <= 4.5.6 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Razorpay for WooCommerce plugin for WordPress is vulnerable to unauthorized modification due to a missing capability check on several functions hooked via admin_post in all versions up to, and including, 4.5.6. This makes it possible for authenticated attackers, with subscriber-level access and above, to update, direct, create, and reverse transfers through the plugin.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f59cf3d6-06a0-42ec-a604-5f59c6b2be40?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woo-razorpay/"
+    google-query: inurl:"/wp-content/plugins/woo-razorpay/"
+    shodan-query: 'http.html:"wp-content/plugins/woo-razorpay/"'
+  tags: cve,wordpress,wp-plugin,woo-razorpay,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-razorpay/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woo-razorpay"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.5.6')

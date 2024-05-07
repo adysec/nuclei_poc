@@ -1,0 +1,59 @@
+id: hub2word-b2401dd1-d132-4899-80fc-9281280806a2
+
+info:
+  name: >
+    Easy Embed for HubSpot Forms, CTAs, Links, Files & add HubSpot to WP Search Results <= 1.1.0 - Missing Authorization to Arbitrary Options Update
+  author: topscoder
+  severity: low
+  description: >
+    The Easy Embed for HubSpot Forms, CTAs, Links, Files & add HubSpot to WP Search Results plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 1.1.0. This is due to missing capability and nonce checks on the Hub2Word_save_settings function. This makes it possible for authenticated attackers to update arbitrary options on the site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b2401dd1-d132-4899-80fc-9281280806a2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/hub2word/"
+    google-query: inurl:"/wp-content/plugins/hub2word/"
+    shodan-query: 'http.html:"wp-content/plugins/hub2word/"'
+  tags: cve,wordpress,wp-plugin,hub2word,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hub2word/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "hub2word"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.0')

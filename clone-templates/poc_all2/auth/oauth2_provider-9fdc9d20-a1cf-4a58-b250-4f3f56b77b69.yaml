@@ -1,0 +1,59 @@
+id: oauth2_provider-9fdc9d20-a1cf-4a58-b250-4f3f56b77b69
+
+info:
+  name: >
+    WP OAuth Server (OAuth Authentication) <= 4.2.5 -Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WP OAuth Server plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 4.2.5. This is due to missing or incorrect nonce validation on several of its AJAX actions like wo_ajax_remove_self_generated_token. This makes it possible for unauthenticated attackers to remove generated tokens for users, via forged request granted they can trick a site user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9fdc9d20-a1cf-4a58-b250-4f3f56b77b69?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:L
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/oauth2-provider/"
+    google-query: inurl:"/wp-content/plugins/oauth2-provider/"
+    shodan-query: 'http.html:"wp-content/plugins/oauth2-provider/"'
+  tags: cve,wordpress,wp-plugin,oauth2-provider,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/oauth2-provider/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "oauth2-provider"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.2.5')

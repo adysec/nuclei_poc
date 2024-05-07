@@ -1,0 +1,40 @@
+id: flow-ssl-simple
+
+info:
+  name: Simple SSL Analysis Flow
+  author: geeknik
+  severity: info
+  description: Basic SSL certificate analysis using Flow Protocol
+  tags: ssl,flow,test
+
+flow: |
+  ssl();
+  log(template);
+  http();
+
+ssl:
+  - address: "{{Host}}:{{Port}}"
+
+    extractors:
+      - type: dsl
+        name: ssl_subject
+        dsl:
+          - "subject"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 403
+          - 404
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"SSL Subject: " + ssl_subject'

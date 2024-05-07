@@ -1,0 +1,59 @@
+id: funnelforms_free-72e4428b-d2cd-471f-9821-947f4601fd64
+
+info:
+  name: >
+    Funnelforms Free <= 3.4 - Cross-Site Request Forgery to Arbitrary Post Deletion
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/72e4428b-d2cd-471f-9821-947f4601fd64?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/funnelforms-free/"
+    google-query: inurl:"/wp-content/plugins/funnelforms-free/"
+    shodan-query: 'http.html:"wp-content/plugins/funnelforms-free/"'
+  tags: cve,wordpress,wp-plugin,funnelforms-free,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/funnelforms-free/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "funnelforms-free"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.4')

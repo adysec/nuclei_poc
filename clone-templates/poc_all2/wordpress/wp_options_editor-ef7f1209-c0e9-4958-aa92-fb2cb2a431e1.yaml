@@ -1,0 +1,59 @@
+id: wp_options_editor-ef7f1209-c0e9-4958-aa92-fb2cb2a431e1
+
+info:
+  name: >
+    WP Options Editor <= 1.1 - Cross-Site Request Forgery to Privilege Escalation
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ef7f1209-c0e9-4958-aa92-fb2cb2a431e1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-options-editor/"
+    google-query: inurl:"/wp-content/plugins/wp-options-editor/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-options-editor/"'
+  tags: cve,wordpress,wp-plugin,wp-options-editor,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-options-editor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-options-editor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1')

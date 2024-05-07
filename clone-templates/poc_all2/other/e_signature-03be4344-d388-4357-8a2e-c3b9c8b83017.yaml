@@ -1,0 +1,59 @@
+id: e_signature-03be4344-d388-4357-8a2e-c3b9c8b83017
+
+info:
+  name: >
+    e-signature < 1.5.6.8 - Unauthenticated Remote Code Execution
+  author: topscoder
+  severity: critical
+  description: >
+    The e-signature plugin for WordPress is vulnerable to Remote Code Execution in versions before 1.5.6.8. This allows unauthenticated attackers to execute code on the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/03be4344-d388-4357-8a2e-c3b9c8b83017?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/e-signature/"
+    google-query: inurl:"/wp-content/plugins/e-signature/"
+    shodan-query: 'http.html:"wp-content/plugins/e-signature/"'
+  tags: cve,wordpress,wp-plugin,e-signature,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/e-signature/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "e-signature"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.6.8')

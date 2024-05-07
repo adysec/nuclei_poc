@@ -1,0 +1,58 @@
+
+id: drupal_module-shs-cross-site-request-forgery
+info:
+  name: drupal_module-shs-cross-site-request-forgery
+  author: Bishopfox
+  severity: medium
+  description: "Simple hierarchical select defines a new form widget for taxonomy fields to select a term by browsing through the vocabularies hierarchy. It also allows users to create new taxonomy terms using its widget directly in the node form. Version 7.x of Simple hierarchical select doesnt sufficiently checks permission when creating new terms so attackers can create arbitrary taxonomy terms in any vocabularies the victim has access to.. This vulnerability is mitigated by the fact that an attacker must trick a user with permission to create terms to visit a specially prepared web page controlled by the attacker."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-038
+  metadata:
+    security-risk: "Moderately critical 10∕25 AC:Basic/A:User/CI:None/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "cross-site-request-forgery"
+    fofa-query: "/sites/all/modules/shs/"
+    google-query: "inurl:'/sites/all/modules/shs/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/shs/shs.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'shs'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.7')
+         - compare_versions(version, '7.x-1.6')
+         - compare_versions(version, '7.x-1.5')
+         - compare_versions(version, '7.x-1.4')
+         - compare_versions(version, '7.x-1.3')
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

@@ -1,0 +1,57 @@
+
+id: drupal_module-cloud-csrf
+info:
+  name: drupal_module-cloud-csrf
+  author: Bishopfox
+  severity: medium
+  description: "This module enables sites to manage public clouds like Amazon EC2 and also private clouds like OpenStack. The module doesnt sufficiently protect the deletion of audit reports, thereby exposing a cross-site request vulnerability which can be exploited by unprivileged users to trick an administrator into unwanted deletion of audit reports. This vulnerability is mitigated by the fact that the victim must have a role with the permission access audit report."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-086
+  metadata:
+    security-risk: "Critical 18∕25 AC:None/A:User/CI:Some/II:All/E:Theoretical/TD:All"
+    vulnerability: "csrf"
+    fofa-query: "/sites/all/modules/cloud/"
+    google-query: "inurl:'/sites/all/modules/cloud/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/cloud/cloud.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'cloud'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.6')
+         - compare_versions(version, '7.x-1.5')
+         - compare_versions(version, '7.x-1.4')
+         - compare_versions(version, '7.x-1.3')
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

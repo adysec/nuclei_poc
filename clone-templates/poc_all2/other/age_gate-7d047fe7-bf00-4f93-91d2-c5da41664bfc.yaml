@@ -1,0 +1,59 @@
+id: age_gate-7d047fe7-bf00-4f93-91d2-c5da41664bfc
+
+info:
+  name: >
+    Age Gate <= 2.13.4 - Open Redirect
+  author: topscoder
+  severity: medium
+  description: >
+    The Age Gate plugin for WordPress is vulnerable to Open Redirects in versions up to, and including, 2.13.4 via the '_wp_http_referer' parameter. This makes it possible for unauthenticated attackers to send users redirection links to hostile sites by using the website's address.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7d047fe7-bf00-4f93-91d2-c5da41664bfc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:N/I:L/A:N
+    cvss-score: 4.7
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/age-gate/"
+    google-query: inurl:"/wp-content/plugins/age-gate/"
+    shodan-query: 'http.html:"wp-content/plugins/age-gate/"'
+  tags: cve,wordpress,wp-plugin,age-gate,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/age-gate/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "age-gate"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.13.5')

@@ -1,0 +1,59 @@
+id: wp-spell-check-17a10ef824db6e2a50bcddc0bb5f0caf
+
+info:
+  name: >
+    WP Spell Check <= 9.2 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b28ba929-d057-43f9-b839-62347c06c1bd?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-spell-check/"
+    google-query: inurl:"/wp-content/plugins/wp-spell-check/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-spell-check,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-spell-check/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-spell-check"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 9.3')

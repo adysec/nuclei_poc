@@ -1,0 +1,59 @@
+id: wp_file_upload-7534f2e5-a296-4c54-99e3-d84f5c9a5b51
+
+info:
+  name: >
+    WordPress File Upload <= 4.16.3 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WordPress File Upload plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 4.16.3 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7534f2e5-a296-4c54-99e3-d84f5c9a5b51?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-file-upload/"
+    google-query: inurl:"/wp-content/plugins/wp-file-upload/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-file-upload/"'
+  tags: cve,wordpress,wp-plugin,wp-file-upload,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-file-upload/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-file-upload"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.16.3')

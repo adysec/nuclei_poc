@@ -1,0 +1,49 @@
+id: wordpress-speedycache
+
+info:
+  name: SpeedyCache – Cache, Optimization, Performance Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/speedycache/
+  metadata:
+    plugin_namespace: speedycache
+    wpscan: https://wpscan.com/plugin/speedycache
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/speedycache/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/speedycache.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a004730450220090510d3d1f015d5352eb5ee6c737e06a493488b106957a94698159d88db6f9d0221009da10bce6d7894d0ad9ce13672006b50bb3ae633f6002d54e6bf39c4fe98da58:922c64590222798bb761d5b6d8e72950

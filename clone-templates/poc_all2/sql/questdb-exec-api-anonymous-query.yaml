@@ -1,0 +1,66 @@
+# gap: questdb-exec-api-anonymous-query
+id: questdb-exec-api-anonymous-query
+
+info:
+  name: QuestDB HTTP /exec API Anonymous Query Execution
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a QuestDB time-series database where the HTTP /exec query
+    endpoint accepts arbitrary SQL without authentication, returning
+    the QuestDB result envelope. The probe sends a no-op
+    `SELECT 1 AS nuclei_canary` and matches the canonical response
+    shape (`{"query":"SELECT 1 AS nuclei_canary","columns":[{"name":
+    "nuclei_canary","type":"INT"}],"dataset":[[1]],"count":1,
+    "timings":{…}}`).
+
+    Anonymous /exec is unauth SQL execution against every table in
+    the QuestDB instance — QuestDB is commonly deployed for IoT,
+    financial-market, and observability time-series workloads, so
+    the data surface routinely includes device-state telemetry,
+    tick-level trading data, in-memory authentication-token issuance
+    events, and PII in event streams. The /exec endpoint also
+    accepts DDL (CREATE / DROP / ALTER) and ingestion via the
+    SELECT ... FROM read_csv() function family, chaining anonymous
+    read access into arbitrary write / arbitrary file read against
+    server-local paths. Class detection — keys on QuestDB result
+    envelope, not vendor banner. Complements upstream `questdb-
+    console` (web console fingerprint).
+  reference:
+    - https://questdb.io/docs/reference/api/rest/
+    - https://questdb.io/docs/operations/auth/
+  tags: custom,exposures,questdb,timeseries,sql,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/exec?query=SELECT%201%20AS%20nuclei_canary"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"query":"SELECT 1 AS nuclei_canary"'
+      - type: word
+        part: body
+        words:
+          - '"columns"'
+          - '"dataset"'
+          - '"timings"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: query-result
+        regex:
+          - '"dataset"\s*:\s*\[\[([^\]]+)\]\]'
+        group: 1

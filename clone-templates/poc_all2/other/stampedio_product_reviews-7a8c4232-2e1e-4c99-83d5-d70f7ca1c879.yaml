@@ -1,0 +1,59 @@
+id: stampedio_product_reviews-7a8c4232-2e1e-4c99-83d5-d70f7ca1c879
+
+info:
+  name: >
+    Stamped.io Product Reviews & UGC for WooCommerce <= 2.3.3 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Stamped.io Product Reviews & UGC for WooCommerce plugin for WordPress is vulnerable to Cross-Site Request Forgery due to missing nonce verification on the clear_reviews_cache function called via AJAX actions in versions up to, and including, 2.3.3. This makes it possible for unauthenticated attackers to export reviews and clear review caches, via a forged request granted an attacker can successfully trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7a8c4232-2e1e-4c99-83d5-d70f7ca1c879?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/stampedio-product-reviews/"
+    google-query: inurl:"/wp-content/plugins/stampedio-product-reviews/"
+    shodan-query: 'http.html:"wp-content/plugins/stampedio-product-reviews/"'
+  tags: cve,wordpress,wp-plugin,stampedio-product-reviews,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/stampedio-product-reviews/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "stampedio-product-reviews"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3.3')

@@ -1,0 +1,59 @@
+id: wp-useronline
+
+info:
+  name: "WP-UserOnline < 2.70 - Cross-Site Scripting"
+  author: topscoder
+  severity: high
+  description: "The WP-UserOnline plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the wp-useronline.php file in versions up to, and including, 2.62 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://seclists.org/fulldisclosure/2010/Jul/8
+    - http://scribu.net/wordpress/wp-useronline/wu-2-70.html
+    - https://wordpress.org/plugins/wp-useronline/#developers
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=238319%40wp-useronline&new=238319%40wp-useronline&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-useronline/"
+    google-query: inurl:"/wp-content/plugins/wp-useronline/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-useronline,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-useronline/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-useronline"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.62')

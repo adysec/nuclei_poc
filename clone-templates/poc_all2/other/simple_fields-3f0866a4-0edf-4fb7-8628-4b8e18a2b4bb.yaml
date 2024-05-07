@@ -1,0 +1,59 @@
+id: simple_fields-3f0866a4-0edf-4fb7-8628-4b8e18a2b4bb
+
+info:
+  name: >
+    Simple Fields <= 1.4.11 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Simple Fields plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the maybe_do_import() function in versions up to, and including, 1.4.11 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3f0866a4-0edf-4fb7-8628-4b8e18a2b4bb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-fields/"
+    google-query: inurl:"/wp-content/plugins/simple-fields/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-fields/"'
+  tags: cve,wordpress,wp-plugin,simple-fields,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-fields/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-fields"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.11')

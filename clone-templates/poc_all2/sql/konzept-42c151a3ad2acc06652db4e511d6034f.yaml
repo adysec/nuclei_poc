@@ -1,0 +1,58 @@
+id: konzept-42c151a3ad2acc06652db4e511d6034f
+
+info:
+  name: "Konzept - Fullscreen Portfolio WordPress Theme <= 2.4 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The 'Konzept - Fullscreen Portfolio WordPress Theme' theme for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘s’ parameter in versions up to, and including, 2.4 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://themeforest.net/item/konzept-fullscreen-portfolio-wordpress-theme/2383907
+    - https://web.archive.org/web/20201127164346/https%3A//vladvector.ru/exploit/2020-07-30-konzept-fullscreen-portfolio-wordpress-theme-v2-3.txt
+    - https://wpscan.com/vulnerability/ef4dc66a-6b66-449a-97c0-20738b0aafd7
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/konzept/"
+    google-query: inurl:"/wp-content/themes/konzept/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,konzept,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/konzept/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "konzept"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.4')

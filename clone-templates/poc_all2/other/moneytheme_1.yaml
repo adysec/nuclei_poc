@@ -1,0 +1,57 @@
+id: moneytheme
+
+info:
+  name: "MoneyTheme (All Versions) - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The MoneyTheme theme for WordPress is vulnerable to Cross-Site Scripting due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - https://packetstormsecurity.com/files/123819/
+    - http://web.archive.org/web/20140808161433/http%3A//themesjunction.com/theme/money_wordpress_template-17129.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/moneytheme/"
+    google-query: inurl:"/wp-content/themes/moneytheme/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,moneytheme,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/moneytheme/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "moneytheme"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>0')

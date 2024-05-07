@@ -1,0 +1,59 @@
+id: nexos-b6b43503-e6f0-4097-9e41-eaae7011b17b
+
+info:
+  name: >
+    Nexos - Real Estate WordPress Theme <= 1.7 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Nexos - Real Estate WordPress Theme theme for WordPress is vulnerable to generic SQL Injection via the ‘search_order’ parameter in versions up to, and including, 1.7 due to insufficient escaping on the user-supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b6b43503-e6f0-4097-9e41-eaae7011b17b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/nexos/"
+    google-query: inurl:"/wp-content/themes/nexos/"
+    shodan-query: 'http.html:"wp-content/themes/nexos/"'
+  tags: cve,wordpress,wp-theme,nexos,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/nexos/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "nexos"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7')

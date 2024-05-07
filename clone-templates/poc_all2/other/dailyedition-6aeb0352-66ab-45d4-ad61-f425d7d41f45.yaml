@@ -1,0 +1,59 @@
+id: dailyedition-6aeb0352-66ab-45d4-ad61-f425d7d41f45
+
+info:
+  name: >
+    Daily Edition <= 1.6.2 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Daily Edition theme for WordPress is vulnerable to SQL Injection via the ‘&id’ parameter in versions up to, and including, 1.6.2 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6aeb0352-66ab-45d4-ad61-f425d7d41f45?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/dailyedition/"
+    google-query: inurl:"/wp-content/themes/dailyedition/"
+    shodan-query: 'http.html:"wp-content/themes/dailyedition/"'
+  tags: cve,wordpress,wp-theme,dailyedition,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/dailyedition/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dailyedition"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.2')

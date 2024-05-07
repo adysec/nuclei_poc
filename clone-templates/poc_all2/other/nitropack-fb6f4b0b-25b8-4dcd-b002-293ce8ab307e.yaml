@@ -1,0 +1,59 @@
+id: nitropack-fb6f4b0b-25b8-4dcd-b002-293ce8ab307e
+
+info:
+  name: >
+    NitroPack <= 1.9.2 - Missing Authorization via multiple AJAX functions
+  author: topscoder
+  severity: low
+  description: >
+    The NitroPack – Cache & Speed Optimization for Core Web Vitals, Defer CSS & JavaScript, Lazy load Images plugin for WordPress is vulnerable to unauthorized access of data, modification of data, and loss of data due to a missing capability check on multiple AJAX function in all versions up to, and including, 1.9.2. This makes it possible for authenticated attackers, with subscriber access and above, to perform actions such as clearing cache, dismiss admin notifications, or enabling safe mode.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fb6f4b0b-25b8-4dcd-b002-293ce8ab307e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/nitropack/"
+    google-query: inurl:"/wp-content/plugins/nitropack/"
+    shodan-query: 'http.html:"wp-content/plugins/nitropack/"'
+  tags: cve,wordpress,wp-plugin,nitropack,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/nitropack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "nitropack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.10.0')

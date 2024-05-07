@@ -1,0 +1,59 @@
+id: feedwordpress-e9178920-d865-45d3-bfdf-b8ad207d4546
+
+info:
+  name: >
+    FeedWordPress < 2015.0426 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The FeedWordPress plugin for WordPress is vulnerable to Cross-Site Scripting via several parameters in versions before 2015.0426 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e9178920-d865-45d3-bfdf-b8ad207d4546?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/feedwordpress/"
+    google-query: inurl:"/wp-content/plugins/feedwordpress/"
+    shodan-query: 'http.html:"wp-content/plugins/feedwordpress/"'
+  tags: cve,wordpress,wp-plugin,feedwordpress,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/feedwordpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "feedwordpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2014.0805')

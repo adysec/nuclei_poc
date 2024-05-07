@@ -1,0 +1,42 @@
+id: splunk-version-info
+
+info:
+  name: Splunk Enterprise Version and Build Disclosure
+  author: milo2012
+  severity: info
+  tags: splunk, version, build, enterprise
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/en-US/splunkd/__raw/services/server/info"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - Splunkd
+
+      - type: regex
+        part: body
+        regex:
+          - '<s:key name="license_labels">\s*<s:list>\s*<s:item>Splunk Enterprise</s:item>'
+
+    extractors:
+      - type: xpath
+        name: splunk_version
+        part: body
+        xpath:
+          - '//s:key[@name="version"]/text()'
+
+      - type: xpath
+        name: splunk_build
+        part: body
+        xpath:
+          - '//generator/@build'
+
+      - type: xpath
+        name: splunk_license_label
+        part: body
+        xpath:
+          - '//s:key[@name="license_labels"]/s:list/s:item/text()'

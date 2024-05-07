@@ -1,0 +1,27 @@
+id: aws-bucket
+info:
+  author: melbadry9
+  name: AWS Bucket Takeover Detection
+  reference: https://github.com/EdOverflow/can-i-take-over-xyz
+  severity: high
+  tags: takeover,aws
+requests:
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - <BucketName>([^\s]+)</BucketName>
+    - '<li>BucketName: ([^\s]+)</li>'
+    type: regex
+  matchers:
+  - type: word
+    words:
+    - The specified bucket does not exist
+  - dsl:
+    - contains(tolower(all_headers), 'x-guploader-uploadid')
+    negative: true
+    type: dsl
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'

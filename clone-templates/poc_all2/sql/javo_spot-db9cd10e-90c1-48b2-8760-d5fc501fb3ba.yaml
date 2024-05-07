@@ -1,0 +1,59 @@
+id: javo_spot-db9cd10e-90c1-48b2-8760-d5fc501fb3ba
+
+info:
+  name: >
+    Javo Spot < 3.0.0 - Directory Traversal
+  author: topscoder
+  severity: high
+  description: >
+    The Javo Spot theme for WordPress is vulnerable to Directory Traversal in versions up to 3.0.0 via the 'fn' parameter found in the jvfrm_spot_get_json() function called via a nopriv AJAX action. This makes it possible for unauthenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/db9cd10e-90c1-48b2-8760-d5fc501fb3ba?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/javo-spot/"
+    google-query: inurl:"/wp-content/themes/javo-spot/"
+    shodan-query: 'http.html:"wp-content/themes/javo-spot/"'
+  tags: cve,wordpress,wp-theme,javo-spot,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/javo-spot/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "javo-spot"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.0.0')

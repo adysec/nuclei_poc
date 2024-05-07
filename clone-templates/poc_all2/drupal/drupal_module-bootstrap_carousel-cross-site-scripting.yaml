@@ -1,0 +1,52 @@
+
+id: drupal_module-bootstrap_carousel-cross-site-scripting
+info:
+  name: drupal_module-bootstrap_carousel-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module provides a way to make carousels, based on bootstrap-carousel.js. The module doesnt sufficiently handle output of img HTML tags alt property. This vulnerability is mitigated by the fact that an attacker must have a role with the permission Carousel: Create new content or any similar node module permissions for creating/editing/removing the module-delivered content type."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-088
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/bootstrap_carousel/"
+    google-query: "inurl:'/sites/all/modules/bootstrap_carousel/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/bootstrap_carousel/bootstrap_carousel.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'bootstrap_carousel'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

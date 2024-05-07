@@ -1,0 +1,59 @@
+id: easy_career_openings-c97b31bc-75d6-40af-bf4a-714ea69d2c28
+
+info:
+  name: >
+    Easy Career Openings <= 0.4 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Easy Career Openings plugin for WordPress is vulnerable to SQL Injection via the ‘jobid’ parameter in versions up to, and including, 0.4 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c97b31bc-75d6-40af-bf4a-714ea69d2c28?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/easy-career-openings/"
+    google-query: inurl:"/wp-content/plugins/easy-career-openings/"
+    shodan-query: 'http.html:"wp-content/plugins/easy-career-openings/"'
+  tags: cve,wordpress,wp-plugin,easy-career-openings,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/easy-career-openings/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "easy-career-openings"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.4')

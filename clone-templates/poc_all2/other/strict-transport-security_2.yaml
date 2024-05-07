@@ -1,0 +1,29 @@
+id: http-headers-strict-transport-security
+
+info:
+  name: Missing HTTP Header - Strict-Transport-Security
+  author: nvsecurity
+  severity: low
+  reference:
+    - https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html#strict-transport-security-hsts
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+  description: |
+    The website is missing the `Strict-Transport-Security` security header. The lack of this header *could* allow an attacker to intercept the user's session.
+  tags: misconfig,headers
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 3
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: strict-transport-security
+        dsl:
+          - "!regex('(?i)strict-transport-security', all_headers)"
+          - "status_code != 301 && status_code != 302 && status_code != 404"
+        condition: and
+

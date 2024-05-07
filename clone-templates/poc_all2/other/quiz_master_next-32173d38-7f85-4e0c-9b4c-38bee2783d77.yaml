@@ -1,0 +1,59 @@
+id: quiz_master_next-32173d38-7f85-4e0c-9b4c-38bee2783d77
+
+info:
+  name: >
+    Quiz And Survey Master <= 8.1.15 - Cross-Site Request Forgery via 'display_results'
+  author: topscoder
+  severity: medium
+  description: >
+    The Quiz And Survey Master plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 8.1.15. This is due to missing or incorrect nonce validation on the 'display_results' function. This makes it possible for unauthenticated attackers to submit quizzes on behalf of another user via a forged request granted they can trick a site administrator into performing an action such as clicking on a link. While the nonce has been added to the submission form in version 8.1.15, nonces are still only checked when the submission is performed via AJAX, though submissions can be sent directly to any page that renders the 'display_shortcode' shortcode.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/32173d38-7f85-4e0c-9b4c-38bee2783d77?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/quiz-master-next/"
+    google-query: inurl:"/wp-content/plugins/quiz-master-next/"
+    shodan-query: 'http.html:"wp-content/plugins/quiz-master-next/"'
+  tags: cve,wordpress,wp-plugin,quiz-master-next,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/quiz-master-next/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "quiz-master-next"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 8.1.15')

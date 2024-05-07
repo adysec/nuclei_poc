@@ -1,0 +1,59 @@
+id: all_in_one_wp_security_and_firewall-8ce4be1b-3807-4ded-80a5-30f2f80db89d
+
+info:
+  name: >
+    All In One WP Security & Firewall 5.0.0 - 5.0.7 - Protection Bypass via IP Spoofing
+  author: topscoder
+  severity: medium
+  description: >
+    The All In One WP Security & Firewall plugin for WordPress is vulnerable to IP Address Spoofing in versions 5.0.0 - 5.0.7 (both included) due to insufficient IP address validation. This makes it possible for attackers to bypass IP blocks and access services even if their IP address is blocked.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8ce4be1b-3807-4ded-80a5-30f2f80db89d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/all-in-one-wp-security-and-firewall/"
+    google-query: inurl:"/wp-content/plugins/all-in-one-wp-security-and-firewall/"
+    shodan-query: 'http.html:"wp-content/plugins/all-in-one-wp-security-and-firewall/"'
+  tags: cve,wordpress,wp-plugin,all-in-one-wp-security-and-firewall,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/all-in-one-wp-security-and-firewall/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "all-in-one-wp-security-and-firewall"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 5.0.0', '<= 5.0.7')

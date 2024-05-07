@@ -1,0 +1,61 @@
+id: wordpress-2f0d4f48-a315-4308-a5b6-7d3f045b292f
+
+info:
+  name: >
+    WordPress Core < 6.0.3 - Information Disclosure (Multi-Part Email Leak)
+  author: topscoder
+  severity: low
+  description: >
+    WordPress Core is vulnerable to information disclosure via a REST-API endpoint in versions up to 6.0.3. The endpoint for terms and tags did not perform enough validation on the user requesting information about terms and tags for a given post. This made it possible for users with access to terms and tags, such as a contributor, to determine those details on all posts not belonging to them, even when in a private status. This does not reveal critical information, and as such it is not likely to be exploited.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2f0d4f48-a315-4308-a5b6-7d3f045b292f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 3.7
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,low,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_js, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_css, '>= 6.0', '<= 6.0.2')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

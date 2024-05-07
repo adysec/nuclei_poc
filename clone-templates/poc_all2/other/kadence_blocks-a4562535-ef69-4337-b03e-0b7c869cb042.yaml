@@ -1,0 +1,59 @@
+id: kadence_blocks-a4562535-ef69-4337-b03e-0b7c869cb042
+
+info:
+  name: >
+    Kadence Blocks <= 3.1.10 - Unauthenticated Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Kadence Blocks for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the process_fields function in versions up to, and including, 3.1.10. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a4562535-ef69-4337-b03e-0b7c869cb042?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/kadence-blocks/"
+    google-query: inurl:"/wp-content/plugins/kadence-blocks/"
+    shodan-query: 'http.html:"wp-content/plugins/kadence-blocks/"'
+  tags: cve,wordpress,wp-plugin,kadence-blocks,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/kadence-blocks/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kadence-blocks"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.1.11')

@@ -1,0 +1,59 @@
+id: directdownload
+
+info:
+  name: "Direct Download for Woocommerce < 1.16 - Local File Inclusion"
+  author: topscoder
+  severity: critical
+  description: "The Direct Download for Woocommerce plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 1.15. This allows unauthenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included."
+  reference:
+    - http://www.diegoceldran.es/how-to-use-exploit-remote-lfi-for-direct-download-for-woocommerce-up-to-v1-15/
+    - https://seclists.org/fulldisclosure/2017/Jan/39
+    - https://codecanyon.net/item/direct-download-for-woocommerce/6320429
+    - https://web.archive.org/web/20170612131504/codecanyon.net/item/direct-download-for-woocommerce/6320429
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/directdownload/"
+    google-query: inurl:"/wp-content/plugins/directdownload/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,directdownload,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/directdownload/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "directdownload"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.16')

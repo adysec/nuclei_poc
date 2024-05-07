@@ -1,0 +1,59 @@
+id: sam_pro_free-730a3cde-bcbd-4d60-80bb-3944cc5386e5
+
+info:
+  name: >
+    SAM Pro (Free Edition) < 1.9.7.69 & Simple Ads Manager <= 2.10.0.130 & SAM Pro Lite < 1.9.0.53 - Local/Remote File Inclusion
+  author: topscoder
+  severity: low
+  description: >
+    The SAM Pro (Free Edition) plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 1.9.7.68 via the 'wap' parameter. This allows authenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included. In certain configurations, the plugin is also vulnerable to Remote File Inclusion via the same parameter. This allows authenticated attackers to include remote files on the server, resulting in code execution.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/730a3cde-bcbd-4d60-80bb-3944cc5386e5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sam-pro-free/"
+    google-query: inurl:"/wp-content/plugins/sam-pro-free/"
+    shodan-query: 'http.html:"wp-content/plugins/sam-pro-free/"'
+  tags: cve,wordpress,wp-plugin,sam-pro-free,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sam-pro-free/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sam-pro-free"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.9.7.69')

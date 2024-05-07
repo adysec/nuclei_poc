@@ -1,0 +1,51 @@
+id: inhype-1f1b02cd-2e62-4f61-a0d4-6f4ea9c4b616
+
+info:
+  name: >
+    InHype - Blog & Magazine WordPress <= 1.5.2 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1f1b02cd-2e62-4f61-a0d4-6f4ea9c4b616?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/inhype/"
+    google-query: inurl:"/wp-content/themes/inhype/"
+    shodan-query: 'http.html:"wp-content/themes/inhype/"'
+  tags: cve,wordpress,wp-theme,inhype,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/inhype/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "inhype"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.2')

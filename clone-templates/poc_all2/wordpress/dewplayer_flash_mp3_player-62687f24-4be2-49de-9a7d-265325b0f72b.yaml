@@ -1,0 +1,59 @@
+id: dewplayer_flash_mp3_player-62687f24-4be2-49de-9a7d-265325b0f72b
+
+info:
+  name: >
+    Dewplayer <= 1.2 and Advanced Dewplayer < 1.5 - Content Spoofing/Injection
+  author: topscoder
+  severity: high
+  description: >
+    The Dewplayer plugin <= 1.2 and Advanced Dewplayer plugin < 1.5 for WordPress are vulnerable to Content Spoofing/Injection. This is due to lack of sanitization of the 'mp3', 'file', 'sound', and 'son' parameters in the dewplayer.swf file. This makes it possible for unauthenticated attackers to inject malicious content into legitimate content if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/62687f24-4be2-49de-9a7d-265325b0f72b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:H/A:N
+    cvss-score: 8.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dewplayer-flash-mp3-player/"
+    google-query: inurl:"/wp-content/plugins/dewplayer-flash-mp3-player/"
+    shodan-query: 'http.html:"wp-content/plugins/dewplayer-flash-mp3-player/"'
+  tags: cve,wordpress,wp-plugin,dewplayer-flash-mp3-player,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dewplayer-flash-mp3-player/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dewplayer-flash-mp3-player"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

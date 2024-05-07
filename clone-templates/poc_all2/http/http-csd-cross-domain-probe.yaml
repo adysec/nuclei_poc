@@ -1,0 +1,60 @@
+# gap: http-csd-cross-domain-probe
+id: http-csd-cross-domain-probe
+
+info:
+  name: HTTP/1.1 Client-Side Desync (CSD) — Browser-Reachable Smuggling
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects Client-Side Desync (CSD) — a PortSwigger-formalized 2022 class
+    where the desync occurs between browser and front-end using only
+    cross-domain-safe headers (no custom headers requiring CORS
+    preflight). A browser victim visiting an attacker page can trigger
+    this; the server-side probe sends a POST with browser-realistic
+    headers (Origin, Referer, text/plain Content-Type) carrying a
+    smuggled HTTP/1.1 GET prefix in the body to a static asset path. A
+    follow-up GET on the same connection returning the smuggled GET's
+    404 instead of the static asset's expected 200 confirms desync.
+
+    CSD is uniquely browser-driven and bypasses front-end CORS / origin
+    controls — auth bypass exploitable from any attacker-controlled page
+    against an authenticated victim's session.
+  reference:
+    - https://portswigger.net/research/browser-powered-desync-attacks
+    - https://i.blackhat.com/USA-22/Wednesday/us-22-Kettle-Browser-Powered-Desync-Attacks-wp.pdf
+  tags: custom,vulnerabilities,smuggling,desync,csd,http,parser-diff,cwe-444
+
+http:
+  - raw:
+      - |+
+        POST /robots.txt HTTP/1.1
+        Host: {{Hostname}}
+        Origin: https://nuclei-csd-probe.invalid
+        Referer: https://nuclei-csd-probe.invalid/
+        Content-Type: text/plain;charset=UTF-8
+        Connection: keep-alive
+        Content-Length: 46
+
+        GET /nuclei-csd-{{rand_text_alpha(8)}} HTTP/1.1
+        Host: x
+
+
+      - |+
+        GET /robots.txt HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_2 == 404"
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - "Server"

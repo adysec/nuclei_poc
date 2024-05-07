@@ -1,0 +1,59 @@
+id: grand_media-a161bd23-0b82-49ef-b3cc-a117823ec8a7
+
+info:
+  name: >
+    Gmedia Photo Gallery <= 1.6.4 - Denial of Service
+  author: topscoder
+  severity: high
+  description: >
+    The Gmedia Photo Gallery plugin for WordPress is vulnerable to Denial of Service in versions up to, and including, 1.6.4. This is due to improper redirect handling. This makes it possible for unauthenticated attackers to send requests that recursively call 301 redirects, rendering the server unavailable.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a161bd23-0b82-49ef-b3cc-a117823ec8a7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/grand-media/"
+    google-query: inurl:"/wp-content/plugins/grand-media/"
+    shodan-query: 'http.html:"wp-content/plugins/grand-media/"'
+  tags: cve,wordpress,wp-plugin,grand-media,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/grand-media/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "grand-media"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.6.5')

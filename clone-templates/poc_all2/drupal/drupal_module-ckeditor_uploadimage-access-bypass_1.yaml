@@ -1,0 +1,55 @@
+
+id: drupal_module-ckeditor_uploadimage-access-bypass
+info:
+  name: drupal_module-ckeditor_uploadimage-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to drag and drop or paste images into CKEditor. The module does not sufficiently verify users permissions, which leads to anonymous users being able to upload files to the server."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-014
+  metadata:
+    security-risk: "Critical 15∕25 AC:None/A:None/CI:None/II:Some/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/ckeditor_uploadimage/"
+    google-query: "inurl:'/sites/all/modules/ckeditor_uploadimage/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/ckeditor_uploadimage/ckeditor_uploadimage.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'ckeditor_uploadimage'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.4')
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

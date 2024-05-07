@@ -1,0 +1,59 @@
+id: wooms-4eb5b0f24cbcd7a72b97f785e0516fe6
+
+info:
+  name: >
+    WooMS <= 9.12 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/298fa9e6-9487-4d3d-95de-5820a3761bdd?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wooms/"
+    google-query: inurl:"/wp-content/plugins/wooms/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wooms,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wooms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wooms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 9.12')

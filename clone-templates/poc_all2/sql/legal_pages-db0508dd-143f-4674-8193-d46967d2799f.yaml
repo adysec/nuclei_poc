@@ -1,0 +1,59 @@
+id: legal_pages-db0508dd-143f-4674-8193-d46967d2799f
+
+info:
+  name: >
+    Legal Pages <= 1.3.8 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Legal Pages – Privacy Policy, Terms & Conditions, GDPR, CCPA, and Cookie Notice Generator plugin for WordPress is vulnerable to unauthorized modification of data due to a missing capability check on the moveToTrash() and fetch_and_insert_template_data() functions hooked via AJAX in all versions up to, and including, 1.3.8. This makes it possible for authenticated attackers, with subscriber-level access and above, to delete arbitrary posts and fetch/insert template data.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/db0508dd-143f-4674-8193-d46967d2799f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/legal-pages/"
+    google-query: inurl:"/wp-content/plugins/legal-pages/"
+    shodan-query: 'http.html:"wp-content/plugins/legal-pages/"'
+  tags: cve,wordpress,wp-plugin,legal-pages,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/legal-pages/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "legal-pages"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.8')

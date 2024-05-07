@@ -1,0 +1,53 @@
+
+id: drupal_module-mollie-faulty-payment-confirmation-logic
+info:
+  name: drupal_module-mollie-faulty-payment-confirmation-logic
+  author: me
+  severity: medium
+  description: "This module enables you to pay online via Mollie. The module might not properly load the correct order to update the payment status when Mollie redirects to the redirect URL. This can allow an attacker to apply other peoples orders to their own, getting credit without paying. This vulnerability is mitigated by the fact that an attacker must have some knowledge about the modules internal functionality. The issue only affects installations that use the Mollie for Drupal Commerce submodule."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-052
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Complex/A:None/CI:None/II:Some/E:Theoretical/TD:All"
+    vulnerability: "faulty-payment-confirmation-logic"
+    fofa-query: "/sites/all/modules/mollie/"
+    google-query: "inurl:'/sites/all/modules/mollie/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/mollie/mollie.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'mollie'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 2.2.1')

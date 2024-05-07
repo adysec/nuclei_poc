@@ -1,0 +1,97 @@
+# gap: jwt-kid-traversal-error-disclosure
+id: jwt-kid-traversal-error-disclosure
+
+info:
+  name: JWT kid Header Path Traversal Error Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects servers that resolve the JWT `kid` (Key ID) header against
+    the filesystem without sanitizing path-traversal sequences. The
+    probe sends a JWT whose `kid` value is `../../../dev/null`
+    base64url-embedded in the header (decoded header:
+    `{"alg":"HS256","kid":"../../../dev/null","typ":"JWT"}`) to common
+    authenticated-API paths, and matches filesystem / path-resolution
+    error markers in the response — `ENOENT.*\.\./`,
+    `FileNotFoundError`, `NoSuchFileException`, `no such file or
+    directory`, `kid.*not found`, `pyjwt.*InvalidKeyError`,
+    `jose.*KidNotFoundException`.
+
+    JWT `kid` path traversal is a documented bug class: when the
+    application uses the `kid` as a key into a filesystem (key file
+    per kid), `kid: /dev/null` causes the server to load `/dev/null`
+    as the HMAC secret — an empty file, so HMAC-of-empty becomes a
+    well-known constant the attacker can forge tokens against
+    (authentication bypass primitive). The traversal-error variant
+    proves the kid reaches a filesystem sink without proving the
+    bypass itself; once confirmed, the attacker pivots to keying
+    against `/dev/null` or similar known-content files. Class
+    detection — keys on standardized filesystem error markers, not
+    vendor banner.
+  reference:
+    - https://portswigger.net/web-security/jwt#injecting-self-signed-jwts-via-the-jwk-header-parameter
+    - https://portswigger.net/web-security/jwt/algorithm-confusion
+    - https://hackerone.com/reports/1124220
+    - https://cwe.mitre.org/data/definitions/22.html
+    - https://cwe.mitre.org/data/definitions/345.html
+  tags: custom,vulnerabilities,jwt,traversal,auth,owasp,cwe-22,cwe-345
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/me"
+      - "{{BaseURL}}/me"
+      - "{{BaseURL}}/api/user/me"
+      - "{{BaseURL}}/api/v1/me"
+      - "{{BaseURL}}/api/auth/verify"
+      - "{{BaseURL}}/api/auth/me"
+      - "{{BaseURL}}/api/profile"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6Ii4uLy4uLy4uLy4uL2Rldi9udWxsIiwidHlwIjoiSldUIn0.eyJzdWIiOiJudWNsZWktY2FuYXJ5IiwiaWF0IjoxNzAwMDAwMDAwfQ.AAAAAA"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          # Node.js / generic POSIX
+          - 'ENOENT[^<\r\n]{0,80}\.\.[\\/]'
+          - '(?i)no such file or directory[^<\r\n]{0,80}\.\.[\\/]'
+          # Python (PyJWT, python-jose, authlib)
+          - 'FileNotFoundError[^<\r\n]{0,80}\.\.[\\/]'
+          - 'pyjwt\.exceptions\.InvalidKeyError'
+          - 'jose\.exceptions\.(JWKError|JWTError)'
+          # Java (jose4j, nimbus-jose-jwt, auth0)
+          - 'NoSuchFileException[^<\r\n]{0,80}\.\.[\\/]'
+          - 'org\.jose4j\.[A-Za-z.]*Exception.*kid'
+          - 'com\.nimbusds\.jose\.[A-Za-z.]*Exception.*kid'
+          # Go (golang-jwt, lestrrat-go/jwx)
+          - 'open[^<\r\n]{0,80}\.\.[\\/]'
+          - 'jwk\.[A-Za-z]*Error.*kid'
+          # Generic kid-not-found markers
+          - '(?i)kid[^<\r\n]{0,40}(not found|invalid|unknown)'
+          - '(?i)(unable to (load|find)|cannot (load|find))[^<\r\n]{0,30}(kid|key)'
+        condition: or
+      # FP guard: do NOT fire if response is a generic auth challenge with no
+      # path-related context (e.g. "Invalid token" without kid markers).
+      - type: word
+        part: body
+        case-insensitive: true
+        words:
+          - "kid"
+          - ".."
+          - "/dev/"
+          - "no such file"
+          - "ENOENT"
+          - "FileNotFoundError"
+          - "NoSuchFileException"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: kid-error
+        regex:
+          - '((?i)(ENOENT|FileNotFoundError|NoSuchFileException|no such file or directory|kid.*(not found|invalid|unknown))[^<\r\n]{0,160})'
+        group: 1

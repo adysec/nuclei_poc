@@ -1,0 +1,55 @@
+
+id: drupal_module-sagepay_payment-access-bypass
+info:
+  name: drupal_module-sagepay_payment-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module integrates the Sagepay payment service. Some of the URLs used while processing the payment are not sufficiently secured. This might allow attackers to resume a previously failed payment attempt or to view content that should only be shown after a succesful payment. This affects all payments in a Drupal installation with this module enabled (including payments made using other payment methods)."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-005
+  metadata:
+    security-risk: "Critical 15∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/sagepay_payment/"
+    google-query: "inurl:'/sites/all/modules/sagepay_payment/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/sagepay_payment/sagepay_payment.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'sagepay_payment'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.4')
+         - compare_versions(version, '7.x-1.3')
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

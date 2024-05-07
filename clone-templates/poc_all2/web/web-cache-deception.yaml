@@ -1,0 +1,91 @@
+# gap: web-cache-deception
+id: web-cache-deception
+
+info:
+  name: Web Cache Deception — Authenticated JSON Served with Public Cache Headers
+  author: TyrusRC
+  severity: high
+  description: |
+    Requests path-confusion variants of common authenticated endpoints
+    (/api/me/nuclei-canary.css, /api/userinfo/test.css, /api/profile/nuclei.js
+    etc.). On a vulnerable stack the backend normalises the path and serves
+    the private /api/me response, while a fronting cache layer honours the
+    .css/.js/.png extension and stores the body as a public static asset.
+    Fires when the response is 200, carries cache headers indicating the
+    response is cacheable (Cache-Control: public, max-age> 0, s-maxage,
+    X-Cache: HIT, or Age > 0) and the body shape looks like user data
+    ("email", "user_id", "username", "session", "role"). HTML/CSS fixture
+    responses are explicitly rejected. Single-request heuristic — Nuclei
+    cannot easily fetch twice to confirm cache hit, so confirm manually
+    with a second unauthenticated fetch from a different source IP before
+    reporting. Family detection for the cache-deception bug class; replays
+    on future variants rather than a single CVE.
+  reference:
+    - https://owasp.org/www-community/attacks/Web_Cache_Deception
+    - https://portswigger.net/web-security/web-cache-deception
+    - https://cwe.mitre.org/data/definitions/444.html
+  tags: custom,vulnerabilities,cache,deception,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/me/nuclei-canary.css"
+      - "{{BaseURL}}/api/me/nuclei-canary.png"
+      - "{{BaseURL}}/api/userinfo/test.css"
+      - "{{BaseURL}}/api/profile/nuclei.js"
+      - "{{BaseURL}}/api/v1/me/x.css"
+      - "{{BaseURL}}/api/account/nuclei.css"
+      - "{{BaseURL}}/api/whoami/x.js"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'len(body) > 100'
+      - type: word
+        part: body
+        case-insensitive: true
+        negative: true
+        condition: or
+        words:
+          - "<!doctype"
+          - "<html"
+          - "body{"
+          - "@charset"
+      - type: regex
+        part: header
+        condition: or
+        regex:
+          - '(?i)cache-control:[^\r\n]*\bpublic\b'
+          - '(?i)cache-control:[^\r\n]*max-age=[1-9]'
+          - '(?i)cache-control:[^\r\n]*s-maxage=[1-9]'
+          - '(?i)x-cache:\s*hit'
+          - '(?i)cf-cache-status:\s*hit'
+          - '(?i)age:\s*[1-9]'
+      - type: word
+        part: body
+        condition: or
+        words:
+          - '"email"'
+          - '"user_id"'
+          - '"userId"'
+          - '"username"'
+          - '"session"'
+          - '"role"'
+          - '"roles"'
+          - '"account"'
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '"(email|user_id|userId|username|session|role|roles|account)"\s*:\s*"?[^",}]{1,80}'
+      - type: kval
+        part: header
+        kval:
+          - "Cache-Control"
+          - "X-Cache"
+          - "Age"
+          - "Cf-Cache-Status"

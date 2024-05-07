@@ -1,0 +1,59 @@
+id: o2s_gallery-f20b79cd-4393-4c96-ac78-139ac7c11144
+
+info:
+  name: >
+    o2s gallery (All Versions) - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The o2s gallery plugin for WordPress is vulnerable to Cross-Site Scripting due to insufficient input sanitization and output escaping on the button_text parameter. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f20b79cd-4393-4c96-ac78-139ac7c11144?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/o2s-gallery/"
+    google-query: inurl:"/wp-content/plugins/o2s-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/o2s-gallery/"'
+  tags: cve,wordpress,wp-plugin,o2s-gallery,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/o2s-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "o2s-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

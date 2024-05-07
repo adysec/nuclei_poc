@@ -1,0 +1,58 @@
+
+id: drupal_module-filefield_sources-access-bypass
+info:
+  name: drupal_module-filefield_sources-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to upload files to fields via several sources. The module doesnt sufficiently handle access control under the scenario of the autocomplete path of reference sources."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-007
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Complex/A:None/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/filefield_sources/"
+    google-query: "inurl:'/sites/all/modules/filefield_sources/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/filefield_sources/filefield_sources.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'filefield_sources'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.10')
+         - compare_versions(version, '7.x-1.9')
+         - compare_versions(version, '7.x-1.8')
+         - compare_versions(version, '7.x-1.7')
+         - compare_versions(version, '7.x-1.6')
+         - compare_versions(version, '7.x-1.5')
+         - compare_versions(version, '7.x-1.4')
+         - compare_versions(version, '7.x-1.3')

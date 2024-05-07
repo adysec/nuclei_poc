@@ -1,0 +1,59 @@
+id: wp_vk-0c6bc786-341a-4ab6-b86e-d21bb3dbf298
+
+info:
+  name: >
+    WP VK-付费内容插件 <= 1.3.3 - Cross-Site Request Forgery via AJAX actions
+  author: topscoder
+  severity: medium
+  description: >
+    The WP VK-付费内容插件 plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.3.3. This is due to missing or incorrect nonce validation on several of its AJAX actions. This makes it possible for unauthenticated attackers to update plugin settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0c6bc786-341a-4ab6-b86e-d21bb3dbf298?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-vk/"
+    google-query: inurl:"/wp-content/plugins/wp-vk/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-vk/"'
+  tags: cve,wordpress,wp-plugin,wp-vk,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-vk/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-vk"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.3.4')

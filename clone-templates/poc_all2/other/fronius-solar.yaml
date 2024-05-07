@@ -1,0 +1,43 @@
+id: fronius-solar-api-detect
+info:
+  name: Fronius Solar API Endpoint Detect
+  author: r3dcl1ff
+  severity: info
+  description: Detects Fronius endpoints via /solar_api version endpoints and/or favicon hashes (1471834791, 1787265245). Non-invasive, no telemetry retrieval.
+  tags: iiot,solar,fronius
+  metadata:
+    shodan-query: 'http.favicon.hash:1471834791 OR http.favicon.hash:1787265245 OR "/solar_api"'
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/favicon.ico"
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl: ["mmh3(base64(body)) == 1471834791"]
+      - type: dsl
+        dsl: ["mmh3(base64(body)) == 1787265245"]
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/solar_api/GetAPIVersion.cgi"
+      - "{{BaseURL}}/solar_api/v1/GetAPIVersion.cgi"
+    headers:
+      Accept: application/json,*/*
+      User-Agent: Mozilla/5.0
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+      - type: regex
+        part: body
+        regex:
+          - '(?i)"APIVersion"\s*:\s*\d+'
+          - '(?i)"BaseURL"\s*:\s*"/solar_api/?'
+    extractors:
+      - type: regex
+        part: body
+        name: api_version
+        regex: ['"APIVersion"\s*:\s*([0-9]+)']

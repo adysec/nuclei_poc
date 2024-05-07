@@ -1,0 +1,59 @@
+id: resume_submissions_job_postings-50537e01-834e-4247-a80f-daa114eedcf1
+
+info:
+  name: >
+    Resume Submissions & Job Postings < 2.5.2 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Resume Submissions & Job Postings plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the functions.php file in versions before 2.5.2. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/50537e01-834e-4247-a80f-daa114eedcf1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/resume-submissions-job-postings/"
+    google-query: inurl:"/wp-content/plugins/resume-submissions-job-postings/"
+    shodan-query: 'http.html:"wp-content/plugins/resume-submissions-job-postings/"'
+  tags: cve,wordpress,wp-plugin,resume-submissions-job-postings,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/resume-submissions-job-postings/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "resume-submissions-job-postings"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.5.2')

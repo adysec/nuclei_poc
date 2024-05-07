@@ -1,0 +1,59 @@
+id: oneclick_whatsapp_order-3e4aaf2e-a0c6-47d2-9eb8-d65952a74424
+
+info:
+  name: >
+    OneClick Chat to Order <= 1.0.5 - Authenticated (Contributor+) Stored Cross-Site Scripting via Shortcode
+  author: topscoder
+  severity: low
+  description: >
+    The OneClick Chat to Order plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the plugin's shortcode(s) in all versions up to, and including, 1.0.5 due to insufficient input sanitization and output escaping on user supplied attributes. This makes it possible for authenticated attackers with contributor-level and above permissions to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3e4aaf2e-a0c6-47d2-9eb8-d65952a74424?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/oneclick-whatsapp-order/"
+    google-query: inurl:"/wp-content/plugins/oneclick-whatsapp-order/"
+    shodan-query: 'http.html:"wp-content/plugins/oneclick-whatsapp-order/"'
+  tags: cve,wordpress,wp-plugin,oneclick-whatsapp-order,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/oneclick-whatsapp-order/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "oneclick-whatsapp-order"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.5')

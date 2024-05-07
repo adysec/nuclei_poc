@@ -1,0 +1,59 @@
+id: youtube_embed-1f95bd2d-c835-4824-b241-f645b4a8fdb2
+
+info:
+  name: >
+    YouTube Embed <= 3.3.2 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1f95bd2d-c835-4824-b241-f645b4a8fdb2?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/youtube-embed/"
+    google-query: inurl:"/wp-content/plugins/youtube-embed/"
+    shodan-query: 'http.html:"wp-content/plugins/youtube-embed/"'
+  tags: cve,wordpress,wp-plugin,youtube-embed,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/youtube-embed/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "youtube-embed"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.3.3')

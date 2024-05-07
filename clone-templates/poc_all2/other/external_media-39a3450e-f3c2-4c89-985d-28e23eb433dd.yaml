@@ -1,0 +1,59 @@
+id: external_media-39a3450e-f3c2-4c89-985d-28e23eb433dd
+
+info:
+  name: >
+    External Media <= 1.0.36 - Authenticated(Author+) File Upload to Stored Cross-Site Scripting via SVG
+  author: topscoder
+  severity: low
+  description: >
+    The External Media plugin for WordPress is vulnerable to File Upload due to insufficient file type validation in the isUnsafe function in versions up to, and including, 1.0.36. This makes it possible for authenticated attackers with the upload_files capability, such as authors, to upload dangerous file types such as unsanitized SVG files which can lead to Cross-Site Scripting.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/39a3450e-f3c2-4c89-985d-28e23eb433dd?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/external-media/"
+    google-query: inurl:"/wp-content/plugins/external-media/"
+    shodan-query: 'http.html:"wp-content/plugins/external-media/"'
+  tags: cve,wordpress,wp-plugin,external-media,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/external-media/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "external-media"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.36')

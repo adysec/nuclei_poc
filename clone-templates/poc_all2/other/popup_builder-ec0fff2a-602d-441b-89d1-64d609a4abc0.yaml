@@ -1,0 +1,59 @@
+id: popup_builder-ec0fff2a-602d-441b-89d1-64d609a4abc0
+
+info:
+  name: >
+    Popup Builder <= 3.72 Missing Authorization on AJAX actions
+  author: topscoder
+  severity: medium
+  description: >
+    The Popup Builder plugin for WordPress is vulnerable to authorization bypass in versions up to, and including 3.71 due to missing capability checks on various actions called via AJAX. This makes it possible for attackers to import subscribers and send newsletters among other actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ec0fff2a-602d-441b-89d1-64d609a4abc0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/popup-builder/"
+    google-query: inurl:"/wp-content/plugins/popup-builder/"
+    shodan-query: 'http.html:"wp-content/plugins/popup-builder/"'
+  tags: cve,wordpress,wp-plugin,popup-builder,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/popup-builder/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "popup-builder"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.71')

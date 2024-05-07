@@ -1,0 +1,59 @@
+id: dsp_dating-79ef7b33-ea6b-4cf2-bed4-8177927ab650
+
+info:
+  name: >
+    WPDating <= 7.4.1 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The WPDating plugin for WordPress is vulnerable to Arbitrary File Upload in versions up to, and including, 7.4.1. This is due to missing file type validation on one of the plugin's functions. While the source of information claims that this is a cross-site request forgery vulnerability that requires tricking an administrative user to click a link in order to exploit the vulnerability, we believe that this may be exploitable by unauthenticated users as well after analyzing the provided proof of concepts. This makes it possible for unauthenticated attackers to upload malicious files to the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/79ef7b33-ea6b-4cf2-bed4-8177927ab650?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dsp_dating/"
+    google-query: inurl:"/wp-content/plugins/dsp_dating/"
+    shodan-query: 'http.html:"wp-content/plugins/dsp_dating/"'
+  tags: cve,wordpress,wp-plugin,dsp_dating,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dsp_dating/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dsp_dating"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.4.1')

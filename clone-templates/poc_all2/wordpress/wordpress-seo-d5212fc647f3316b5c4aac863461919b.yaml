@@ -1,0 +1,59 @@
+id: wordpress-seo-d5212fc647f3316b5c4aac863461919b
+
+info:
+  name: >
+    Yoast SEO <= 2.0.1 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2fe34989-493c-4883-a1ca-454262919202?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wordpress-seo/"
+    google-query: inurl:"/wp-content/plugins/wordpress-seo/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wordpress-seo,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordpress-seo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordpress-seo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.1')

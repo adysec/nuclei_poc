@@ -1,0 +1,59 @@
+id: google_language_translator-ec894433-53c8-4d04-bb8a-92c66cbd2ce7
+
+info:
+  name: >
+    Google Language Translator <= 6.0.20 - Missing Authorization to Notice Dismissal
+  author: topscoder
+  severity: high
+  description: >
+    The Translate WordPress – Google Language Translator plugin for WordPress is vulnerable to unauthorized modification of data due to a missing capability check on the admin_notice_ignore() function in all versions up to 6.0.20 (exclusive). This makes it possible for unauthenticated attackers to dismiss admin notices.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ec894433-53c8-4d04-bb8a-92c66cbd2ce7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/google-language-translator/"
+    google-query: inurl:"/wp-content/plugins/google-language-translator/"
+    shodan-query: 'http.html:"wp-content/plugins/google-language-translator/"'
+  tags: cve,wordpress,wp-plugin,google-language-translator,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/google-language-translator/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "google-language-translator"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 6.0.20')

@@ -1,0 +1,59 @@
+id: emails_verification_for_woocommerce-85bd9922-3316-4fd0-b31e-c3ca5ab8a79d
+
+info:
+  name: >
+    Email Verification for WooCommerce <= 1.8.1 - Authentication Bypass
+  author: topscoder
+  severity: critical
+  description: >
+    The Email Verification for WooCommerce plugin for WordPress is vulnerable to Authentication Bypass due to insufficient validation on the alg_wc_ev_activation_code value found in the verify() function which makes it possible for users to spoof email validation for any user, including administrators, that will auto-log them in as that user through wp_set_auth_cookie(). This affects versions up to, and including, 1.8.1. This makes it possible for unauthenticated attackers to log in as site administrators.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/85bd9922-3316-4fd0-b31e-c3ca5ab8a79d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/emails-verification-for-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/emails-verification-for-woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/emails-verification-for-woocommerce/"'
+  tags: cve,wordpress,wp-plugin,emails-verification-for-woocommerce,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/emails-verification-for-woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "emails-verification-for-woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.1')

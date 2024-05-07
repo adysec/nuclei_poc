@@ -1,0 +1,74 @@
+# gap: velero-backup-api-anonymous
+id: velero-backup-api-anonymous
+
+info:
+  name: Velero (K8s Backup) - Anonymous BackupList Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects Velero — the canonical Kubernetes backup/restore
+    operator — exposing its REST API anonymously through a
+    misconfigured ingress, kubectl-proxy, or apiserver-extension.
+    A reachable `/apis/velero.io/v1/backups` (or its
+    namespace-scoped equivalent) leaks every backup's name,
+    namespace scope, included resources, backup-location storage
+    config — and, on operator-deployed dashboards, restore is
+    triggerable through the same API surface.
+
+    Wire-format keys on the BackupList envelope: response JSON
+    contains `"kind":"BackupList"` AND `"apiVersion":"velero.io/v1"`.
+    The `velero.io/v1` apiVersion string is the unique tell — it
+    appears only in Velero CRDs and nowhere in upstream Kubernetes
+    core APIs.
+
+    Why this matters beyond enumeration: the backups list often
+    exposes the S3 / GCS bucket names of the backup storage
+    location (in spec.storageLocation), and Velero backups
+    typically contain Secrets — anyone with read access to the
+    bucket has effectively cluster-admin.
+  reference:
+    - https://velero.io/docs/main/api-types/backup/
+    - https://github.com/vmware-tanzu/velero
+    - https://velero.io/docs/main/disaster-case/
+  tags: custom,exposures,velero,kubernetes,backup,anonymous,cwe-862
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/apis/velero.io/v1/backups"
+      - "{{BaseURL}}/apis/velero.io/v1/namespaces/velero/backups"
+      - "{{BaseURL}}/api/v1/backups"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+      - type: word
+        part: body
+        words:
+          - '"kind":"BackupList"'
+          - '"apiVersion":"velero.io/v1"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: backup-names
+        regex:
+          - '"name"\s*:\s*"([a-z0-9][a-z0-9-]{1,80})"'
+        group: 1
+      - type: regex
+        part: body
+        name: storage-location
+        regex:
+          - '"storageLocation"\s*:\s*"([^"]{1,80})"'
+        group: 1
+      - type: regex
+        part: body
+        name: included-namespaces
+        regex:
+          - '"includedNamespaces"\s*:\s*\[([^\]]{1,200})\]'
+        group: 1

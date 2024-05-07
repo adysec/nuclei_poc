@@ -1,0 +1,50 @@
+# gap: owasp-wstg-clnt-09-missing-x-frame-options
+id: owasp-wstg-clnt-09-missing-x-frame-options
+
+info:
+  name: Missing X-Frame-Options and CSP frame-ancestors (Clickjacking)
+  author: TyrusRC
+  severity: low
+  description: |
+    Detects HTML responses that omit both the X-Frame-Options header and a
+    Content-Security-Policy frame-ancestors directive. This template only
+    fires for text/html responses where neither protection is present,
+    meaning the page can be embedded in an attacker-controlled iframe and
+    used for clickjacking or UI-redress attacks against authenticated
+    users. JSON/API/asset endpoints are skipped because they are not
+    framable surfaces.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/11-Client-side_Testing/09-Testing_for_Clickjacking
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
+  tags: custom,misconfig,headers,clickjacking,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "content-type: text/html"
+      - type: word
+        part: header
+        case-insensitive: true
+        negative: true
+        words:
+          - "x-frame-options"
+      # CSP frame-ancestors must be ABSENT or PERMISSIVE (wildcard) to fire.
+      # A restrictive policy (e.g. frame-ancestors 'self' or https://example.com)
+      # blocks framing and should suppress the finding. A permissive policy
+      # (frame-ancestors *) does not actually protect against clickjacking and
+      # must still trigger.
+      - type: regex
+        part: header
+        negative: true
+        regex:
+          - "(?i)frame-ancestors\\s+[^*;\r\n]*(?:'self'|'none'|https?://[^\\s;]+)"

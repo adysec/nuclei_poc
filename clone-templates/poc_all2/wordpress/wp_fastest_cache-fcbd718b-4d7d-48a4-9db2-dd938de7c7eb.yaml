@@ -1,0 +1,59 @@
+id: wp_fastest_cache-fcbd718b-4d7d-48a4-9db2-dd938de7c7eb
+
+info:
+  name: >
+    WP Fastest Cache <= 0.8.5.7 - Missing Authorization
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Fastest Cache plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the wpfc_save_cdn_integration_ajax_request_callback() function in versions up to, and including, 0.8.5.7. This makes it possible for unauthorized attackers to redirect all CSS file, image, video, etc. requests to a potentially malicious site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fcbd718b-4d7d-48a4-9db2-dd938de7c7eb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 4.9
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-fastest-cache/"
+    google-query: inurl:"/wp-content/plugins/wp-fastest-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-fastest-cache/"'
+  tags: cve,wordpress,wp-plugin,wp-fastest-cache,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-fastest-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-fastest-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.8.5.7')

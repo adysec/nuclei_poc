@@ -1,0 +1,59 @@
+id: scarlet-f6d24786-676b-478a-ad9a-5c3f5ca3e85b
+
+info:
+  name: >
+    Scarlet (All Versions) - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Scarlet theme for WordPress is vulnerable to Reflected Cross-Site Scripting in all versions due to the inclusion of a vulnerable version of ZeroClipboard. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f6d24786-676b-478a-ad9a-5c3f5ca3e85b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/scarlet/"
+    google-query: inurl:"/wp-content/themes/scarlet/"
+    shodan-query: 'http.html:"wp-content/themes/scarlet/"'
+  tags: cve,wordpress,wp-theme,scarlet,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/scarlet/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "scarlet"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

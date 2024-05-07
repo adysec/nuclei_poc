@@ -1,0 +1,59 @@
+id: ultimate_maps_by_supsystic-758e23e4-72e6-4dc1-94f9-d02b75bb9857
+
+info:
+  name: >
+    Ultimate Maps by Supsystic <= 1.1.16 - Authenticated SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Ultimate Maps by Supsystic plugin for WordPress is vulnerable to SQL Injection in versions up to, and including, 1.1.16 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated-level attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/758e23e4-72e6-4dc1-94f9-d02b75bb9857?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ultimate-maps-by-supsystic/"
+    google-query: inurl:"/wp-content/plugins/ultimate-maps-by-supsystic/"
+    shodan-query: 'http.html:"wp-content/plugins/ultimate-maps-by-supsystic/"'
+  tags: cve,wordpress,wp-plugin,ultimate-maps-by-supsystic,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ultimate-maps-by-supsystic/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ultimate-maps-by-supsystic"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.1.17')

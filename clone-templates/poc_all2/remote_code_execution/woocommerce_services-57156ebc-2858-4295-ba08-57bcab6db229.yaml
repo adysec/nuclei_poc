@@ -1,0 +1,59 @@
+id: woocommerce_services-57156ebc-2858-4295-ba08-57bcab6db229
+
+info:
+  name: >
+    WooCommerce Shipping & Tax <= 2.2.4 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WooCommerce Shipping & Tax plugin for WordPress is vulnerable to Stored Cross-Site Scripting via an unknown parameter in versions up to, and including, 2.2.4 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/57156ebc-2858-4295-ba08-57bcab6db229?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-services/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-services/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-services/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-services,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-services/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-services"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.2.5')

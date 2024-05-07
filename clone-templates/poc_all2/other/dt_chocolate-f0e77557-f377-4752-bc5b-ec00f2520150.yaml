@@ -1,0 +1,59 @@
+id: dt_chocolate-f0e77557-f377-4752-bc5b-ec00f2520150
+
+info:
+  name: >
+    Chocolate WP – Responsive Photography Theme (All Versions) - Remote File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The Chocolate WP – Responsive Photography Theme for WordPress is vulnerable to Remote File Inclusion in all versions due to inclusion of a vulnerable version of TimThumb. This allows unauthenticated attackers to include remote files on the server, resulting in code execution.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f0e77557-f377-4752-bc5b-ec00f2520150?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/dt-chocolate/"
+    google-query: inurl:"/wp-content/themes/dt-chocolate/"
+    shodan-query: 'http.html:"wp-content/themes/dt-chocolate/"'
+  tags: cve,wordpress,wp-theme,dt-chocolate,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/dt-chocolate/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dt-chocolate"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

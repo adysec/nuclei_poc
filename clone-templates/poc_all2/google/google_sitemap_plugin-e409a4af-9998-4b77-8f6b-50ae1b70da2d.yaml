@@ -1,0 +1,59 @@
+id: google_sitemap_plugin-e409a4af-9998-4b77-8f6b-50ae1b70da2d
+
+info:
+  name: >
+    Sitemap by BestWebSoft – WordPress XML Site Map Page Generator Plugin < 3.0.8 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Sitemap by BestWebSoft – WordPress XML Site Map Page Generator Plugin plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘category’ parameter in versions before 3.0.8 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e409a4af-9998-4b77-8f6b-50ae1b70da2d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/google-sitemap-plugin/"
+    google-query: inurl:"/wp-content/plugins/google-sitemap-plugin/"
+    shodan-query: 'http.html:"wp-content/plugins/google-sitemap-plugin/"'
+  tags: cve,wordpress,wp-plugin,google-sitemap-plugin,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/google-sitemap-plugin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "google-sitemap-plugin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.0.8')

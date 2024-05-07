@@ -1,0 +1,53 @@
+
+id: drupal_module-role_delegation-privilege-escalation
+info:
+  name: drupal_module-role_delegation-privilege-escalation
+  author: Bishopfox
+  severity: medium
+  description: "This module allows site administrators to grant specific roles the authority to assign selected roles to users, without them needing the administer permissions permission. The module contains an access bypass vulnerability when used in combination with the Views Bulk Operations module. An authenticated user is able to assign the administrator role to his own user.  This vulnerability is mitigated by the fact that an attacker must have access to an overview of users with the views bulk operations module enabled. E.g. The admin_views module provides such a view."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-031
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:User/CI:Some/II:Some/E:Proof/TD:Default"
+    vulnerability: "privilege-escalation"
+    fofa-query: "/sites/all/modules/role_delegation/"
+    google-query: "inurl:'/sites/all/modules/role_delegation/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/role_delegation/role_delegation.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'role_delegation'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

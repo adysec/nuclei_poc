@@ -1,0 +1,59 @@
+id: switchblade-8114905a-f08c-425f-ae48-06302cfcb20a
+
+info:
+  name: >
+    Switchblade - Powerful WordPress Theme <= 1.3.2 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Switchblade - Powerful WordPress Theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the php.php file in versions up to, and including, 1.3.2. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8114905a-f08c-425f-ae48-06302cfcb20a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/switchblade/"
+    google-query: inurl:"/wp-content/themes/switchblade/"
+    shodan-query: 'http.html:"wp-content/themes/switchblade/"'
+  tags: cve,wordpress,wp-theme,switchblade,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/switchblade/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "switchblade"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.2')

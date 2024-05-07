@@ -1,0 +1,59 @@
+id: fix_rss_feed-a3895b45-b103-4ba0-905c-611f5d1ba9a6
+
+info:
+  name: >
+    Fix Rss Feeds <= 3.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a3895b45-b103-4ba0-905c-611f5d1ba9a6?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fix-rss-feed/"
+    google-query: inurl:"/wp-content/plugins/fix-rss-feed/"
+    shodan-query: 'http.html:"wp-content/plugins/fix-rss-feed/"'
+  tags: cve,wordpress,wp-plugin,fix-rss-feed,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fix-rss-feed/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fix-rss-feed"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1')

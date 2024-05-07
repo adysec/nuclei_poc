@@ -1,0 +1,51 @@
+id: simple_donate-d661c24e-48f3-4b97-aa34-e46bd3907546
+
+info:
+  name: >
+    Simple Donate <= 1.0 - Authenticated (Contributor+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d661c24e-48f3-4b97-aa34-e46bd3907546?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-donate/"
+    google-query: inurl:"/wp-content/plugins/simple-donate/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-donate/"'
+  tags: cve,wordpress,wp-plugin,simple-donate,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-donate/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-donate"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

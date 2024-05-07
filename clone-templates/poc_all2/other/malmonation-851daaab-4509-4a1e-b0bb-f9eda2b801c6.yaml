@@ -1,0 +1,59 @@
+id: malmonation-851daaab-4509-4a1e-b0bb-f9eda2b801c6
+
+info:
+  name: >
+    Malmonation (All Versions) - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Malmonation theme for WordPress is vulnerable to SQL Injection via the ‘id’ parameter in all versions due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/851daaab-4509-4a1e-b0bb-f9eda2b801c6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/malmonation/"
+    google-query: inurl:"/wp-content/themes/malmonation/"
+    shodan-query: 'http.html:"wp-content/themes/malmonation/"'
+  tags: cve,wordpress,wp-theme,malmonation,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/malmonation/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "malmonation"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

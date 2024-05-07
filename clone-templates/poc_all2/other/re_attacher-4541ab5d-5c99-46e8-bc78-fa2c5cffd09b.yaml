@@ -1,0 +1,59 @@
+id: re_attacher-4541ab5d-5c99-46e8-bc78-fa2c5cffd09b
+
+info:
+  name: >
+    Re-attacher by BestWebSoft < 1.0.9 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Re-attacher by BestWebSoft plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘category’ parameter in versions before 1.0.9 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4541ab5d-5c99-46e8-bc78-fa2c5cffd09b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/re-attacher/"
+    google-query: inurl:"/wp-content/plugins/re-attacher/"
+    shodan-query: 'http.html:"wp-content/plugins/re-attacher/"'
+  tags: cve,wordpress,wp-plugin,re-attacher,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/re-attacher/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "re-attacher"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.9')

@@ -1,0 +1,59 @@
+id: official_mailerlite_sign_up_forms-f3b79fab-208f-4354-89ea-508290dcd851
+
+info:
+  name: >
+    MailerLite – Signup forms <= 1.4.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The MailerLite – Signup forms plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.4.4. This is due to missing or incorrect nonce validation on multiple functions. This makes it possible for unauthenticated attackers to create, modify, or delete signup forms via forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f3b79fab-208f-4354-89ea-508290dcd851?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:L
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/official-mailerlite-sign-up-forms/"
+    google-query: inurl:"/wp-content/plugins/official-mailerlite-sign-up-forms/"
+    shodan-query: 'http.html:"wp-content/plugins/official-mailerlite-sign-up-forms/"'
+  tags: cve,wordpress,wp-plugin,official-mailerlite-sign-up-forms,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/official-mailerlite-sign-up-forms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "official-mailerlite-sign-up-forms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.5')

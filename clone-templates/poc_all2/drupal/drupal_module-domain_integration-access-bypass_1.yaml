@@ -1,0 +1,52 @@
+
+id: drupal_module-domain_integration-access-bypass
+info:
+  name: drupal_module-domain_integration-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to integrate the Domain module with other popular Drupal modules. The Domain Integration Login Restrict sub-module enables you to restrict access to a domain based on the assigned domains on a user. The Domain Integration Login Restrict sub-module doesnt sufficiently check these restrictions when using one-time logins. This vulnerability is mitigated by the fact that an attacker must have an active account on one of the domains."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-084
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:None/A:User/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/domain_integration/"
+    google-query: "inurl:'/sites/all/modules/domain_integration/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/domain_integration/domain_integration.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'domain_integration'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

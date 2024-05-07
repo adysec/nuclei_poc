@@ -1,0 +1,37 @@
+id: ssti-detection-template
+
+info:
+  name: SSTI Detection
+  author: BlackHatGPT
+  severity: high
+  tags: ssti, template-injection
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}?{{param}}={{ssti_payload}}"
+
+    headers:
+      User-Agent: nuclei
+      Accept: "*/*"
+
+    payloads:
+      ssti_payload:
+        - "{{234234*2}}"
+        - "{$234234*2}"
+        - "#set($x=234234*2)$x"
+        - "<#assign x=234234*2>${x}"
+        - "th:text=\"${234234*2}\""
+        - "<%%=234234*2%%>"
+        - "<?=234234*2?>"
+        - "{{234234*2}}<%%=234234*2%%>"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "Rendered: 468468"
+
+      - type: regex
+        regex:
+          - "Rendered:.*468468"

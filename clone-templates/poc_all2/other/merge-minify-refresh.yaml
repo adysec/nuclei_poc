@@ -1,0 +1,57 @@
+id: merge-minify-refresh
+
+info:
+  name: "Merge + Minify + Refresh <= 1.10.7 - Cross-Site Request Forgery leading to Arbitrary File Deletion and Site Reset"
+  author: topscoder
+  severity: high
+  description: "The Merge + Minify + Refresh plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.10.7. This is due to missing nonce validation in the plugin. This makes it possible for unauthenticated attackers to exploit path traversal vulnerabilities via forged request granted they can trick any logged-in site user into performing an action such as clicking on a link."
+  reference:
+    - https://wearetradecraft.com/advisories/tc-2020-0002/
+    - https://plugins.trac.wordpress.org/changeset/2234960/merge-minify-refresh
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:H/A:H
+    cvss-score: 8.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/merge-minify-refresh/"
+    google-query: inurl:"/wp-content/plugins/merge-minify-refresh/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,merge-minify-refresh,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/merge-minify-refresh/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "merge-minify-refresh"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.10.8')

@@ -1,0 +1,59 @@
+id: modify_comment_fields-a646ebe5-3445-4e9b-99a9-23761d4fba9c
+
+info:
+  name: >
+    Comment Fields <= 1.03 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Comment Fields plugin for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 1.03 due to the use of add_query_arg with insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages via a URL that executes if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a646ebe5-3445-4e9b-99a9-23761d4fba9c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/modify-comment-fields/"
+    google-query: inurl:"/wp-content/plugins/modify-comment-fields/"
+    shodan-query: 'http.html:"wp-content/plugins/modify-comment-fields/"'
+  tags: cve,wordpress,wp-plugin,modify-comment-fields,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/modify-comment-fields/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "modify-comment-fields"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.03')

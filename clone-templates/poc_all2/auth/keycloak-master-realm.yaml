@@ -1,0 +1,47 @@
+id: keycloak-master-realm
+
+info:
+  name: Detect Keycloak master realm
+  author: haones
+  severity: medium
+  description: Keycloak master realm is exposed. It is possible to attempt bruteforce attack and retrieve access to administrative panel of Keycloak.
+  metadata:
+    max-request: 12
+    product: keycloak
+  tags: panel,keycloak
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/auth/realms/master"
+      - "{{BaseURL}}/auth/realms/master/"
+      - "{{BaseURL}}/auth/admin/master/console/"
+      - "{{BaseURL}}/auth/realms/master/account"
+      - "{{BaseURL}}/realms/master"
+      - "{{BaseURL}}/realms/master/"
+      - "{{BaseURL}}/admin/master/console/"
+      - "{{BaseURL}}/realms/master/account"
+      - "{{BaseURL}}/auth-cluster/realms/master"
+      - "{{BaseURL}}/auth-cluster/realms/master/"
+      - "{{BaseURL}}/auth-cluster/admin/master/console/"
+      - "{{BaseURL}}/auth-cluster/realms/master/account"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"public_key":"MIIBIjAN'
+          - "{{BaseURL}}/auth/realms/master/account"
+          - "Welcome to Keycloak Account Management"
+          - '"realm":"master"'
+          - "<span>Keycloak</span></div></div>"
+        condition: or
+
+      - type: status
+        status:
+          - 200

@@ -1,0 +1,59 @@
+id: realestate_7-5778ba3d-6670-47ad-ae65-50b6fb8e5db0
+
+info:
+  name: >
+    Real Estate 7 Theme <= 3.3.4 - Unauthenticated Arbitrary Email Sending
+  author: topscoder
+  severity: medium
+  description: >
+    The Real Estate 7 Theme for WordPress suffers from an Open Mailer vulnerability in versions up to, and including, 3.3.4. This is due to a lack of authorization in the /includes/ajax-submit-favorites.php and /includes/ajax-submit-listings.php files which are reachable via AJAX call but also directly via POST. This makes it possible for unauthenticated attackers to send emails with any content to any recipient.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5778ba3d-6670-47ad-ae65-50b6fb8e5db0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N
+    cvss-score: 5.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/realestate-7/"
+    google-query: inurl:"/wp-content/themes/realestate-7/"
+    shodan-query: 'http.html:"wp-content/themes/realestate-7/"'
+  tags: cve,wordpress,wp-theme,realestate-7,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/realestate-7/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "realestate-7"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.3.4')

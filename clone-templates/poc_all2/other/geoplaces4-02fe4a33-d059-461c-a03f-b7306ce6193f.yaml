@@ -1,0 +1,59 @@
+id: geoplaces4-02fe4a33-d059-461c-a03f-b7306ce6193f
+
+info:
+  name: >
+    GeoPlaces <= 4 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The GeoPlaces 4 Theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the /monetize/upload/ directory in versions up to, and including, 4. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/02fe4a33-d059-461c-a03f-b7306ce6193f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/geoplaces4/"
+    google-query: inurl:"/wp-content/themes/geoplaces4/"
+    shodan-query: 'http.html:"wp-content/themes/geoplaces4/"'
+  tags: cve,wordpress,wp-theme,geoplaces4,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/geoplaces4/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "geoplaces4"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4')

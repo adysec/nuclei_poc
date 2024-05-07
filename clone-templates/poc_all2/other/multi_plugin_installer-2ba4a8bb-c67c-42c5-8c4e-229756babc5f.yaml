@@ -1,0 +1,59 @@
+id: multi_plugin_installer-2ba4a8bb-c67c-42c5-8c4e-229756babc5f
+
+info:
+  name: >
+    Multi Plugin Installer < 1.2.0 - Arbitrary File Read
+  author: topscoder
+  severity: high
+  description: >
+    The Multi Plugin Installer plugin for WordPress is vulnerable to Arbitrary File Read in versions before 1.2.0. This is due to vulnerable parameters 'filepath' and 'filename' in the mpi_download_file function. This makes it possible for unauthenticated attackers to read arbitrary files.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2ba4a8bb-c67c-42c5-8c4e-229756babc5f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/multi-plugin-installer/"
+    google-query: inurl:"/wp-content/plugins/multi-plugin-installer/"
+    shodan-query: 'http.html:"wp-content/plugins/multi-plugin-installer/"'
+  tags: cve,wordpress,wp-plugin,multi-plugin-installer,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/multi-plugin-installer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "multi-plugin-installer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.0')

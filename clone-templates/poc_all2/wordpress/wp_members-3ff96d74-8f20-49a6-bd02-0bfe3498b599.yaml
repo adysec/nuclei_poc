@@ -1,0 +1,59 @@
+id: wp_members-3ff96d74-8f20-49a6-bd02-0bfe3498b599
+
+info:
+  name: >
+    WP-Members <= 3.5.2 - Authenticated (Contributor+) Stored Cross-Site Scripting via wpmem_user_memberships Shortcode
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3ff96d74-8f20-49a6-bd02-0bfe3498b599?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-members/"
+    google-query: inurl:"/wp-content/plugins/wp-members/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-members/"'
+  tags: cve,wordpress,wp-plugin,wp-members,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-members/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-members"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.5.2')

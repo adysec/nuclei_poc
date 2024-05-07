@@ -1,0 +1,59 @@
+id: premium_gallery_manager-c274a9b2-c95e-4898-afa4-d6e2f6006f91
+
+info:
+  name: >
+    Premium Gallery Manager (Unknown Versions) - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Premium Gallery Manager plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'uploadify.php' file. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c274a9b2-c95e-4898-afa4-d6e2f6006f91?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/Premium_Gallery_Manager/"
+    google-query: inurl:"/wp-content/plugins/Premium_Gallery_Manager/"
+    shodan-query: 'http.html:"wp-content/plugins/Premium_Gallery_Manager/"'
+  tags: cve,wordpress,wp-plugin,Premium_Gallery_Manager,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/Premium_Gallery_Manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "Premium_Gallery_Manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

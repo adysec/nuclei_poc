@@ -1,0 +1,59 @@
+id: affiliate_toolkit_starter-b5e64a33-6165-4257-b324-0bbab4129e54
+
+info:
+  name: >
+    affiliate-toolkit – WP Affiliate Plugin with Amazon <= 3.7.0 - Authenticated (Contributor+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The affiliate-toolkit – WP Affiliate Plugin with Amazon plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the plugin's 'atkp_product' shortcode in all versions up to, and including, 3.7.0 due to insufficient input sanitization and output escaping on user supplied attributes. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This is a bypass to CVE-2024-10227.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b5e64a33-6165-4257-b324-0bbab4129e54?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/affiliate-toolkit-starter/"
+    google-query: inurl:"/wp-content/plugins/affiliate-toolkit-starter/"
+    shodan-query: 'http.html:"wp-content/plugins/affiliate-toolkit-starter/"'
+  tags: cve,wordpress,wp-plugin,affiliate-toolkit-starter,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/affiliate-toolkit-starter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "affiliate-toolkit-starter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.7.0')

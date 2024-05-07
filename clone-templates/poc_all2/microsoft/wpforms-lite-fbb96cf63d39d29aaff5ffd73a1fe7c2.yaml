@@ -1,0 +1,59 @@
+id: wpforms-lite-fbb96cf63d39d29aaff5ffd73a1fe7c2
+
+info:
+  name: "Contact Form by WPForms <= 1.4.8 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: high
+  description: "The Contact Form by WPForms for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 1.4.8 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset/1935751/wpforms-lite
+    - https://patchstack.com/database/vulnerability/wpforms-lite/wordpress-contact-form-by-wpforms-plugin-1-4-8-unauthenticated-cross-site-scripting-xss-vulnerability
+    - https://web.archive.org/web/20201014050019/https%3A//demo.ripstech.com/issue/96/136/1/52191/details
+    - https://web.archive.org/web/20200513054402/https%3A//www.ripstech.com/php-security-calendar-2018/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wpforms-lite/"
+    google-query: inurl:"/wp-content/plugins/wpforms-lite/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wpforms-lite,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpforms-lite/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpforms-lite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.8.1')

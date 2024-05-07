@@ -1,0 +1,59 @@
+id: all_in_one_event_calendar-f23d80ae-a686-4e89-a8c0-648289521c58
+
+info:
+  name: >
+    All-in-One Events Calendar < 1.10 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The All-in-One Events Calendar plugin for WordPress is vulnerable to SQL Injection via the “ai1ec_cat_ids”, “ai1ec_post_ids” and “ai1ec_tag_ids” parameters in versions up to, and including, 1.9 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f23d80ae-a686-4e89-a8c0-648289521c58?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/all-in-one-event-calendar/"
+    google-query: inurl:"/wp-content/plugins/all-in-one-event-calendar/"
+    shodan-query: 'http.html:"wp-content/plugins/all-in-one-event-calendar/"'
+  tags: cve,wordpress,wp-plugin,all-in-one-event-calendar,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/all-in-one-event-calendar/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "all-in-one-event-calendar"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.10')

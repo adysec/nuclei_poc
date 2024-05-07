@@ -1,0 +1,59 @@
+id: wp_ultimate_csv_importer-45ba8203-a8a0-4330-a264-c2f555d09ef0
+
+info:
+  name: >
+    Import Export All WordPress Images, Users & Post Types <= 3.8.7 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Import Export All WordPress Images, Users & Post Types plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘alertmsg’ parameter in versions up to, and including, 3.8.7 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/45ba8203-a8a0-4330-a264-c2f555d09ef0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-ultimate-csv-importer/"
+    google-query: inurl:"/wp-content/plugins/wp-ultimate-csv-importer/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-ultimate-csv-importer/"'
+  tags: cve,wordpress,wp-plugin,wp-ultimate-csv-importer,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-ultimate-csv-importer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-ultimate-csv-importer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.8.8')

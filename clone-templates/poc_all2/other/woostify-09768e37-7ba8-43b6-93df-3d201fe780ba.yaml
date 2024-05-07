@@ -1,0 +1,59 @@
+id: woostify-09768e37-7ba8-43b6-93df-3d201fe780ba
+
+info:
+  name: >
+    Woostify <= 1.9.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Woostify Theme for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.9.1. This is due to missing or incorrect nonce validation on several functions. This makes it possible for unauthenticated attackers to add products and edit product quantities in a cart via a forged request granted they can trick a site user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/09768e37-7ba8-43b6-93df-3d201fe780ba?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/woostify/"
+    google-query: inurl:"/wp-content/themes/woostify/"
+    shodan-query: 'http.html:"wp-content/themes/woostify/"'
+  tags: cve,wordpress,wp-theme,woostify,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/woostify/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woostify"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.1')

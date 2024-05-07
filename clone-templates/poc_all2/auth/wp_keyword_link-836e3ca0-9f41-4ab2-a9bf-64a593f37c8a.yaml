@@ -1,0 +1,59 @@
+id: wp_keyword_link-836e3ca0-9f41-4ab2-a9bf-64a593f37c8a
+
+info:
+  name: >
+    WP Keyword link <= 1.7 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Keyword link plugin for WordPress is vulnerable to Cross-Site Scripting via the 'limit' parameter in versions up to, and including, 1.7 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/836e3ca0-9f41-4ab2-a9bf-64a593f37c8a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-keyword-link/"
+    google-query: inurl:"/wp-content/plugins/wp-keyword-link/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-keyword-link/"'
+  tags: cve,wordpress,wp-plugin,wp-keyword-link,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-keyword-link/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-keyword-link"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7')

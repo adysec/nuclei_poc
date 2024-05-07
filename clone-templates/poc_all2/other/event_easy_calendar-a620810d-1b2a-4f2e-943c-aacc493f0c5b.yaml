@@ -1,0 +1,59 @@
+id: event_easy_calendar-a620810d-1b2a-4f2e-943c-aacc493f0c5b
+
+info:
+  name: >
+    Event Easy Calendar <= 1.0.0 - Multiple Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Event Easy Calendar plugin for WordPress is vulnerable to Multiple Cross-Site Request Forgery in versions up to, and including, 1.0.0. This is due to missing or incorrect nonce validation on several functions. This makes it possible for unauthenticated attackers to perform administrative actions via a forged request granted they can trick a site administrator into performing an action such as clicking on a link. These actions include creating and updating customers, creating new services and coupons, changing settings, enabling reminders and auto approvals, deleting all bookings, modifying the PayPal recipient email address, and modifying cost of services.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a620810d-1b2a-4f2e-943c-aacc493f0c5b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/event-easy-calendar/"
+    google-query: inurl:"/wp-content/plugins/event-easy-calendar/"
+    shodan-query: 'http.html:"wp-content/plugins/event-easy-calendar/"'
+  tags: cve,wordpress,wp-plugin,event-easy-calendar,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/event-easy-calendar/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "event-easy-calendar"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

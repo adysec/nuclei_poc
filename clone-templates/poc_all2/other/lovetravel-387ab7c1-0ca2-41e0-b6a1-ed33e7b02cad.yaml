@@ -1,0 +1,59 @@
+id: lovetravel-387ab7c1-0ca2-41e0-b6a1-ed33e7b02cad
+
+info:
+  name: >
+    Love Travel 2.0 - 3.8 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Love Travel theme for WordPress is vulnerable to Reflected Cross-Site Scripting and Cross-Frame Scripting via the 'keyword', 'date_from', 'date_to', 'price_from_to', 'nicdark_price_from', and 'nicdark_price_to' parameters in versions 2.0 - 3.8 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/387ab7c1-0ca2-41e0-b6a1-ed33e7b02cad?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/lovetravel/"
+    google-query: inurl:"/wp-content/themes/lovetravel/"
+    shodan-query: 'http.html:"wp-content/themes/lovetravel/"'
+  tags: cve,wordpress,wp-theme,lovetravel,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/lovetravel/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "lovetravel"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 2.0', '<= 3.8')

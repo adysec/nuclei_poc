@@ -1,0 +1,51 @@
+id: chat_help-91654765-6631-4eb4-9971-32b7db7933e1
+
+info:
+  name: >
+    Chat Help – Click to Chat Button & Form <= 3.1.3 - Missing Authorization to Unauthenticated Sensitive Information Exposure
+  author: topscoder
+  severity: high
+  description: >
+    The Chat Help – Click to Chat Button & Form plugin for WordPress is vulnerable to Sensitive Information Exposure in all versions up to, and including, 3.1.3 via the REST API endpoints /wp-json/chat-help/v1/leads and /wp-json/chat-help/v1/leads/{id}. This is due to the plugin not performing any authentication and authorization checks. This makes it possible for unauthenticated attackers to extract sensitive data including customer names, email addresses, phone numbers, WhatsApp messages, complete geolocation data (IP addresses, city, country, ISP, coordinates), device fingerprinting information (browser, OS, screen resolution), and WordPress account credentials (user IDs, usernames, emails, names) for logged-in users who submit forms.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/91654765-6631-4eb4-9971-32b7db7933e1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/chat-help/"
+    google-query: inurl:"/wp-content/plugins/chat-help/"
+    shodan-query: 'http.html:"wp-content/plugins/chat-help/"'
+  tags: cve,wordpress,wp-plugin,chat-help,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/chat-help/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "chat-help"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1.3')

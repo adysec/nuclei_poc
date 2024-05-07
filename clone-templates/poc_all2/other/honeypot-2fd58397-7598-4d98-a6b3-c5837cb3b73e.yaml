@@ -1,0 +1,59 @@
+id: honeypot-2fd58397-7598-4d98-a6b3-c5837cb3b73e
+
+info:
+  name: >
+    WP Armour Honeypot Anti Spam <= 1.5.6 -Cross-Site Request Forgery to Arbitrary Options Update
+  author: topscoder
+  severity: critical
+  description: >
+    The Armour Honeypot Anti Spam plugin for WordPress is vulnerable to Cross-Site Request Forgery due to missing nonce validation on the wpa_save_settings() function in versions up to, and including, 1.5.6. This makes it possible for attackers to modify arbitrary site options granted they can trick an administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2fd58397-7598-4d98-a6b3-c5837cb3b73e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H
+    cvss-score: 9.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/honeypot/"
+    google-query: inurl:"/wp-content/plugins/honeypot/"
+    shodan-query: 'http.html:"wp-content/plugins/honeypot/"'
+  tags: cve,wordpress,wp-plugin,honeypot,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/honeypot/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "honeypot"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.7')

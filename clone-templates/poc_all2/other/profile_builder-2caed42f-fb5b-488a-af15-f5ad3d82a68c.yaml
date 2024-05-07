@@ -1,0 +1,59 @@
+id: profile_builder-2caed42f-fb5b-488a-af15-f5ad3d82a68c
+
+info:
+  name: >
+    Profile Builder <= 2.4.0 - Privilege Escalation
+  author: topscoder
+  severity: high
+  description: >
+    The Profile Builder plugin for WordPress is vulnerable to Privilege Escalation in versions up to, and including, 2.4.0.  This makes it possible for subscriber-level attackers to elevate user roles to administrative levels, giving them full control of the website.  This vulnerability only impacts websites that have registration enabled, but given that the plugin functionality is directly related to registration it is likely that the majority of websites with the plugin installed are effected.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2caed42f-fb5b-488a-af15-f5ad3d82a68c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/profile-builder/"
+    google-query: inurl:"/wp-content/plugins/profile-builder/"
+    shodan-query: 'http.html:"wp-content/plugins/profile-builder/"'
+  tags: cve,wordpress,wp-plugin,profile-builder,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/profile-builder/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "profile-builder"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.4.1')

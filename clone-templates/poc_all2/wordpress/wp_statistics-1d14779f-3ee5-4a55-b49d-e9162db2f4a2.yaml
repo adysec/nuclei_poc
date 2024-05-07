@@ -1,0 +1,59 @@
+id: wp_statistics-1d14779f-3ee5-4a55-b49d-e9162db2f4a2
+
+info:
+  name: >
+    WP Statistics < 8.3.1 - Multiple Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The WP Statistics plugin for WordPress is vulnerable to Multiple Cross-Site Scripting via several parameters in versions before 8.3.1 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1d14779f-3ee5-4a55-b49d-e9162db2f4a2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-statistics/"
+    google-query: inurl:"/wp-content/plugins/wp-statistics/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-statistics/"'
+  tags: cve,wordpress,wp-plugin,wp-statistics,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-statistics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-statistics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 8.3.1')

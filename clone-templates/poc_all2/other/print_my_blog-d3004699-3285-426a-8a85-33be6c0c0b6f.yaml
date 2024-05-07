@@ -1,0 +1,59 @@
+id: print_my_blog-d3004699-3285-426a-8a85-33be6c0c0b6f
+
+info:
+  name: >
+    Print My Blog – Print, PDF, & eBook Converter <= 3.15.8 - Unprotected AJAX Actions
+  author: topscoder
+  severity: low
+  description: >
+    The Print My Blog – Print, PDF, & eBook Converter plugin for WordPress is vulnerable to authorization bypass due to missing capability checks on several functions hooked via AJAX actions in versions up to, and including, 3.15.8. This makes it possible for authenticated attackers with subscriber-level permissions and above to modify the plugin's settings and inject malicious JavaScript. The affected AJAX actions are: wp_ajax_pmb_save_project_main, wp_ajax_pmb_post_search, wp_ajax_pmb_add_print_material, wp_ajax_pmb_reduce_credits, wp_ajax_pmb_report_error, and wp_ajax_pmb_duplicate_print_material. This could also be exploited via Cross-Site Request Forgery.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d3004699-3285-426a-8a85-33be6c0c0b6f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/print-my-blog/"
+    google-query: inurl:"/wp-content/plugins/print-my-blog/"
+    shodan-query: 'http.html:"wp-content/plugins/print-my-blog/"'
+  tags: cve,wordpress,wp-plugin,print-my-blog,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/print-my-blog/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "print-my-blog"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.15.8')

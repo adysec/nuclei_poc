@@ -1,0 +1,51 @@
+id: ce21_suite-5e24feac-1812-45d7-b3c3-27787eed1cf1
+
+info:
+  name: >
+    CE21 Suite 2.2.1 - 2.3.1 - Missing Authorization to Unauthenticated Privilege Escalation via Plugin Settings Update
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5e24feac-1812-45d7-b3c3-27787eed1cf1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ce21-suite/"
+    google-query: inurl:"/wp-content/plugins/ce21-suite/"
+    shodan-query: 'http.html:"wp-content/plugins/ce21-suite/"'
+  tags: cve,wordpress,wp-plugin,ce21-suite,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ce21-suite/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ce21-suite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 2.2.1', '<= 2.3.1')

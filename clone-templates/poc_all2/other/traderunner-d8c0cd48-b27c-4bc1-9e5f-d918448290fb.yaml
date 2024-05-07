@@ -1,0 +1,59 @@
+id: traderunner-d8c0cd48-b27c-4bc1-9e5f-d918448290fb
+
+info:
+  name: >
+    Trade Runner <= 3.9 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Trade Runner  plugin for WordPress is vulnerable to authenticated Stored Cross-Site Scripting in versions up to, and including 3.9. This is due to insufficient output escaping on the $google_ads_account_id variable that is displayed on the front-end on the site. This can only be exploited by site administrators on multi-site installations or installations where unfiltered_html has been disabled.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d8c0cd48-b27c-4bc1-9e5f-d918448290fb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/traderunner/"
+    google-query: inurl:"/wp-content/plugins/traderunner/"
+    shodan-query: 'http.html:"wp-content/plugins/traderunner/"'
+  tags: cve,wordpress,wp-plugin,traderunner,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/traderunner/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "traderunner"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.9')

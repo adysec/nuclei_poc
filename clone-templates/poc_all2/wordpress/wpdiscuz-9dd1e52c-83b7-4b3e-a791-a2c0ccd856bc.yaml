@@ -1,0 +1,59 @@
+id: wpdiscuz-9dd1e52c-83b7-4b3e-a791-a2c0ccd856bc
+
+info:
+  name: >
+    wpDiscuz <= 7.6.5 - Unauthenticated SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The wpDiscuz plugin for WordPress is vulnerable to SQL Injection via the 'visibleCommentIds' parameter in versions up to, and including, 7.6.5 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. This requires the 'Live Update' functionality to be enabled for subscriber+ exploitation, and the 'Enable Live Update for Guests' setting enabled for unauthenticated exploitation.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9dd1e52c-83b7-4b3e-a791-a2c0ccd856bc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpdiscuz/"
+    google-query: inurl:"/wp-content/plugins/wpdiscuz/"
+    shodan-query: 'http.html:"wp-content/plugins/wpdiscuz/"'
+  tags: cve,wordpress,wp-plugin,wpdiscuz,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpdiscuz/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpdiscuz"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 7.6.6')

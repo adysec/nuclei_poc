@@ -1,0 +1,59 @@
+id: wp_product_review-1c09743a-cf0a-4eaa-8508-ecde32de4fce
+
+info:
+  name: >
+    WP Product Review Lite <= 3.7.5 - Unauthenticated Stored Cross Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The WP Product Review Lite plugin for WordPress is vulnerable to Stored Cross-Site Scripting in versions up to, and including, 3.7.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1c09743a-cf0a-4eaa-8508-ecde32de4fce?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-product-review/"
+    google-query: inurl:"/wp-content/plugins/wp-product-review/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-product-review/"'
+  tags: cve,wordpress,wp-plugin,wp-product-review,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-product-review/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-product-review"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.7.6')

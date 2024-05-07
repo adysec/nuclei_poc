@@ -1,0 +1,51 @@
+id: wpcode_content_ratio-b47b1230-bf08-4960-9fc9-56a5b37da8b5
+
+info:
+  name: >
+    WPCode Content Ratio <= 2.0 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b47b1230-bf08-4960-9fc9-56a5b37da8b5?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpcode-content-ratio/"
+    google-query: inurl:"/wp-content/plugins/wpcode-content-ratio/"
+    shodan-query: 'http.html:"wp-content/plugins/wpcode-content-ratio/"'
+  tags: cve,wordpress,wp-plugin,wpcode-content-ratio,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpcode-content-ratio/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpcode-content-ratio"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0')

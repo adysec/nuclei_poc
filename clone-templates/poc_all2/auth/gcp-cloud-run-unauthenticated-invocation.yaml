@@ -1,0 +1,53 @@
+# gap: gcp-cloud-run-unauthenticated-invocation
+id: gcp-cloud-run-unauthenticated-invocation
+
+info:
+  name: GCP Cloud Run Service Allows Unauthenticated Invocation
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects GCP Cloud Run services that permit unauthenticated HTTP invocations.
+    When an allUsers IAM binding is present, a GET request without an Authorization
+    header returns HTTP 200 with application content rather than a 403 permission error.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/gcp-security/gcp-unauthenticated-enum-and-access/gcp-cloud-run-unauthenticated-enum.md
+    - https://cloud.google.com/run/docs/securing/managing-access
+  tags: custom,cloud,gcp,cloudrun,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "Google Frontend"
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "Your client does not have permission to get URL"
+      - type: dsl
+        dsl:
+          - 'contains(host, ".run.app")'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Cloud Run service URL: " + host'
+      - type: kval
+        part: header
+        kval:
+          - "X-Cloud-Trace-Context"
+          - "Server"
+      - type: regex
+        part: header
+        name: gcp-region
+        regex:
+          - '(?i)(us-central1|us-east1|us-east4|us-west1|us-west2|us-west3|us-west4|europe-west1|europe-west2|europe-west3|europe-west4|europe-west6|asia-east1|asia-east2|asia-northeast1|asia-northeast2|asia-northeast3|asia-south1|asia-southeast1|asia-southeast2|australia-southeast1|northamerica-northeast1|southamerica-east1)'
+        group: 1

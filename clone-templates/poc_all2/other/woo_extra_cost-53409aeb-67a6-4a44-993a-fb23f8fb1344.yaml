@@ -1,0 +1,59 @@
+id: woo_extra_cost-53409aeb-67a6-4a44-993a-fb23f8fb1344
+
+info:
+  name: >
+    WooCommerce Extra Cost <= 2.6 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WooCommerce Extra Cost plugins for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.6. This is due to missing or incorrect nonce validation on the 'save_extra_cost' method. This makes it possible for unauthenticated attackers to gain restricted access to administrative actions via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/53409aeb-67a6-4a44-993a-fb23f8fb1344?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woo-extra-cost/"
+    google-query: inurl:"/wp-content/plugins/woo-extra-cost/"
+    shodan-query: 'http.html:"wp-content/plugins/woo-extra-cost/"'
+  tags: cve,wordpress,wp-plugin,woo-extra-cost,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-extra-cost/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woo-extra-cost"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.6')

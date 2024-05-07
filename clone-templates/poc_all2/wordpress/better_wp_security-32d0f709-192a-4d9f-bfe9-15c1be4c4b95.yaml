@@ -1,0 +1,59 @@
+id: better_wp_security-32d0f709-192a-4d9f-bfe9-15c1be4c4b95
+
+info:
+  name: >
+    iThemes Security < 5.3.1 - Insecure Backup/Logfile Generation
+  author: topscoder
+  severity: medium
+  description: >
+    The iThemes Security plugin for WordPress is vulnerable to insecure backup and logfile generation in versions up to, and including, 5.3.0. This is due to backup and logfiles being created in a world-readable directory. This makes it possible for unauthenticated attackers to view backup and log files.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/32d0f709-192a-4d9f-bfe9-15c1be4c4b95?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/better-wp-security/"
+    google-query: inurl:"/wp-content/plugins/better-wp-security/"
+    shodan-query: 'http.html:"wp-content/plugins/better-wp-security/"'
+  tags: cve,wordpress,wp-plugin,better-wp-security,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/better-wp-security/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "better-wp-security"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.3.1')

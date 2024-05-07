@@ -1,0 +1,101 @@
+# gap: sql-injection-error-disclosure
+id: sql-injection-error-disclosure
+
+info:
+  name: SQL Injection Error Disclosure (Multi-Database Class)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects SQL injection by sending unbalanced-quote payloads through
+    common query parameters and matching DBMS-specific syntax-error
+    markers in the response body. The matchers cover the stable error
+    grammars of MySQL / MariaDB (`You have an error in your SQL syntax`,
+    `mysql_fetch`, `mysqli_`), PostgreSQL (`syntax error at or near`,
+    `pg_query`, `PG::SyntaxError`), Microsoft SQL Server
+    (`Microsoft SQL Server`, `Unclosed quotation mark`,
+    `[Microsoft][ODBC SQL Server Driver]`), Oracle (`ORA-[0-9]{5}`,
+    `PL/SQL`, `Oracle.*Driver`), SQLite (`SQLite3::SQLException`,
+    `near "[^"]+": syntax error`, `sqlite3.OperationalError`), DB2
+    (`SQLSTATE`, `DB2 SQL error`), and Sybase (`Sybase.*ERROR`).
+
+    SQL injection is the highest-impact injection class — it grants
+    arbitrary SELECT against the application's database (PII /
+    financial / identity disclosure), routinely chains to
+    authentication bypass via UNION-based credential extraction or
+    boolean-based login bypass, and on PostgreSQL / MSSQL also chains
+    to arbitrary file read and operating-system command execution
+    via built-in DBMS functions. The error-disclosure variant proves
+    the parameter reaches a query builder — blind / boolean / time-
+    based extraction follows from there. Class detection — keys on
+    DBMS error grammar, not vendor banner.
+  reference:
+    - https://owasp.org/www-community/attacks/SQL_Injection
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection
+    - https://cwe.mitre.org/data/definitions/89.html
+    - https://portswigger.net/web-security/sql-injection
+  tags: custom,vulnerabilities,sql,sqli,injection,owasp,cwe-89
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?id=1%27"
+      - "{{BaseURL}}/?id=1%22"
+      - "{{BaseURL}}/?q=%27%27"
+      - "{{BaseURL}}/?search=%27"
+      - "{{BaseURL}}/?user=%27"
+      - "{{BaseURL}}/?name=%27"
+      - "{{BaseURL}}/?category=1%27%29%29"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          # MySQL / MariaDB
+          - 'You have an error in your SQL syntax'
+          - '(?i)(warning|fatal|notice|error)[^<\r\n]{0,40}mysql_fetch_(array|assoc|object|row)'
+          - '(?i)(warning|fatal|notice|error)[^<\r\n]{0,40}mysqli?_(query|fetch|num_rows|real_escape_string)'
+          - 'MariaDB server version'
+          - '(?i)Warning.{0,40}mysqli?_'
+          # PostgreSQL
+          - 'PostgreSQL.{0,30}ERROR'
+          - 'syntax error at or near'
+          - 'pg_query\(\)|pg_exec\(\)'
+          - 'PG::SyntaxError'
+          - 'org\.postgresql\.util\.PSQLException'
+          # Microsoft SQL Server
+          - '(?i)Microsoft SQL Server'
+          - 'Unclosed quotation mark'
+          - '\[Microsoft\]\[ODBC SQL Server Driver\]'
+          - 'SqlClient\.SqlException'
+          - 'OLE DB Provider for SQL Server'
+          # Oracle
+          - 'ORA-[0-9]{5}'
+          - 'PL/SQL'
+          - 'Oracle.{0,20}Driver'
+          - 'quoted string not properly terminated'
+          # SQLite
+          - 'SQLite3::SQLException'
+          - 'SQLite/JDBCDriver'
+          - 'sqlite3\.OperationalError'
+          - 'near "[^"]+": syntax error'
+          # DB2
+          - 'DB2 SQL (E|W)RROR'
+          - 'SQLSTATE\[?[0-9]{5}'
+          - 'com\.ibm\.db2\.jcc'
+          # Sybase
+          - 'Sybase.{0,20}(ERROR|Server)'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: sql-error
+        regex:
+          - '(You have an error in your SQL syntax[^<\r\n]{0,200}|syntax error at or near[^<\r\n]{0,160}|ORA-[0-9]{5}[^<\r\n]{0,120}|near "[^"]+": syntax error[^<\r\n]{0,120}|Unclosed quotation mark[^<\r\n]{0,120})'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "X-Powered-By"

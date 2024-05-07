@@ -1,0 +1,44 @@
+id: topdesk-detect
+
+info:
+  name: TOPdesk - Detect
+  author: darses
+  severity: info
+  description: |
+    Detects the presence of TOPdesk and extract timestamp from static files.
+  metadata:
+    verified: true
+    max-requests: 1
+    shodan-query: http.favicon.hash:-1177777311
+    fofa-query: icon_hash="1428583669" || icon_hash="589927604" || icon_hash="1123106483" || icon_hash="1431756848" || icon_hash="1986563074"
+    vendor: TOPDesk
+  tags: tech,detect,topdesk
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'href="/tas/'
+        part: body
+
+    extractors:
+      - type: regex
+        name: extracted_unix_timestamp
+        part: body
+        regex:
+          - "timestamp=(\\d{10})"
+        group: 1
+        internal: true
+
+      - type: dsl
+        name: extracted_date
+        dsl:
+          - "date_time('%Y-%M-%D', extracted_unix_timestamp)"

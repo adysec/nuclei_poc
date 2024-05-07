@@ -1,0 +1,59 @@
+id: twl_easy_call-72113d42-1a93-4979-849b-ba8038231417
+
+info:
+  name: >
+    Easy Call With Twilio <= 1.0.4 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Easy Call With Twilio plugin for WordPress is vulnerable to Cross-Site Scripting via several parameters in versions up to 1.1.0.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/72113d42-1a93-4979-849b-ba8038231417?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/twl-easy-call/"
+    google-query: inurl:"/wp-content/plugins/twl-easy-call/"
+    shodan-query: 'http.html:"wp-content/plugins/twl-easy-call/"'
+  tags: cve,wordpress,wp-plugin,twl-easy-call,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/twl-easy-call/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "twl-easy-call"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.1.0')

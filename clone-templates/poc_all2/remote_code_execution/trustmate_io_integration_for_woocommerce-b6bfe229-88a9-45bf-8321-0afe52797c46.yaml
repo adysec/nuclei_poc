@@ -1,0 +1,59 @@
+id: trustmate_io_integration_for_woocommerce-b6bfe229-88a9-45bf-8321-0afe52797c46
+
+info:
+  name: >
+    TrustMate.io integration for WooCommerce < 1.8.12 - Authenticated (Subscriber+) Arbitrary Settings Update
+  author: topscoder
+  severity: low
+  description: >
+    The TrustMate.io integration for WooCommerce plugin for WordPress is vulnerable to Arbitrary Settings Update via the 'save_checkbox' AJAX action in versions up to, and including, 1.8.11. This makes it possible for authenticated Subscriber+ attackers to update otherwise restricted plugin settings and perform a subsequent stored XSS attack within the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b6bfe229-88a9-45bf-8321-0afe52797c46?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/trustmate-io-integration-for-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/trustmate-io-integration-for-woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/trustmate-io-integration-for-woocommerce/"'
+  tags: cve,wordpress,wp-plugin,trustmate-io-integration-for-woocommerce,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/trustmate-io-integration-for-woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "trustmate-io-integration-for-woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.11')

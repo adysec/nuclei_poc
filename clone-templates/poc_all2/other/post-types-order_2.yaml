@@ -1,0 +1,49 @@
+id: wordpress-post-types-order
+
+info:
+  name: Post Types Order Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/post-types-order/
+  metadata:
+    plugin_namespace: post-types-order
+    wpscan: https://wpscan.com/plugin/post-types-order
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/post-types-order/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/post-types-order.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a004730450220363c892c075b905e733a0483b23ab9ff759fa91b1291a1b1a143d91e23b79195022100cdc7c3d50268817e664560005f303c965dfd9cd0e4b4672f22312ba365b49bd9:922c64590222798bb761d5b6d8e72950

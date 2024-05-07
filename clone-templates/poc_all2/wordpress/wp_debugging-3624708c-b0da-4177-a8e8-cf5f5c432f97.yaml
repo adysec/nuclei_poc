@@ -1,0 +1,59 @@
+id: wp_debugging-3624708c-b0da-4177-a8e8-cf5f5c432f97
+
+info:
+  name: >
+    WP Debugging <= 2.11.7 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Debugging plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.11.7. This is due to inclusion of a vulnerable version of the wp-dependency-installer library. This makes it possible for unauthenticated attackers to install and activate arbitrary plugins via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3624708c-b0da-4177-a8e8-cf5f5c432f97?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-debugging/"
+    google-query: inurl:"/wp-content/plugins/wp-debugging/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-debugging/"'
+  tags: cve,wordpress,wp-plugin,wp-debugging,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-debugging/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-debugging"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.11.7')

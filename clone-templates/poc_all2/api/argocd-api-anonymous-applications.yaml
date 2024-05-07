@@ -1,0 +1,76 @@
+# gap: argocd-api-anonymous-applications
+id: argocd-api-anonymous-applications
+
+info:
+  name: ArgoCD Applications API Anonymous Access — Deployment Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an ArgoCD deployment where /api/v1/applications is reachable
+    without an `Authorization: Bearer` token, returning the GitOps
+    application list with source repository URLs, target Kubernetes
+    clusters, deployment health, and sync status. Class signal: the
+    response is a JSON object with an `items` array whose entries
+    carry the canonical ArgoCD application shape (`metadata`,
+    `spec.source` or `spec.sources`, `spec.destination`, `status`).
+
+    Anonymous applications-API access leaks the entire GitOps surface:
+    private repository URLs (often with embedded credentials or
+    deployment-key paths), cluster endpoints (kube-apiserver hostnames
+    and namespaces), Helm chart values containing in-memory secrets,
+    and per-application sync hooks. Complements upstream
+    `argocd-login` (which detects the login panel only).
+  reference:
+    - https://argo-cd.readthedocs.io/en/stable/operator-manual/server-commands/argocd-server/
+    - https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
+  tags: custom,exposures,argocd,argoproj,kubernetes,gitops,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/applications"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"items"\s*:\s*(\[|null)'
+      # ArgoCD app spec markers — at least one must be present to
+      # differentiate from generic /items APIs.
+      - type: word
+        part: body
+        words:
+          - '"argoproj.io'
+          - '"Application"'
+          - '"destination"'
+          - '"source":'
+          - '"sources":'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: app-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"[^}]*"namespace"\s*:\s*"argocd"'
+        group: 1
+      - type: regex
+        part: body
+        name: source-repos
+        regex:
+          - '"repoURL"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: target-clusters
+        regex:
+          - '"server"\s*:\s*"(https?://[^"]+)"'
+        group: 1

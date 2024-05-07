@@ -1,0 +1,59 @@
+id: i_recommend_this-ef888b2e-1fc7-442b-8b67-ebfdcbc76696
+
+info:
+  name: >
+    I Recommend This < 3.8.2 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The I Recommend This plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 3.8.1 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ef888b2e-1fc7-442b-8b67-ebfdcbc76696?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/i-recommend-this/"
+    google-query: inurl:"/wp-content/plugins/i-recommend-this/"
+    shodan-query: 'http.html:"wp-content/plugins/i-recommend-this/"'
+  tags: cve,wordpress,wp-plugin,i-recommend-this,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/i-recommend-this/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "i-recommend-this"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.8.2')

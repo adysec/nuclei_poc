@@ -1,0 +1,59 @@
+id: wp_memory-45f3568c-b6d9-4d00-a8cd-571443d80fd3
+
+info:
+  name: >
+    Memory Usage, Memory Limit, PHP and Server Memory Health Check and Fix Plugin <= 2.43 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Memory Usage, Memory Limit, PHP and Server Memory Health Check plugin for WordPress is vulnerable to Stored Cross-Site Scripting via several parameters in versions up to, and including, 2.43  due to insufficient input sanitization and output escaping. This makes it possible for attackers, with subscriber-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/45f3568c-b6d9-4d00-a8cd-571443d80fd3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-memory/"
+    google-query: inurl:"/wp-content/plugins/wp-memory/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-memory/"'
+  tags: cve,wordpress,wp-plugin,wp-memory,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-memory/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-memory"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.43')

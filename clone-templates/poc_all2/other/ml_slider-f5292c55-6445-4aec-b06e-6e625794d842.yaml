@@ -1,0 +1,59 @@
+id: ml_slider-f5292c55-6445-4aec-b06e-6e625794d842
+
+info:
+  name: >
+    Slider, Gallery, and Carousel by MetaSlider <= 3.17.1 - Authenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Slider, Gallery, and Carousel by MetaSlider plugin for WordPress is vulnerable to Stored Cross Site Scripting in versions up to, and including, 3.17.1. The patch adds extra filtering of captions using HTML Purifier where there appeared to be a stored cross-site scripting vulnerability to accounts with sufficient privileges.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f5292c55-6445-4aec-b06e-6e625794d842?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ml-slider/"
+    google-query: inurl:"/wp-content/plugins/ml-slider/"
+    shodan-query: 'http.html:"wp-content/plugins/ml-slider/"'
+  tags: cve,wordpress,wp-plugin,ml-slider,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ml-slider/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ml-slider"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.17.2')

@@ -1,0 +1,51 @@
+id: fleet-3e72644c-138d-4733-bcca-a8305273d1a0
+
+info:
+  name: >
+    Fleet Manager <= 2.5.1 - Authenticated (Editor+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3e72644c-138d-4733-bcca-a8305273d1a0?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fleet/"
+    google-query: inurl:"/wp-content/plugins/fleet/"
+    shodan-query: 'http.html:"wp-content/plugins/fleet/"'
+  tags: cve,wordpress,wp-plugin,fleet,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fleet/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fleet"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5.1')

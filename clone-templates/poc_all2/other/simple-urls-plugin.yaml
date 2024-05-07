@@ -1,0 +1,58 @@
+id: simple-urls-plugin
+
+info:
+  name: >
+    Simple URLs <= 117 - Cross-Site Request Forgery via AJAX actions
+  author: topscoder
+  severity: medium
+  description: >
+    The Simple URLs plugin for WordPress is vulnerable to Cross-Site Request Forgery due to a missing nonce check on its AJAX handler functions in versions up to, and including, 117. This makes it possible for unauthenticated attackers to invoke those functions and change plugin behavior and settings provided they can trick an administrator into performing an action such as clicking on a link.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bf101b60-f12e-4326-8e39-96d6415a218d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-urls/"
+    google-query: inurl:"/wp-content/plugins/simple-urls/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,simple-urls,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-urls/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-urls"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 117')

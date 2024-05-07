@@ -1,0 +1,55 @@
+
+id: drupal_module-file_extractor-arbitrary-php-code-execution
+info:
+  name: drupal_module-file_extractor-arbitrary-php-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to extract the textual content of files for use on a website, e.g. to display it or use it in search indexes. The module doesnt sufficiently protect the administrator-defined commands that are executed on the server, which leads to post-authentication remote code execution by a limited set of users. This vulnerability is mitigated by the fact that an attacker must have a role with the permission Administer File Extractor to access the settings form. Sites are encouraged to review which roles have that permission and which users have that role, to ensure that only trusted users have that permission."
+  reference:
+    - https://www.drupal.org/sa-contrib-2021-033
+  metadata:
+    security-risk: "Critical 15∕25 AC:Complex/A:Admin/CI:All/II:All/E:Theoretical/TD:Default"
+    vulnerability: "arbitrary-php-code-execution"
+    fofa-query: "/sites/all/modules/file_extractor/"
+    google-query: "inurl:'/sites/all/modules/file_extractor/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/file_extractor/file_extractor.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'file_extractor'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '4.0.0')
+         - compare_versions(version, '3.0.0')
+         - compare_versions(version, '2.0.2')
+         - compare_versions(version, '2.0.1')
+         - compare_versions(version, '2.0.0')

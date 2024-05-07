@@ -1,0 +1,59 @@
+id: under_construction_maintenance_mode-86c1b729-e8fe-46e8-8d57-c6312087c6b2
+
+info:
+  name: >
+    Under Construction, Coming Soon & Maintenance Mode <= 1.1.1 - Server Side Request Forgery
+  author: topscoder
+  severity: high
+  description: >
+    The Under Construction, Coming Soon & Maintenance Mode Plugin for WordPress is vulnerable to Server Side Request Forgery in versions up to, and including, 1.1.1.  This is due to missing or incorrect nonce validation on the 'ucmm_mc_api' function. This makes it possible for unauthenticated attackers to exploit via direct access to the affected file, and the application that supports data imports from URLs or allows them to read data from URLs
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/86c1b729-e8fe-46e8-8d57-c6312087c6b2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/under-construction-maintenance-mode/"
+    google-query: inurl:"/wp-content/plugins/under-construction-maintenance-mode/"
+    shodan-query: 'http.html:"wp-content/plugins/under-construction-maintenance-mode/"'
+  tags: cve,wordpress,wp-plugin,under-construction-maintenance-mode,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/under-construction-maintenance-mode/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "under-construction-maintenance-mode"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.1.2')

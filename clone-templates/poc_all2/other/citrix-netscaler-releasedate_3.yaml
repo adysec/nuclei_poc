@@ -1,0 +1,34 @@
+id: citrix-netscaler-releasedate
+
+info:
+  name: Citrix Netscaler - Version
+  severity: info
+  author: darses
+  description: |
+    Citrix Netscaler release date was detected. Note that some installs will return `:00:01 GMT` of `:00:02 GMT`, which is an unreliable release date. In that case, read the last-modified date from the gzipped file /vpn/js/rdx/core/lang/rdx_en.json.gz, as per the research buy Fox-IT. If the extracted release date does not match existing versions or the 00:01/00:02, you have may have found a honeypot.
+  metadata:
+    vendor: citrix
+    product: netscaler
+    shodan-query:
+      - http.favicon.hash:1418494345
+    fofa-query:
+      - icon_hash="1418494345"
+    references:
+      - https://github.com/fox-it/citrix-netscaler-triage
+  tags: detect,citrix,netscaler
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/logon/LogonPoint/receiver/images/common/icon_vpn.ico"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200 && mmh3(body)=="1418494345"
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - last_modified

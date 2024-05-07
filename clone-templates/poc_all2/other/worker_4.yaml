@@ -1,0 +1,56 @@
+id: worker
+
+info:
+  name: "Manage WP Worker <= 4.9.2 - Authentication Bypass"
+  author: topscoder
+  severity: critical
+  description: "The Manage WP Worker plugin for WordPress is vulnerable to authentication bypass in versions up to, and including 4.9.2, due to the use of global keys that every installation of Manage WP worker uses for signature verification. This makes it possible to specially craft a request that can be used to auto-login as any user on any WordPress site running the plugin."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset/2242479
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/worker/"
+    google-query: inurl:"/wp-content/plugins/worker/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,worker,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/worker/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "worker"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.9.2')

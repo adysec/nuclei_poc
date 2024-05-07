@@ -1,0 +1,111 @@
+id: orthanc-detect
+info:
+  name: Orthanc Core UI/REST & DICOMweb detect
+  author: r3dcl1ff
+  severity: info
+  description: Non-invasive Orthanc detector that probes UI/REST and DICOMweb endpoints. Matches Orthanc-specific headers, titles, realms, and DICOMweb landings. Extracts version from /system when available; never requests studies or PHI.
+  tags: medical,iot,miot,pacs,dicom,orthanc
+  metadata:
+    shodan-query: '"Orthanc" OR http.title:"Orthanc" OR "/dicom-web/"'
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    max-redirects: 3
+    headers:
+      Accept: "*/*"
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - (?im)^server:\s*orthanc\b
+          - (?im)^x-powered-by:\s*orthanc\b
+      - type: regex
+        part: header
+        regex:
+          - (?im)^www-authenticate:\s*basic\s+realm="?.*orthanc.*"?$
+    extractors:
+      - type: regex
+        part: header
+        name: server
+        regex:
+          - (?im)^server:\s*(.+)$
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/app"
+      - "{{BaseURL}}/app/"
+      - "{{BaseURL}}/ui/app/"
+      - "{{BaseURL}}/ui/app/index.html"
+    max-redirects: 3
+    headers:
+      Accept: "text/html,*/*;q=0.8"
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+      - type: regex
+        part: body
+        regex:
+          - (?i)\bOrthanc( Explorer\s?2)?\b
+    extractors:
+      - type: regex
+        part: body
+        name: title
+        regex:
+          - (?im)<title>\s*(.*?)\s*</title>
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/system"
+      - "{{BaseURL}}/tools"
+    max-redirects: 2
+    headers:
+      Accept: application/json,*/*
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '"Version"\s*:\s*"[0-9][^"]*"'
+      - type: regex
+        part: header
+        regex:
+          - (?im)^www-authenticate:\s*basic\s+realm="?.*orthanc.*"?$
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - '"Version"\s*:\s*"([^"]+)"'
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/dicom-web/"
+      - "{{BaseURL}}/dicom-web"
+    max-redirects: 3
+    headers:
+      Accept: text/html,*/*;q=0.8
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+      - type: word
+        part: body
+        words:
+          - DICOMweb
+      - type: regex
+        part: body
+        condition: or
+        regex:
+          - (?i)/dicom-web/(studies|series|instances)
+          - (?i)\bQIDO-RS\b
+          - (?i)\bWADO-RS\b

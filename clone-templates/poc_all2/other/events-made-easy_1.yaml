@@ -1,0 +1,60 @@
+id: events-made-easy
+
+info:
+  name: "Events Made Easy < 1.5.50 - Cross-Site Request Forgery to Stored Cross-Site Scripting"
+  author: topscoder
+  severity: high
+  description: "The Events Made Easy plugin for WordPress is vulnerable to Cross-Site Request Forgery to Stored Cross-Site Scripting in versions before 1.5.50 due to insufficient input sanitization and output escaping and missing nonce validation. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page if they can successfully trick an admin into performing an action such as clicking on a link."
+  reference:
+    - https://www.davidsopas.com/events-made-easy-wordpress-plugin-csrf-persistent-xss/
+    - https://ithemes.com/blog/wordpress-vulnerability-report-october-2021-part-1/
+    - https://wpscan.com/vulnerability/497bbac8-aefb-40ed-a561-b6a860a4b1d8
+    - https://plugins.trac.wordpress.org/changeset/1264089
+    - https://plugins.trac.wordpress.org/changeset/1264060
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/events-made-easy/"
+    google-query: inurl:"/wp-content/plugins/events-made-easy/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,events-made-easy,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/events-made-easy/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "events-made-easy"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.50')

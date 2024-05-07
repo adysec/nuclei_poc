@@ -1,0 +1,59 @@
+id: digital_climate_strike_wp-5294af95-e85f-4425-9c4b-0a92dfac4bd1
+
+info:
+  name: >
+    Digital Climate Strike WP <= 1.0.0 - Malicious Redirect
+  author: topscoder
+  severity: high
+  description: >
+    The Digital Climate Strike WP for WordPress contains a malicious redirect in versions up to, and including, 1.0.0. This is due to a compromised JS asset in the https://assets.digitalclimatestrike.net/widget.js file. This makes it possible for unauthenticated attackers to redirect all traffic on the site to a malicious target
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5294af95-e85f-4425-9c4b-0a92dfac4bd1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/digital-climate-strike-wp/"
+    google-query: inurl:"/wp-content/plugins/digital-climate-strike-wp/"
+    shodan-query: 'http.html:"wp-content/plugins/digital-climate-strike-wp/"'
+  tags: cve,wordpress,wp-plugin,digital-climate-strike-wp,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/digital-climate-strike-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "digital-climate-strike-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.0')

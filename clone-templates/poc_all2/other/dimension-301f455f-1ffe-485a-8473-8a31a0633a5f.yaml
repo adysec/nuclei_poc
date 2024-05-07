@@ -1,0 +1,59 @@
+id: dimension-301f455f-1ffe-485a-8473-8a31a0633a5f
+
+info:
+  name: >
+    Dimension (Unknown Versions) - Cross-Site Request Forgery to Arbitrary File Upload
+  author: topscoder
+  severity: medium
+  description: >
+    The Dimension theme for WordPress is vulnerable to Cross-Site Request Forgery. This is due to missing or incorrect nonce validation in the 'upload-handler.php' file. This makes it possible for unauthenticated attackers to gain otherwise restricted access to administrative actions via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/301f455f-1ffe-485a-8473-8a31a0633a5f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/dimension/"
+    google-query: inurl:"/wp-content/themes/dimension/"
+    shodan-query: 'http.html:"wp-content/themes/dimension/"'
+  tags: cve,wordpress,wp-theme,dimension,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/dimension/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dimension"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

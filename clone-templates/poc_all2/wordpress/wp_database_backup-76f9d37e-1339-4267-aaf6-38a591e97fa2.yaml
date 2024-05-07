@@ -1,0 +1,59 @@
+id: wp_database_backup-76f9d37e-1339-4267-aaf6-38a591e97fa2
+
+info:
+  name: >
+    WP Database Backup <= 4.3.5 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Database Backup plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 4.3.5. This is due to missing or incorrect nonce validation on the wp_db_backup_admin_init() function. This makes it possible for unauthenticated attackers to modify backups via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/76f9d37e-1339-4267-aaf6-38a591e97fa2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-database-backup/"
+    google-query: inurl:"/wp-content/plugins/wp-database-backup/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-database-backup/"'
+  tags: cve,wordpress,wp-plugin,wp-database-backup,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-database-backup/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-database-backup"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.3.6')

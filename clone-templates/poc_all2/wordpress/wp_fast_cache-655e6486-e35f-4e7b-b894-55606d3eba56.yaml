@@ -1,0 +1,59 @@
+id: wp_fast_cache-655e6486-e35f-4e7b-b894-55606d3eba56
+
+info:
+  name: >
+    WP Fast Cache <= 1.4 - Cross-Site Request Forgery to Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Fast Cache plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.4. This is due to the 'wp_fast_cache_bulk_action_url' variable not being sanitized or escapes. This makes it possible for unauthenticated attackers to gain otherwise restricted access to administrative actions and perform subsequent Cross-Site Scripting attacks via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/655e6486-e35f-4e7b-b894-55606d3eba56?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H
+    cvss-score: 9.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-fast-cache/"
+    google-query: inurl:"/wp-content/plugins/wp-fast-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-fast-cache/"'
+  tags: cve,wordpress,wp-plugin,wp-fast-cache,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-fast-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-fast-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4')

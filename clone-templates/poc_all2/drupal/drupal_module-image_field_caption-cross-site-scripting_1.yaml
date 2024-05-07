@@ -1,0 +1,52 @@
+
+id: drupal_module-image_field_caption-cross-site-scripting
+info:
+  name: drupal_module-image_field_caption-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "Image Field Caption (image_field_caption) adds an extra text area for captions on image fields. The module doesnt sanitize user input in certain cases, which leads to a Cross-Site-Scripting (XSS) vulnerability. The vulnerability is mitigated by several permissions, of which at least some are commonly only assigned to either editors, site builders or administrators."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-036
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/image_field_caption/"
+    google-query: "inurl:'/sites/all/modules/image_field_caption/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/image_field_caption/image_field_caption.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'image_field_caption'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

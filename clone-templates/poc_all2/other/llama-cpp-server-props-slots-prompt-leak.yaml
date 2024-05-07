@@ -1,0 +1,109 @@
+# gap: llama-cpp-server-props-slots-prompt-leak
+id: llama-cpp-server-props-slots-prompt-leak
+
+info:
+  name: llama.cpp Server Exposes /props (and Optionally /slots Live Prompts)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects the llama.cpp HTTP server (`llama-server`) exposing the
+    `/props` endpoint, which returns the loaded model path, default
+    sampler config, and the bound chat template. When the server is
+    started with `--slots` (recommended against by upstream but
+    common in self-hosted deployments documented by UpGuard 2025),
+    `/slots` additionally returns each concurrent request's live
+    prompt and generation state — a privacy-grade disclosure.
+
+    Class detection keys on the co-occurrence of three fields that
+    are unique to llama.cpp's server.cpp implementation
+    (`default_generation_settings`, `model_path`, `chat_template`) —
+    these fingerprint llama-server specifically and distinguish it
+    from Ollama, vLLM, TGI, LocalAI, and Triton, all of which expose
+    different config shapes. The follow-up `/slots` probe escalates
+    when the server leaks active prompts.
+  reference:
+    - https://www.upguard.com/blog/llama-cpp-prompt-leak
+    - https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+  tags: custom,exposures,llama-cpp,ai,llm,inference,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/props"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # llama.cpp server.cpp fingerprint — these three together are
+        # unique to llama-server's /props envelope.
+        words:
+          - '"default_generation_settings"'
+          - '"model_path"'
+          - '"chat_template"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: model-path
+        regex:
+          - '"model_path"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: chat-template-preview
+        regex:
+          - '"chat_template"\s*:\s*"([^"]{1,160})'
+        group: 1
+      - type: regex
+        part: body
+        name: total-slots
+        regex:
+          - '"total_slots"\s*:\s*([0-9]+)'
+        group: 1
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/slots"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # /slots is the high-impact disclosure: an array of slot
+        # objects each carrying the live `prompt` of an in-flight
+        # request and an `id_slot` index.
+        words:
+          - '"id_slot"'
+          - '"is_processing"'
+          - '"prompt"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: leaked-prompt-preview
+        regex:
+          - '"prompt"\s*:\s*"([^"]{1,200})'
+        group: 1
+      - type: regex
+        part: body
+        name: slot-id
+        regex:
+          - '"id_slot"\s*:\s*([0-9]+)'
+        group: 1

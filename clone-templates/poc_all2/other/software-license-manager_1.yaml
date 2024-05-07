@@ -1,0 +1,59 @@
+id: software-license-manager
+
+info:
+  name: "Software License Manager <= 4.4.9 - Authenticated (Admin+) Stored Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Software License Manager plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the License Key Prefix setting in versions up to, and including, 4.4.9 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrative privileges, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled."
+  reference:
+    - https://ithemes.com/blog/wordpress-vulnerability-report-september-2021-part-2/#ib-toc-anchor-12
+    - https://wpscan.com/vulnerability/3dac1598-fb35-4679-822d-edc7cff75ee8
+    - https://wordpress.org/plugins/software-license-manager/#developers
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=2590327%40software-license-manager&new=2590327%40software-license-manager&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/software-license-manager/"
+    google-query: inurl:"/wp-content/plugins/software-license-manager/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,software-license-manager,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/software-license-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "software-license-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.4.9')

@@ -1,0 +1,59 @@
+id: salem-c6b95cc2-c40b-40db-abd2-d66978cf55d1
+
+info:
+  name: >
+    Salem Theme <= 1.5.5 - DOM-based Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Salem Theme plugin for WordPress is vulnerable to DOM-based Cross-Site Scripting in versions up to, and including, 1.5.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c6b95cc2-c40b-40db-abd2-d66978cf55d1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/salem/"
+    google-query: inurl:"/wp-content/themes/salem/"
+    shodan-query: 'http.html:"wp-content/themes/salem/"'
+  tags: cve,wordpress,wp-theme,salem,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/salem/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "salem"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.5')

@@ -1,0 +1,50 @@
+id: ASVS-4-0-3-V14-5-3
+
+info:
+  name: ASVS 14.5.3 Check
+  author: Hamed Salimian
+  severity: low
+  classification:
+    cwe-id: CWE-346
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/11-Client-side_Testing/07-Testing_Cross_Origin_Resource_Sharing
+    - https://snbig.github.io/Vulnerable-Pages/ASVS_14_5_3/
+  tags: asvs,14.5.3
+  description: |
+    Verify that the Cross-Origin Resource Sharing (CORS) Access-Control-Allow-Origin header uses a strict allow list of trusted domains and subdomains to match against and does not support the "null" origin.
+
+http:
+  - method: DELETE
+    path:
+      - "{{BaseURL}}"
+    headers:
+      Host: "{{Hostname}}"
+      Access-Control-Request-Method: DELETE
+      Origin: https://attacker.com
+      Referer: https://attacker.com/
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+      Accept: "*/*"
+
+    extractors:
+      - type: kval
+        part: header
+        name: "Access-Control-Allow-Origin header"
+        kval:
+          - Access_Control_Allow_Origin
+
+    matchers:
+      - type: word
+        name: "Wildcard directive in Access-Control-Allow-Origin"
+        part: access_control_allow_origin
+        words:
+          - "*"
+      - type: word
+        name: "Access-Control-Allow-Origin reflects Origin header"
+        part: access_control_allow_origin
+        words:
+          - "attacker.com"
+      - type: word
+        name: "Access-Control-Allow-Origin is null"
+        part: access_control_allow_origin
+        words:
+          - "null"

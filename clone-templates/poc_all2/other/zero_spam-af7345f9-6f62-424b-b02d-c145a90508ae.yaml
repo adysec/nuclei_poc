@@ -1,0 +1,59 @@
+id: zero_spam-af7345f9-6f62-424b-b02d-c145a90508ae
+
+info:
+  name: >
+    WordPress Zero Spam <= 2.1.1 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The WordPress Zero Spam plugin for WordPress is vulnerable to Blind SQL Injection in versions up to, and including, 2.1.1 due to insufficient escaping on the user supplied Client-IP header parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/af7345f9-6f62-424b-b02d-c145a90508ae?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/zero-spam/"
+    google-query: inurl:"/wp-content/plugins/zero-spam/"
+    shodan-query: 'http.html:"wp-content/plugins/zero-spam/"'
+  tags: cve,wordpress,wp-plugin,zero-spam,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/zero-spam/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "zero-spam"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.1')

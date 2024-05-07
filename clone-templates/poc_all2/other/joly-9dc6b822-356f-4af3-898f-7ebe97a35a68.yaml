@@ -1,0 +1,51 @@
+id: joly-9dc6b822-356f-4af3-898f-7ebe97a35a68
+
+info:
+  name: >
+    Joly <= 1.22.0 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9dc6b822-356f-4af3-898f-7ebe97a35a68?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/joly/"
+    google-query: inurl:"/wp-content/themes/joly/"
+    shodan-query: 'http.html:"wp-content/themes/joly/"'
+  tags: cve,wordpress,wp-theme,joly,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/joly/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "joly"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.22.0')

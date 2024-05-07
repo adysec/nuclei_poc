@@ -1,0 +1,59 @@
+id: w3_total_cache-3b8282a2-8265-4fa0-b137-6272b9e44fc3
+
+info:
+  name: >
+    W3 Total Cache <= 0.9.4.1 - Cross-Site Scripting via request_id
+  author: topscoder
+  severity: medium
+  description: >
+    The W3 Total Cache plugin plugin for WordPress is vulnerable to Cross-Site Scripting via the 'request_id' parameter in versions up to, and including, 0.9.4.1 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3b8282a2-8265-4fa0-b137-6272b9e44fc3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/w3-total-cache/"
+    google-query: inurl:"/wp-content/plugins/w3-total-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/w3-total-cache/"'
+  tags: cve,wordpress,wp-plugin,w3-total-cache,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/w3-total-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "w3-total-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.9.4.1')

@@ -1,0 +1,59 @@
+id: thinkun_remind-0afcdec7-dd22-4f10-b8f9-96a1e57d8f0b
+
+info:
+  name: >
+    Thinkun Remind <= 1.1.3 - Directory Traversal
+  author: topscoder
+  severity: high
+  description: >
+    The Thinkun Remind plugin for WordPress is vulnerable to arbitrary file reading via directory traversal in versions up to, and including, 1.1.3 via the 'exportData.php' file. This can allow unauthenticated attackers to extract sensitive data in system files that may be useful for performing subsequent attacks.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0afcdec7-dd22-4f10-b8f9-96a1e57d8f0b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/thinkun-remind/"
+    google-query: inurl:"/wp-content/plugins/thinkun-remind/"
+    shodan-query: 'http.html:"wp-content/plugins/thinkun-remind/"'
+  tags: cve,wordpress,wp-plugin,thinkun-remind,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/thinkun-remind/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "thinkun-remind"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.3')

@@ -1,0 +1,59 @@
+id: wpmarketplace-d257d0e0-7e42-49d5-83c6-f5c44f2e15fc
+
+info:
+  name: >
+    WP Marketplace – Complete Shopping Cart / eCommerce Solution <= 1.2.1 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The WP Marketplace – Complete Shopping Cart / eCommerce Solution plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the uploadify/check.php and uploadify/uploadify.php files in versions up to, and including, 1.2.1. This makes it possible for attackers o upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d257d0e0-7e42-49d5-83c6-f5c44f2e15fc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpmarketplace/"
+    google-query: inurl:"/wp-content/plugins/wpmarketplace/"
+    shodan-query: 'http.html:"wp-content/plugins/wpmarketplace/"'
+  tags: cve,wordpress,wp-plugin,wpmarketplace,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpmarketplace/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpmarketplace"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.2')

@@ -1,0 +1,59 @@
+id: wordpress_ecommerce-74a26e81-c063-4590-abe8-6cac9ec62316
+
+info:
+  name: >
+    MarketPress <= 3.2.6 - Unauthenticated PHP Object Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The MarketPress plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 3.2.6 via deserialization of untrusted input mp_globalcart_* cookie value. This allows unauthenticated attackers to inject a PHP Object. The additional presence of a POP chain allows attackers to execute arbitrary PHP code in the scope of the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/74a26e81-c063-4590-abe8-6cac9ec62316?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wordpress-ecommerce/"
+    google-query: inurl:"/wp-content/plugins/wordpress-ecommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/wordpress-ecommerce/"'
+  tags: cve,wordpress,wp-plugin,wordpress-ecommerce,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordpress-ecommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordpress-ecommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.6')

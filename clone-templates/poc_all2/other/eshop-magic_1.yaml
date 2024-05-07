@@ -1,0 +1,61 @@
+id: eshop-magic
+
+info:
+  name: "Eshop Magic < 0.2 - Arbitrary File Read"
+  author: topscoder
+  severity: medium
+  description: "The Eshop Magic plugin for WordPress is vulnerable to Arbitrary File Disclosure in versions before 0.2 via the 'file' parameter. This allows unauthenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information."
+  reference:
+    - https://exchange.xforce.ibmcloud.com/vulnerabilities/79222
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-eshop-magic-arbitrary-file-disclosure-0-1/
+    - https://wordpress.org/plugins/eshop-magic/#developers
+    - https://plugins.trac.wordpress.org/changeset/610831
+    - https://web.archive.org/web/20121018192154/http%3A//www.securityfocus.com/bid/55906/
+    - https://web.archive.org/web/20121031044522/http%3A//secunia.com/advisories/50933
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/eshop-magic/"
+    google-query: inurl:"/wp-content/plugins/eshop-magic/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,eshop-magic,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/eshop-magic/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "eshop-magic"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.2')

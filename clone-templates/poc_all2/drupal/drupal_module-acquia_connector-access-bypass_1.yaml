@@ -1,0 +1,51 @@
+
+id: drupal_module-acquia_connector-access-bypass
+info:
+  name: drupal_module-acquia_connector-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "Acquia Connector facilitates sending certain telemetry data to Acquia for the purposes of analysis. The module automates the collection of site information to speed support communication and issue resolution. It is required for use with the Acquia Insight service. The module does not properly enforce access control in a specific case, which can lead to disclosing information. The vulnerability is mitigated by requiring the module diff feature to be enabled. This feature is enabled by default."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-014
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/acquia_connector/"
+    google-query: "inurl:'/sites/all/modules/acquia_connector/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/acquia_connector/acquia_connector.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'acquia_connector'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 1.16.0')

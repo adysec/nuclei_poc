@@ -1,0 +1,46 @@
+# gap: aws-cognito-identity-pool-id-exposed
+id: aws-cognito-identity-pool-id-exposed
+
+info:
+  name: AWS Cognito Identity Pool ID Disclosed in Response
+  author: TyrusRC
+  severity: low
+  description: |
+    Detects an AWS Cognito Identity Pool ID
+    ("<region>:<uuid>") embedded in HTML or JavaScript served by the
+    target. If the pool also allows unauthenticated identities, the
+    disclosed ID lets a remote attacker call cognito-identity
+    GetId/GetCredentialsForIdentity and obtain temporary AWS
+    credentials scoped to the unauthenticated role, expanding the
+    attack surface beyond the web tier.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/aws-security/aws-unauthenticated-enum-access/aws-cognito-unauthenticated-enum/README.md
+    - https://docs.aws.amazon.com/cognito/latest/developerguide/identity-pools.html
+  tags: custom,cloud,aws,cognito,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/config.js"
+      - "{{BaseURL}}/env.js"
+      - "{{BaseURL}}/runtime.js"
+      - "{{BaseURL}}/bundle.js"
+      - "{{BaseURL}}/static/js/main.js"
+      - "{{BaseURL}}/js/main.js"
+      - "{{BaseURL}}/assets/config.js"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - '[a-z]{2}-[a-z]+-\d:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '[a-z]{2}-[a-z]+-\d:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'

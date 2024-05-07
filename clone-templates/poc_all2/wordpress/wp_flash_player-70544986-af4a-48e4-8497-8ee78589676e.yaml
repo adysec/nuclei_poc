@@ -1,0 +1,59 @@
+id: wp_flash_player-70544986-af4a-48e4-8497-8ee78589676e
+
+info:
+  name: >
+    FLASH PLAYER PLUGIN <= 1.3 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The "FLASH PLAYER PLUGIN" plugin for WordPress is vulnerable to Cross-Site Scripting via the 'plfilter' and 'search' parameters in versions up to, and including, 1.3 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/70544986-af4a-48e4-8497-8ee78589676e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-flash-player/"
+    google-query: inurl:"/wp-content/plugins/wp-flash-player/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-flash-player/"'
+  tags: cve,wordpress,wp-plugin,wp-flash-player,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-flash-player/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-flash-player"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3')

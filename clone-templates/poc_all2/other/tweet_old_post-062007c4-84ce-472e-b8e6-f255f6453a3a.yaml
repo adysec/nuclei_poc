@@ -1,0 +1,51 @@
+id: tweet_old_post-062007c4-84ce-472e-b8e6-f255f6453a3a
+
+info:
+  name: >
+    Revive Old Posts <= 9.3.3 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/062007c4-84ce-472e-b8e6-f255f6453a3a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/tweet-old-post/"
+    google-query: inurl:"/wp-content/plugins/tweet-old-post/"
+    shodan-query: 'http.html:"wp-content/plugins/tweet-old-post/"'
+  tags: cve,wordpress,wp-plugin,tweet-old-post,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/tweet-old-post/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "tweet-old-post"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 9.3.3')

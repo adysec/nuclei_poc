@@ -1,0 +1,59 @@
+id: ecwid_shopping_cart-d8a12e1d-f46a-499e-bfd6-185d5b955071
+
+info:
+  name: >
+    Ecwid Ecommerce Shopping Cart <= 6.10.22 - Insufficient Access Control on Multiple AJAX Actions
+  author: topscoder
+  severity: low
+  description: >
+    The Ecwid Ecommerce Shopping Cart plugin for WordPress is vulnerable to Insufficient Access Control on Multiple AJAX Actions in versions up to, and including, 6.10.22. This allows any authenticated user to perform multiple AJAX actions including creating product and category pages as well as changing, publishing, and unpublishing the storefront page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d8a12e1d-f46a-499e-bfd6-185d5b955071?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ecwid-shopping-cart/"
+    google-query: inurl:"/wp-content/plugins/ecwid-shopping-cart/"
+    shodan-query: 'http.html:"wp-content/plugins/ecwid-shopping-cart/"'
+  tags: cve,wordpress,wp-plugin,ecwid-shopping-cart,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ecwid-shopping-cart/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ecwid-shopping-cart"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.10.22')

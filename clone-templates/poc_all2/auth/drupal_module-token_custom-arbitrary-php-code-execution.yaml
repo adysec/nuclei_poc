@@ -1,0 +1,52 @@
+
+id: drupal_module-token_custom-arbitrary-php-code-execution
+info:
+  name: drupal_module-token_custom-arbitrary-php-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "The Custom Tokens module enables you to create custom tokens for specific replacements that can improve other modules relying on the token API. The module doesnt sufficiently identify that its custom permissions are risky and should only be granted to highly trusted roles. This vulnerability is mitigated by the fact that an attacker must have a role with the permission administer custom tokens.  CVE identifier(s) issued  A CVE identifier will be requested, and added upon issuance, in accordance with Drupal Security Team processes."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-041
+  metadata:
+    security-risk: "Critical 16∕25 AC:Basic/A:Admin/CI:All/II:All/E:Theoretical/TD:Default"
+    vulnerability: "arbitrary-php-code-execution"
+    fofa-query: "/sites/all/modules/token_custom/"
+    google-query: "inurl:'/sites/all/modules/token_custom/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/token_custom/token_custom.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'token_custom'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

@@ -1,0 +1,51 @@
+id: alloggio-62b7bb00-8bd3-4d2b-b126-6b49b18fd920
+
+info:
+  name: >
+    Alloggio - Hotel Booking <= 1.8 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/62b7bb00-8bd3-4d2b-b126-6b49b18fd920?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/alloggio/"
+    google-query: inurl:"/wp-content/themes/alloggio/"
+    shodan-query: 'http.html:"wp-content/themes/alloggio/"'
+  tags: cve,wordpress,wp-theme,alloggio,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/alloggio/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "alloggio"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8')

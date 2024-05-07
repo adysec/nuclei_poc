@@ -1,0 +1,59 @@
+id: events_addon_for_elementor-5256ef2b-e1fc-4746-b35e-07a265f47f95
+
+info:
+  name: >
+    Events Addon for Elementor <= 2.1.2 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Events Addon for Elementor plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 2.1.2. This is due to missing nonce validation on the naevents_bw_settings_save_func(), naevents_bw_toggle_submit_func(), naevents_pro_settings_save_func(), naevents_pro_toggle_submit_func() and naevents_uw_settings_save_func() functions. This makes it possible for unauthenticated attackers to modify the plugin's settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5256ef2b-e1fc-4746-b35e-07a265f47f95?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/events-addon-for-elementor/"
+    google-query: inurl:"/wp-content/plugins/events-addon-for-elementor/"
+    shodan-query: 'http.html:"wp-content/plugins/events-addon-for-elementor/"'
+  tags: cve,wordpress,wp-plugin,events-addon-for-elementor,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/events-addon-for-elementor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "events-addon-for-elementor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.2')

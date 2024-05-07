@@ -1,0 +1,59 @@
+id: super_socializer-cdbf2658-b819-4fd3-ac89-8b90a7e3a2cf
+
+info:
+  name: >
+    Social Share, Social Login and Social Comments <= 7.10.6 - Authentication Bypass
+  author: topscoder
+  severity: critical
+  description: >
+    The Social Share, Social Login and Social Comments plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the 'the_champ_user_auth' AJAX action in versions up to, and including, 7.10.6. This makes it possible for unauthenticated attackers to log in as any user, assuming they know their email address.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cdbf2658-b819-4fd3-ac89-8b90a7e3a2cf?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/super-socializer/"
+    google-query: inurl:"/wp-content/plugins/super-socializer/"
+    shodan-query: 'http.html:"wp-content/plugins/super-socializer/"'
+  tags: cve,wordpress,wp-plugin,super-socializer,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/super-socializer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "super-socializer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.10.6')

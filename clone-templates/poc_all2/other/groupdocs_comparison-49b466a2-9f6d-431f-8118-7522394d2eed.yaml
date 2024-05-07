@@ -1,0 +1,59 @@
+id: groupdocs_comparison-49b466a2-9f6d-431f-8118-7522394d2eed
+
+info:
+  name: >
+    GroupDocs.Comparison for Cloud < 1.0.3 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The GroupDocs.Comparison for Cloud plugin for WordPress is vulnerable to Cross-Site Scripting via several parameters in versions before 1.0.3 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/49b466a2-9f6d-431f-8118-7522394d2eed?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/groupdocs-comparison/"
+    google-query: inurl:"/wp-content/plugins/groupdocs-comparison/"
+    shodan-query: 'http.html:"wp-content/plugins/groupdocs-comparison/"'
+  tags: cve,wordpress,wp-plugin,groupdocs-comparison,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/groupdocs-comparison/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "groupdocs-comparison"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.3')

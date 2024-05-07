@@ -1,0 +1,59 @@
+id: monsters_editor_10_for_wp_super_edit-a2f8c71d-ad19-4265-8d33-3b0e7dbbf4c2
+
+info:
+  name: >
+    Monsters Editor for WP Super Edit <= 1.1 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Monsters Editor plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'test.html' page in versions up to, and including, 1.1. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a2f8c71d-ad19-4265-8d33-3b0e7dbbf4c2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/monsters-editor-10-for-wp-super-edit/"
+    google-query: inurl:"/wp-content/plugins/monsters-editor-10-for-wp-super-edit/"
+    shodan-query: 'http.html:"wp-content/plugins/monsters-editor-10-for-wp-super-edit/"'
+  tags: cve,wordpress,wp-plugin,monsters-editor-10-for-wp-super-edit,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/monsters-editor-10-for-wp-super-edit/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "monsters-editor-10-for-wp-super-edit"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1')

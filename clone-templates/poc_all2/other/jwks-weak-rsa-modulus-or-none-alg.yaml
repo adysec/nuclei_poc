@@ -1,0 +1,90 @@
+# gap: jwks-weak-rsa-modulus-or-none-alg
+id: jwks-weak-rsa-modulus-or-none-alg
+
+info:
+  name: JWKS - Weak RSA Modulus or alg=none Key Advertised
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a `/.well-known/jwks.json` (or sibling JWKS URI) that
+    advertises keys with provably-unsafe parameters:
+
+    - an RSA key whose modulus `n` (base64url) is short enough
+      to be a 1024-bit modulus or smaller. RFC 8017 obsoletes
+      1024-bit RSA for signature use; many providers still ship
+      legacy keys. Length math: a 2048-bit modulus base64url-encodes
+      to ~342 chars; 1024-bit to ~172 chars. The regex below
+      matches `n` values whose decoded length is ≤ ~256 chars
+      (= 1535 bits — clearly under 2048).
+
+    - an `alg` value of `"none"` advertised IN the key object —
+      the verifier is telling JWT consumers to accept unsigned
+      tokens.
+
+    - a symmetric `"kty":"oct"` exported as PUBLIC JWKS — symmetric
+      secrets MUST never appear in a public JWKS; if they do, anyone
+      can mint valid JWTs.
+
+    Differentiates from upstream `jwk-json-leak` (which only
+    presence-detects `"kty":` markers). This is the posture
+    analyzer.
+  reference:
+    - https://datatracker.ietf.org/doc/html/rfc7517
+    - https://datatracker.ietf.org/doc/html/rfc7518
+    - https://portswigger.net/web-security/jwt/algorithm-confusion
+  tags: custom,misconfig,jwks,jwt,crypto,weak-key,cwe-326
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/jwks.json"
+      - "{{BaseURL}}/.well-known/jwks"
+      - "{{BaseURL}}/oauth/jwks"
+      - "{{BaseURL}}/jwks"
+      - "{{BaseURL}}/.well-known/keys"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+      - type: word
+        part: body
+        words:
+          - '"keys"'
+          - '"kty"'
+        condition: and
+      # At least ONE unsafe signal must be present
+      - type: regex
+        part: body
+        regex:
+          # Symmetric key published publicly (oct kty)
+          - '"kty"\s*:\s*"oct"'
+          # alg=none advertised in a key
+          - '"alg"\s*:\s*"none"'
+          # RSA modulus shorter than ~257 chars => under 1536 bits
+          - '"kty"\s*:\s*"RSA"[^}]{0,500}"n"\s*:\s*"[A-Za-z0-9_\-]{1,256}"'
+          - '"n"\s*:\s*"[A-Za-z0-9_\-]{1,256}"[^}]{0,500}"kty"\s*:\s*"RSA"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: key-types
+        regex:
+          - '"kty"\s*:\s*"([A-Za-z]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: key-algorithms
+        regex:
+          - '"alg"\s*:\s*"([A-Za-z0-9]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: key-ids
+        regex:
+          - '"kid"\s*:\s*"([^"]{1,80})"'
+        group: 1

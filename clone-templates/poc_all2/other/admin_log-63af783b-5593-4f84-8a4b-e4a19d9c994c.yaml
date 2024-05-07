@@ -1,0 +1,59 @@
+id: admin_log-63af783b-5593-4f84-8a4b-e4a19d9c994c
+
+info:
+  name: >
+    Admin Log <= 1.50 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/63af783b-5593-4f84-8a4b-e4a19d9c994c?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/admin-log/"
+    google-query: inurl:"/wp-content/plugins/admin-log/"
+    shodan-query: 'http.html:"wp-content/plugins/admin-log/"'
+  tags: cve,wordpress,wp-plugin,admin-log,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/admin-log/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "admin-log"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.50')

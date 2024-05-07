@@ -1,0 +1,59 @@
+id: xerte_online-0b4b0cd0-dcc2-4790-8aeb-a304088dea3c
+
+info:
+  name: >
+    Xerte Online <= 0.35 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Xerte Online plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the save.php file in versions up to, and including, 0.35. This makes it possible for attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0b4b0cd0-dcc2-4790-8aeb-a304088dea3c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/xerte-online/"
+    google-query: inurl:"/wp-content/plugins/xerte-online/"
+    shodan-query: 'http.html:"wp-content/plugins/xerte-online/"'
+  tags: cve,wordpress,wp-plugin,xerte-online,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/xerte-online/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "xerte-online"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.35')

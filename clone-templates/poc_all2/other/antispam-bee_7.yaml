@@ -1,0 +1,49 @@
+id: wordpress-antispam-bee
+
+info:
+  name: Antispam Bee Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/antispam-bee/
+  metadata:
+    plugin_namespace: antispam-bee
+    wpscan: https://wpscan.com/plugin/antispam-bee
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/antispam-bee/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/antispam-bee.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a0046304402206367829c4a1de686c1836022d003555cd6abbfe1f9052924688550b8b2d5ef1d02201a3b30dcc62d440593b15528cf6b0c5a5f9a0e8992f282c7559fc24969f00b0c:922c64590222798bb761d5b6d8e72950

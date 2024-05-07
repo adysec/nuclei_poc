@@ -1,0 +1,59 @@
+id: ultimate_vc_addons-6b48cae6-254c-4882-a464-3a44a63cadf5
+
+info:
+  name: >
+    Ultimate Addons for WPBakery <= 3.16.11 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Ultimate Addons for WPBakery plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the tab parameter in versions up to, and including 3.16.11 via the update_ultimate_options AJAX action and ultimate_smooth_scroll_options[step] parameter. This makes it possible for low-level authenticated attackers to inject arbitrary web scripts in administrative pages that execute whenever a user accesses the page with the stored web scripts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6b48cae6-254c-4882-a464-3a44a63cadf5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/Ultimate_VC_Addons/"
+    google-query: inurl:"/wp-content/plugins/Ultimate_VC_Addons/"
+    shodan-query: 'http.html:"wp-content/plugins/Ultimate_VC_Addons/"'
+  tags: cve,wordpress,wp-plugin,Ultimate_VC_Addons,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/Ultimate_VC_Addons/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "Ultimate_VC_Addons"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.16.11')

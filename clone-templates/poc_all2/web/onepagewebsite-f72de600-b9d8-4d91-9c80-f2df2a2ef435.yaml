@@ -1,0 +1,59 @@
+id: onepagewebsite-f72de600-b9d8-4d91-9c80-f2df2a2ef435
+
+info:
+  name: >
+    onepagewebsite (Unknown Versions) - Full Path Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The onepagewebsite Theme for WordPress is vulnerable to Sensitive Data Exposure in all versions via the index.php file. This can allow unauthenticated attackers to extract sensitive data including the full path of the WordPress installation.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f72de600-b9d8-4d91-9c80-f2df2a2ef435?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/onepagewebsite/"
+    google-query: inurl:"/wp-content/themes/onepagewebsite/"
+    shodan-query: 'http.html:"wp-content/themes/onepagewebsite/"'
+  tags: cve,wordpress,wp-theme,onepagewebsite,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/onepagewebsite/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "onepagewebsite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

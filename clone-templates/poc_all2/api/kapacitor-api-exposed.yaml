@@ -1,0 +1,57 @@
+# gap: kapacitor-api-exposed
+id: kapacitor-api-exposed
+
+info:
+  name: Kapacitor HTTP API Exposed Unauthenticated
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an unauthenticated Kapacitor HTTP API endpoint that returns the task
+    list in JSON format without requiring credentials. An attacker can create
+    tasks that execute arbitrary shell scripts on the host system.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/8086-pentesting-influxdb.html
+  tags: custom,kapacitor,influxdb,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/kapacitor/v1/tasks"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"tasks"\s*:\s*\['
+
+    extractors:
+      - type: regex
+        part: body
+        name: task-ids
+        regex:
+          - '"id"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: task-types
+        regex:
+          - '"type"\s*:\s*"(stream|batch)"'
+        group: 1
+      - type: regex
+        part: body
+        name: task-status
+        regex:
+          - '"status"\s*:\s*"(enabled|disabled)"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "X-Kapacitor-Version"

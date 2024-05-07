@@ -1,0 +1,59 @@
+id: give-40f79195-23e7-4091-9dcb-8b787f0606f4
+
+info:
+  name: >
+    GiveWP – Donation Plugin and Fundraising Platform < 0.8.5 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The GiveWP – Donation Plugin and Fundraising Platform plugin for WordPress is vulnerable to Cross-Site Scripting in versions before 0.8.5 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/40f79195-23e7-4091-9dcb-8b787f0606f4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/give/"
+    google-query: inurl:"/wp-content/plugins/give/"
+    shodan-query: 'http.html:"wp-content/plugins/give/"'
+  tags: cve,wordpress,wp-plugin,give,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/give/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "give"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.8.5')

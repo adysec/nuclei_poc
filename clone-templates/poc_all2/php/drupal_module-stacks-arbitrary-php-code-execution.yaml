@@ -1,0 +1,51 @@
+
+id: drupal_module-stacks-arbitrary-php-code-execution
+info:
+  name: drupal_module-stacks-arbitrary-php-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "This module enables content editors to create complex pages and layouts on the fly without the help from a developer, using reusable widgets. The module does not sufficiently filter values posted to its AJAX endpoint, which leads to the instantiation of an arbitrary PHP class. This vulnerability is mitigated by the fact that only sites with the Stacks - Content Feed submodule enabled are affected."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-001
+  metadata:
+    security-risk: "Critical 18∕25 AC:None/A:None/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "arbitrary-php-code-execution"
+    fofa-query: "/sites/all/modules/stacks/"
+    google-query: "inurl:'/sites/all/modules/stacks/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/stacks/stacks.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'stacks'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.0')

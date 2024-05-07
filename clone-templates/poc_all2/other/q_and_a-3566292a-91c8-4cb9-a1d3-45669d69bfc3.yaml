@@ -1,0 +1,59 @@
+id: q_and_a-3566292a-91c8-4cb9-a1d3-45669d69bfc3
+
+info:
+  name: >
+    Q and A <= 1.0.6.2 Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Q and A plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including 1.0.6.2. This is due to missing or incorrect nonce validation on various functions/parameters. This makes it possible for unauthenticated attackers to perform SQLIs and XSSs (vulnerabilities explained in detail in reference) via forged requests granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3566292a-91c8-4cb9-a1d3-45669d69bfc3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/q-and-a/"
+    google-query: inurl:"/wp-content/plugins/q-and-a/"
+    shodan-query: 'http.html:"wp-content/plugins/q-and-a/"'
+  tags: cve,wordpress,wp-plugin,q-and-a,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/q-and-a/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "q-and-a"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.6.2')

@@ -1,0 +1,59 @@
+id: wp_sms-c9141ad3-86cf-47ae-be99-d78f0337f2ca
+
+info:
+  name: >
+    WP SMS <= 6.5.1 - Authenticated (Contributor+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The WP SMS – Messaging & SMS Notification for WordPress, WooCommerce, GravityForms, etc plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the plugin's shortcode(s) in all versions up to, and including, 6.5.1 due to insufficient input sanitization and output escaping on user supplied attributes. This makes it possible for authenticated attackers with contributor-level and above permissions to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c9141ad3-86cf-47ae-be99-d78f0337f2ca?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-sms/"
+    google-query: inurl:"/wp-content/plugins/wp-sms/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-sms/"'
+  tags: cve,wordpress,wp-plugin,wp-sms,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-sms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-sms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.5.1')

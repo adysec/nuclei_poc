@@ -1,0 +1,59 @@
+id: avada-e9b58db6-4059-4923-b1e3-3321cc7d3573
+
+info:
+  name: >
+    Avada <= 7.4.1 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Avada plugin for WordPress is vulnerable to Stored Cross-Site Scripting via improper escaping of HTML form entries in the backend in versions up to, and including, 7.4.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e9b58db6-4059-4923-b1e3-3321cc7d3573?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/Avada/"
+    google-query: inurl:"/wp-content/themes/Avada/"
+    shodan-query: 'http.html:"wp-content/themes/Avada/"'
+  tags: cve,wordpress,wp-theme,Avada,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/Avada/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "Avada"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.4.1')

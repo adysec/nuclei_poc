@@ -1,0 +1,59 @@
+id: wise_chat-c7112f34-3055-4033-82ba-d59489cd8c6b
+
+info:
+  name: >
+    Wise Chat <= 2.8.3 - CSV Injection
+  author: topscoder
+  severity: medium
+  description: >
+    The Wise Chat plugin for WordPress is vulnerable to CSV Injection in versions up to, and including, 2.8.3. This allows unauthenticated attackers to embed untrusted input into exported CSV files, which can result in code execution when these files are downloaded and opened on a local system with a vulnerable configuration.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c7112f34-3055-4033-82ba-d59489cd8c6b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wise-chat/"
+    google-query: inurl:"/wp-content/plugins/wise-chat/"
+    shodan-query: 'http.html:"wp-content/plugins/wise-chat/"'
+  tags: cve,wordpress,wp-plugin,wise-chat,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wise-chat/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wise-chat"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.8.3')

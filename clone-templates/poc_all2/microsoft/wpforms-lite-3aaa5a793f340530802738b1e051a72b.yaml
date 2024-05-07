@@ -1,0 +1,58 @@
+id: wpforms-lite-3aaa5a793f340530802738b1e051a72b
+
+info:
+  name: "Contact Form by WPForms <= 1.7.5.3 - Authenticated (Administrator+) Arbitrary File Access via Path Traversal"
+  author: topscoder
+  severity: medium
+  description: "The Contact Form by WPForms plugin for WordPress is vulnerable to Directory Traversal via email template paths in versions up to, and including, 1.7.5.3. This allows administrator-level attackers to read the contents of arbitrary files on the server, which can contain sensitive information."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&new=2763032%40wpforms-lite%2Ftrunk&old=2758539%40wpforms-lite%2Ftrunk&sfp_email=&sfph_mail=
+    - https://patchstack.com/database/vulnerability/wpforms-lite/wordpress-contact-form-by-wpforms-plugin-1-7-5-3-authenticated-arbitrary-file-access-vulnerability
+    - https://wpscan.com/vulnerability/faa56a23-66bc-4dd7-a5b0-81ea6365d75a
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 6.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wpforms-lite/"
+    google-query: inurl:"/wp-content/plugins/wpforms-lite/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wpforms-lite,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpforms-lite/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpforms-lite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7.5.3')

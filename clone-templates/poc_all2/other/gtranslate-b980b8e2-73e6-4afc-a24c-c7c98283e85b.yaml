@@ -1,0 +1,59 @@
+id: gtranslate-b980b8e2-73e6-4afc-a24c-c7c98283e85b
+
+info:
+  name: >
+    Translate WordPress with GTranslate <= 2.8.10 - Open Redirect
+  author: topscoder
+  severity: medium
+  description: >
+    The Google Translate Plugin for WordPress is vulnerable to Open Redirect in versions up to, and including, 2.8.10. This is due to the application failing to properly verify user-supplied input from the `gurl` parameter. This makes it possible for unauthenticated attackers to exploit this issue and redirect users to arbitrary web sites and conduct phishing attacks; other attacks are also possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b980b8e2-73e6-4afc-a24c-c7c98283e85b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gtranslate/"
+    google-query: inurl:"/wp-content/plugins/gtranslate/"
+    shodan-query: 'http.html:"wp-content/plugins/gtranslate/"'
+  tags: cve,wordpress,wp-plugin,gtranslate,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gtranslate/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gtranslate"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.8.11')

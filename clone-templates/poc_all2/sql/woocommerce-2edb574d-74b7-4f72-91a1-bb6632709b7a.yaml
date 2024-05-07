@@ -1,0 +1,59 @@
+id: woocommerce-2edb574d-74b7-4f72-91a1-bb6632709b7a
+
+info:
+  name: >
+    WooCommerce <= 3.6.4 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The WooCommerce plugin for WordPress is vulnerable to Cross-Site Request forgery in versions up to, and including 3.6.4, due to the CSV importer actions missing a nonce validation.  This makes it possible for attackers with at least author privileges to embed script code in a CSV, upload it to the target site, and then trick an administrator into uploading the CSV injected payload to a product description via a forged request all granted they can trick them into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2edb574d-74b7-4f72-91a1-bb6632709b7a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce/"
+    google-query: inurl:"/wp-content/plugins/woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce/"'
+  tags: cve,wordpress,wp-plugin,woocommerce,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.6.5')

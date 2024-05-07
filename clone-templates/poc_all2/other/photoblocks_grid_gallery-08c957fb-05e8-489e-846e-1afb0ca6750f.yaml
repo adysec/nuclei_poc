@@ -1,0 +1,59 @@
+id: photoblocks_grid_gallery-08c957fb-05e8-489e-846e-1afb0ca6750f
+
+info:
+  name: >
+    Gallery PhotoBlocks <= 1.2.8 - Missing Authorization Checks
+  author: topscoder
+  severity: low
+  description: >
+    The Gallery PhotoBlocks plugin for WordPress is vulnerable to authorization bypass in versions up to, and including 1.2.8 due to missing capability checks on the init() function found in the ~/admin/class-photoblocks-admin.php file. This makes it possible for authenticated users with minimal permissions, such as a subscriber, to delete and clone gallery photoblocks.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/08c957fb-05e8-489e-846e-1afb0ca6750f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/photoblocks-grid-gallery/"
+    google-query: inurl:"/wp-content/plugins/photoblocks-grid-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/photoblocks-grid-gallery/"'
+  tags: cve,wordpress,wp-plugin,photoblocks-grid-gallery,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/photoblocks-grid-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "photoblocks-grid-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.8')

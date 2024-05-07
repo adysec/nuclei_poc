@@ -1,0 +1,59 @@
+id: top_10-9b320755-1255-4331-8176-ee67d8d4873e
+
+info:
+  name: >
+    Top 10 – Popular posts plugin for WordPress <= 2.4.3 - SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Top 10 – Popular posts plugin for WordPress plugin for WordPress is vulnerable to generic SQL Injection via the ‘get_results’ parameter in versions up to, and including, 2.4.3 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers with admin level access to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9b320755-1255-4331-8176-ee67d8d4873e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 7.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/top-10/"
+    google-query: inurl:"/wp-content/plugins/top-10/"
+    shodan-query: 'http.html:"wp-content/plugins/top-10/"'
+  tags: cve,wordpress,wp-plugin,top-10,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/top-10/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "top-10"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.4.4')

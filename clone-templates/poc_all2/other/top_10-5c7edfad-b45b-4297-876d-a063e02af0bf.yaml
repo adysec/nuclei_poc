@@ -1,0 +1,59 @@
+id: top_10-5c7edfad-b45b-4297-876d-a063e02af0bf
+
+info:
+  name: >
+    Top 10 – Popular posts plugin for WordPress <= 3.2.3 - Cross-Site Request Forgery via tptn_ajax_clearcache
+  author: topscoder
+  severity: medium
+  description: >
+    The Top 10 – Popular posts plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 3.2.3. This is due to missing or incorrect nonce validation on the tptn_ajax_clearcache function. This makes it possible for unauthenticated attackers to clear the plugin's cache via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5c7edfad-b45b-4297-876d-a063e02af0bf?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/top-10/"
+    google-query: inurl:"/wp-content/plugins/top-10/"
+    shodan-query: 'http.html:"wp-content/plugins/top-10/"'
+  tags: cve,wordpress,wp-plugin,top-10,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/top-10/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "top-10"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.3')

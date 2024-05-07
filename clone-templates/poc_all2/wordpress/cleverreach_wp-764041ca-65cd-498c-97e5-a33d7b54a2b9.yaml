@@ -1,0 +1,59 @@
+id: cleverreach_wp-764041ca-65cd-498c-97e5-a33d7b54a2b9
+
+info:
+  name: >
+    CleverReach WP <= 1.5.20 - Unauthenticated SQL Injection via title Parameter
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/764041ca-65cd-498c-97e5-a33d7b54a2b9?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/cleverreach-wp/"
+    google-query: inurl:"/wp-content/plugins/cleverreach-wp/"
+    shodan-query: 'http.html:"wp-content/plugins/cleverreach-wp/"'
+  tags: cve,wordpress,wp-plugin,cleverreach-wp,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/cleverreach-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "cleverreach-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.20')

@@ -1,0 +1,59 @@
+id: link_library-6755c415-427e-4572-908c-061ab8f7490a
+
+info:
+  name: >
+    Link Library <= 5.9.13.26 – SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Link Library plugin for WordPress is vulnerable to generic SQL Injection via the "$_GET[‘linkid’]" parameter in versions up to, and including, 5.9.13.26 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers, with administrative privileges and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6755c415-427e-4572-908c-061ab8f7490a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/link-library/"
+    google-query: inurl:"/wp-content/plugins/link-library/"
+    shodan-query: 'http.html:"wp-content/plugins/link-library/"'
+  tags: cve,wordpress,wp-plugin,link-library,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/link-library/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "link-library"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.9.13.26')

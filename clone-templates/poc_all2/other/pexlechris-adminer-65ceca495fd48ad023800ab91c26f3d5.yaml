@@ -1,0 +1,59 @@
+id: pexlechris-adminer-65ceca495fd48ad023800ab91c26f3d5
+
+info:
+  name: >
+    Database Management tool – Adminer <= 1.1.5 - Information Exposure
+  author: topscoder
+  severity: medium
+  description: >
+    The Database Management tool – Adminer plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 1.1.5. This is due to the fact that the database password was included in a GET request as one of the parameters. This could allow individuals with access to log files to extract sensitive user or configuration data.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7047d53e-c9e4-46f9-8b5f-3489a1fb7e97?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 6.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/pexlechris-adminer/"
+    google-query: inurl:"/wp-content/plugins/pexlechris-adminer/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,pexlechris-adminer,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/pexlechris-adminer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "pexlechris-adminer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.5')

@@ -1,0 +1,59 @@
+id: count_per_day-7612b680-fb4a-4c5a-aa46-fb3473da78b4
+
+info:
+  name: >
+    Count Per Day <= 3.2.3 - Path Disclosure and Denial of Service
+  author: topscoder
+  severity: critical
+  description: >
+    The Count Per Day plugin for WordPress is vulnerable to Path Disclosure and Denial of Service in versions up to, and including, 3.2.3 via the 'notes.php' file. This makes it possible for unauthenticated attackers to disclose sensitive information and slow/deny the responsiveness of the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7612b680-fb4a-4c5a-aa46-fb3473da78b4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H
+    cvss-score: 9.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/count-per-day/"
+    google-query: inurl:"/wp-content/plugins/count-per-day/"
+    shodan-query: 'http.html:"wp-content/plugins/count-per-day/"'
+  tags: cve,wordpress,wp-plugin,count-per-day,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/count-per-day/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "count-per-day"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.3')

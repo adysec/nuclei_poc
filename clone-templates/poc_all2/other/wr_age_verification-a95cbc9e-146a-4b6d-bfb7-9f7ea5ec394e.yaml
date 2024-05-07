@@ -1,0 +1,59 @@
+id: wr_age_verification-a95cbc9e-146a-4b6d-bfb7-9f7ea5ec394e
+
+info:
+  name: >
+    Wr Age Verification <= 1.0.0 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Wr Age Verification plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘PHP_SELF’ parameter in versions up to, and including, 1.0.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a95cbc9e-146a-4b6d-bfb7-9f7ea5ec394e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wr-age-verification/"
+    google-query: inurl:"/wp-content/plugins/wr-age-verification/"
+    shodan-query: 'http.html:"wp-content/plugins/wr-age-verification/"'
+  tags: cve,wordpress,wp-plugin,wr-age-verification,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wr-age-verification/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wr-age-verification"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.0')

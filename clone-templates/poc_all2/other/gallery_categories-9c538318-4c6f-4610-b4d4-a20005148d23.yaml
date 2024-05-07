@@ -1,0 +1,59 @@
+id: gallery_categories-9c538318-4c6f-4610-b4d4-a20005148d23
+
+info:
+  name: >
+    Gallery Categories by BestWebSoft < 1.0.9 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Gallery Categories by BestWebSoft plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘category’ parameter in versions before 1.0.9 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9c538318-4c6f-4610-b4d4-a20005148d23?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gallery-categories/"
+    google-query: inurl:"/wp-content/plugins/gallery-categories/"
+    shodan-query: 'http.html:"wp-content/plugins/gallery-categories/"'
+  tags: cve,wordpress,wp-plugin,gallery-categories,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gallery-categories/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gallery-categories"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.9')

@@ -1,0 +1,59 @@
+id: ithemes_security_pro-21a1a6c2-0eb1-4ee3-abf0-76b84adca01b
+
+info:
+  name: >
+    iThemes Security < 7.9.1 and iThemes Security Pro < 6.8.4 - Hidden Login Bypass
+  author: topscoder
+  severity: medium
+  description: >
+    It is possible to bypass the hidden login page functionality in iThemes Security < 7.9.1 and iThemes Security Pro < 6.8.4
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/21a1a6c2-0eb1-4ee3-abf0-76b84adca01b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ithemes-security-pro/"
+    google-query: inurl:"/wp-content/plugins/ithemes-security-pro/"
+    shodan-query: 'http.html:"wp-content/plugins/ithemes-security-pro/"'
+  tags: cve,wordpress,wp-plugin,ithemes-security-pro,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ithemes-security-pro/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ithemes-security-pro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 6.8.4')

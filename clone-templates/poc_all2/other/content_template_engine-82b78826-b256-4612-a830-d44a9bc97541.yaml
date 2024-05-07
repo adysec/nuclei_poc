@@ -1,0 +1,59 @@
+id: content_template_engine-82b78826-b256-4612-a830-d44a9bc97541
+
+info:
+  name: >
+    Twigify <= 1.1.2 & AP Twig Bridge <= 1.0 & Content Template Engine <= 0.9.4  - Running Vulnerable Twig Package
+  author: topscoder
+  severity: high
+  description: >
+    The Twigify plugin for WordPress is running a vulnerable version of Twig (1.16.3) in all versions up to, and including, 1.1.2, the AP Twig Bridge plugin for WordPress is running a vulnerable version of Twig (1.5.0) in all versions up to, and including, 1.0, and the Content Template Engine plugin for WordPress is running a vulnerable version of Twig (1.22.3) in all versions up to, and including, 0.9.4. This version of Twig contains many security vulnerabilities, though none have been confirmed exploitable in the Twigify or AP Twig Bridge plugins.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/82b78826-b256-4612-a830-d44a9bc97541?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/content-template-engine/"
+    google-query: inurl:"/wp-content/plugins/content-template-engine/"
+    shodan-query: 'http.html:"wp-content/plugins/content-template-engine/"'
+  tags: cve,wordpress,wp-plugin,content-template-engine,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/content-template-engine/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "content-template-engine"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.9.4')

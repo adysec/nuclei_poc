@@ -1,0 +1,59 @@
+id: wp_super_cache-51d98277-a1d7-4708-8daf-88948a235375
+
+info:
+  name: >
+    WP Super Cache <= 1.4.8 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Super Cashe plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.4.8 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/51d98277-a1d7-4708-8daf-88948a235375?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-super-cache/"
+    google-query: inurl:"/wp-content/plugins/wp-super-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-super-cache/"'
+  tags: cve,wordpress,wp-plugin,wp-super-cache,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-super-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-super-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.8')

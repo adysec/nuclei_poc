@@ -1,0 +1,52 @@
+
+id: drupal_module-tapestry-cross-site-scripting
+info:
+  name: drupal_module-tapestry-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This theme provides Drupal users with many advanced features including 20 Different Color Styles, 30 User Regions, Custom Block Theme Templates, Suckerfish Menus, Icon Support, Advanced Page Layout Options, Simple Configuration, Custom Typography... The theme doesnt sufficiently sanitize user input. This vulnerability is mitigated by the fact that the theme is only exploitable with non-default settings and under certain site configurations."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-051
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:None/CI:Some/II:Some/E:Theoretical/TD:Uncommon"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/tapestry/"
+    google-query: "inurl:'/sites/all/modules/tapestry/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/tapestry/tapestry.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'tapestry'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.1')
+         - compare_versions(version, '7.x-2.0')

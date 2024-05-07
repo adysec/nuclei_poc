@@ -1,0 +1,59 @@
+id: extended_evaluation_for_statify-35027df9-ae55-453f-bb42-4b2664d66293
+
+info:
+  name: >
+    Statify – Extended Evaluation <= 2.6.3 - Authenticated (Admin+) CSV Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Statify – Extended Evaluation plugin for WordPress is vulnerable to CSV Injection in versions up to, and including, 2.6.3 via the eefstatifyTableToCsv() function. This allows authenticated attackers, with administrative-level access and above, to embed untrusted input into exported CSV files, which can result in code execution when these files are downloaded and opened on a local system with a vulnerable configuration.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/35027df9-ae55-453f-bb42-4b2664d66293?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/extended-evaluation-for-statify/"
+    google-query: inurl:"/wp-content/plugins/extended-evaluation-for-statify/"
+    shodan-query: 'http.html:"wp-content/plugins/extended-evaluation-for-statify/"'
+  tags: cve,wordpress,wp-plugin,extended-evaluation-for-statify,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/extended-evaluation-for-statify/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "extended-evaluation-for-statify"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.6.4')

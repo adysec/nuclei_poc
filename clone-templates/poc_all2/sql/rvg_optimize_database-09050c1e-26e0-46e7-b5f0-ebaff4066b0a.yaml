@@ -1,0 +1,59 @@
+id: rvg_optimize_database-09050c1e-26e0-46e7-b5f0-ebaff4066b0a
+
+info:
+  name: >
+    Optimize Database after Deleting Revisions <= 5.0.110 - Missing Authorization via 'odb_csv_download'
+  author: topscoder
+  severity: high
+  description: >
+    The Optimize Database after Deleting Revisions plugin for WordPress is vulnerable to information disclosure in versions up to, and including, 5.0.110. This is due to a missing capability check on the 'odb_csv_download' function which is hooked via admin_init. This makes it possible for unauthenticated attackers to trigger a download of the plugin's data.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/09050c1e-26e0-46e7-b5f0-ebaff4066b0a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/rvg-optimize-database/"
+    google-query: inurl:"/wp-content/plugins/rvg-optimize-database/"
+    shodan-query: 'http.html:"wp-content/plugins/rvg-optimize-database/"'
+  tags: cve,wordpress,wp-plugin,rvg-optimize-database,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/rvg-optimize-database/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "rvg-optimize-database"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.0.110')

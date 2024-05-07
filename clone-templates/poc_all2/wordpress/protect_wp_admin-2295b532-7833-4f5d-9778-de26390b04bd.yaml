@@ -1,0 +1,59 @@
+id: protect_wp_admin-2295b532-7833-4f5d-9778-de26390b04bd
+
+info:
+  name: >
+    Protect WP Admin <= 3.6 - Unauthenticated Plugin Deactivation
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2295b532-7833-4f5d-9778-de26390b04bd?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/protect-wp-admin/"
+    google-query: inurl:"/wp-content/plugins/protect-wp-admin/"
+    shodan-query: 'http.html:"wp-content/plugins/protect-wp-admin/"'
+  tags: cve,wordpress,wp-plugin,protect-wp-admin,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/protect-wp-admin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "protect-wp-admin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.6')

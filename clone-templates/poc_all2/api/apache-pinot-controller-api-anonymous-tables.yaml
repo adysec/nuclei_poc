@@ -1,0 +1,93 @@
+# gap: apache-pinot-controller-api-anonymous-tables
+id: apache-pinot-controller-api-anonymous-tables
+
+info:
+  name: Apache Pinot Controller REST API Anonymous Table Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an Apache Pinot real-time OLAP cluster where the
+    controller REST API (/tables, /schemas, /instances, /cluster/info)
+    is reachable without an Authorization header. Class signal:
+    /tables returns `{"tables":["t1","t2",…]}`; /schemas returns a
+    JSON array of schema-name strings; /cluster/info returns
+    `{"clusterName":"…"}`.
+
+    Anonymous Pinot controller access leaks the cluster's table /
+    schema inventory and chains to arbitrary SQL query via the
+    broker's /query/sql endpoint (commonly deployed on the same
+    or sibling host) — Pinot is the analytical layer over real-
+    time event streams (LinkedIn / Uber / GitHub-style deployments
+    are typical references), so the table surface routinely
+    includes engagement events, transaction streams, and
+    user-attribute records. The controller API also accepts
+    POST /tables (creating a new table configuration) and
+    POST /segments (uploading new segments to existing tables) —
+    arbitrary write primitives that bypass authentication of the
+    cluster's data plane. Class detection — keys on Pinot
+    controller response shape, not vendor banner.
+  reference:
+    - https://docs.pinot.apache.org/users/api/controller-api-reference
+    - https://docs.pinot.apache.org/operators/tutorials/authentication
+  tags: custom,exposures,pinot,apache,olap,query-engine,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/tables"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"tables"\s*:\s*\['
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/cluster/info"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # clusterName alone collides with ScyllaDB/Cassandra/ClickHouse responses;
+        # require Pinot-specific co-occurrence (helixVersion or zkServers).
+        words:
+          - '"clusterName"'
+          - '"helixVersion"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: pinot-cluster-name
+        regex:
+          - '"clusterName"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: pinot-helix-version
+        regex:
+          - '"helixVersion"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: pinot-tables
+        regex:
+          - '"tables"\s*:\s*\[([^\]]+)\]'
+        group: 1

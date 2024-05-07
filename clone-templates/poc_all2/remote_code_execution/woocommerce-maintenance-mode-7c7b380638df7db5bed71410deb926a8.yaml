@@ -1,0 +1,59 @@
+id: woocommerce-maintenance-mode-7c7b380638df7db5bed71410deb926a8
+
+info:
+  name: >
+    WooCommerce Maintenance Mode <= 2.0.1 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/910902ab-8bd4-42b8-bd60-dce973e80ee5?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-maintenance-mode/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-maintenance-mode/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,woocommerce-maintenance-mode,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-maintenance-mode/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-maintenance-mode"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.1')

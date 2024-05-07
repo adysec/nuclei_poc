@@ -1,0 +1,59 @@
+id: font_awesome-4783eff5-b7cf-4342-b762-85f745c38ec8
+
+info:
+  name: >
+    Font Awesome 4.0.0-rc15 and 4.0.0-rc16 - API Token Exposure
+  author: topscoder
+  severity: medium
+  description: >
+    The Font Awesome plugin for WordPress versions 4.0.0-rc15 and 4.0.0-rc16 are vulnerable to API Token Exposure. The vulnerability exposes the Font Awesome API token and access token for users who have configured the plugin to use a kit. If compromised, these tokens could give an unauthorized person access to that user’s list of kits and kit settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4783eff5-b7cf-4342-b762-85f745c38ec8?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/font-awesome/"
+    google-query: inurl:"/wp-content/plugins/font-awesome/"
+    shodan-query: 'http.html:"wp-content/plugins/font-awesome/"'
+  tags: cve,wordpress,wp-plugin,font-awesome,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/font-awesome/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "font-awesome"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '4.0.0-rc16')

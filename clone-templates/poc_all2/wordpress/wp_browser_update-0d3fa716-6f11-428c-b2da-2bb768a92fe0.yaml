@@ -1,0 +1,59 @@
+id: wp_browser_update-0d3fa716-6f11-428c-b2da-2bb768a92fe0
+
+info:
+  name: >
+    WP BrowserUpdate <= 4.5 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0d3fa716-6f11-428c-b2da-2bb768a92fe0?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-browser-update/"
+    google-query: inurl:"/wp-content/plugins/wp-browser-update/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-browser-update/"'
+  tags: cve,wordpress,wp-plugin,wp-browser-update,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-browser-update/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-browser-update"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.5')

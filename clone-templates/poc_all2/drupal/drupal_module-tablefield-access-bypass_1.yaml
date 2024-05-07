@@ -1,0 +1,51 @@
+
+id: drupal_module-tablefield-access-bypass
+info:
+  name: drupal_module-tablefield-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module allows you to attach tabular data to an entity. There is insufficient access checking for users with the ability to Export Tablefield Data as CSV. They can export data from unpublished nodes or otherwise inaccessible entities. This vulnerability is mitigated by the fact that an attacker must have a role with the permission Export Tablefield Data as CSV."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-067
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:None/A:User/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/tablefield/"
+    google-query: "inurl:'/sites/all/modules/tablefield/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/tablefield/tablefield.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'tablefield'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-2.0')

@@ -1,0 +1,59 @@
+id: paid_memberships_pro-78bb5e18-5535-4cee-a38b-e38802059ef7
+
+info:
+  name: >
+    Paid Memberships Pro <= 2.0.5 - Open Redirect
+  author: topscoder
+  severity: low
+  description: >
+    The Paid Memberships Pro plugin for WordPress is vulnerable to an open redirect vulnerability in versions up to, and including, 2.0.5. This is due to missing redirect location verification on the pmpro_redirect_to_logged_in() function. This makes it possible for authenticated attackers to redirect traffic to a different website, where they could potentially perform other attacks; such as phishing.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/78bb5e18-5535-4cee-a38b-e38802059ef7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/paid-memberships-pro/"
+    google-query: inurl:"/wp-content/plugins/paid-memberships-pro/"
+    shodan-query: 'http.html:"wp-content/plugins/paid-memberships-pro/"'
+  tags: cve,wordpress,wp-plugin,paid-memberships-pro,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/paid-memberships-pro/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "paid-memberships-pro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.5')

@@ -1,0 +1,59 @@
+id: google_calendar_events-248b74d3-5228-473d-a79a-743566898606
+
+info:
+  name: >
+    Simple Calendar <= 3.1.42 - Cross-Site Request Forgery to Transient Cache Clearing
+  author: topscoder
+  severity: medium
+  description: >
+    The Simple Calendar plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 3.1.42. This is due to missing nonce validation on the clear_cache() function used to clear the plugin's transients. This makes it possible for unauthenticated attackers to clear the plugin's transients for a given id, via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/248b74d3-5228-473d-a79a-743566898606?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/google-calendar-events/"
+    google-query: inurl:"/wp-content/plugins/google-calendar-events/"
+    shodan-query: 'http.html:"wp-content/plugins/google-calendar-events/"'
+  tags: cve,wordpress,wp-plugin,google-calendar-events,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/google-calendar-events/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "google-calendar-events"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1.42')

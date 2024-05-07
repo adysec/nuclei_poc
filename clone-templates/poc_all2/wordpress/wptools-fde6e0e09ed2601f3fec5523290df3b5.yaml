@@ -1,0 +1,59 @@
+id: wptools-fde6e0e09ed2601f3fec5523290df3b5
+
+info:
+  name: >
+    WP Tools <= 5.18 - Cross-Site Request Forgery to Arbitrary File Renaming
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c8a14993-6faa-47fd-a066-d827ab143d9b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wptools/"
+    google-query: inurl:"/wp-content/plugins/wptools/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wptools,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wptools/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wptools"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.18')

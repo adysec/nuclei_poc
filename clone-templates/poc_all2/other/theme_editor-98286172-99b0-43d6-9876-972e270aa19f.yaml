@@ -1,0 +1,59 @@
+id: theme_editor-98286172-99b0-43d6-9876-972e270aa19f
+
+info:
+  name: >
+    Theme Editor <= 2.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Theme Editor plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.1. This is due to missing or incorrect nonce validation on the [function-name] function. This makes it possible for unauthenticated attackers to [state the impact of the vulnerability] via forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/98286172-99b0-43d6-9876-972e270aa19f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/theme-editor/"
+    google-query: inurl:"/wp-content/plugins/theme-editor/"
+    shodan-query: 'http.html:"wp-content/plugins/theme-editor/"'
+  tags: cve,wordpress,wp-plugin,theme-editor,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/theme-editor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "theme-editor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.2')

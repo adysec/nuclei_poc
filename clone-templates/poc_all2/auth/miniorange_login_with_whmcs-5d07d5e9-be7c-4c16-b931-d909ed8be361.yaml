@@ -1,0 +1,59 @@
+id: miniorange_login_with_whmcs-5d07d5e9-be7c-4c16-b931-d909ed8be361
+
+info:
+  name: >
+    Login with WHMCS <= 1.11.3 - Authentication Bypass
+  author: topscoder
+  severity: critical
+  description: >
+    The Login with WHMCS plugin for WordPress is vulnerable to authentication bypass in versions up to, and including 1.11.3. This is due to the plugin accepting a user supplied email address that is passed to wp_set_auth_cookie() with no further identity validation to verify that the email supplied belongs to the user trying to log in with that email address. This makes it possible for unauthenticated attackers to log in as a site administrator granted they have access to a site admin's email address.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5d07d5e9-be7c-4c16-b931-d909ed8be361?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/miniorange-login-with-whmcs/"
+    google-query: inurl:"/wp-content/plugins/miniorange-login-with-whmcs/"
+    shodan-query: 'http.html:"wp-content/plugins/miniorange-login-with-whmcs/"'
+  tags: cve,wordpress,wp-plugin,miniorange-login-with-whmcs,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/miniorange-login-with-whmcs/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "miniorange-login-with-whmcs"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.11.3')

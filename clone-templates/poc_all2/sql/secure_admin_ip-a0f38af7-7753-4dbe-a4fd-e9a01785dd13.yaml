@@ -1,0 +1,59 @@
+id: secure_admin_ip-a0f38af7-7753-4dbe-a4fd-e9a01785dd13
+
+info:
+  name: >
+    Secure Admin IP <= 2.0 - Missing Authorization via 'saveSettings'
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a0f38af7-7753-4dbe-a4fd-e9a01785dd13?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/secure-admin-ip/"
+    google-query: inurl:"/wp-content/plugins/secure-admin-ip/"
+    shodan-query: 'http.html:"wp-content/plugins/secure-admin-ip/"'
+  tags: cve,wordpress,wp-plugin,secure-admin-ip,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/secure-admin-ip/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "secure-admin-ip"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0')

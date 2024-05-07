@@ -1,0 +1,59 @@
+id: embed_rss-0d87a375-81b8-4f81-8fd5-46608c84faca
+
+info:
+  name: >
+    Embed RSS <= 3.1 - Authenticated (Subscriber+) Arbitrary Shortcode Execution
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0d87a375-81b8-4f81-8fd5-46608c84faca?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/embed-rss/"
+    google-query: inurl:"/wp-content/plugins/embed-rss/"
+    shodan-query: 'http.html:"wp-content/plugins/embed-rss/"'
+  tags: cve,wordpress,wp-plugin,embed-rss,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/embed-rss/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "embed-rss"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1')

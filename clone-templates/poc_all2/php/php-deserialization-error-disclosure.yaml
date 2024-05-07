@@ -1,0 +1,67 @@
+# gap: php-deserialization-error-disclosure
+id: php-deserialization-error-disclosure
+
+info:
+  name: PHP unserialize() Error Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects PHP applications that pass user-controlled input to
+    `unserialize()` by sending a syntactically-valid-but-incomplete
+    PHP serialized payload (`O:8:"stdClass":0:{}`,
+    `a:1:{i:0;s:1:"x";}`) through common query parameters and matching
+    PHP-specific deserialization error markers in the response. Class
+    signatures are stable across PHP versions: `unserialize(): Error
+    at offset N of M bytes`, `unserialize(): unexpected end of`,
+    `Notice: unserialize(): Error at`, and `__wakeup` / `__destruct`
+    method-resolution warnings when the input declares a class name.
+
+    PHP deserialization is a load-bearing RCE primitive — the standard
+    Magento / Joomla / Drupal / Magneto / PHPGGC gadget chains all
+    pivot from a serialized-input sink to arbitrary file write,
+    arbitrary function invocation, or arbitrary command execution.
+    The error-disclosure variant proves the parameter reaches an
+    unserialize() sink — exploitation follows from gadget mapping.
+    Class detection — keys on the PHP runtime's unserialize error
+    grammar, not vendor banner.
+  reference:
+    - https://www.php.net/manual/en/function.unserialize.php
+    - https://owasp.org/www-community/vulnerabilities/PHP_Object_Injection
+    - https://github.com/ambionics/phpggc
+    - https://cwe.mitre.org/data/definitions/502.html
+  tags: custom,vulnerabilities,php,deserialization,injection,owasp,cwe-502
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?data=O%3A8%3A%22stdClass%22%3A0%3A%7B%7D"
+      - "{{BaseURL}}/?obj=a%3A1%3A%7Bi%3A0%3Bs%3A1%3A%22a%22%3B%7D"
+      - "{{BaseURL}}/?serialized=O%3A8%3A%22stdClass%22%3A0%3A%7B%7D"
+      - "{{BaseURL}}/?state=O%3A8%3A%22stdClass%22%3A0%3A%7B%7D"
+      - "{{BaseURL}}/?session=O%3A8%3A%22stdClass%22%3A0%3A%7B%7D"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'unserialize\(\):\s*Error at offset'
+          - 'unserialize\(\):\s*unexpected end of'
+          - 'Notice:\s*unserialize\(\):\s*'
+          - 'Warning:\s*unserialize\(\)'
+          - 'PHP Fatal error.*unserialize'
+          - 'Class .* not found in.*\(eval\(\)''d code\)'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: php-error
+        regex:
+          - '(unserialize\(\):[^<\r\n]{0,160})'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "X-Powered-By"

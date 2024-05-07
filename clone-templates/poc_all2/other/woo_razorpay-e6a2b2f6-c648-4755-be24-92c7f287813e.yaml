@@ -1,0 +1,59 @@
+id: woo_razorpay-e6a2b2f6-c648-4755-be24-92c7f287813e
+
+info:
+  name: >
+    Razorpay for WooCommerce <= 4.5.6 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Razorpay for WooCommerce plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 4.5.6. This is due to missing nonce validation on several functions hooked via admin_post. This makes it possible for unauthenticated attackers to update, direct, create, and reverse transfers through the plugin via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e6a2b2f6-c648-4755-be24-92c7f287813e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woo-razorpay/"
+    google-query: inurl:"/wp-content/plugins/woo-razorpay/"
+    shodan-query: 'http.html:"wp-content/plugins/woo-razorpay/"'
+  tags: cve,wordpress,wp-plugin,woo-razorpay,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-razorpay/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woo-razorpay"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.5.6')

@@ -1,0 +1,59 @@
+id: my_wp-6a830fb8-de5f-40c7-bb6c-464ed916b440
+
+info:
+  name: >
+    My WP Customize Admin/Frontend <= 1.21.0 - Authenticated (Administrator+) Stored Cross-Site Scripting via plugin settings
+  author: topscoder
+  severity: low
+  description: >
+    The My WP Customize Admin/Frontend plugin for WordPress is vulnerable to Stored Cross-Site Scripting via admin settings in versions up to, and including, 1.21.0  due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6a830fb8-de5f-40c7-bb6c-464ed916b440?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 4.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/my-wp/"
+    google-query: inurl:"/wp-content/plugins/my-wp/"
+    shodan-query: 'http.html:"wp-content/plugins/my-wp/"'
+  tags: cve,wordpress,wp-plugin,my-wp,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/my-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "my-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.21.1')

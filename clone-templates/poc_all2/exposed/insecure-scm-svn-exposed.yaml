@@ -1,0 +1,50 @@
+# gap: insecure-scm-svn-exposed
+id: insecure-scm-svn-exposed
+
+info:
+  name: SVN Repository Artifacts Exposed via HTTP
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects a Subversion working copy whose .svn directory is reachable over
+    HTTP. Either the wc.db SQLite store or the legacy entries file is
+    returned, which exposes the repository URL, revision history, and the
+    full set of tracked source files - frequently including secrets and
+    deployment scripts.
+  reference:
+    - https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/Insecure%20Source%20Code%20Management/README.md
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/01-Information_Gathering/03-Review_Webserver_Metafiles_for_Information_Leakage
+  tags: custom,exposures,svn,scm,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.svn/wc.db"
+      - "{{BaseURL}}/.svn/entries"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - "^SQLite format 3"
+          - "(?m)^(dir|file)$"
+          - "svn://|https?://[^\\s]+"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: svn-repo-url
+        regex:
+          - '(svn(?:\+ssh)?://[^\s\x00-\x1f]+|https?://[^\s\x00-\x1f]+/svn/[^\s\x00-\x1f]+)'
+        group: 1
+      - type: regex
+        part: body
+        name: svn-uuid
+        regex:
+          - '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
+        group: 1

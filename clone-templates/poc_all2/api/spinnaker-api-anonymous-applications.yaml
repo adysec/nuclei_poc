@@ -1,0 +1,78 @@
+# gap: spinnaker-api-anonymous-applications
+id: spinnaker-api-anonymous-applications
+
+info:
+  name: Spinnaker Gate API Anonymous Applications Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Spinnaker Gate (Deck UI's API gateway) where
+    /applications or /gate/applications is reachable without an
+    authenticated session cookie, returning the deployed-application
+    catalog as a JSON array. Class signal: top-level JSON array of
+    objects carrying Spinnaker application metadata fields
+    (`cloudProvider`, `lastModified` / `lastModifiedBy`, `email`,
+    `accounts`).
+
+    Anonymous Spinnaker applications-API access leaks the deployment
+    inventory: application names (frequently mapping to internal
+    services), `cloudProvider` per app (aws / kubernetes / gce —
+    recon for which cloud control planes to target next), and
+    `accounts` (per-app cloud account / cluster identifiers that
+    disclose multi-tenant tenancy structure). Combined with
+    /pipelines and /clusters the response chains into pipeline JSON
+    that often embeds in-memory secrets via parameter defaults and
+    notification configs. Class detection — keys on Spinnaker
+    application schema, not vendor banner.
+  reference:
+    - https://spinnaker.io/docs/reference/api/
+    - https://spinnaker.io/docs/setup/other_config/security/
+  tags: custom,exposures,spinnaker,cicd,deployment,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/gate/applications"
+      - "{{BaseURL}}/applications"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '^\s*\['
+      - type: word
+        part: body
+        words:
+          - '"cloudProviders"'
+          - '"cloudProvider"'
+          - '"lastModifiedBy"'
+        condition: or
+      - type: word
+        part: body
+        words:
+          - '"name"'
+          - '"accounts"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: application-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: cloud-accounts
+        regex:
+          - '"accounts"\s*:\s*"([^"]+)"'
+        group: 1

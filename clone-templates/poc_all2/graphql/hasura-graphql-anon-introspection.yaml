@@ -1,0 +1,75 @@
+# gap: hasura-graphql-anon-introspection
+id: hasura-graphql-anon-introspection
+
+info:
+  name: Hasura GraphQL Anonymous Role with Introspection Enabled
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Hasura GraphQL Engine instance where the public
+    `anonymous` role is configured (typically via
+    `HASURA_GRAPHQL_UNAUTHORIZED_ROLE=public`) AND introspection
+    is enabled in production. The combination lets an
+    unauthenticated client dump the full schema — every table /
+    relationship / `_aggregate` query Hasura code-generates —
+    which routinely is followed by data extraction over the same
+    anonymous role.
+
+    Class signal: a successful `__schema` introspection response
+    that contains Hasura-specific code-generated types
+    (`*_aggregate`, `*_mutation_response`, `*_bool_exp`). These
+    type-name suffixes are emitted by Hasura's schema generator
+    and do not appear in hand-written GraphQL APIs. The presence
+    of the `x-request-id` response header further fingerprints
+    Hasura's middleware.
+  reference:
+    - https://github.com/hasura/graphql-engine/issues/5501
+    - https://hasura.io/docs/2.0/security/disable-graphql-introspection/
+    - https://hasura.io/docs/2.0/auth/authentication/unauthenticated-access/
+  tags: custom,exposures,hasura,graphql,baas,disclosure,cwe-306
+
+http:
+  - raw:
+      - |
+        POST /v1/graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"query":"{__schema{types{name fields{name}}}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # __schema present + Hasura-specific code-generated type suffix.
+        words:
+          - '"__schema"'
+          - '"queryType"'
+        condition: and
+      - type: regex
+        part: body
+        # Hasura code-generation signatures — _aggregate / _bool_exp /
+        # _mutation_response — that don't appear in hand-written schemas.
+        regex:
+          - '"name"\s*:\s*"[a-zA-Z0-9_]+_(aggregate|bool_exp|mutation_response|insert_input|set_input)"'
+
+    extractors:
+      - type: regex
+        part: body
+        name: hasura-type-names
+        regex:
+          - '"name"\s*:\s*"([a-zA-Z0-9_]+_(?:aggregate|bool_exp))"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "x-request-id"

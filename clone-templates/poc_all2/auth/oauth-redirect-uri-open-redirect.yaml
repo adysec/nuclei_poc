@@ -1,0 +1,40 @@
+# gap: oauth-redirect-uri-open-redirect
+id: oauth-redirect-uri-open-redirect
+
+info:
+  name: OAuth Authorize Endpoint Accepts Arbitrary redirect_uri
+  author: TyrusRC
+  severity: high
+  description: |
+    Probes common OAuth authorization endpoints with an attacker-controlled
+    redirect_uri (https://attacker.example.com/nuclei-canary) and matches a
+    Location header redirect back to that canary URL. A hit confirms the
+    endpoint will deliver authorization codes or tokens to an arbitrary host,
+    enabling account takeover via OAuth code/token theft. Limitations: the
+    test client_id is a placeholder, so endpoints that strictly validate
+    client_id before evaluating redirect_uri will reject the request and not
+    fire. This template only catches the basic "any URL accepted" variant;
+    subdomain-whitelist bypasses and partial-match flaws are out of scope.
+  reference:
+    - https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/OAuth%20Misconfiguration/README.md
+    - https://datatracker.ietf.org/doc/html/rfc6819
+  tags: custom,vulnerabilities,oauth,redirect,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/oauth/authorize?response_type=code&client_id=test&redirect_uri=https://attacker.example.com/nuclei-canary"
+      - "{{BaseURL}}/oauth2/authorize?response_type=code&client_id=test&redirect_uri=https://attacker.example.com/nuclei-canary"
+      - "{{BaseURL}}/login/oauth/authorize?response_type=code&client_id=test&redirect_uri=https://attacker.example.com/nuclei-canary"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 301
+          - 302
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "Location: https://attacker.example.com/nuclei-canary"

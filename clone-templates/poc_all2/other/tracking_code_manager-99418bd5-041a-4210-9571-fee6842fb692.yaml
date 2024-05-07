@@ -1,0 +1,59 @@
+id: tracking_code_manager-99418bd5-041a-4210-9571-fee6842fb692
+
+info:
+  name: >
+    Tracking Code Manager < 1.11.5 - Denial of Service
+  author: topscoder
+  severity: high
+  description: >
+    The Tracking Code Manager for WordPress is vulnerable to Denial of Service attacks in versions up to, and including, 1.11.4. This is due to the ability of users to make a recursive call to the 'tcmp_do_action' function. Due to an additional Cross-Site Request Forgery vulnerability, this makes it possible for unauthenticated attackers to render a site unresponsive until a restart.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/99418bd5-041a-4210-9571-fee6842fb692?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/tracking-code-manager/"
+    google-query: inurl:"/wp-content/plugins/tracking-code-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/tracking-code-manager/"'
+  tags: cve,wordpress,wp-plugin,tracking-code-manager,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/tracking-code-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "tracking-code-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.11.4')

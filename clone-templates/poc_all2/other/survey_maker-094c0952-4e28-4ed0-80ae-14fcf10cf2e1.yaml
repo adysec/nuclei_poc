@@ -1,0 +1,59 @@
+id: survey_maker-094c0952-4e28-4ed0-80ae-14fcf10cf2e1
+
+info:
+  name: >
+    Survey Maker – Best WordPress Survey Plugin <= 3.1.1 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Survey Maker – Best WordPress Survey Plugin plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the plugin's settings (such as custom CSS) in versions up to, and including, 3.1.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers with administrative privileges to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/094c0952-4e28-4ed0-80ae-14fcf10cf2e1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/survey-maker/"
+    google-query: inurl:"/wp-content/plugins/survey-maker/"
+    shodan-query: 'http.html:"wp-content/plugins/survey-maker/"'
+  tags: cve,wordpress,wp-plugin,survey-maker,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/survey-maker/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "survey-maker"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1.1')

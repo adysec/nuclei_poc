@@ -1,0 +1,59 @@
+id: buddypress_media-1814ad55-0807-4def-b584-6dbbc5d6eb72
+
+info:
+  name: >
+    rtMedia for WordPress, BuddyPress and bbPress <= 3.9.5 - Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The rtMedia for WordPress, BuddyPress and bbPress plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 3.9.5 via the 'template' parameter. This allows unauthenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1814ad55-0807-4def-b584-6dbbc5d6eb72?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/buddypress-media/"
+    google-query: inurl:"/wp-content/plugins/buddypress-media/"
+    shodan-query: 'http.html:"wp-content/plugins/buddypress-media/"'
+  tags: cve,wordpress,wp-plugin,buddypress-media,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/buddypress-media/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "buddypress-media"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.9.5')

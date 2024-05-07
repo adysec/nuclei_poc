@@ -1,0 +1,59 @@
+id: flickr_rss-0b90503b-6186-48b5-a85a-3602f318872e
+
+info:
+  name: >
+    flickrRSS <= 5.3.1 - Cross-Site Scripting via flickrRSS_id
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0b90503b-6186-48b5-a85a-3602f318872e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/flickr-rss/"
+    google-query: inurl:"/wp-content/plugins/flickr-rss/"
+    shodan-query: 'http.html:"wp-content/plugins/flickr-rss/"'
+  tags: cve,wordpress,wp-plugin,flickr-rss,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/flickr-rss/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "flickr-rss"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.3.1')

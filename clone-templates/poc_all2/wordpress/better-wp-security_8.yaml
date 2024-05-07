@@ -1,0 +1,49 @@
+id: wordpress-better-wp-security
+
+info:
+  name: Solid Security – Password, Two Factor Authentication, and Brute Force Protection Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/better-wp-security/
+  metadata:
+    plugin_namespace: better-wp-security
+    wpscan: https://wpscan.com/plugin/better-wp-security
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/better-wp-security/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/better-wp-security.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a004630440220724149befdce5aaddb5eff0b0262973d295083543af6e30b68fa1886422fe66902207e1b01b8a74e285ab231294f2a297a70c7970320f5be2a3d5ecdab8f07e2fcb7:922c64590222798bb761d5b6d8e72950

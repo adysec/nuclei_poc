@@ -1,0 +1,51 @@
+id: businext-2be1c75f-393a-4dd7-83cc-3b9df141dd88
+
+info:
+  name: >
+    Businext < 2.4.4 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2be1c75f-393a-4dd7-83cc-3b9df141dd88?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/businext/"
+    google-query: inurl:"/wp-content/themes/businext/"
+    shodan-query: 'http.html:"wp-content/themes/businext/"'
+  tags: cve,wordpress,wp-theme,businext,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/businext/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "businext"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.4.4')

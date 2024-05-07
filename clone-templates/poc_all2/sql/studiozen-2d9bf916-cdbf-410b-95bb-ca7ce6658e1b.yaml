@@ -1,0 +1,59 @@
+id: studiozen-2d9bf916-cdbf-410b-95bb-ca7ce6658e1b
+
+info:
+  name: >
+    StudioZen <= 1.6 - Multiple Vulnerabilities
+  author: topscoder
+  severity: medium
+  description: >
+    The StudioZen Theme for WordPress is vulnerable to full path disclosure, content spoofing, and cross-site scripting in versions up to, and including, 1.6. This is due to the inclusion of vulnerable jPlayer 2.2.23 scripts. This makes it possible for unauthenticated attackers to view the full path of the WordPress installation, alter content, and inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2d9bf916-cdbf-410b-95bb-ca7ce6658e1b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/studiozen/"
+    google-query: inurl:"/wp-content/themes/studiozen/"
+    shodan-query: 'http.html:"wp-content/themes/studiozen/"'
+  tags: cve,wordpress,wp-theme,studiozen,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/studiozen/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "studiozen"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6')

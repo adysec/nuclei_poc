@@ -1,0 +1,59 @@
+id: sf_booking-cdac6080-5e23-488d-8b3c-de0c6c92e344
+
+info:
+  name: >
+    Service Finder - Provider and Business Listing Theme < 3.2 - Path Traversal
+  author: topscoder
+  severity: high
+  description: >
+    The Service Finder - Provider and Business Listing theme for WordPress is vulnerable to Path Traversal in versions up to 3.2 via the 'file' parameter found in the downloads.php file. This allows unauthenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cdac6080-5e23-488d-8b3c-de0c6c92e344?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/sf-booking/"
+    google-query: inurl:"/wp-content/themes/sf-booking/"
+    shodan-query: 'http.html:"wp-content/themes/sf-booking/"'
+  tags: cve,wordpress,wp-theme,sf-booking,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/sf-booking/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sf-booking"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.2')

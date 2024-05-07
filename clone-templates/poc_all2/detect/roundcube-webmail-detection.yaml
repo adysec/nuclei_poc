@@ -1,0 +1,51 @@
+id: roundcube-webmail-detection
+
+info:
+  name: Roundcube Webmail Detection
+  author: Mark Dube
+  severity: low
+  description: Detects the presence of Roundcube webmail interfaces.
+  tags: tech,webmail,roundcube
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/roundcube/"
+      - "{{BaseURL}}/mail/"
+      - "{{BaseURL}}/webmail/"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<title>Roundcube Webmail</title>"
+          - "var rcmail = new rcube_webmail();"
+          - 'class="roundcube-logo"'
+          - "Roundcube Webmail :: Welcome to Roundcube Webmail"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "(?i)<meta[^>]+roundcube"
+          - "(?i)<title>[^<]*roundcube[^<]*</title>"
+          - "(?i)powered by.*roundcube"
+
+      - type: word
+        part: header
+        words:
+          - "X-Roundcube-Version:"
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - "(?i)roundcube\\s+webmail\\s+([\\d.]+)"
+          - "(?i)var rcmail_version\\s*=\\s*['\"]([\\d.]+)['\"]"

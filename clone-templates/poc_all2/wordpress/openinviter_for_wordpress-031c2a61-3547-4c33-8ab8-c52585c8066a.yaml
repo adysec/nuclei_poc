@@ -1,0 +1,59 @@
+id: openinviter_for_wordpress-031c2a61-3547-4c33-8ab8-c52585c8066a
+
+info:
+  name: >
+    OpenInviter for WordPress <= 1.7.0 - Sensitive Information Disclosure
+  author: topscoder
+  severity: high
+  description: >
+    The OpenInviter for WordPress plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 1.7.0 via the log_error file. This can allow unauthenticated attackers to extract sensitive data from site visitors including emails and passwords (in clear text) for providers such as Yahoo, Gmail, Hotmail, AOL and others.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/031c2a61-3547-4c33-8ab8-c52585c8066a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/openinviter-for-wordpress/"
+    google-query: inurl:"/wp-content/plugins/openinviter-for-wordpress/"
+    shodan-query: 'http.html:"wp-content/plugins/openinviter-for-wordpress/"'
+  tags: cve,wordpress,wp-plugin,openinviter-for-wordpress,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/openinviter-for-wordpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "openinviter-for-wordpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7.0')

@@ -1,0 +1,57 @@
+
+id: drupal_module-advanced_forum-cross-site-scripting
+info:
+  name: drupal_module-advanced_forum-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "Advanced Forum builds on and enhances Drupals core forum module. When used in combination with other Drupal contributed modules, many of which are automatically used by Advanced Forum, you can achieve much of what stand alone software provides. The module doesnt sufficiently sanitise user input in specific circumstances. It is not possible to disable the vulnerable functionality. This vulnerability is mitigated by the fact that an attacker must have a role with permission to create forum content."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-054
+  metadata:
+    security-risk: "Critical 16∕25 AC:Basic/A:None/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/advanced_forum/"
+    google-query: "inurl:'/sites/all/modules/advanced_forum/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/advanced_forum/advanced_forum.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'advanced_forum'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.6')
+         - compare_versions(version, '7.x-2.5')
+         - compare_versions(version, '7.x-2.4')
+         - compare_versions(version, '7.x-2.3')
+         - compare_versions(version, '7.x-2.2')
+         - compare_versions(version, '7.x-2.1')
+         - compare_versions(version, '7.x-2.0')

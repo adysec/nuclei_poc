@@ -1,0 +1,57 @@
+id: formidable-f4febb50a699892fc96b7d31d18a66d2
+
+info:
+  name: "Formidable Forms <= 5.5.4 - Authenticated (Admin+) Server-Side Request Forgery"
+  author: topscoder
+  severity: medium
+  description: "The Formidable Form Builder plugin for WordPress is vulnerable to Server-Side Request Forgery in versions up to, and including, 5.5.4 due to insufficient URL restrictions on the 'plugin' parameter passed to the the install_addon function. This makes it possible for authenticated users, with administrative privileges, to make web requests to arbitrary locations originating from the web application and can be used to query and modify information from internal services."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset/2834540/formidable/tags/5.5.5/classes/helpers/FrmAppHelper.php
+    - https://plugins.trac.wordpress.org/changeset/2834540/formidable/tags/5.5.5/classes/controllers/FrmAddonsController.php
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 4.7
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/formidable/"
+    google-query: inurl:"/wp-content/plugins/formidable/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,formidable,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/formidable/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "formidable"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.5.4')

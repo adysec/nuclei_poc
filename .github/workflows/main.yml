@@ -1,0 +1,73 @@
+name: Daily Update Nuclei POCs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */2 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache Rust dependencies & clone-templates
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+          clone-templates
+        key: ${{ runner.os }}-cargo-nuclei-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('repo.csv') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-nuclei-
+
+    - name: 0 Build Release
+      run: cargo build --release
+
+    - name: 1 Clone Repos
+      run: cargo run --bin 1_clone_repos --release
+
+    - name: 2 Delete Duplicated
+      run: cargo run --bin 2_delete_duplicated --release
+        
+    - name: 3 Move File
+      run: cargo run --bin 3_move_file --release
+      
+    - name: 4 Download Nuclei
+      run: cargo run --bin 4_download_nuclei --release
+
+    - name: 5 Check POC
+      run: cargo run --bin 5_check_poc --release
+      
+    - name: 6 Get Count
+      run: cargo run --bin 6_get_count --release
+      
+    - name: 7 Generate POC Index (poc_index.json + poc.txt)
+      run: cargo run --bin 7_get_pocname --release
+
+    - name: 8 Tier 1 → Baseline Filter (→ poc_baseline)
+      run: cargo run --bin 8_dedup_high_quality --release
+
+    - name: 9 Tier 2 → Advanced Dedup (→ poc_high_quality)
+      run: cargo run --bin 9_dedup_advanced --release -- --src-dir poc --dst-dir poc_high_quality --threshold 70
+
+    - name: 10 Clean Dir
+      run: |
+        rm -rf nuclei
+        rm -rf target/
+      
+    - name: Commit and Push changes
+      run: |
+        echo $(date +'%Y%m%d%H') > date.txt
+        git config --local user.email "admin@adysec.com"
+        git config --local user.name "adysec"
+        git add poc/ poc.txt poc_index.json poc_summary.json poc_high_quality/ date.txt
+        git commit -am "$(date +'%Y%m%d')" || echo "No changes to commit"
+        git push -v --progress

@@ -1,0 +1,98 @@
+id: php-config-backup-exposure
+
+info:
+  name: PHP Configuration Backup File Exposure
+  author: geeknik
+  severity: high
+  description: |
+    Detects exposed PHP configuration backup files that may contain
+    database credentials, API keys, and other sensitive configuration data.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/
+  tags: config,backup,php,exposure
+
+requests:
+  - method: GET
+    path:
+      # Common PHP config backup patterns
+      - "{{BaseURL}}/config.php.bak"
+      - "{{BaseURL}}/config.php.old"
+      - "{{BaseURL}}/config.php.backup"
+      - "{{BaseURL}}/config.php~"
+      - "{{BaseURL}}/config.inc.php.bak"
+      - "{{BaseURL}}/config.inc.php.old"
+      - "{{BaseURL}}/config.inc.php.backup"
+      - "{{BaseURL}}/configuration.php.bak"
+      - "{{BaseURL}}/wp-config.php.bak"
+      - "{{BaseURL}}/wp-config.php.old"
+      - "{{BaseURL}}/database.php.bak"
+      - "{{BaseURL}}/db.php.bak"
+      - "{{BaseURL}}/settings.php.bak"
+      - "{{BaseURL}}/.config.php.swp"
+      - "{{BaseURL}}/.config.inc.php.swp"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      # Must contain PHP code
+      - type: word
+        words:
+          - "<?php"
+          - "$"
+        condition: and
+
+      # Must contain actual configuration data - using word matching to avoid regex issues
+      - type: word
+        words:
+          - "$db_password"
+          - "$database_password"
+          - "$db_pass"
+          - "$mysql_password"
+          - "$DB_PASSWORD"
+          - "DB_PASSWORD"
+          - "$api_key"
+          - "$API_KEY"
+          - "$secret_key"
+          - "define("
+        condition: or
+
+      # Must have assignment operators
+      - type: word
+        words:
+          - "="
+          - "=>"
+
+      # Exclude empty configs and placeholders
+      - type: word
+        words:
+          - "your_password_here"
+          - "changeme"
+          - "xxxxxx"
+          - "TODO"
+          - "PLACEHOLDER"
+        negative: true
+
+      # Not an HTML error page
+      - type: word
+        part: header
+        words:
+          - "text/html"
+        negative: true
+
+      # Reasonable file size
+      - type: dsl
+        dsl:
+          - "len(body) > 100 && len(body) < 524288"
+
+    extractors:
+      - type: regex
+        name: credentials
+        regex:
+          - 'password.{0,5}=.{0,5}["\''](.+?)["\'']'
+          - 'DB_PASSWORD.{0,5},.{0,5}["\''](.+?)["\'']'
+          - 'api_key.{0,5}=.{0,5}["\'']([a-zA-Z0-9_\-]{20,})["\'']'
+        group: 1

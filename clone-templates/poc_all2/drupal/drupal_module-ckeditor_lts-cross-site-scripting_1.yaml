@@ -1,0 +1,53 @@
+
+id: drupal_module-ckeditor_lts-cross-site-scripting
+info:
+  name: drupal_module-ckeditor_lts-cross-site-scripting
+  author: me
+  severity: medium
+  description: "The CKEditor 4 LTS - WYSIWYG HTML editor module uses the CKEditor library for WYSIWYG editing. CKEditor has released a security update that on certain configurations may impact the Drupal module that bundles and integrates this code. The vulnerability is mitigated by the fact it requires:  full-page editing mode is enabled or CDATA elements in Advanced Content Filtering configuration (defaults to script and style elements) are enabled. An attacker must have a permission with access to the CKEditor instance.  For more information, see CKEditors security advisory: CVE-2024-24815: Cross-site scripting (XSS) vulnerability caused by incorrect CDATA detection"
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-009
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Uncommon"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/ckeditor_lts/"
+    google-query: "inurl:'/sites/all/modules/ckeditor_lts/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/ckeditor_lts/ckeditor_lts.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'ckeditor_lts'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '>=1.0.0 <= 1.0.1')

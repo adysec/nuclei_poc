@@ -1,0 +1,59 @@
+id: woocommerce_gateway_eway-b6bff35f-f881-4c60-9611-4a04727bac36
+
+info:
+  name: >
+    WooCommerce Eway Gateway <= 3.5.0 - Insecure Direct Object Reference
+  author: topscoder
+  severity: medium
+  description: >
+    The WooCommerce Eway Gateway plugin for WordPress is vulnerable to insecure direct object reference in versions up to, and including, 3.5.0. This is due to insufficient validation on the 'order' user-controlled key. This ensures that subscriptions are paid for by the subscriber as opposed to another user.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b6bff35f-f881-4c60-9611-4a04727bac36?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-gateway-eway/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-gateway-eway/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-gateway-eway/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-gateway-eway,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-gateway-eway/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-gateway-eway"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.5.0')

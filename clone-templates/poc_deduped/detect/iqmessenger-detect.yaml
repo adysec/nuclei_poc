@@ -1,0 +1,59 @@
+id: iqmessenger-detect
+
+info:
+  name: IQ Messenger - Panel
+  author: darses
+  severity: info
+  description: |
+    IQ Messenger was detected.
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: iq_messenger
+    shodan-query:
+      - http.favicon.hash:1033082340
+      - title:"IQ Messenger"
+    fofa-query:
+      - icon_hash="-1987558539"
+      - icon_hash="-1021409057"
+      - title="IQ Messenger"
+  reference:
+    - https://iqmessenger.com/
+  tags: detect,panel,iqmessenger
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/ui"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        internal: true
+        status:
+          - 200
+
+      - type: word
+        part: body
+        internal: true
+        words:
+          - "<iqm-root>"
+
+    extractors:
+      - type: regex
+        name: stylesheet_filename
+        internal: true
+        part: body
+        regex:
+          - 'href="(styles\.\w+\.css)"'
+        group: 1
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/ui/{{stylesheet_filename}}"
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - last_modified

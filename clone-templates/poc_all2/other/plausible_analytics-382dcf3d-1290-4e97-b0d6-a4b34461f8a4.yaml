@@ -1,0 +1,59 @@
+id: plausible_analytics-382dcf3d-1290-4e97-b0d6-a4b34461f8a4
+
+info:
+  name: >
+    Plausible Analytics <= 1.2.3 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Plausible Analytics plugin is vulnerable to unauthorized setting changes in versions up to, and including, 1.2.3 due to an improperly configured capability and nonce check on the save_admin_settings() function. This could be exploited by any authenticated user, including those with minimal capabilities like subscribers.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/382dcf3d-1290-4e97-b0d6-a4b34461f8a4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/plausible-analytics/"
+    google-query: inurl:"/wp-content/plugins/plausible-analytics/"
+    shodan-query: 'http.html:"wp-content/plugins/plausible-analytics/"'
+  tags: cve,wordpress,wp-plugin,plausible-analytics,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/plausible-analytics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "plausible-analytics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.3')

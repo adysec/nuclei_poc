@@ -1,0 +1,59 @@
+id: wp_users_media-07a82335-d738-4c14-b385-04843f12e4ef
+
+info:
+  name: >
+    WP Users Media <= 4.2.3 - Cross-Site Request Forgery in wpusme_save_settings
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Users Media plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 4.2.3. This is due to missing or incorrect nonce validation on the wpusme_save_settings function. This makes it possible for unauthenticated attackers to modify plugin settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/07a82335-d738-4c14-b385-04843f12e4ef?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-users-media/"
+    google-query: inurl:"/wp-content/plugins/wp-users-media/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-users-media/"'
+  tags: cve,wordpress,wp-plugin,wp-users-media,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-users-media/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-users-media"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.2.3')

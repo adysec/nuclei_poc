@@ -1,0 +1,58 @@
+id: lazy-load-819db9a5bf7acd6096bdff345baa5fc4
+
+info:
+  name: "Lazy Load < 0.6.1 - Authenticated Stored Cross-Site Scripting"
+  author: topscoder
+  severity: high
+  description: "The Lazy Load plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘content’ parameter in versions before 0.6.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset/1457709/lazy-load
+    - https://klikki.fi/lazy-load-stored-xss/
+    - https://hackerone.com/reports/152416
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 7.4
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/lazy-load/"
+    google-query: inurl:"/wp-content/plugins/lazy-load/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,lazy-load,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/lazy-load/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "lazy-load"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.6.1')

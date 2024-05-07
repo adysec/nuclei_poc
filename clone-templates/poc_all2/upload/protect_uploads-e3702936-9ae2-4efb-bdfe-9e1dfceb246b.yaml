@@ -1,0 +1,59 @@
+id: protect_uploads-e3702936-9ae2-4efb-bdfe-9e1dfceb246b
+
+info:
+  name: >
+    Protect uploads <= 0.3 - Authorization Bypass
+  author: topscoder
+  severity: medium
+  description: >
+    The Protect uploads plugin for WordPress failed to use a capability check and leaked the nonce necessary to save changes in the protect-uploads-admin-settings-page.php file. This meant that attackers able to successfully load this file in the context of WordPress, such as through a separate local file inclusion vulnerability, could save changes to the plugin settings. Note that while the file did allow direct access, this was not sufficient to obtain sensitive information or make changes on its own.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e3702936-9ae2-4efb-bdfe-9e1dfceb246b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 4.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/protect-uploads/"
+    google-query: inurl:"/wp-content/plugins/protect-uploads/"
+    shodan-query: 'http.html:"wp-content/plugins/protect-uploads/"'
+  tags: cve,wordpress,wp-plugin,protect-uploads,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/protect-uploads/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "protect-uploads"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.3')

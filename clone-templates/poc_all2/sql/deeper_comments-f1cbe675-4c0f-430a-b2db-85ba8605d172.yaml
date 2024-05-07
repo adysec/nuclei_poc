@@ -1,0 +1,59 @@
+id: deeper_comments-f1cbe675-4c0f-430a-b2db-85ba8605d172
+
+info:
+  name: >
+    Deeper Comments <= 2.1.1 - Missing Authorization to Authenticated(Subscriber+) Arbitrary Options Update
+  author: topscoder
+  severity: low
+  description: >
+    The Deeper Comments plugin for WordPress is vulnerable to unauthorized modification of data due to a missing capability check on the update_options function in versions up to, and including, 2.1.1. This makes it possible for authenticated attackers with subscriber access and above, to modify arbitrary site options.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f1cbe675-4c0f-430a-b2db-85ba8605d172?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/deeper-comments/"
+    google-query: inurl:"/wp-content/plugins/deeper-comments/"
+    shodan-query: 'http.html:"wp-content/plugins/deeper-comments/"'
+  tags: cve,wordpress,wp-plugin,deeper-comments,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/deeper-comments/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "deeper-comments"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.1')

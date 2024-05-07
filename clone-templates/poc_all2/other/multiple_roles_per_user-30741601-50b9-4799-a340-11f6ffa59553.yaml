@@ -1,0 +1,51 @@
+id: multiple_roles_per_user-30741601-50b9-4799-a340-11f6ffa59553
+
+info:
+  name: >
+    Multiple Roles per User <= 1.0 - Missing Authorization to Authenticated (Custom+) Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/30741601-50b9-4799-a340-11f6ffa59553?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/multiple-roles-per-user/"
+    google-query: inurl:"/wp-content/plugins/multiple-roles-per-user/"
+    shodan-query: 'http.html:"wp-content/plugins/multiple-roles-per-user/"'
+  tags: cve,wordpress,wp-plugin,multiple-roles-per-user,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/multiple-roles-per-user/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "multiple-roles-per-user"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

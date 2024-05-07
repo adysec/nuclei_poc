@@ -1,0 +1,51 @@
+
+id: drupal_module-yandex_metrics-cross-site-scripting
+info:
+  name: drupal_module-yandex_metrics-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "The Yandex.Metrics module allows you to look for key indicators of your site effectiveness. The module doesnt sufficiently let users know a setting page should not be given to untrusted users. This vulnerability is mitigated by the fact that an attacker must have a role with the permission administer Yandex.Metrics settings.  Edited October 19, 2017 to add a note about checking permissions."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-078
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/yandex_metrics/"
+    google-query: "inurl:'/sites/all/modules/yandex_metrics/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/yandex_metrics/yandex_metrics.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'yandex_metrics'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-3.0')

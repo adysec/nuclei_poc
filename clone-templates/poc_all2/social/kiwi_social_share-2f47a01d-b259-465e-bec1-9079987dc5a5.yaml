@@ -1,0 +1,59 @@
+id: kiwi_social_share-2f47a01d-b259-465e-bec1-9079987dc5a5
+
+info:
+  name: >
+    Kiwi Social Share <= 2.0.10 - Arbitrary Options Update
+  author: topscoder
+  severity: critical
+  description: >
+    The Kiwi Social Share plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the kiwi_social_share_get_option() function called via the kiwi_social_share_get_option AJAX action in versions up to, and including, 2.0.10. This makes it possible for unauthenticated attackers to read and modify arbitrary options on a WordPress site that can be used for complete site takeover.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2f47a01d-b259-465e-bec1-9079987dc5a5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/kiwi-social-share/"
+    google-query: inurl:"/wp-content/plugins/kiwi-social-share/"
+    shodan-query: 'http.html:"wp-content/plugins/kiwi-social-share/"'
+  tags: cve,wordpress,wp-plugin,kiwi-social-share,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/kiwi-social-share/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kiwi-social-share"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.10')

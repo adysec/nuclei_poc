@@ -1,0 +1,59 @@
+id: wordfence-fdfa2336-dda2-4945-9278-1a85f8b5f88b
+
+info:
+  name: >
+    Wordfence <= 5.2.3 - Stored Cross-Site Scripting via REQUEST_URI
+  author: topscoder
+  severity: high
+  description: >
+    The Wordfence plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the '$_SERVER['REQUEST_URI']' parameters in versions up to, and including, 5.2.3 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fdfa2336-dda2-4945-9278-1a85f8b5f88b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wordfence/"
+    google-query: inurl:"/wp-content/plugins/wordfence/"
+    shodan-query: 'http.html:"wp-content/plugins/wordfence/"'
+  tags: cve,wordpress,wp-plugin,wordfence,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordfence/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordfence"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.2.3')

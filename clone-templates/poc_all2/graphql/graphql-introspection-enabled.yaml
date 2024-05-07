@@ -1,0 +1,42 @@
+# gap: graphql-introspection-enabled
+id: graphql-introspection-enabled
+
+info:
+  name: GraphQL Introspection Enabled
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects GraphQL endpoints that respond to introspection queries, leaking the
+    full schema including all types, queries, and mutations. Introspection should
+    be disabled in production as it aids attacker reconnaissance significantly.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/pentesting-web/graphql.html
+  tags: custom,graphql,exposure,misconfiguration
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/graphql/v1"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/api/v1/graphql"
+      - "{{BaseURL}}/query"
+      - "{{BaseURL}}/gql"
+      - "{{BaseURL}}/graphiql"
+      - "{{BaseURL}}/playground"
+    stop-at-first-match: true
+    headers:
+      Content-Type: application/json
+    body: '{"query":"{__schema{types{name}}}"}'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "__schema"
+          - "types"
+        condition: and

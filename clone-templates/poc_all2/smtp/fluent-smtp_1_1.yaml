@@ -1,0 +1,49 @@
+id: wordpress-fluent-smtp
+
+info:
+  name: FluentSMTP – WP SMTP Plugin with Amazon SES, SendGrid, MailGun, Postmark, Google and Any SMTP Provider Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/fluent-smtp/
+  metadata:
+    plugin_namespace: fluent-smtp
+    wpscan: https://wpscan.com/plugin/fluent-smtp
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fluent-smtp/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/fluent-smtp.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502207ee00c8a2089e820be804347cfe14de5b9d31b2b5d8e77acae6631b7695450f2022100c9afcf2ac16890a8c7481fc74f331583a7cf785a916527a55cfbbe3a5b73a344:922c64590222798bb761d5b6d8e72950

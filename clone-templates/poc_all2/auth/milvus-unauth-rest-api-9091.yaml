@@ -1,0 +1,82 @@
+# gap: milvus-unauth-rest-api-9091
+id: milvus-unauth-rest-api-9091
+
+info:
+  name: Milvus Unauthenticated REST API on Metrics Port 9091 (CVE-2026-26190)
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects Milvus vector-database instances exposing the management
+    REST API on the metrics port (default 9091) without authentication.
+    The vulnerability (CVE-2026-26190 / GHSA-7ppg-37fh-vcr6, published
+    2026-02-11, CVSS 9.8) is rooted in `registerHTTPServer()` at
+    `internal/distributed/proxy/service.go:170` registering business
+    handlers on the metrics listener without auth middleware — so even
+    when authentication is correctly enabled on the primary port,
+    `:9091/api/v1/*` remains anonymously reachable.
+
+    The probe sends GET `/api/v1/credential/users` and matches the
+    canonical response envelope
+    `{"status":{},"usernames":["root", …]}` (Content-Type
+    application/json). A positive match leaks the full username roster
+    — `root` is always present alongside attacker-created principals —
+    and confirms anonymous reach to the broader `/api/v1/*` surface
+    (collection / partition / dml / dql / control endpoints), which
+    bypasses authentication of the cluster's data plane and exposes
+    secrets / credentials via the credential APIs. Class detection —
+    keys on the Milvus credential-users response shape, not vendor
+    banner. Complements upstream `milvus-detect` (root-path
+    fingerprint).
+
+    Target the Milvus metrics port directly, e.g.
+    `nuclei -u http://target.example.com:9091 -t
+    templates/exposures/milvus-unauth-rest-api-9091.yaml`.
+
+    Affected: Milvus < 2.5.27 AND 2.6.0 ≤ version ≤ 2.6.9. Versions
+    above this range may have patched the auth middleware on the
+    metrics port; the response-shape matcher still survives because
+    the JSON envelope is the canonical Milvus credential-users
+    response.
+  reference:
+    - https://github.com/milvus-io/milvus/security/advisories/GHSA-7ppg-37fh-vcr6
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-26190
+  tags: custom,exposures,milvus,vector-db,ai,cve-2026-26190,disclosure,cwe-306
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/credential/users"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"usernames"'
+      - type: regex
+        part: body
+        regex:
+          - '"status"\s*:\s*\{\s*\}'
+      - type: word
+        part: body
+        words:
+          - '"root"'
+
+    extractors:
+      - type: regex
+        part: body
+        name: usernames
+        regex:
+          - '"usernames"\s*:\s*\[([^\]]+)\]'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

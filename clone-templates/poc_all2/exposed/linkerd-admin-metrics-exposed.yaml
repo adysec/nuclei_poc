@@ -1,0 +1,62 @@
+# gap: linkerd-admin-metrics-exposed
+id: linkerd-admin-metrics-exposed
+
+info:
+  name: Linkerd Dataplane Proxy Admin Metrics Exposed (port 4191)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed Linkerd proxy admin endpoint by probing /metrics
+    and matching Prometheus-formatted metric names with the canonical
+    `linkerd_proxy_` / `linkerd_destination_` prefixes. The Linkerd
+    dataplane proxy binds its admin server to :4191 by default; on
+    cluster meshes where the pod is reachable from outside the mesh
+    (NodePort, LB misroute, host-network deployment), unauthenticated
+    /metrics scraping leaks request URIs, downstream identities,
+    TLS-binding peer identities, and traffic-split decisions — recon
+    for a cluster-internal attacker and credential disclosure of
+    service-account identities. Complements upstream `linkerd-panel`
+    (HTML title fingerprint) by detecting the dataplane admin port
+    rather than the web console. Class detection — matches stable
+    Prometheus metric prefix, not vendor version.
+  reference:
+    - https://linkerd.io/2/reference/proxy-metrics/
+    - https://linkerd.io/2/reference/architecture/
+  tags: custom,exposures,linkerd,servicemesh,observability,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/metrics"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+      - type: word
+        part: body
+        words:
+          - "linkerd_proxy_"
+          - "linkerd_destination_"
+        condition: or
+      # Guard: must be Prometheus-format (TYPE/HELP markers) to avoid
+      # false-positive on generic text/plain endpoints.
+      - type: word
+        part: body
+        words:
+          - "# HELP"
+          - "# TYPE"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: linkerd-version
+        regex:
+          - 'linkerd_build_info\{[^}]*version="([^"]+)"'
+        group: 1

@@ -1,0 +1,59 @@
+id: jetpack-d8616189-5ab8-4db0-ab9e-768cc738aeb6
+
+info:
+  name: >
+    Jetpack <= 3.5.2 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Jetpack plugin for WordPress, in versions up to 3.5.2, is vulnerable to DOM based Cross-Site Scripting via the file genericons/example.html. This vulnerability allowed unauthenticated users to execute JavaScript in a visitor's browser provided they were able to trick them into clicking on a carefully crafted link. Executing JavaScript in an administrative user was possible if the victim was logged on to the affected site as an administrator.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d8616189-5ab8-4db0-ab9e-768cc738aeb6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/jetpack/"
+    google-query: inurl:"/wp-content/plugins/jetpack/"
+    shodan-query: 'http.html:"wp-content/plugins/jetpack/"'
+  tags: cve,wordpress,wp-plugin,jetpack,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jetpack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jetpack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.5.2')

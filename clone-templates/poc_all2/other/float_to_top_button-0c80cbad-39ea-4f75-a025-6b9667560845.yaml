@@ -1,0 +1,59 @@
+id: float_to_top_button-0c80cbad-39ea-4f75-a025-6b9667560845
+
+info:
+  name: >
+    Float to Top Button <= 2.3.6 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Float to Top Button plugin for WordPress is vulnerable to Stored Cross-Site Scripting via several parameters such as 'arrow_img_url' in versions up to, and including, 2.3.6 due to insufficient input sanitization and output escaping that makes attribute based XSS possible. This makes it possible for authenticated attackers with administrative level permissions and above to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0c80cbad-39ea-4f75-a025-6b9667560845?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/float-to-top-button/"
+    google-query: inurl:"/wp-content/plugins/float-to-top-button/"
+    shodan-query: 'http.html:"wp-content/plugins/float-to-top-button/"'
+  tags: cve,wordpress,wp-plugin,float-to-top-button,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/float-to-top-button/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "float-to-top-button"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3.6')

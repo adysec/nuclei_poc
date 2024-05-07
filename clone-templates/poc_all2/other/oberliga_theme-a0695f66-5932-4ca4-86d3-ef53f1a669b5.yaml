@@ -1,0 +1,59 @@
+id: oberliga_theme-a0695f66-5932-4ca4-86d3-ef53f1a669b5
+
+info:
+  name: >
+    Oberliga Theme (All Versions) - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Oberliga Theme for WordPress is vulnerable to generic SQL Injection via the ‘team’ parameter in all versions due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a0695f66-5932-4ca4-86d3-ef53f1a669b5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/oberliga_theme/"
+    google-query: inurl:"/wp-content/themes/oberliga_theme/"
+    shodan-query: 'http.html:"wp-content/themes/oberliga_theme/"'
+  tags: cve,wordpress,wp-theme,oberliga_theme,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/oberliga_theme/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "oberliga_theme"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

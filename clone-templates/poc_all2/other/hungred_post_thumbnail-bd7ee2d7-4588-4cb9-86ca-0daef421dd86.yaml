@@ -1,0 +1,59 @@
+id: hungred_post_thumbnail-bd7ee2d7-4588-4cb9-86ca-0daef421dd86
+
+info:
+  name: >
+    Hungred Post Thumbnail <= 2.1.9 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Hungred Post Thumbnail plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the hpt_file_upload.php file in versions up to, and including, 2.1.9. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bd7ee2d7-4588-4cb9-86ca-0daef421dd86?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/hungred-post-thumbnail/"
+    google-query: inurl:"/wp-content/plugins/hungred-post-thumbnail/"
+    shodan-query: 'http.html:"wp-content/plugins/hungred-post-thumbnail/"'
+  tags: cve,wordpress,wp-plugin,hungred-post-thumbnail,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hungred-post-thumbnail/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "hungred-post-thumbnail"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.9')

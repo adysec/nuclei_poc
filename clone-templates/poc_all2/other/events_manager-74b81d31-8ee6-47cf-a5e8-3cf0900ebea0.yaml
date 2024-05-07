@@ -1,0 +1,59 @@
+id: events_manager-74b81d31-8ee6-47cf-a5e8-3cf0900ebea0
+
+info:
+  name: >
+    Events Manager < 5.9.7.2 & Events Manager Pro < 2.6.7.2 - Unauthenticated CSV Injection
+  author: topscoder
+  severity: high
+  description: >
+    The Events Manager Pro, versions up to 2.6.7.2, and Events Manager, versions up to 5.9.7.2, plugins for WordPress are vulnerable to CSV Injection. This allows unauthenticated attackers to embed untrusted input into exported CSV files, which can result in code execution when these files are downloaded and opened on a local system with a vulnerable configuration.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/74b81d31-8ee6-47cf-a5e8-3cf0900ebea0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/events-manager/"
+    google-query: inurl:"/wp-content/plugins/events-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/events-manager/"'
+  tags: cve,wordpress,wp-plugin,events-manager,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/events-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "events-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.9.7.2')

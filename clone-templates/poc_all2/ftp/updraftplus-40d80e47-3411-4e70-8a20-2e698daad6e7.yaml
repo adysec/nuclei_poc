@@ -1,0 +1,59 @@
+id: updraftplus-40d80e47-3411-4e70-8a20-2e698daad6e7
+
+info:
+  name: >
+    UpdraftPlus < 1.16.59 - Authenticated (Admin+) Local File Inclusion
+  author: topscoder
+  severity: low
+  description: >
+    The UpdraftPlus plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 1.16.56 via the updraft_service settings. This makes it possible for authenticated attackers, with administrator-level permissions and above, to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/40d80e47-3411-4e70-8a20-2e698daad6e7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/updraftplus/"
+    google-query: inurl:"/wp-content/plugins/updraftplus/"
+    shodan-query: 'http.html:"wp-content/plugins/updraftplus/"'
+  tags: cve,wordpress,wp-plugin,updraftplus,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/updraftplus/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "updraftplus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.16.56')

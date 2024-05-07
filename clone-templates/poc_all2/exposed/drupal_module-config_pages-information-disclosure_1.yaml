@@ -1,0 +1,59 @@
+
+id: drupal_module-config_pages-information-disclosure
+info:
+  name: drupal_module-config_pages-information-disclosure
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to build administrative pages for managing configuration objects, which may then be used elsewhere in the site. The module doesnt sufficiently validate access when the JSONAPI module is also installed. This vulnerability is mitigated by the fact that it only affects sites when the JSONAPI module is installed."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-037
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "information-disclosure"
+    fofa-query: "/sites/all/modules/config_pages/"
+    google-query: "inurl:'/sites/all/modules/config_pages/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/config_pages/config_pages.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'config_pages'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-2.8')
+         - compare_versions(version, '8.x-2.7')
+         - compare_versions(version, '8.x-2.6')
+         - compare_versions(version, '8.x-2.5')
+         - compare_versions(version, '8.x-2.4')
+         - compare_versions(version, '8.x-2.3')
+         - compare_versions(version, '8.x-2.2')
+         - compare_versions(version, '8.x-2.1')
+         - compare_versions(version, '8.x-2.0')

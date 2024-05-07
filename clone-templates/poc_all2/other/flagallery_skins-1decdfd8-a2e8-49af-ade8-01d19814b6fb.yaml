@@ -1,0 +1,59 @@
+id: flagallery_skins-1decdfd8-a2e8-49af-ade8-01d19814b6fb
+
+info:
+  name: >
+    Flagallery-skins <= 1.1.5 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Flagallery-skins plugin for WordPress is vulnerable to generic SQL Injection via the ‘playlist’ parameter in all versions due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1decdfd8-a2e8-49af-ade8-01d19814b6fb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/flagallery-skins/"
+    google-query: inurl:"/wp-content/plugins/flagallery-skins/"
+    shodan-query: 'http.html:"wp-content/plugins/flagallery-skins/"'
+  tags: cve,wordpress,wp-plugin,flagallery-skins,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/flagallery-skins/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "flagallery-skins"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.5')

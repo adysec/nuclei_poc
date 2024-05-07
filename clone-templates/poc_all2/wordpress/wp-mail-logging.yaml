@@ -1,0 +1,58 @@
+id: wp-mail-logging
+
+info:
+  name: "WP Mail Logging < 1.10.0 - Unauthenticated Arbitrary Settings Change"
+  author: topscoder
+  severity: medium
+  description: "The WP Mail Logging plugin for WordPress is vulnerable to arbitrary settings change in versions before 1.10.0. This is due to the plugin using an outdated version of the Redux Framework. This makes it possible for unauthenticated attackers to arbitrarily change some plugin settings."
+  reference:
+    - https://wpscan.com/vulnerability/66616623-0c80-4b95-a8de-5d7f8c6a57b3
+    - https://wordpress.org/plugins/wp-mail-logging/#developers
+    - https://plugins.trac.wordpress.org/changeset/2634396
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-mail-logging/"
+    google-query: inurl:"/wp-content/plugins/wp-mail-logging/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-mail-logging,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-mail-logging/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-mail-logging"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.10.0')

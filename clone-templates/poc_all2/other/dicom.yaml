@@ -1,0 +1,38 @@
+id: dicom-server-detect
+
+info:
+  name: DICOM Server Detection Multiport
+  author: r3dcl1ff
+  severity: high
+  description: |
+    DICOM detector sending A-ASSOCIATE-RQ (C-ECHO) to TCP 104/11112/4242;
+    flags only AC responses containing Application Context UID (1.2.840.10008.3.1.1.1).
+    Optional FINDSCU marker. Exposure of a DICOM server can be a critical vulnerability,
+    risking PHI leakage and unauthorized access.
+  tags: medical,dicom,exposure,miot
+
+variables:
+  require_word: ""   #optional set at runtime with: -var require_word=FINDSCU
+
+network:
+  - host:
+      - "{{Hostname}}:104"
+      - "{{Hostname}}:11112"
+      - "{{Hostname}}:4242"
+    inputs:
+
+      - type: hex
+        data: "0100000000e400010000414e592d5343502020202020202020204543484f534355202020202020202020000000000000000000000000000000000000000000000000000000000000000010000015312e322e3834302e31303030382e332e312e312e31200000450100000030000011312e322e3834302e31303030382e312e3140000011312e322e3834302e31303030382e312e3240000013312e322e3834302e31303030382e312e322e315000003a51000004000040005200001b312e322e3237362e302e373233303031302e332e302e332e362e325500000f4f464649535f44434d544b5f333632"
+    read-size: 4096
+
+    matchers-condition: and
+    matchers:
+      - type: binary
+        binary:
+          - "02000000"
+      - type: word
+        words:
+          - "1.2.840.10008.3.1.1.1"
+      - type: dsl
+        dsl:
+          - "len('{{require_word}}') == 0 || contains(response, '{{require_word}}')"

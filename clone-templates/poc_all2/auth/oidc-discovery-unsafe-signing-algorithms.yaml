@@ -1,0 +1,100 @@
+# gap: oidc-discovery-unsafe-signing-algorithms
+id: oidc-discovery-unsafe-signing-algorithms
+
+info:
+  name: OIDC Discovery - Unsafe Signing Algorithms Advertised
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an OpenID Connect provider whose
+    `/.well-known/openid-configuration` discovery document
+    advertises support for unsafe authentication or signing
+    primitives. The class is posture / self-disclosure rather
+    than active exploitation — the provider itself tells you
+    its hardening gaps:
+
+    - `id_token_signing_alg_values_supported` contains `"none"`
+      → unsigned ID tokens accepted (alg-none family — chain
+      with JWT alg-none attack)
+    - `id_token_signing_alg_values_supported` contains `"HS256"`
+      while the provider also advertises asymmetric keys via
+      `jwks_uri` → algorithm-confusion primitive (PortSwigger
+      Academy: attacker signs tokens with the published public
+      key as HS256 key)
+    - `token_endpoint_auth_methods_supported` contains `"none"`
+      → public clients can request tokens with no client auth
+    - `code_challenge_methods_supported` contains ONLY `"plain"`
+      → PKCE plaintext, no entropy for code-injection defence
+    - `request_object_signing_alg_values_supported` contains
+      `"none"` → unsigned request objects accepted (JAR family)
+
+    The matcher fires when ANY of these unsafe signals is found
+    inside a structurally-valid OIDC discovery JSON (presence
+    of `authorization_endpoint` + `issuer` is the sanity gate
+    to avoid firing on every random `application/json` response).
+
+    Differentiates from upstream's
+    `oauth-authorization-server-exposure` (presence-only).
+  reference:
+    - https://openid.net/specs/openid-connect-discovery-1_0.html
+    - https://portswigger.net/web-security/jwt/algorithm-confusion
+    - https://datatracker.ietf.org/doc/html/rfc9700
+  tags: custom,misconfig,oidc,oauth,jwt,discovery,cwe-327
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/openid-configuration"
+      - "{{BaseURL}}/.well-known/oauth-authorization-server"
+      - "{{BaseURL}}/auth/realms/master/.well-known/openid-configuration"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      # Confirm a real OIDC discovery doc
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+      - type: word
+        part: body
+        words:
+          - '"authorization_endpoint"'
+          - '"issuer"'
+        condition: and
+      # At least ONE unsafe signal must be present
+      - type: regex
+        part: body
+        regex:
+          - '"id_token_signing_alg_values_supported"\s*:\s*\[[^\]]*"none"'
+          - '"id_token_signing_alg_values_supported"\s*:\s*\[[^\]]*"HS256"'
+          - '"token_endpoint_auth_methods_supported"\s*:\s*\[[^\]]*"none"'
+          - '"code_challenge_methods_supported"\s*:\s*\[\s*"plain"\s*\]'
+          - '"request_object_signing_alg_values_supported"\s*:\s*\[[^\]]*"none"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: issuer
+        regex:
+          - '"issuer"\s*:\s*"([^"]{1,200})"'
+        group: 1
+      - type: regex
+        part: body
+        name: signing-algs
+        regex:
+          - '"id_token_signing_alg_values_supported"\s*:\s*\[([^\]]{1,400})\]'
+        group: 1
+      - type: regex
+        part: body
+        name: token-auth-methods
+        regex:
+          - '"token_endpoint_auth_methods_supported"\s*:\s*\[([^\]]{1,400})\]'
+        group: 1
+      - type: regex
+        part: body
+        name: pkce-methods
+        regex:
+          - '"code_challenge_methods_supported"\s*:\s*\[([^\]]{1,200})\]'
+        group: 1

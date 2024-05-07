@@ -1,0 +1,59 @@
+id: sticky_menu_or_anything_on_scroll-4625d217-99d4-47d8-b093-fe55a3018348
+
+info:
+  name: >
+    Sticky Menu & Sticky Header <= 2.20 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Sticky Menu & Sticky Header plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the tab parameter in versions up to, and including 2.20. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in administrative pages that execute if they can successfully trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4625d217-99d4-47d8-b093-fe55a3018348?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sticky-menu-or-anything-on-scroll/"
+    google-query: inurl:"/wp-content/plugins/sticky-menu-or-anything-on-scroll/"
+    shodan-query: 'http.html:"wp-content/plugins/sticky-menu-or-anything-on-scroll/"'
+  tags: cve,wordpress,wp-plugin,sticky-menu-or-anything-on-scroll,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sticky-menu-or-anything-on-scroll/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sticky-menu-or-anything-on-scroll"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.21')

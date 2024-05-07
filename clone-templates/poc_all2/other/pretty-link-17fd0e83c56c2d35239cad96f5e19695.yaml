@@ -1,0 +1,57 @@
+id: pretty-link-17fd0e83c56c2d35239cad96f5e19695
+
+info:
+  name: "Pretty Links <= 2.1.9 - Unauthenticated Stored Cross-Site Scripting via track_link"
+  author: topscoder
+  severity: high
+  description: "The Pretty Links plugin for WordPress is vulnerable to Stored Cross-Site Scripting via various IP headers as well as the referer header in versions up to, and including, 2.1.9 due to insufficient input sanitization and output escaping in the track_link function. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - https://blog.nintechnet.com/stored-xss-and-csv-injection-vulnerabilities-in-wordpress-shortlinks-by-pretty-links-plugin/
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&new=2108490%40pretty-link%2Ftrunk&old=2078274%40pretty-link%2Ftrunk&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/pretty-link/"
+    google-query: inurl:"/wp-content/plugins/pretty-link/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,pretty-link,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/pretty-link/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "pretty-link"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.1.10')

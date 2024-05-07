@@ -1,0 +1,59 @@
+id: wp_ultimate_csv_importer-d21bebcc-8dba-407d-8a3a-b91d3cddd38f
+
+info:
+  name: >
+    WP Ultimate CSV Importer  <= 6.4.0 - Arbitrary File Upload
+  author: topscoder
+  severity: high
+  description: >
+    The WP Ultimate CSV Importer plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the zip_upload AJAX call in versions up to, and including, 6.4.0. This makes it possible for subscriber-level attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d21bebcc-8dba-407d-8a3a-b91d3cddd38f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-ultimate-csv-importer/"
+    google-query: inurl:"/wp-content/plugins/wp-ultimate-csv-importer/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-ultimate-csv-importer/"'
+  tags: cve,wordpress,wp-plugin,wp-ultimate-csv-importer,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-ultimate-csv-importer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-ultimate-csv-importer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.4.0')

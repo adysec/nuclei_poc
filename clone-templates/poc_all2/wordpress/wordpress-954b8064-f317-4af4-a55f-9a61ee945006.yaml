@@ -1,0 +1,61 @@
+id: wordpress-954b8064-f317-4af4-a55f-9a61ee945006
+
+info:
+  name: >
+    WordPress Core < 5.9.2 & Gutenberg < 12.7.2 - Prototype Pollution via Block Editor
+  author: topscoder
+  severity: medium
+  description: >
+    WordPress Core in various versions < 5.9.2 and Gutenberg versions less than 12.7.2 are vulnerable to prototype pollution via the block editor which could make injecting malicious web scripts possible in some cases.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/954b8064-f317-4af4-a55f-9a61ee945006?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,medium,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 5.9', '<= 5.9.1')
+          - compare_versions(version_by_js, '>= 5.9', '<= 5.9.1')
+          - compare_versions(version_by_css, '>= 5.9', '<= 5.9.1')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

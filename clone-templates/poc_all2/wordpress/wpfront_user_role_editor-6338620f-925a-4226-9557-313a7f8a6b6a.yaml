@@ -1,0 +1,59 @@
+id: wpfront_user_role_editor-6338620f-925a-4226-9557-313a7f8a6b6a
+
+info:
+  name: >
+    WPFront User Role Editor < 3.2.1.11184 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WPFront User Role Editor plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘changes-saved’ parameter in versions before 3.2.1.11184 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6338620f-925a-4226-9557-313a7f8a6b6a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpfront-user-role-editor/"
+    google-query: inurl:"/wp-content/plugins/wpfront-user-role-editor/"
+    shodan-query: 'http.html:"wp-content/plugins/wpfront-user-role-editor/"'
+  tags: cve,wordpress,wp-plugin,wpfront-user-role-editor,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpfront-user-role-editor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpfront-user-role-editor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.2.1.11184')

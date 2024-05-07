@@ -1,0 +1,47 @@
+id: ecostruxure-link150-default-login
+
+info:
+  name: Schneider Electric EcoStruxure Link150 Default Login
+  author: Vincent Bouvier
+  severity: high
+  description: |
+    Schneider Electric EcoStruxure Link150 Ethernet Gateway with default administrator credentials discovered.
+  reference:
+    - https://www.se.com/uk/en/product-range/63423-ecostruxure-link150/#overview
+    - https://www.se.com/ww/en/product/TCSEGLA23F14F/ecostruxure-link150-application
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    max-request: 1
+    vendor: Schneider Electric
+    product: EcoStruxure Link 150
+    runzero-match: asset["hw_product"] matches `LINK150` || any(each(service["html.titles"]), {# matches `Schneider Electric`}) && any(each(service["vscan.technologies"]), {# matches `schneider-electric-ecostruxure`})
+  tags: default-login,schneider-electric,ecostruxure,link150,iot,runzero
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64('Administrator:Gateway')}}
+        Accept: */*
+
+    host-redirects: true
+    cookie-reuse: true
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "logout"
+          - "Logout"
+          - "dashboard"
+          - "Dashboard"
+          - "Link 150"
+          - "Link150"
+        condition: or

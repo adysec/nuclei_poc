@@ -1,0 +1,62 @@
+
+id: drupal_module-simple_oauth-access-bypass
+info:
+  name: drupal_module-simple_oauth-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to implement OAuth 2.0 authentication for Drupal. The module doesnt sufficiently verify client secret keys for confidential OAuth 2.0 clients when using certain grant types. The token refresh and client credentials grants are not affected. This vulnerability is mitigated by the fact that the vast majority of OAuth 2.0 clients in the wild are public, not confidential. Furthermore, all affected grant types still require users to authenticate to Drupal during the OAuth flow. The implicit grant type is insecure for other reasons (and still requires user authentication) and is disabled by default. Sites at risk of information disclosure would be specifically configured to restrict access based on the OAuth clients confidentiality status and configured scopes, not only traditional Drupal user permissions and roles. Further mitigation includes configuring allowed redirect URIs for clients. This is an OAuth best practice for guarding against man-in-the-middle attacks on authorization codes, and prevents redirection to imposter clients. Anyone implementing OAuth 2.0 on their Drupal site is also encouraged to review the relevant RFCs and Internet-Drafts pertaining to OAuth security."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-002
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/simple_oauth/"
+    google-query: "inurl:'/sites/all/modules/simple_oauth/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/simple_oauth/simple_oauth.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'simple_oauth'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '5.0.5')
+         - compare_versions(version, '5.0.4')
+         - compare_versions(version, '5.0.3')
+         - compare_versions(version, '5.0.2')
+         - compare_versions(version, '5.0.1')
+         - compare_versions(version, '5.0.0')
+         - compare_versions(version, '8.x-4.5')
+         - compare_versions(version, '8.x-4.4')
+         - compare_versions(version, '8.x-4.3')
+         - compare_versions(version, '8.x-4.2')
+         - compare_versions(version, '8.x-4.1')
+         - compare_versions(version, '8.x-4.0')

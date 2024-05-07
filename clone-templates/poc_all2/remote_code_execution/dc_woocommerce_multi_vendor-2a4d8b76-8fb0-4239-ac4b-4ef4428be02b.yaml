@@ -1,0 +1,59 @@
+id: dc_woocommerce_multi_vendor-2a4d8b76-8fb0-4239-ac4b-4ef4428be02b
+
+info:
+  name: >
+    Multivendor Marketplace Solution for WooCommerce – WC Marketplace <= 3.8.11.8 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Multivendor Marketplace Solution for WooCommerce plugin is vulnerable to Reflected Cross-Site Scripting via multiple unprotected AJAX actions in versions up to, and including, 3.8.11.8. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2a4d8b76-8fb0-4239-ac4b-4ef4428be02b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dc-woocommerce-multi-vendor/"
+    google-query: inurl:"/wp-content/plugins/dc-woocommerce-multi-vendor/"
+    shodan-query: 'http.html:"wp-content/plugins/dc-woocommerce-multi-vendor/"'
+  tags: cve,wordpress,wp-plugin,dc-woocommerce-multi-vendor,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dc-woocommerce-multi-vendor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dc-woocommerce-multi-vendor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.8.11.8')

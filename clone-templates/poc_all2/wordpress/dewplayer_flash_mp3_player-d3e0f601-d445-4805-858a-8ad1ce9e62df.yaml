@@ -1,0 +1,59 @@
+id: dewplayer_flash_mp3_player-d3e0f601-d445-4805-858a-8ad1ce9e62df
+
+info:
+  name: >
+    Dewplayer <= 1.2 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Dewplayer plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.2 due to insufficient input sanitization and output escaping on the XML file supplied via the xml parameter. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d3e0f601-d445-4805-858a-8ad1ce9e62df?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dewplayer-flash-mp3-player/"
+    google-query: inurl:"/wp-content/plugins/dewplayer-flash-mp3-player/"
+    shodan-query: 'http.html:"wp-content/plugins/dewplayer-flash-mp3-player/"'
+  tags: cve,wordpress,wp-plugin,dewplayer-flash-mp3-player,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dewplayer-flash-mp3-player/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dewplayer-flash-mp3-player"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2')

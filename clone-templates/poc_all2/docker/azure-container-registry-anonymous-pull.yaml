@@ -1,0 +1,40 @@
+# gap: azure-container-registry-anonymous-pull
+id: azure-container-registry-anonymous-pull
+
+info:
+  name: Azure Container Registry Anonymous Pull Enabled
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects Azure Container Registries configured with anonymous pull access enabled.
+    When anonymous pull is active, a GET to /v2/_catalog without credentials returns
+    HTTP 200 with a JSON body listing all repository names in the registry.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/azure-security/az-unauthenticated-enum-and-initial-entry/az-container-registry-unauth.md
+    - https://learn.microsoft.com/en-us/azure/container-registry/anonymous-pull-access
+  tags: custom,cloud,azure,acr,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v2/_catalog"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "repositories"
+
+    extractors:
+      - type: regex
+        part: body
+        name: repository-names
+        regex:
+          - '"([a-z0-9][a-z0-9._/-]*[a-z0-9])"'
+        group: 1
+      - type: dsl
+        dsl:
+          - '"ACR endpoint: " + host'

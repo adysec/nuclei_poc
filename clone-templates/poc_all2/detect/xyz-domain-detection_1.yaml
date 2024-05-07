@@ -1,0 +1,43 @@
+id: xyz-domains-detection
+
+info:
+  name: Embedded .XYZ Domains Scanner
+  author: sublimeow
+  severity: info
+  description: |
+    Detects any embedded .xyz domains in website content (HTML, JS, CSS)
+  tags: osint,xyz,domain-detection
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/js/"
+      - "{{BaseURL}}/assets/"
+      - "{{BaseURL}}/static/"
+      - "{{BaseURL}}/wp-content/"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "(?i)(https?:\\/\\/[^\\s'\"]+\\.xyz)"
+          - "(?i)(\\/\\/[^\\s'\"]+\\.xyz)"
+          - "(?i)[^a-zA-Z0-9]\\.xyz[^a-zA-Z0-9]"
+        condition: or
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: xyz-domains
+        group: 1
+        regex:
+          - "(?i)(?:https?:\\/\\/|\\/\\/)([a-zA-Z0-9-]+\\.xyz)"
+          - "[^a-zA-Z0-9]([a-zA-Z0-9-]+\\.xyz)[^a-zA-Z0-9]"

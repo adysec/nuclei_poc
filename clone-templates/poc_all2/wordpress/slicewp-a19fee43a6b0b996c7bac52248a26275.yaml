@@ -1,0 +1,58 @@
+id: slicewp-a19fee43a6b0b996c7bac52248a26275
+
+info:
+  name: "WordPress Affiliates Plugin — SliceWP Affiliates <= 1.0.45 - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The WordPress Affiliates Plugin — SliceWP Affiliates for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘converted’ parameter in versions up to, and including, 1.0.45 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://ithemes.com/blog/wordpress-vulnerability-report-august-2021-part-3/
+    - https://wpscan.com/vulnerability/9d9b5ca8-72e2-409a-ac6d-543f6f3e7920
+    - https://plugins.trac.wordpress.org/changeset/2579650
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/slicewp/"
+    google-query: inurl:"/wp-content/plugins/slicewp/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,slicewp,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/slicewp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "slicewp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.45')

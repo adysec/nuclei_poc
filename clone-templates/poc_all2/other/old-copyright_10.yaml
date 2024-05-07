@@ -1,0 +1,59 @@
+id: old-copyright
+
+info:
+  name: Find pages with old copyright dates
+  author: geeknik
+  severity: info
+  tags: misc
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 3
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      # Exclude pages that show recent years (2023, 2024, 2025, 2026)
+      - type: word
+        words:
+          - '2023'
+          - '2024'
+          - '2025'
+          - '2026'
+        part: body
+        negative: true
+        condition: or
+      # Must contain a clearly outdated copyright year (pre-2021)
+      - type: regex
+        part: body
+        condition: or
+        regex:
+          - 'Copyright 1(9|0)\d{2}'
+          - 'Copyright 200\d'
+          - 'Copyright 201\d'
+          - 'Copyright 2020'
+          - 'Copyright 2021'
+          - 'Copyright 2022'
+          - '© 1(9|0)\d{2}'
+          - '© 200\d'
+          - '© 201\d'
+          - '© 2020'
+          - '© 2021'
+          - '© 2022'
+          - '&copy; 1(9|0)\d{2}'
+          - '&copy; 200\d'
+          - '&copy; 201\d'
+          - '&copy; 2020'
+          - '&copy; 2021'
+          - '&copy; 2022'
+    extractors:
+      - type: regex
+        part: body
+        name: copyright_year
+        regex:
+          - '(?:Copyright|©|&copy;|&#169;)\s+\d{4}'

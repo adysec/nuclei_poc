@@ -1,0 +1,55 @@
+
+id: drupal_module-domain_group-access-bypass
+info:
+  name: drupal_module-domain_group-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables sites to define a domain from Domain Access that points directly to a group page. The module doesnt sufficiently manage the access to content administrative paths allowing an attacker to see and take actions on content (nodes) they should be allowed to."
+  reference:
+    - https://www.drupal.org/sa-contrib-2021-037
+  metadata:
+    security-risk: "Critical 18∕25 AC:None/A:None/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/domain_group/"
+    google-query: "inurl:'/sites/all/modules/domain_group/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/domain_group/domain_group.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'domain_group'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '2.0.0')
+         - compare_versions(version, '8.x-1.03')
+         - compare_versions(version, '8.x-1.02')
+         - compare_versions(version, '8.x-1.01')
+         - compare_versions(version, '8.x-1.0')

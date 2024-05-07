@@ -1,0 +1,61 @@
+id: wordpress-6300c8c2-f539-46b2-9ee0-80bebbe4cad3
+
+info:
+  name: >
+    WordPress Core < 6.2.1 - Shortcode Execution in User Generated Content
+  author: topscoder
+  severity: medium
+  description: >
+    WordPress Core processes shortcodes in user-generated content on block themes in versions up to, and including, 6.2. This could allow unauthenticated attackers to execute shortcodes via submitting comments or other content, allowing them to exploit vulnerabilities that typically require Subscriber or Contributor-level permissions. While this is likely to have minimal impact on its own, it can significantly increase the severity of other vulnerabilities.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6300c8c2-f539-46b2-9ee0-80bebbe4cad3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,medium,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.2', '< 6.2.1')
+          - compare_versions(version_by_js, '>= 6.2', '< 6.2.1')
+          - compare_versions(version_by_css, '>= 6.2', '< 6.2.1')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

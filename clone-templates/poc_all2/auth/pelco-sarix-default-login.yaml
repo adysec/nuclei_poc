@@ -1,0 +1,72 @@
+id: pelco-sarix-default-login-digest
+
+info:
+  name: Pelco Sarix - Default Login
+  author: tdiderich
+  severity: high
+  description: |
+    Pelco Sarix camera default login credentials (admin/admin) were discovered using Digest Authentication.
+  reference:
+    - https://support.pelco.com/s/article/Default-passwords-and-usernames-for-Digital-Sentry-DX-Endura-Sarix-and-VideoXpert-components-1538586718306?language=en_US
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: pelco
+    product: sarix
+    runzero-match: asset["hw"] matches "(i)Pelco Sarix"
+  tags: pelco,sarix,default-login
+
+http:
+  - raw:
+      - |
+        GET /cgi-bin/get?system.access_level HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 401
+      - type: word
+        words:
+          - "WWW-Authenticate: Digest"
+        part: header
+
+    extractors:
+      - type: regex
+        name: realm
+        part: header
+        group: 1
+        regex:
+          - 'realm="([^"]+)"'
+      - type: regex
+        name: nonce
+        part: header
+        group: 1
+        regex:
+          - 'nonce="([^"]+)"'
+      - type: regex
+        name: qop
+        part: header
+        group: 1
+        regex:
+          - 'qop="([^"]+)"'
+
+  - raw:
+      - |
+        GET /cgi-bin/get?system.access_level HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Digest username="admin", realm="{{realm}}", nonce="{{nonce}}", uri="/cgi-bin/get?system.access_level", qop={{qop}}, nc=00000001, cnonce="{{rand_base(8)}}", response="{{md5(md5('admin:{{realm}}:admin') + ':' + nonce + ':' + '00000001' + ':' + rand_base(8) + ':' + qop + ':' + md5('GET:/cgi-bin/get?system.access_level'))}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "system.access_level"
+

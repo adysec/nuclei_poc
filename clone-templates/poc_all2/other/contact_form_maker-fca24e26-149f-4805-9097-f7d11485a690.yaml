@@ -1,0 +1,59 @@
+id: contact_form_maker-fca24e26-149f-4805-9097-f7d11485a690
+
+info:
+  name: >
+    Contact Form by WD – responsive drag & drop contact form builder tool <= 1.7.18 - Authorization Bypass
+  author: topscoder
+  severity: low
+  description: >
+    The Contact Form by WD – responsive drag & drop contact form builder tool plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the form_maker_cfm function in versions up to, and including, 1.7.18. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to edit forms, including entering stored cross-site scripting, as output is not properly escaped.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fca24e26-149f-4805-9097-f7d11485a690?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:H
+    cvss-score: 8.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/contact-form-maker/"
+    google-query: inurl:"/wp-content/plugins/contact-form-maker/"
+    shodan-query: 'http.html:"wp-content/plugins/contact-form-maker/"'
+  tags: cve,wordpress,wp-plugin,contact-form-maker,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/contact-form-maker/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "contact-form-maker"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7.18')

@@ -1,0 +1,59 @@
+id: simple_file_list-fdfb5e74-e52c-4f44-acdc-9740624af9e7
+
+info:
+  name: >
+    Simple File List <= 3.2.4 - Arbitrary File Deletion
+  author: topscoder
+  severity: high
+  description: >
+    The Simple File List plugin for WordPress is vulnerable to Arbitrary File Deletion in versions up to, and including, 3.2.4. This is due to the upward path traversal via the 'eeDeleteFile' parameter. This makes it possible for unauthenticated attackers to delete files within the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fdfb5e74-e52c-4f44-acdc-9740624af9e7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:H/A:N
+    cvss-score: 8.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-file-list/"
+    google-query: inurl:"/wp-content/plugins/simple-file-list/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-file-list/"'
+  tags: cve,wordpress,wp-plugin,simple-file-list,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-file-list/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-file-list"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.4')

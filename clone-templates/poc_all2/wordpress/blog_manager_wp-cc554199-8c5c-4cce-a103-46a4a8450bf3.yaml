@@ -1,0 +1,59 @@
+id: blog_manager_wp-cc554199-8c5c-4cce-a103-46a4a8450bf3
+
+info:
+  name: >
+    Blog Manager WP <= 1.0.5 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cc554199-8c5c-4cce-a103-46a4a8450bf3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/blog-manager-wp/"
+    google-query: inurl:"/wp-content/plugins/blog-manager-wp/"
+    shodan-query: 'http.html:"wp-content/plugins/blog-manager-wp/"'
+  tags: cve,wordpress,wp-plugin,blog-manager-wp,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/blog-manager-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "blog-manager-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.5')

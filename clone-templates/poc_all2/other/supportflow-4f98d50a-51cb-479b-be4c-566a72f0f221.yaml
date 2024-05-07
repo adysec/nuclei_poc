@@ -1,0 +1,59 @@
+id: supportflow-4f98d50a-51cb-479b-be4c-566a72f0f221
+
+info:
+  name: >
+    SupportFlow <= 0.6 - Cross-Site Scripting via a ticket excerpt.
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4f98d50a-51cb-479b-be4c-566a72f0f221?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/supportflow/"
+    google-query: inurl:"/wp-content/plugins/supportflow/"
+    shodan-query: 'http.html:"wp-content/plugins/supportflow/"'
+  tags: cve,wordpress,wp-plugin,supportflow,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/supportflow/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "supportflow"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.7')

@@ -1,0 +1,59 @@
+id: tk_google_fonts-7c1e005f-c0f1-4dff-928b-18919f117048
+
+info:
+  name: >
+    TK Google Fonts GDPR Compliant <= 2.2.7 - Authorization Bypass
+  author: topscoder
+  severity: high
+  description: >
+    The TK Google Fonts GDPR Compliant plugin for wordPress is vulnerable to unauthenticated plugin settings update in versions up to, and including, 2.2.7 due to missing capability checks and missing nonce checks on the `tk_google_fonts_add_font` function that can be called by unauthenticated users via the `wp_ajax_nopriv_tk_google_fonts_add_font` AJAX action.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7c1e005f-c0f1-4dff-928b-18919f117048?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/tk-google-fonts/"
+    google-query: inurl:"/wp-content/plugins/tk-google-fonts/"
+    shodan-query: 'http.html:"wp-content/plugins/tk-google-fonts/"'
+  tags: cve,wordpress,wp-plugin,tk-google-fonts,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/tk-google-fonts/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "tk-google-fonts"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.2.7')

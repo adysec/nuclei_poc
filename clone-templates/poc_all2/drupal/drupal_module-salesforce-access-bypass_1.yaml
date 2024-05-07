@@ -1,0 +1,51 @@
+
+id: drupal_module-salesforce-access-bypass
+info:
+  name: drupal_module-salesforce-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables Drupal to synchronize entities with Salesforce records. The module includes a page that does not sufficiently protect access rights, resulting in potential information disclosure. This vulnerability is mitigated by the fact that only Drupal entity title and IDs, and Salesforce record IDs are exposed. Entity content and metadata are appropriately protected. Disclosure of Salesforce ID does not confer any additional privileges."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-078
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/salesforce/"
+    google-query: "inurl:'/sites/all/modules/salesforce/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/salesforce/salesforce.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'salesforce'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-3.0')

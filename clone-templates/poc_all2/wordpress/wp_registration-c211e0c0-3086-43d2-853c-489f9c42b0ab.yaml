@@ -1,0 +1,59 @@
+id: wp_registration-c211e0c0-3086-43d2-853c-489f9c42b0ab
+
+info:
+  name: >
+    Simple User Registration <= 6.3 - Unauthenticated Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c211e0c0-3086-43d2-853c-489f9c42b0ab?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-registration/"
+    google-query: inurl:"/wp-content/plugins/wp-registration/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-registration/"'
+  tags: cve,wordpress,wp-plugin,wp-registration,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-registration/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-registration"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.3')

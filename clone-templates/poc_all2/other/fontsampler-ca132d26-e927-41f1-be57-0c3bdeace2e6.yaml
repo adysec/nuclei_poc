@@ -1,0 +1,59 @@
+id: fontsampler-ca132d26-e927-41f1-be57-0c3bdeace2e6
+
+info:
+  name: >
+    Fontsampler <= 0.4.12 -  Cross-Site Request Forgery to Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Fontsampler plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ajax_get_mock_fontsampler function in versions up to, and including, 0.4.12 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ca132d26-e927-41f1-be57-0c3bdeace2e6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fontsampler/"
+    google-query: inurl:"/wp-content/plugins/fontsampler/"
+    shodan-query: 'http.html:"wp-content/plugins/fontsampler/"'
+  tags: cve,wordpress,wp-plugin,fontsampler,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fontsampler/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fontsampler"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.4.12')

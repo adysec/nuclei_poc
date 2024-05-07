@@ -1,0 +1,58 @@
+id: revampcrm-woocommerce
+
+info:
+  name: "Revamp CRM for WooCommerce < 1.0.4 - Local File Inclusion"
+  author: topscoder
+  severity: critical
+  description: "The Revamp CRM for WooCommerce plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 1.0.3 via the 'error_notice' and 'success_notice' parameters. This allows unauthenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset?reponame=&new=2103958%40revampcrm-woocommerce&old=2102983%40revampcrm-woocommerce
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-revamp-crm-for-woocommerce-local-file-inclusion-1-0-3/
+    - https://web.archive.org/web/20210619042820/https%3A//www.pluginvulnerabilities.com/2019/06/10/our-proactive-monitoring-caught-a-local-file-inclusion-lfi-vulnerability-in-revamp-crm-for-woocommerce/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/revampcrm-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/revampcrm-woocommerce/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,revampcrm-woocommerce,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/revampcrm-woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "revampcrm-woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.4')

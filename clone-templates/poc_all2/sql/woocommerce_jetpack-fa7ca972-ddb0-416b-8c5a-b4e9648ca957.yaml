@@ -1,0 +1,59 @@
+id: woocommerce_jetpack-fa7ca972-ddb0-416b-8c5a-b4e9648ca957
+
+info:
+  name: >
+    Booster for WooCommerce <= 5.6.8 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Booster for WooCommerce plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 5.6.8. This is due to missing or incorrect nonce validation on several functions. This makes it possible for unauthenticated attackers to invoke those functions, via forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fa7ca972-ddb0-416b-8c5a-b4e9648ca957?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-jetpack/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-jetpack/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-jetpack/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-jetpack,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-jetpack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-jetpack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.6.8')

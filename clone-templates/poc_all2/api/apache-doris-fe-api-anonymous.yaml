@@ -1,0 +1,83 @@
+# gap: apache-doris-fe-api-anonymous
+id: apache-doris-fe-api-anonymous
+
+info:
+  name: Apache Doris Frontend REST API Anonymous Cluster Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an Apache Doris frontend (FE) where the management REST API
+    (/rest/v2/manager/cluster/cluster_info, /rest/v2/manager/node/
+    frontends, /rest/v2/manager/node/backends) is reachable without an
+    Authorization header. Class signal: response carries Doris's
+    canonical envelope `{"msg":"success","code":0,"data":{…}}` with
+    nested cluster / node fields (`Host`, `EditLogPort`, `HttpPort`,
+    `QueryPort`, `Alive`, `Version`).
+
+    Anonymous Doris FE-API access leaks the OLAP cluster topology
+    (frontend / backend node inventories with their internal
+    listener ports) and the cluster_info object's master FE
+    designation. Combined with /api/show_data (information_schema
+    enumeration) the response chains into datasource / database /
+    table enumeration which then reaches /api/<db>/<tbl>/_query
+    (anonymous SQL execution on default builds) — arbitrary SELECT
+    against every Doris database in scope of the FE's identity.
+    Doris deployments are commonly the analytical layer over
+    transactional databases via streaming ingest, so the data
+    surface is materially equivalent to the source-of-truth tables.
+    Class detection — keys on Doris response envelope, not vendor
+    banner. Complements upstream `doris-dashboard` (HTML fingerprint).
+  reference:
+    - https://doris.apache.org/docs/dev/admin-manual/http-actions/fe/manager/cluster-action/
+    - https://doris.apache.org/docs/dev/admin-manual/auth/authentication-and-authorization/
+  tags: custom,exposures,doris,apache,olap,query-engine,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/rest/v2/manager/cluster/cluster_info"
+      - "{{BaseURL}}/rest/v2/manager/node/frontends"
+      - "{{BaseURL}}/rest/v2/manager/node/backends"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"msg"\s*:\s*"success"'
+      - type: regex
+        part: body
+        regex:
+          - '"code"\s*:\s*0'
+      - type: word
+        part: body
+        words:
+          - '"Host"'
+          - '"EditLogPort"'
+          - '"HttpPort"'
+          - '"QueryPort"'
+          - '"BackendId"'
+          - '"FrontendId"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: doris-hosts
+        regex:
+          - '"Host"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: doris-version
+        regex:
+          - '"Version"\s*:\s*"([^"]+)"'
+        group: 1

@@ -1,0 +1,57 @@
+id: wp-slimstat-ad9fac6378ab838e9025cd3a27ab6619
+
+info:
+  name: "Slimstat Analytics < 3.9.6 - Unauthenticated Blind SQL Injection"
+  author: topscoder
+  severity: high
+  description: "The Slimstat Analytics plugin for WordPress is vulnerable to blind SQL Injection via the ‘_data’ parameter in versions before 3.9.6 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database."
+  reference:
+    - https://blog.sucuri.net/2015/02/security-advisory-wp-slimstat-3-9-5-and-lower.html
+    - http://arstechnica.com/security/2015/02/more-than-1-million-wordpress-websites-imperiled-by-critical-plugin-bug/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N
+    cvss-score: 8.2
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-slimstat/"
+    google-query: inurl:"/wp-content/plugins/wp-slimstat/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-slimstat,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-slimstat/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-slimstat"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.9.6')

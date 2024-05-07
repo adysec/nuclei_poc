@@ -1,0 +1,59 @@
+id: wp_post_real_time_statistics-907329af-2ff0-475e-b4b2-3ac7ae4b9ced
+
+info:
+  name: >
+    WP Post Statistics (Visitors & Visits Counter) <= 2.5 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The WP Post Statistics (Visitors & Visits Counter) plugin for WordPress is vulnerable to Stored Cross-Site Scripting via spoofed IP addresses in versions up to, and including, 2.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/907329af-2ff0-475e-b4b2-3ac7ae4b9ced?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-post-real-time-statistics/"
+    google-query: inurl:"/wp-content/plugins/wp-post-real-time-statistics/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-post-real-time-statistics/"'
+  tags: cve,wordpress,wp-plugin,wp-post-real-time-statistics,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-post-real-time-statistics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-post-real-time-statistics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5')

@@ -1,0 +1,59 @@
+id: wp_fastest_cache-3ebe25a7-fa4d-4e3f-b969-2ff3a8388b06
+
+info:
+  name: >
+    WP Fastest Cache <= 0.8.5.7 - Local File Inclusion
+  author: topscoder
+  severity: low
+  description: >
+    The WP Fastest Cache plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 0.8.5.7 via the 'id' parameter. This allows authenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3ebe25a7-fa4d-4e3f-b969-2ff3a8388b06?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-fastest-cache/"
+    google-query: inurl:"/wp-content/plugins/wp-fastest-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-fastest-cache/"'
+  tags: cve,wordpress,wp-plugin,wp-fastest-cache,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-fastest-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-fastest-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.8.5.7')

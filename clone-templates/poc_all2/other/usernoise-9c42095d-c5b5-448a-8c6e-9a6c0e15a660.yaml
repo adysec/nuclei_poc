@@ -1,0 +1,59 @@
+id: usernoise-9c42095d-c5b5-448a-8c6e-9a6c0e15a660
+
+info:
+  name: >
+    Usernoise modal feedback / contact form < 3.7.9 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Usernoise modal feedback / contact form plugin for WordPress is vulnerable to Cross-Site Scripting in versions before 3.7.9 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9c42095d-c5b5-448a-8c6e-9a6c0e15a660?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/usernoise/"
+    google-query: inurl:"/wp-content/plugins/usernoise/"
+    shodan-query: 'http.html:"wp-content/plugins/usernoise/"'
+  tags: cve,wordpress,wp-plugin,usernoise,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/usernoise/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "usernoise"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.7.9')

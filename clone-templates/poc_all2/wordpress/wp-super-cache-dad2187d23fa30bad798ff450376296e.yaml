@@ -1,0 +1,58 @@
+id: wp-super-cache-dad2187d23fa30bad798ff450376296e
+
+info:
+  name: "WP Super Cache <= 1.8 - Unauthenticated Cache Poisoning"
+  author: topscoder
+  severity: medium
+  description: "The WP Super Cache plugin for WordPress is vulnerable to Unauthenticated Cache Poisoning in versions up to, and including, 1.8. This is due to insufficient parsing of URLs containing double slashes. This makes it possible for unauthenticated attackers to poison the site's cache potentially resulting in harmful content being served to visitors."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&new=2785875%40wp-super-cache%2Ftrunk&old=2771209%40wp-super-cache%2Ftrunk&sfp_email=&sfph_mail=
+    - https://patchstack.com/database/vulnerability/wp-super-cache/wordpress-wp-super-cache-plugin-1-8-cache-poisoning-vulnerability
+    - https://wpscan.com/vulnerability/f9dddb51-60ff-4fed-8c89-749d92c4af94
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L
+    cvss-score: 6.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-super-cache/"
+    google-query: inurl:"/wp-content/plugins/wp-super-cache/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-super-cache,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-super-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-super-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8')

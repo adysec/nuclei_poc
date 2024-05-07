@@ -1,0 +1,59 @@
+id: syncee_for_suppliers-c3172e21-c2e4-4ec0-ad0f-4433303efcfb
+
+info:
+  name: >
+    Syncee for Suppliers <= 1.0.5 - Missing Authorization to Sensitive Information Disclosure
+  author: topscoder
+  severity: high
+  description: >
+    The Syncee for Suppliers plugin for WordPress is vulnerable to Missing Authorization to Sensitive Information Disclosure in versions up to, and including, 1.0.5. This is due to a missing capability check on the /wp-json/syncee/supplier/v1/getDataForFrontend REST-API endpoint. This makes it possible for unauthenticated attackers to perform a GET request to that information that discloses information like the site's syncee_access_token_supplier and data_to_syncee_installer_supplier values.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c3172e21-c2e4-4ec0-ad0f-4433303efcfb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/syncee-for-suppliers/"
+    google-query: inurl:"/wp-content/plugins/syncee-for-suppliers/"
+    shodan-query: 'http.html:"wp-content/plugins/syncee-for-suppliers/"'
+  tags: cve,wordpress,wp-plugin,syncee-for-suppliers,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/syncee-for-suppliers/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "syncee-for-suppliers"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.5')

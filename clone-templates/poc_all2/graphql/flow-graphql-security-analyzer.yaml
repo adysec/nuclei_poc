@@ -1,0 +1,241 @@
+id: flow-graphql-security-analyzer
+
+info:
+  name: GraphQL Security Analyzer
+  author: geeknik
+  severity: medium
+  description: |
+    Advanced GraphQL endpoint security assessment using Flow Protocol for introspection
+    analysis and query vulnerability testing. This template performs comprehensive
+    GraphQL security analysis including schema introspection, depth limit testing,
+    and information disclosure detection while maintaining defensive research principles
+    for identifying GraphQL-specific security vulnerabilities.
+  reference:
+    - https://graphql.org/learn/introspection/
+    - https://owasp.org/www-project-web-security-testing-guide/
+  tags: graphql,api,flow,security-assessment,introspection,defensive
+
+flow: |
+  // Test for GraphQL endpoint existence
+  http("graphql-detection");
+
+  const initialResponse = template["initial_response"];
+  const graphqlDetected = (
+    initialResponse &&
+    (initialResponse.includes("graphql") ||
+     initialResponse.includes("GraphQL") ||
+     initialResponse.includes("__schema") ||
+     (initialResponse.includes("query") && initialResponse.includes("mutation")))
+  );
+  set("graphql_detected", graphqlDetected);
+
+  if (graphqlDetected) {
+    // Test introspection capability
+    http("introspection-test");
+
+    const introspectionResponse = template["introspection_response"];
+    const introspectionEnabled = (
+      introspectionResponse &&
+      introspectionResponse.includes("__schema") &&
+      introspectionResponse.includes("types") &&
+      !introspectionResponse.includes("GraphQL introspection is not allowed")
+    );
+    set("introspection_enabled", introspectionEnabled);
+
+    let riskScore = 0;
+    let securityFindings = [];
+
+    if (introspectionEnabled) {
+      securityFindings.push({
+        "type": "introspection_enabled",
+        "severity": "medium",
+        "description": "GraphQL introspection is enabled"
+      });
+      riskScore += 20;
+
+      // Analyze schema for sensitive fields
+      if (introspectionResponse.includes("password") ||
+          introspectionResponse.includes("secret") ||
+          introspectionResponse.includes("token")) {
+        securityFindings.push({
+          "type": "sensitive_fields_exposed",
+          "severity": "high",
+          "description": "Sensitive fields detected in schema"
+        });
+        riskScore += 40;
+      }
+    }
+
+    // Test query depth limits
+    const testQueries = [
+      // Depth attack query
+      "query DepthAttack { user { profile { settings { preferences { theme { colors { primary } } } } } } }",
+
+      // Information disclosure query
+      "query InfoDisclosure { users { id email adminFlag } }",
+
+      // Batch query attack
+      "query BatchQuery { query1: users { id } query2: users { id } query3: users { id } }",
+
+      // Field suggestion attack
+      "query FieldSuggestion { users { nonExistentField } }"
+    ];
+    set("test_queries", testQueries);
+
+    for (let query of iterate(testQueries)) {
+      set("test_query", query);
+
+      http("query-test");
+
+      const queryResponse = template["query_response"];
+      const queryStatus = template["query_status"];
+
+      if (queryResponse) {
+        // Check for successful execution of dangerous queries
+        if (query.includes("DepthAttack") && queryStatus === "200" &&
+            !queryResponse.includes("error")) {
+          securityFindings.push({
+            "type": "depth_limit_bypass",
+            "severity": "medium",
+            "description": "Deep nested queries accepted - potential DoS risk"
+          });
+          riskScore += 20;
+        }
+
+        // Check for information disclosure
+        if ((queryResponse.includes("password") ||
+             queryResponse.includes("secret") ||
+             queryResponse.includes("admin")) &&
+            !queryResponse.includes("error")) {
+          securityFindings.push({
+            "type": "information_disclosure",
+            "severity": "high",
+            "description": "Query returned sensitive information"
+          });
+          riskScore += 40;
+        }
+
+        // Check for field suggestions that might leak schema info
+        if (queryResponse.includes("Did you mean") ||
+            queryResponse.includes("suggestions")) {
+          securityFindings.push({
+            "type": "field_suggestion_leak",
+            "severity": "low",
+            "description": "Field suggestions may leak schema information"
+          });
+          riskScore += 10;
+        }
+      }
+    }
+
+    // Store security findings before final calculations
+    set("security_findings", securityFindings);
+
+    // Calculate final GraphQL security assessment
+    const graphqlRiskScore = Math.min(riskScore, 100);
+    const graphqlRiskLevel = riskScore > 70 ? "High" :
+                            riskScore > 40 ? "Medium" : "Low";
+    set("graphql_risk_score", graphqlRiskScore);
+    set("graphql_risk_level", graphqlRiskLevel);
+
+    // Generate recommendations
+    let recommendations = [];
+    if (introspectionEnabled) {
+      recommendations.push("Disable GraphQL introspection in production");
+    }
+    if (securityFindings.some(f => f.type === "depth_limit_bypass")) {
+      recommendations.push("Implement query depth limits");
+    }
+    if (securityFindings.some(f => f.type === "information_disclosure")) {
+      recommendations.push("Review field-level permissions and data exposure");
+    }
+    set("recommendations", recommendations);
+  }
+
+http:
+  - id: graphql-detection
+    method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/graphql/v1"
+      - "{{BaseURL}}/query"
+
+    body: |
+      {"query": "{ __typename }"}
+
+    headers:
+      Content-Type: application/json
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+        internal: true
+
+    extractors:
+      - type: regex
+        name: initial_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: introspection-test
+    method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+
+    body: |
+      {"query": "{ __schema { types { name fields { name type { name } } } queryType { fields { name } } mutationType { fields { name } } } }"}
+
+    headers:
+      Content-Type: application/json
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+        internal: true
+
+    extractors:
+      - type: regex
+        name: introspection_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: query-test
+    method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+
+    body: |
+      {"query": "{{test_query}}"}
+
+    headers:
+      Content-Type: application/json
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+        internal: true
+
+    extractors:
+      - type: regex
+        name: query_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+      - type: regex
+        name: query_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+# Flow template - matchers and extractors handled by Flow logic

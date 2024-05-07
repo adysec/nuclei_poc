@@ -1,0 +1,37 @@
+id: git-folder
+info:
+  author: Me
+  name: Git Folder Exposure
+  severity: medium
+  tags: git,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.git/HEAD"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "ref: refs/heads/"
+        # HEAD always starts with this exact string; a 200 without it is a redirect/custom error page
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/.git/config"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        condition: and
+        words:
+          - "[core]"
+          - "repositoryformatversion"
+        # Real git config files always contain both of these; generic 200s won't

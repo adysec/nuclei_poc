@@ -1,0 +1,59 @@
+id: konami_easter_egg-0e69325d-49a9-4cd6-a359-7a926e77144e
+
+info:
+  name: >
+    Konami Easter Egg <= v0.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0e69325d-49a9-4cd6-a359-7a926e77144e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/konami-easter-egg/"
+    google-query: inurl:"/wp-content/plugins/konami-easter-egg/"
+    shodan-query: 'http.html:"wp-content/plugins/konami-easter-egg/"'
+  tags: cve,wordpress,wp-plugin,konami-easter-egg,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/konami-easter-egg/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "konami-easter-egg"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= v0.4')

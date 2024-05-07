@@ -1,0 +1,59 @@
+id: my_content_management-dcd986cd-d6c0-4d8f-8078-ac0ac83572a3
+
+info:
+  name: >
+    My Content Management <= 1.7.1 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The My Content Management plugin for WordPress may have been vulnerable to Cross-Site Scripting in versions less than or equal to 1.7.1. Version 1.7.2 of the plugin implemented extensive sanitization and escaping on user supplied inputs which means there may have been exploitable cross-site scripting vulnerabilities present in versions older than 1.7.2.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dcd986cd-d6c0-4d8f-8078-ac0ac83572a3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/my-content-management/"
+    google-query: inurl:"/wp-content/plugins/my-content-management/"
+    shodan-query: 'http.html:"wp-content/plugins/my-content-management/"'
+  tags: cve,wordpress,wp-plugin,my-content-management,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/my-content-management/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "my-content-management"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '1.7.1')

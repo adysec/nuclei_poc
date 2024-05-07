@@ -1,0 +1,59 @@
+id: simple_share_buttons_adder-2f72c94f-b0b6-464b-8bc7-df3d75b22edb
+
+info:
+  name: >
+    Simple Share Buttons Adder <= 4.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Simple Share Buttons Adder  plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 4.4. This is due to missing or incorrect nonce validation. This makes it possible for unauthenticated attackers to execute arbitrary javascript in the context of the Homepage, Pages, Posts, Category/Archive pages and post Excerpt via forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2f72c94f-b0b6-464b-8bc7-df3d75b22edb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N
+    cvss-score: 8.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-share-buttons-adder/"
+    google-query: inurl:"/wp-content/plugins/simple-share-buttons-adder/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-share-buttons-adder/"'
+  tags: cve,wordpress,wp-plugin,simple-share-buttons-adder,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-share-buttons-adder/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-share-buttons-adder"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.5')

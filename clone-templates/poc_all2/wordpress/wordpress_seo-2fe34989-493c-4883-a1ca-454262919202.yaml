@@ -1,0 +1,59 @@
+id: wordpress_seo-2fe34989-493c-4883-a1ca-454262919202
+
+info:
+  name: >
+    Yoast SEO <= 2.0.1 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Yoast SEO plugin for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 2.0.1 due to insufficient input sanitization and output escaping on remove_query_arg and add_query_arg. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2fe34989-493c-4883-a1ca-454262919202?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wordpress-seo/"
+    google-query: inurl:"/wp-content/plugins/wordpress-seo/"
+    shodan-query: 'http.html:"wp-content/plugins/wordpress-seo/"'
+  tags: cve,wordpress,wp-plugin,wordpress-seo,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordpress-seo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordpress-seo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.1')

@@ -1,0 +1,53 @@
+
+id: drupal_module-swiftmailer-access-bypass
+info:
+  name: drupal_module-swiftmailer-access-bypass
+  author: me
+  severity: medium
+  description: "The Drupal Swift Mailer module extends the basic e-mail sending functionality provided by Drupal by delegating all e-mail handling to the Swift Mailer library. This enables your site to take advantage of the many features which the Swift Mailer library provides. The module could allow an attacker to gain widespread access to a Drupal site. This vulnerability is mitigated by the fact that an attacker must have a means to trigger sending an email with a body that they can control, which would requires either another contributed module or custom integration."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-006
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/swiftmailer/"
+    google-query: "inurl:'/sites/all/modules/swiftmailer/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/swiftmailer/swiftmailer.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'swiftmailer'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 99.x-99.99')

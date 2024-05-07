@@ -1,0 +1,59 @@
+id: propertyhive-02bb12db-0bc9-4c13-918f-1f90b500c165
+
+info:
+  name: >
+    PropertyHive < 1.4.26 - Remote Code Execution
+  author: topscoder
+  severity: critical
+  description: >
+    The PropertyHive plugin for WordPress is vulnerable to Remote Code Execution in versions up to, and including, 1.4.25 via the custom_email_log_cron function. This allows unauthenticated attackers to execute code on the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/02bb12db-0bc9-4c13-918f-1f90b500c165?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/propertyhive/"
+    google-query: inurl:"/wp-content/plugins/propertyhive/"
+    shodan-query: 'http.html:"wp-content/plugins/propertyhive/"'
+  tags: cve,wordpress,wp-plugin,propertyhive,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/propertyhive/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "propertyhive"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.26')

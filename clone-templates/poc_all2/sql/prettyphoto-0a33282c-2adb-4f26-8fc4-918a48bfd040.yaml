@@ -1,0 +1,59 @@
+id: prettyphoto-0a33282c-2adb-4f26-8fc4-918a48bfd040
+
+info:
+  name: >
+    WordPress prettyPhoto <= 1.1 - DOM Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The prettyPhoto plugin for WordPress is vulnerable to DOM Cross-Site Scripting in versions up to, and including, 1.1 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0a33282c-2adb-4f26-8fc4-918a48bfd040?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/prettyphoto/"
+    google-query: inurl:"/wp-content/plugins/prettyphoto/"
+    shodan-query: 'http.html:"wp-content/plugins/prettyphoto/"'
+  tags: cve,wordpress,wp-plugin,prettyphoto,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/prettyphoto/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "prettyphoto"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1')

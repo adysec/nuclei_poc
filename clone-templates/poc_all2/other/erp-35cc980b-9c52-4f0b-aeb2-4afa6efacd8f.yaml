@@ -1,0 +1,59 @@
+id: erp-35cc980b-9c52-4f0b-aeb2-4afa6efacd8f
+
+info:
+  name: >
+    WP ERP <=1.10.5 - Sensitive Data Exposure
+  author: topscoder
+  severity: medium
+  description: >
+    The WP ERP Plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 1.10.5 due to missing authorization checks in a number of functions, including 'generate_csv_url', which leaks a nonce used to import CSV files.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/35cc980b-9c52-4f0b-aeb2-4afa6efacd8f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/erp/"
+    google-query: inurl:"/wp-content/plugins/erp/"
+    shodan-query: 'http.html:"wp-content/plugins/erp/"'
+  tags: cve,wordpress,wp-plugin,erp,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/erp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "erp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.10.5')

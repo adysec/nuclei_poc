@@ -1,0 +1,59 @@
+id: payment_gateways_caller_for_wp_e_commerce-9766a657-1cf2-448a-bd66-a27c0ebd8261
+
+info:
+  name: >
+    Payment Gateways Caller for WP e-Commerce < 0.1.1 - Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The Payment Gateways Caller for WP e-Commerce plugin for WordPress is vulnerable to Local File Inclusion in versions before 0.1.1 via the wpscmc_load_merchant function. This allows attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9766a657-1cf2-448a-bd66-a27c0ebd8261?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/payment-gateways-caller-for-wp-e-commerce/"
+    google-query: inurl:"/wp-content/plugins/payment-gateways-caller-for-wp-e-commerce/"
+    shodan-query: 'http.html:"wp-content/plugins/payment-gateways-caller-for-wp-e-commerce/"'
+  tags: cve,wordpress,wp-plugin,payment-gateways-caller-for-wp-e-commerce,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/payment-gateways-caller-for-wp-e-commerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "payment-gateways-caller-for-wp-e-commerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.1.1')

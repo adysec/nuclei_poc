@@ -1,0 +1,59 @@
+id: 3dprint-f89e9c46-aca3-4b2f-b935-2976c510ed8b
+
+info:
+  name: >
+    3DPrint <= 3.5.4.7 - Cross-Site Request Forgery to Arbitrary File Deletion
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f89e9c46-aca3-4b2f-b935-2976c510ed8b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/3dprint/"
+    google-query: inurl:"/wp-content/plugins/3dprint/"
+    shodan-query: 'http.html:"wp-content/plugins/3dprint/"'
+  tags: cve,wordpress,wp-plugin,3dprint,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/3dprint/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "3dprint"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.5.4.7')

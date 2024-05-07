@@ -1,0 +1,59 @@
+id: publish_to_schedule-a438ec56-8ddc-4cea-8d93-c8f79b46f47e
+
+info:
+  name: >
+    Publish to Schedule <= 4.4.2 - Cross-Site Request Forgery leading to Plugin Option Changes
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a438ec56-8ddc-4cea-8d93-c8f79b46f47e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/publish-to-schedule/"
+    google-query: inurl:"/wp-content/plugins/publish-to-schedule/"
+    shodan-query: 'http.html:"wp-content/plugins/publish-to-schedule/"'
+  tags: cve,wordpress,wp-plugin,publish-to-schedule,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/publish-to-schedule/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "publish-to-schedule"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.4.2')

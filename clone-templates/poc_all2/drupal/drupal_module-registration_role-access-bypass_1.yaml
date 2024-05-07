@@ -1,0 +1,53 @@
+
+id: drupal_module-registration_role-access-bypass
+info:
+  name: drupal_module-registration_role-access-bypass
+  author: me
+  severity: medium
+  description: "The Registration role module lets an administrator select a role (or multiple roles) to automatically assign to new users. The selected role (or roles) will be assigned to new registrants. The module has a logic error when handling sites that upgraded code and did not run the Drupal update process (e.g. update.php). This vulnerability is mitigated by the fact that the problem does not exist on sites that followed the process of updating code and running the standard updates."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-015
+  metadata:
+    security-risk: "Critical 18∕25 AC:Basic/A:None/CI:All/II:All/E:Theoretical/TD:Uncommon"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/registration_role/"
+    google-query: "inurl:'/sites/all/modules/registration_role/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/registration_role/registration_role.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'registration_role'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 2.0.1')

@@ -1,0 +1,59 @@
+id: buddypress_media-7a2420ca-e079-429b-b1f1-47bf1d0a9f71
+
+info:
+  name: >
+    rtMedia for WordPress, BuddyPress and bbPress <= 4.6.18 - Authenticated (Subscriber+) SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The rtMedia for WordPress, BuddyPress and bbPress plugin for WordPress is vulnerable to time-based SQL Injection via the order_by parameter in all versions up to, and including, 4.6.18 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers, with subscriber access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7a2420ca-e079-429b-b1f1-47bf1d0a9f71?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/buddypress-media/"
+    google-query: inurl:"/wp-content/plugins/buddypress-media/"
+    shodan-query: 'http.html:"wp-content/plugins/buddypress-media/"'
+  tags: cve,wordpress,wp-plugin,buddypress-media,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/buddypress-media/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "buddypress-media"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.6.18')

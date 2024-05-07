@@ -1,0 +1,59 @@
+id: restrict_content-79bb311d-d10d-4e4e-b690-84c0051b9911
+
+info:
+  name: >
+    Restrict Content <= 3.2.2 - Missing Authorization to Notice Dismissal
+  author: topscoder
+  severity: low
+  description: >
+    The Restrict Content plugin for WordPress is vulnerable to unauthorized notice dismissal due to a missing capability check on the rcp_ajax_dismissed_notice_handler() function in versions up to, and including, 3.2.2. This makes it possible for authenticated attackers with subscriber-level access and above to dismiss plugin notices.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/79bb311d-d10d-4e4e-b690-84c0051b9911?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/restrict-content/"
+    google-query: inurl:"/wp-content/plugins/restrict-content/"
+    shodan-query: 'http.html:"wp-content/plugins/restrict-content/"'
+  tags: cve,wordpress,wp-plugin,restrict-content,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/restrict-content/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "restrict-content"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.2.3')

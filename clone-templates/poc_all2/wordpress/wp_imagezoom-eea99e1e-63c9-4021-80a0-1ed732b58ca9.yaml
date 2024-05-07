@@ -1,0 +1,59 @@
+id: wp_imagezoom-eea99e1e-63c9-4021-80a0-1ed732b58ca9
+
+info:
+  name: >
+    Wp-ImageZoom < 1.0.5 - Directory Traversal
+  author: topscoder
+  severity: medium
+  description: >
+    The Wp-ImageZoom plugin for WordPress is vulnerable to Directory Traversal in versions before 1.0.5 via the 'file' parameter. This allows attackers to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/eea99e1e-63c9-4021-80a0-1ed732b58ca9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-imagezoom/"
+    google-query: inurl:"/wp-content/plugins/wp-imagezoom/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-imagezoom/"'
+  tags: cve,wordpress,wp-plugin,wp-imagezoom,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-imagezoom/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-imagezoom"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.5')

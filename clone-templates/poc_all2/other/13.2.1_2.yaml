@@ -1,0 +1,79 @@
+id: ASVS-4-0-3-V13-2-1
+
+info:
+  name: ASVS 13.2.1 Check
+  author: Hamed Salimian
+  severity: medium
+  classification:
+    cwe-id: CWE-650
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/06-Test_HTTP_Methods
+    - https://nmap.org/nsedoc/scripts/http-methods.html
+  tags: asvs,13.2.1
+  description: |
+    Verify that enabled RESTful HTTP methods are a valid choice for the user or action, such as preventing normal users using DELETE or PUT on protected API or resources.
+
+http:
+  - method: OPTIONS
+    path:
+      - "{{BaseURL}}"
+    headers:
+      Host: "{{Hostname}}"
+      Cookie: "{{Cookie}}"
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - Access_Control_Allow_Methods
+      - type: kval
+        part: header
+        kval:
+          - Allow
+    matchers:
+      - type: regex
+        name: "potentially risky methods (OPTIONS check)"
+        part: header
+        regex:
+          - (?i)Access-Control-Allow-Methods:\s*.*\b(PUT|DELETE)\b
+          - (?i)Allow:\s*.*\b(PUT|DELETE)\b
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}"
+    headers:
+      Host: "{{Hostname}}"
+      Cookie: "{{Cookie}}"
+    body: "<html>HTTP PUT Method is Enabled</html>"
+    extractors:
+      - type: dsl
+        dsl:
+          - status_code
+    matchers:
+      - type: status
+        name: "PUT method is Enabled"
+        negative: true
+        status:
+          - 405
+          - 501
+          - 400
+          - 404
+
+  - method: DELETE
+    path:
+      - "{{BaseURL}}"
+    headers:
+      Host: "{{Hostname}}"
+      Cookie: "{{Cookie}}"
+    extractors:
+      - type: dsl
+        dsl:
+          - status_code
+    matchers:
+      - type: status
+        name: "DELETE method is Enabled"
+        negative: true
+        status:
+          - 405
+          - 501
+          - 400
+          - 404

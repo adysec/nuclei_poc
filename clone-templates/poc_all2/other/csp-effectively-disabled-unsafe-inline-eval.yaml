@@ -1,0 +1,64 @@
+# gap: csp-effectively-disabled-unsafe-inline-eval
+id: csp-effectively-disabled-unsafe-inline-eval
+
+info:
+  name: Content-Security-Policy Effectively Disabled (unsafe-inline + unsafe-eval)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects HTTP responses whose Content-Security-Policy header contains
+    BOTH 'unsafe-inline' AND 'unsafe-eval'. The combination eliminates
+    CSP's two primary XSS-mitigation properties simultaneously —
+    'unsafe-inline' permits inline `<script>` and event-handler attributes,
+    'unsafe-eval' permits `eval()`, `new Function()`, `setTimeout(string)`
+    and `setInterval(string)` — leaving CSP with no meaningful protection
+    against reflected or stored XSS payloads. The MDN CSP guidance and
+    OWASP Cheat Sheet both call this combination out as
+    'CSP effectively disabled'.
+
+    Class detection — keys on standardized header keyword values, not
+    vendor banner. Catches future CSP-bypass-class CVEs where any reflected
+    HTML payload becomes script execution because the policy never
+    constrained it. (script-src or default-src placement is checked; we
+    flag co-occurrence in the same CSP header value to avoid false
+    positives on policies that only weaken style-src.)
+  reference:
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+    - https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html
+  tags: custom,misconfig,csp,xss,headers,owasp,cwe-693
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "(?i)Content-Security-Policy:"
+      # Both unsafe-inline AND unsafe-eval must appear in the response
+      # headers — co-occurrence is the class signal.
+      - type: regex
+        part: header
+        regex:
+          - "(?i)'unsafe-inline'"
+      - type: regex
+        part: header
+        regex:
+          - "(?i)'unsafe-eval'"
+      # Guard: the CSP must include script-src OR default-src — if both
+      # unsafe-* live only under style-src, do not fire.
+      - type: regex
+        part: header
+        regex:
+          - "(?i)(script-src|default-src)"
+
+    extractors:
+      - type: regex
+        part: header
+        name: csp-policy
+        regex:
+          - '(?i)Content-Security-Policy:\s*([^\r\n]+)'
+        group: 1

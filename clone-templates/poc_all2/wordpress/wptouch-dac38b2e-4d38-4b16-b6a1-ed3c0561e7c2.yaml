@@ -1,0 +1,59 @@
+id: wptouch-dac38b2e-4d38-4b16-b6a1-ed3c0561e7c2
+
+info:
+  name: >
+    WPtouch < 1.9.30 - Open Redirect
+  author: topscoder
+  severity: medium
+  description: >
+    The WPtouch plugin for WordPress is vulnerable to Open Redirect in versions before 1.9.30. This is due to insufficient input sanitization via the 'wptouch_redirect' parameter. This makes it possible for attackers to construct a URL which causes a redirection to an arbitrary external domain.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dac38b2e-4d38-4b16-b6a1-ed3c0561e7c2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wptouch/"
+    google-query: inurl:"/wp-content/plugins/wptouch/"
+    shodan-query: 'http.html:"wp-content/plugins/wptouch/"'
+  tags: cve,wordpress,wp-plugin,wptouch,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wptouch/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wptouch"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.9.30')

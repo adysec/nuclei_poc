@@ -1,0 +1,59 @@
+id: newsletter-e91e6101-bd30-4cf1-9a39-23218c3bff6f
+
+info:
+  name: >
+    Newsletter <= 6.5.3 - CSV Injection
+  author: topscoder
+  severity: medium
+  description: >
+    The Newsletter plugin for WordPress is vulnerable to CSV Injection in versions up to, and including, 6.5.3 by the use of Microsoft Excel DDE function, or to leak data via maliciously injected hyperlinks. This allows non-privileged attackers to embed untrusted input into exported CSV files, which can result in code execution when these files are downloaded and opened on a local system with a vulnerable configuration.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e91e6101-bd30-4cf1-9a39-23218c3bff6f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/newsletter/"
+    google-query: inurl:"/wp-content/plugins/newsletter/"
+    shodan-query: 'http.html:"wp-content/plugins/newsletter/"'
+  tags: cve,wordpress,wp-plugin,newsletter,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/newsletter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "newsletter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.5.3')

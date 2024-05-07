@@ -1,0 +1,74 @@
+id: ntrip-detect
+info:
+  name: NTRIP Caster Detect
+  author: r3dcl1ff
+  severity: medium
+  description: |
+    Detects NTRIP casters by requesting the sourcetable with User-Agent NTRIP.
+    Matches ICY/SOURCETABLE banners and STR/CAS/NET lines.
+  tags: gnss,rtcm,ntrip,maritime iot
+  metadata:
+    shodan-query: 'port:2101 "Ntrip" OR "NTRIP Caster" OR "SOURCETABLE 200 OK"'
+
+variables:
+  ntrip_port: "2101"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    headers:
+      User-Agent: "NTRIP"
+      Accept: "*/*"
+      Ntrip-Version: "Ntrip/2.0"
+    max-redirects: 0
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+      - type: word
+        part: body
+        words: ["SOURCETABLE"]
+      - type: regex
+        part: body
+        regex:
+          - '(?m)^(STR|CAS|NET);\S+'
+
+network:
+  - host:
+      - "{{Hostname}}:{{ntrip_port}}"
+    inputs:
+      - type: hex
+        data: "474554202f20485454502f312e300d0a557365722d4167656e743a204e545249500d0a0d0a"
+    read-size: 4096
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "SOURCETABLE 200 OK"
+          - "ICY 200 OK"
+        condition: or
+      - type: regex
+        part: response
+        regex:
+          - '(?m)^(STR|CAS|NET);\S+'
+
+  - host:
+      - "tls://{{Hostname}}:{{ntrip_port}}"
+    inputs:
+      - type: hex
+        data: "474554202f20485454502f312e300d0a557365722d4167656e743a204e545249500d0a0d0a"
+    read-size: 4096
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "SOURCETABLE 200 OK"
+          - "ICY 200 OK"
+        condition: or
+      - type: regex
+        part: response
+        regex:
+          - '(?m)^(STR|CAS|NET);\S+'

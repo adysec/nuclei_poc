@@ -1,0 +1,59 @@
+id: simple_author_box-f670b93e-da2e-43e7-a28a-6cacba4df3a1
+
+info:
+  name: >
+    Simple Author Box <= 2.50 - Cross-Site Request Forgery via save_user_profile
+  author: topscoder
+  severity: medium
+  description: >
+    The Simple Author Box plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.50. This is due to missing or incorrect nonce validation on the save_user_profile function. This makes it possible for unauthenticated attackers to edit user profile settings of other users via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f670b93e-da2e-43e7-a28a-6cacba4df3a1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-author-box/"
+    google-query: inurl:"/wp-content/plugins/simple-author-box/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-author-box/"'
+  tags: cve,wordpress,wp-plugin,simple-author-box,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-author-box/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-author-box"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.50')

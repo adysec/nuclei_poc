@@ -1,0 +1,59 @@
+id: wp_shamsi-8fc88821-b2be-49a5-a2cf-53e87d0349a2
+
+info:
+  name: >
+    WP Shamsi <= 4.3.3 - Missing Authorization leading to Authenticated (Subscriber+) Attachment Deletion
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8fc88821-b2be-49a5-a2cf-53e87d0349a2?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-shamsi/"
+    google-query: inurl:"/wp-content/plugins/wp-shamsi/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-shamsi/"'
+  tags: cve,wordpress,wp-plugin,wp-shamsi,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-shamsi/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-shamsi"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.3.3')

@@ -1,0 +1,59 @@
+id: ht_event-8b14c07b-23bb-4a14-8018-fa2462383b35
+
+info:
+  name: >
+    HT Event <= 1.4.5 - Cross-Site Request Forgery leading to Arbitrary Plugin Activation
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8b14c07b-23bb-4a14-8018-fa2462383b35?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ht-event/"
+    google-query: inurl:"/wp-content/plugins/ht-event/"
+    shodan-query: 'http.html:"wp-content/plugins/ht-event/"'
+  tags: cve,wordpress,wp-plugin,ht-event,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ht-event/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ht-event"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.5')

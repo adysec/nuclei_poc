@@ -1,0 +1,56 @@
+
+id: drupal_module-cshs-cross-site-scripting
+info:
+  name: drupal_module-cshs-cross-site-scripting
+  author: me
+  severity: medium
+  description: "The module provides a field widget for selecting taxonomy terms in a hierarchical fashion. The module doesnt sanitize user input in certain cases, leading to a possible Cross-Site-Scripting (XSS) vulnerability. This vulnerability is mitigated by the fact that an attacker must have a role with permission to create or edit taxonomy terms to which the widget may apply."
+  reference:
+    - https://www.drupal.org/sa-contrib-2021-031
+  metadata:
+    security-risk: "Moderately critical 13 ∕ 25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/cshs/"
+    google-query: "inurl:'/sites/all/modules/cshs/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/cshs/cshs.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'cshs'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 3.5.0')

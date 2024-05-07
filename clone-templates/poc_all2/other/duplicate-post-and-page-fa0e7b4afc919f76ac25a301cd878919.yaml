@@ -1,0 +1,59 @@
+id: duplicate-post-and-page-fa0e7b4afc919f76ac25a301cd878919
+
+info:
+  name: >
+    Duplicate Page and Post <= 1.0 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/61a04c77-28ef-4a3f-8e6c-95a98fcc994d?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/duplicate-post-and-page/"
+    google-query: inurl:"/wp-content/plugins/duplicate-post-and-page/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,duplicate-post-and-page,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/duplicate-post-and-page/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "duplicate-post-and-page"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

@@ -1,0 +1,36 @@
+id: fortigate-sslvpn-date
+
+info:
+  name: FortiGate SSLVPN Release Date
+  author: darses
+  severity: info
+  description: |
+    Detect FortiGate SSLVPN portal release date.
+  metadata:
+    max-request: 1
+    shodan-query:
+      - cpe:"cpe:2.3:o:fortinet:fortios"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    extractors:
+      - type: regex
+        name: etag
+        part: header
+        group: 1
+        internal: true
+        regex:
+          - '[Ee][Tt]ag: \"[\w\d]*\-([\w\d]{8})\"'
+
+      - type: dsl
+        name: date
+        dsl:
+          - date_time("%Y-%M-%D", hex_to_dec(etag))
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200 && contains(tolower(header), 'etag') && contains(body, '/remote/login')

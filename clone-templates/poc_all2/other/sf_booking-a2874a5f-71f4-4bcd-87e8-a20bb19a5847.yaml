@@ -1,0 +1,51 @@
+id: sf_booking-a2874a5f-71f4-4bcd-87e8-a20bb19a5847
+
+info:
+  name: >
+    Service Finder Bookings <= 6.0 - Authenticated (Subscriber+) Privilege Escalation via change_candidate_password
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a2874a5f-71f4-4bcd-87e8-a20bb19a5847?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sf-booking/"
+    google-query: inurl:"/wp-content/plugins/sf-booking/"
+    shodan-query: 'http.html:"wp-content/plugins/sf-booking/"'
+  tags: cve,wordpress,wp-plugin,sf-booking,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sf-booking/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sf-booking"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.0')

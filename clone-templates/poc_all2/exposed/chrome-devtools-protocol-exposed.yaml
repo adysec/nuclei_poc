@@ -1,0 +1,80 @@
+# gap: chrome-devtools-protocol-exposed
+id: chrome-devtools-protocol-exposed
+
+info:
+  name: Chrome DevTools Protocol Endpoint Exposed (CDP / Node --inspect)
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects an exposed Chrome DevTools Protocol (CDP) endpoint
+    or Node.js `--inspect` debugger reachable on the network.
+    These endpoints are intended for local-only browser/node
+    debugging, but routinely leak when:
+    - headless Chrome containers in scraping/automation infra
+      bind 9222 to 0.0.0.0
+    - browserless / puppeteer / playwright services run with
+      CDP open
+    - Node processes started with `--inspect=0.0.0.0:9229` or
+      a typo turning the loopback bind into an interface bind
+
+    Anyone who reaches CDP can:
+    - execute arbitrary code in the browser JavaScript context
+    - read every cookie / localStorage on any visited origin
+    - take screenshots and download page contents
+    - on Node: arbitrary code execution in the V8 process —
+      unauth RCE primitive
+
+    Wire-format: `GET /json/version` returns a JSON envelope.
+    For Chrome: contains `"Browser"` and `"webSocketDebuggerUrl":"ws://`.
+    For Node: contains `"description":"node.js instance"` and
+    `"devtoolsFrontendUrl":` and `webSocketDebuggerUrl`.
+    The `webSocketDebuggerUrl` field with a `ws://` value is the
+    canonical CDP envelope marker.
+  reference:
+    - https://chromedevtools.github.io/devtools-protocol/
+    - https://nodejs.org/api/inspector.html
+    - https://github.com/GoogleChrome/chrome-launcher
+  tags: custom,exposures,chrome,cdp,nodejs,debugger,anonymous,rce,cwe-489
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/json/version"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+      - type: regex
+        part: body
+        regex:
+          - '"webSocketDebuggerUrl"\s*:\s*"ws://'
+      - type: word
+        part: body
+        words:
+          - '"Browser"'
+          - '"description":"node.js instance"'
+          - '"devtoolsFrontendUrl"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: cdp-browser
+        regex:
+          - '"Browser"\s*:\s*"([^"]{1,120})"'
+        group: 1
+      - type: regex
+        part: body
+        name: cdp-websocket-url
+        regex:
+          - '"webSocketDebuggerUrl"\s*:\s*"(ws://[^"]{1,200})"'
+        group: 1
+      - type: regex
+        part: body
+        name: node-version
+        regex:
+          - '"V8-Version"\s*:\s*"([^"]{1,30})"'
+        group: 1

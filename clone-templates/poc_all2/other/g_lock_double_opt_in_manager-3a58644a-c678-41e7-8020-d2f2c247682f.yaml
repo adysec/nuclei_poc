@@ -1,0 +1,59 @@
+id: g_lock_double_opt_in_manager-3a58644a-c678-41e7-8020-d2f2c247682f
+
+info:
+  name: >
+    G-Lock Double Opt-in Manager <= 2.6.5 - SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The G-Lock Double Opt-in Manager plugin for WordPress is vulnerable to generic SQL Injection via the 'json' parameter in versions up to, and including, 2.6.5 due to insufficient escaping on the user-supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3a58644a-c678-41e7-8020-d2f2c247682f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/g-lock-double-opt-in-manager/"
+    google-query: inurl:"/wp-content/plugins/g-lock-double-opt-in-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/g-lock-double-opt-in-manager/"'
+  tags: cve,wordpress,wp-plugin,g-lock-double-opt-in-manager,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/g-lock-double-opt-in-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "g-lock-double-opt-in-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.6.5')

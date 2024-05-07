@@ -1,0 +1,59 @@
+id: wordpress-theme-travelscape-1-0-3-arbitrary-file-upload
+
+info:
+  name: >
+    Wordpress Theme Travelscape 1.0.3 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Travelscape Theme for WordPress is vulnerable to arbitrary file uploads.
+  reference:
+    - https://www.exploit-db.com/exploits/51969
+    - https://github.com/topscoder/nuclei-zero-day
+  classification:
+    cvss-metrics:
+    cvss-score:
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/travelscape/"
+    google-query: inurl:"/wp-content/themes/travelscape/"
+    shodan-query: http.html:/wp-content/themes/travelscape/
+  tags: cve,wordpress,wp-theme,travelscape,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/travelscape/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "travelscape"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '1.0.3')

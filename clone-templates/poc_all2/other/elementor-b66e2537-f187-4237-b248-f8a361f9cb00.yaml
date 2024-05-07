@@ -1,0 +1,59 @@
+id: elementor-b66e2537-f187-4237-b248-f8a361f9cb00
+
+info:
+  name: >
+    Elementor <= 3.13.1 - Missing Authorization to Settings Update
+  author: topscoder
+  severity: low
+  description: >
+    The Elementor plugin for WordPress is vulnerable to unauthorized modification of data due to missing capability checks on the register_as_beta_tester(), ajax_enable_safe_mode(), ajax_get_category_items(), and ajax_re_migrate_globals() functions called via AJAX actions in versions up to, and including, 3.13.1. This makes it possible for authenticated attackers with minimal permissions such as subscribers to perform many actions such as registering the site for beta testing, enabling safe mode, remigrating globals and retrieving category items.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b66e2537-f187-4237-b248-f8a361f9cb00?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/elementor/"
+    google-query: inurl:"/wp-content/plugins/elementor/"
+    shodan-query: 'http.html:"wp-content/plugins/elementor/"'
+  tags: cve,wordpress,wp-plugin,elementor,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/elementor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "elementor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.13.1')

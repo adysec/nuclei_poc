@@ -1,0 +1,59 @@
+id: dropdown_and_scrollable_text-b8cf9350-d207-49ae-865a-b2e016b41b55
+
+info:
+  name: >
+    Dropdown and scrollable Text <= 2.0 - Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The plugin Dropdown and scrollable Text for WordPress is vulnerable to Stored Cross-Site Scripting via several parameters in versions up to, and including, 2.0 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b8cf9350-d207-49ae-865a-b2e016b41b55?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dropdown-and-scrollable-text/"
+    google-query: inurl:"/wp-content/plugins/dropdown-and-scrollable-text/"
+    shodan-query: 'http.html:"wp-content/plugins/dropdown-and-scrollable-text/"'
+  tags: cve,wordpress,wp-plugin,dropdown-and-scrollable-text,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dropdown-and-scrollable-text/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dropdown-and-scrollable-text"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0')

@@ -1,0 +1,58 @@
+id: download-monitor-d32f9e143f35a14d326395b6dd4f0c1d
+
+info:
+  name: "Download Monitor <= 1.6.3 - Directory Listing to Information Disclosure"
+  author: topscoder
+  severity: medium
+  description: "The Download Monitor plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 1.6.3 via the 'dir' parameter. This can allow authenticated attackers to extract sensitive data including directories and otherwise restricted server-side filenames."
+  reference:
+    - https://web.archive.org/web/20150626191631/https%3A//research.evex.pw/?vuln=7
+    - https://github.com/WPChill/download-monitor/blob/master/changelog.txt
+    - https://wpscan.com/vulnerability/a84882a0-5b18-49dd-9be3-a1d92045d5a9
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/download-monitor/"
+    google-query: inurl:"/wp-content/plugins/download-monitor/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,download-monitor,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-monitor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-monitor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.3')

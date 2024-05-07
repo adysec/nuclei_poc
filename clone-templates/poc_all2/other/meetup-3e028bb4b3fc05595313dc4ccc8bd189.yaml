@@ -1,0 +1,59 @@
+id: meetup-3e028bb4b3fc05595313dc4ccc8bd189
+
+info:
+  name: >
+    Meetup <= 0.1 - Authentication Bypass via Account Takeover
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7d70e56f-3bb2-4cfd-8998-e419bbdf016c?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/meetup/"
+    google-query: inurl:"/wp-content/plugins/meetup/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,meetup,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/meetup/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "meetup"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.1')

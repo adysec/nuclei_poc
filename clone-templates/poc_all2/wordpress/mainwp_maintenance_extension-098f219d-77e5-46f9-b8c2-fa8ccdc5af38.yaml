@@ -1,0 +1,59 @@
+id: mainwp_maintenance_extension-098f219d-77e5-46f9-b8c2-fa8ccdc5af38
+
+info:
+  name: >
+    MainWP Maintenance Extension <= 4.1.1 - Missing Authorization to Plugin Settings Change
+  author: topscoder
+  severity: low
+  description: >
+    The MainWP Maintenance Extension plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 4.1.1 due to a missing capability check. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to change the plugin's settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/098f219d-77e5-46f9-b8c2-fa8ccdc5af38?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mainwp-maintenance-extension/"
+    google-query: inurl:"/wp-content/plugins/mainwp-maintenance-extension/"
+    shodan-query: 'http.html:"wp-content/plugins/mainwp-maintenance-extension/"'
+  tags: cve,wordpress,wp-plugin,mainwp-maintenance-extension,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mainwp-maintenance-extension/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mainwp-maintenance-extension"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.1.1')

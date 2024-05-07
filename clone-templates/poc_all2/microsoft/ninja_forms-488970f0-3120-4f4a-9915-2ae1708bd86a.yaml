@@ -1,0 +1,61 @@
+id: ninja_forms-488970f0-3120-4f4a-9915-2ae1708bd86a
+
+info:
+  name: >
+    Ninja Forms Contact Form – The Drag and Drop Form Builder for WordPress <= 3.6.9 - Cross-Site Request Forgery to Field Import and PHP Object Injection
+  author: topscoder
+  severity: medium
+  description: >
+    The Ninja Forms Contact Form – The Drag and Drop Form Builder for WordPress plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including 3.6.9, due to missing nonce validation on the import_fields_listener() function that makes it possible for unauthenticated attackers to import new form fields granted that can trick an attacker into performing an action such as clicking on a link.
+    
+    This CSRF vulnerability can also be exploited to achieve PHP Object Injection due to the use of unserialize() on the user supplied file contents.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/488970f0-3120-4f4a-9915-2ae1708bd86a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ninja-forms/"
+    google-query: inurl:"/wp-content/plugins/ninja-forms/"
+    shodan-query: 'http.html:"wp-content/plugins/ninja-forms/"'
+  tags: cve,wordpress,wp-plugin,ninja-forms,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ninja-forms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ninja-forms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.6.9')

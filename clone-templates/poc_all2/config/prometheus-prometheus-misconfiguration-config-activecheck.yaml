@@ -1,0 +1,75 @@
+id: prometheus-prometheus-misconfiguration-config-activecheck
+
+info:
+  name: Prometheus Config API Endpoint Discov
+  author: geeknik, gordey
+  severity: info
+  description: A Prometheus config API endpoint was discovered. The config endpoint returns the loaded Prometheus configuration file along with the addresses of targets and alerting/discovery services alongside the credentials required to access them. Usually, Prometheus replaces the passwords in the credentials config configuration field with the placeholder <secret> (although this still leaks the username).
+  reference:
+    - https://jfrog.com/blog/dont-let-prometheus-steal-your-fire/
+  metadata:
+    date: 23.01.2024
+    expiration_date: 26.02.2024
+    code_requirements:
+    additional_files:
+    nuclei_commandline:
+    bdu-id:
+    cok-id:
+    template_type: activecheck
+    max-request: 1
+    verified: false
+    shodan-query: |
+      http.title:"Prometheus Time Series Collection and Processing Server"
+      http.favicon.hash:"-1399433489"
+    netlas-query: |
+      http.favicon.hash_sha256:d72fc7b0bd1a4c1c4a016dfa4bfd594b2fb65a409575ec8f857864d4bdc658be
+      http.title:"Prometheus Time Series Collection and Processing Server"
+    rooster-query: |
+      http.body:"Prometheus Time Series Collection and Processing Server" OR http.favicon_hash.md5:"-1399433489"
+    fofa-query: |
+      title="Prometheus Time Series Collection and Processing Server" || icon_hash="-1399433489"
+    censys-query: |
+      services.http.response.html_title="Prometheus Time Series Collection and Processing Server"
+      services.http.response.favicons.md5_hash: 5ee43b38986a144d6b5022ea8c8f748f
+    hunter-query: |
+      web.title="Prometheus Time Series Collection and Processing Server"
+      favicon_hash=="5ee43b38986a144d6b5022ea8c8f748f"
+    accuracy: 1
+    damage: 0.1
+    vendor: prometheus
+    product: prometheus
+  tags: prometheus,config,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/status/config"
+    headers:
+        User-Agent: Mozilla/5.0 (compatible; CyberOKInspect/1.0; +https://www.cyberok.ru/policy.html)
+    extractors:
+      - type: regex
+        name: secrets
+        regex:
+          - '\/\/([^\s]+:[^\s]+)\@'
+          - 'token:\s([^\s]*)'
+          - 'client_secret:\s([^\s]*)'
+          - 'password:\s([^\s]*)'
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - '"status"'
+          - '"success"'
+          - 'job_name:'
+          - '"yaml":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'application/json'

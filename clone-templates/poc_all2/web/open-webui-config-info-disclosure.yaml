@@ -1,0 +1,90 @@
+# gap: open-webui-config-info-disclosure
+id: open-webui-config-info-disclosure
+
+info:
+  name: Open WebUI /api/config Disclosure (OAuth Metadata + Posture Flags)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects Open WebUI's anonymous `/api/config` endpoint, which
+    returns the deployment's posture: name, version, feature flags
+    (signup-open, direct-connections, websocket support), default
+    model list, and the configured OAuth/OIDC providers including
+    Google/Microsoft/OIDC client IDs and issuer URLs. The endpoint
+    was reported as a disclosure in Open WebUI Issue #9211 and is
+    still served unauthenticated in current builds.
+
+    Posture extraction here is the precondition for several
+    follow-on bug classes documented through 2025 (CVE-2025-63391
+    auth-bypass class, CVE-2025-64496 SSE-injection via Direct
+    Connections, the `enable_signup=true` self-registration to
+    admin path). The combination of OIDC issuer + signup flag +
+    version pinning in one template is intended to give the
+    operator the data they need to triage which of those classes
+    applies without a follow-up request.
+  reference:
+    - https://github.com/open-webui/open-webui/issues/9211
+    - https://www.catonetworks.com/blog/cato-ctrl-vulnerability-discovered-open-webui-cve-2025-64496/
+  tags: custom,exposures,open-webui,ai,llm,oauth,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/config"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # Open WebUI-specific envelope: top-level "features" and "oauth"
+        # objects, name string identifying the product.
+        words:
+          - '"features"'
+          - '"oauth"'
+          - '"Open WebUI"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: open-webui-version
+        regex:
+          - '"version"\s*:\s*"([0-9][^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: enable-signup
+        regex:
+          - '"enable_signup"\s*:\s*(true|false)'
+        group: 1
+      - type: regex
+        part: body
+        name: oauth-google-client-id
+        regex:
+          - '"google"\s*:\s*\{[^}]*"client_id"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: oauth-microsoft-client-id
+        regex:
+          - '"microsoft"\s*:\s*\{[^}]*"client_id"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: oidc-issuer
+        regex:
+          - '"oidc"\s*:\s*\{[^}]*"providers"\s*:\s*\[[^\]]*"issuer"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: default-models
+        regex:
+          - '"default_models"\s*:\s*"([^"]+)"'
+        group: 1

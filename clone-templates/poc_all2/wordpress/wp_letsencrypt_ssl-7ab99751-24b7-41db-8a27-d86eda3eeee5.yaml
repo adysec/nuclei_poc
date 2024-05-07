@@ -1,0 +1,59 @@
+id: wp_letsencrypt_ssl-7ab99751-24b7-41db-8a27-d86eda3eeee5
+
+info:
+  name: >
+    WP Encryption – One Click Free SSL Certificate & SSL / HTTPS Redirect to Force HTTPS, SSL Score <= 7.0 - Sensitive Information Exposure via insufficiently protected files
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7ab99751-24b7-41db-8a27-d86eda3eeee5?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-letsencrypt-ssl/"
+    google-query: inurl:"/wp-content/plugins/wp-letsencrypt-ssl/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-letsencrypt-ssl/"'
+  tags: cve,wordpress,wp-plugin,wp-letsencrypt-ssl,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-letsencrypt-ssl/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-letsencrypt-ssl"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.0')

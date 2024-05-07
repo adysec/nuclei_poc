@@ -1,0 +1,59 @@
+id: wp_donottrack-bd4a1fd2-8831-482d-8ae3-fb78c2657b86
+
+info:
+  name: >
+    WP DoNotTrack <= 0.8.8 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The WP DoNotTrack plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘whitelist’ and 'blacklist' parameters in versions up to, and including, 0.8.8 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers with administrator privileges to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bd4a1fd2-8831-482d-8ae3-fb78c2657b86?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-donottrack/"
+    google-query: inurl:"/wp-content/plugins/wp-donottrack/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-donottrack/"'
+  tags: cve,wordpress,wp-plugin,wp-donottrack,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-donottrack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-donottrack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.8.8')

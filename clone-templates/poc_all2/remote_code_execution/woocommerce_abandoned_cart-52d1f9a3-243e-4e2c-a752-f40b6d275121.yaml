@@ -1,0 +1,59 @@
+id: woocommerce_abandoned_cart-52d1f9a3-243e-4e2c-a752-f40b6d275121
+
+info:
+  name: >
+    Abandoned Cart Lite for WooCommerce <= 5.16.0 - Improper Authorization via wcal_delete_expired_used_coupon_code
+  author: topscoder
+  severity: low
+  description: >
+    The Abandoned Cart Lite for WooCommerce plugin for WordPress is vulnerable to unauthorized loss of data due to invalid logic in the capability check present in the wcal_delete_expired_used_coupon_code function in all versions up to and including 5.16.0. This makes it possible for authenticated attackers with subscriber privileges or above to delete expired used coupon codes, granted they are able to obtain a nonce via a separate vulnerability.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/52d1f9a3-243e-4e2c-a752-f40b6d275121?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:L
+    cvss-score: 3.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-abandoned-cart/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-abandoned-cart/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-abandoned-cart/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-abandoned-cart,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-abandoned-cart/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-abandoned-cart"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.16.1')
