@@ -196,7 +196,7 @@ def get_file_size(file_path):
 
 community_path = "clone-templates"
 source_of_truth = "clone-templates/projectdiscovery__nuclei-templates"
-output_path = ""
+output_path = "poc"
 
 community = get_all_yaml_files(community_path)
 nucleiTemplates = get_all_yaml_files(source_of_truth)
