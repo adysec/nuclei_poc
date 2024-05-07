@@ -1,0 +1,57 @@
+id: sahifa-5a85be9691fc1f27bf6e17548b697284
+
+info:
+  name: "Sahifa <= 2.4.0 - Full Path Disclosure"
+  author: topscoder
+  severity: medium
+  description: "The Sahifa theme for WordPress is vulnerable to Full Path Disclosure in versions up to, and including, 2.4.0 via the 'category.php' file. This makes it possible for unauthenticated attackers to extract sensitive data regarding the full installations path when requesting the vulnerable file."
+  reference:
+    - https://packetstormsecurity.com/files/119191/
+    - https://themeforest.net/item/sahifa-responsive-wordpress-news-magazine-newspaper-theme/2819356
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/sahifa/"
+    google-query: inurl:"/wp-content/themes/sahifa/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,sahifa,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/sahifa/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sahifa"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.4.0')

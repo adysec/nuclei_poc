@@ -1,0 +1,51 @@
+
+id: drupal_module-commerce_custom_order_status-cross-site-scripting
+info:
+  name: drupal_module-commerce_custom_order_status-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "Commerce Custom Order Status provides forms for administrators to add, edit, and delete order statuses from the order settings screen. The module doesnt sufficiently sanitize the output of the status names. This vulnerability is mitigated by the fact that an attacker must have a role with the configure order settings permission."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-046
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/commerce_custom_order_status/"
+    google-query: "inurl:'/sites/all/modules/commerce_custom_order_status/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/commerce_custom_order_status/commerce_custom_order_status.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'commerce_custom_order_status'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

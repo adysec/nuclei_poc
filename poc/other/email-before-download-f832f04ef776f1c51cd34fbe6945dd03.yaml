@@ -1,0 +1,57 @@
+id: email-before-download-f832f04ef776f1c51cd34fbe6945dd03
+
+info:
+  name: "Email Before Download <= 3.6 - SMTP Header Injection"
+  author: topscoder
+  severity: medium
+  description: "The Email Before Download plugin for WordPress is vulnerable to SMTP Header Injection in versions up to, and including, 3.6 via the 'email_from' POST parameter, where the 'emailfrom' variable is concatenated in the SMTP 'From:' header and then directly passed to wp_mail. This makes it possible for unauthenticated attackers to add newline characters which can lead to arbitrary headers/message bodies."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset?new=1682702%40email-before-download%2Ftrunk&old=1651128%40email-before-download%2Ftrunk
+    - https://wpscan.com/vulnerability/8f182b48-da8b-48de-85a5-5cbb73e5a394
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N
+    cvss-score: 5.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/email-before-download/"
+    google-query: inurl:"/wp-content/plugins/email-before-download/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,email-before-download,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/email-before-download/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "email-before-download"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.6')

@@ -1,0 +1,57 @@
+id: indeed-membership-pro-9f83469e90b546e171fda291dde72b57
+
+info:
+  name: "Indeed Membership Pro <= 7.5 - Remote Image File Inclusion"
+  author: topscoder
+  severity: high
+  description: "The Indeed Membership Pro plugin for WordPress is vulnerable to Remote File Inclusion in versions up to, and including, 7.5 via the imgUrl feature. This allows unauthorized attackers to include remote files on the server, resulting in code execution."
+  reference:
+    - https://codecanyon.net/item/ultimate-membership-pro-wordpress-plugin/12159253
+    - https://wpscan.com/vulnerability/f422a274-6f9e-4a20-9759-f3bb5ad972d6
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/indeed-membership-pro/"
+    google-query: inurl:"/wp-content/plugins/indeed-membership-pro/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,indeed-membership-pro,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/indeed-membership-pro/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "indeed-membership-pro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.5')

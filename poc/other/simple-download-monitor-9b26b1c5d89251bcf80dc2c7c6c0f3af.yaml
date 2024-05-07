@@ -1,0 +1,57 @@
+id: simple-download-monitor-9b26b1c5d89251bcf80dc2c7c6c0f3af
+
+info:
+  name: "Simple Download Monitor <= 3.2.8 - Missing Authorization"
+  author: topscoder
+  severity: critical
+  description: "The Simple Download Monitor plugin for WordPress is vulnerable to authorization bypass due to missing capability checks on the 'sdm_tiny_get_post_ids_ajax_call()' and 'sdm_remove_thumbnail_image_ajax_call()' functions in versions up to, and including, 3.2.8. This makes it possible for unauthorized attackers to access otherwise private files and delete thumbnails."
+  reference:
+    - https://www.pritect.net/blog/simple-download-monitor-3-2-8-security-vulnerability
+    - https://wpscan.com/vulnerability/cdcdb594-8b52-4d47-9047-14938f56b0d0
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:L
+    cvss-score: 9.9
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/simple-download-monitor/"
+    google-query: inurl:"/wp-content/plugins/simple-download-monitor/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,simple-download-monitor,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-download-monitor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-download-monitor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.8')

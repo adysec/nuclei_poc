@@ -1,0 +1,60 @@
+id: Yes-68a0c6dc9a99d19d764b95999ff0346f
+
+info:
+  name: "WordPress Core < 6.0.3 - Open Redirect"
+  author: topscoder
+  severity: medium
+  description: "WordPress Core is vulnerable to open redirect in versions up to 6.0.3. This is due to insufficient validation of the 'Referer' header and _wp_http_referer request parameter when a user accesses a link with an expired or invalid nonce. This would make it possible for an attacker to redirect a victim to a potentially malicious site, granted they could trick the victim into performing an action such as clicking on a link."
+  reference:
+    - https://www.wordfence.com/blog/2022/10/patch-now-the-wordpress-6-0-3-security-update-contains-important-fixes/
+    - https://wordpress.org/news/2022/10/wordpress-6-0-3-security-release/
+    - https://core.trac.wordpress.org/changeset/54532
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id:
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,medium
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '<= 3.6.1')
+          - compare_versions(version_by_js, '<= 3.6.1')
+          - compare_versions(version_by_css, '<= 3.6.1')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

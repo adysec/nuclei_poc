@@ -1,0 +1,58 @@
+id: wpremote-661833c53cf53d611a603a6a8adc3242
+
+info:
+  name: "The WP Remote WordPress Plugin <= 4.64 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The 'The WP Remote WordPress Plugin' plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via a URL in versions up to, and including, 4.64 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://wpscan.com/vulnerability/718a3f34-7793-4da2-99c0-3dd0ab72253d
+    - https://patchstack.com/database/vulnerability/wpremote-/wordpress-the-wp-remote-wordpress-plugin-4-64-reflected-cross-site-scripting-xss-vulnerability
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=2636751%40wpremote&new=2636751%40wpremote&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wpremote/"
+    google-query: inurl:"/wp-content/plugins/wpremote/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wpremote,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpremote/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpremote"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.64')

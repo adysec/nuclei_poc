@@ -1,0 +1,53 @@
+
+id: drupal_module-uuid-access-bypass
+info:
+  name: drupal_module-uuid-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module provides an API for adding universally unique identifiers (UUID) to Drupal objects, most notably entities. The module has a privilege escalation vulnerability when its used in combination with Services+REST server. This vulnerability is mitigated by the fact that an attacker must authenticate to the site, services module must be configured on the site and the user update resource enabled."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-052
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Complex/A:User/CI:All/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/uuid/"
+    google-query: "inurl:'/sites/all/modules/uuid/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/uuid/uuid.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'uuid'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

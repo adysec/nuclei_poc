@@ -1,0 +1,51 @@
+
+id: drupal_module-tfa_basic-insecure-randomness
+info:
+  name: drupal_module-tfa_basic-insecure-randomness
+  author: Bishopfox
+  severity: medium
+  description: "The TFA Basic module enables you to use Two Factor Authentication via a variety of plugins including TOTP and one-time codes delivered via email or sms. The module doesnt use a strong source of randomness, creating weak and predictable one-time login codes that are then delivered using SMS. This weakness does not affect the more common TOTP second factor. This vulnerability is mitigated by the fact that the site must be configured to use SMS to deliver one-time login codes which is an uncommon configuration."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-044
+  metadata:
+    security-risk: "Less critical 9∕25 AC:Complex/A:User/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "insecure-randomness"
+    fofa-query: "/sites/all/modules/tfa_basic/"
+    google-query: "inurl:'/sites/all/modules/tfa_basic/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/tfa_basic/tfa_basic.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'tfa_basic'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

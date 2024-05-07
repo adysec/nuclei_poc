@@ -1,0 +1,53 @@
+
+id: drupal_module-session_limit-insecure-session-management
+info:
+  name: drupal_module-session_limit-insecure-session-management
+  author: Bishopfox
+  severity: medium
+  description: "The session limit module enables a site administrator to set a policy around the number of active sessions users of the site may have. This is typically set to one so that you can only be logged in once with the same user account. In one configuration of the module, when a user logs in with another session elsewhere already active, the module asks the user which session should be closed before they can proceed with login. The module does not sufficiently tokenise the list of sessions so that the users session keys can be found through inspection of the form. This vulnerability is mitigated by the fact that an attacker must already be able to intercept the contents of the HTML page to exploit the issue. That ability to intercept may come from Cross Site Scripting.  This makes a Cross Site Scripting vulnerability worse than it would normally be."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-072
+  metadata:
+    security-risk: "Critical 15∕25 AC:Complex/A:None/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "insecure-session-management"
+    fofa-query: "/sites/all/modules/session_limit/"
+    google-query: "inurl:'/sites/all/modules/session_limit/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/session_limit/session_limit.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'session_limit'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.2')
+         - compare_versions(version, '7.x-2.1')
+         - compare_versions(version, '7.x-2.0')

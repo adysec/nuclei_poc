@@ -1,0 +1,56 @@
+id: download-manager-1c4d226f9501185f32fdf890f55ef894
+
+info:
+  name: "Download Manager <= 3.2.43 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Download Manager plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via redirect parameter in versions up to, and including, 3.2.43 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&new=2746785%40download-manager%2Ftrunk&old=2736071%40download-manager%2Ftrunk&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/download-manager/"
+    google-query: inurl:"/wp-content/plugins/download-manager/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,download-manager,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.43')

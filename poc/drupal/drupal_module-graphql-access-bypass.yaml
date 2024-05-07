@@ -1,0 +1,52 @@
+
+id: drupal_module-graphql-access-bypass
+info:
+  name: drupal_module-graphql-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This advisory addresses a similar issue to Drupal core - Moderately critical - Access bypass - SA-CORE-2021-008. The GraphQL module allows file uploads through its HTTP API. The module does not correctly run all file validation, which causes an access bypass vulnerability. An attacker might be able to upload files that bypass the file validation process implemented by modules on the site. This vulnerability is mitigated by four factors:  The GraphQL module must be enabled on the site. The GraphQL schema must expose a file upload by using the helper src/GraphQL/Utility/FileUpload.php in the module. An attacker must have access to that file upload via the GraphQL API. The site must employ a file validation module."
+  reference:
+    - https://www.drupal.org/sa-contrib-2021-029
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/graphql/"
+    google-query: "inurl:'/sites/all/modules/graphql/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/graphql/graphql.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'graphql'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-4.1')
+         - compare_versions(version, '8.x-4.0')

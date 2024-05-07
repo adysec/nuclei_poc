@@ -1,0 +1,62 @@
+
+id: drupal_module-video-remote-code-execution
+info:
+  name: drupal_module-video-remote-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "This module provides a field where editors can add videos to their content and this module offers functionality to transcode these videos to different sizes and formats. The module doesnt sufficiently sanitize some user input on administrative forms."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-037
+  metadata:
+    security-risk: "Critical 19∕25 AC:None/A:Admin/CI:All/II:All/E:Theoretical/TD:All"
+    vulnerability: "remote-code-execution"
+    fofa-query: "/sites/all/modules/video/"
+    google-query: "inurl:'/sites/all/modules/video/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/video/video.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'video'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.13')
+         - compare_versions(version, '7.x-2.12')
+         - compare_versions(version, '7.x-2.11')
+         - compare_versions(version, '7.x-2.10')
+         - compare_versions(version, '7.x-2.9')
+         - compare_versions(version, '7.x-2.8')
+         - compare_versions(version, '7.x-2.7')
+         - compare_versions(version, '7.x-2.6')
+         - compare_versions(version, '7.x-2.5')
+         - compare_versions(version, '7.x-2.4')
+         - compare_versions(version, '7.x-2.3')
+         - compare_versions(version, '7.x-2.2')

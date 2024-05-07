@@ -1,0 +1,57 @@
+
+id: drupal_module-super_login-cross-site-scripting
+info:
+  name: drupal_module-super_login-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module improves the Drupal login page with the new features and layout. The module doesnt sufficiently filter input text in the administration pages text configuration inputs. For example, the login text field. The vulnerability is mitigated by the fact it can only be exploited by a user with the Administer super login permission."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-062
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/super_login/"
+    google-query: "inurl:'/sites/all/modules/super_login/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/super_login/super_login.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'super_login'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')
+         - compare_versions(version, '7.x-1.3')
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

@@ -1,0 +1,55 @@
+
+id: drupal_module-tagify-access-bypass
+info:
+  name: drupal_module-tagify-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module provides a widget to transform entity reference fields into a more user-friendly tags input component with a great performance. The module doesnt sufficiently check access for the add operation. Users with permission to edit content can view and reference unpublished terms. The edit form may expose term data that users could not otherwise see, since there is no term view route by default. This vulnerability is slightly mitigated by the fact that an attacker must have a role with the permission access content, so may not be accessible to anonymous users on all sites."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-051
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Complex/A:User/CI:None/II:Some/E:Exploit/TD:Uncommon"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/tagify/"
+    google-query: "inurl:'/sites/all/modules/tagify/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/tagify/tagify.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'tagify'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '1.0.4')
+         - compare_versions(version, '1.0.3')
+         - compare_versions(version, '1.0.2-beta1')
+         - compare_versions(version, '1.0.1-beta1')
+         - compare_versions(version, '1.0.0-beta1')

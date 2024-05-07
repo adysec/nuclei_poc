@@ -1,0 +1,58 @@
+id: wp-rss-multi-importer-fdeb6f948343c25c4baa3ee12bb462fa
+
+info:
+  name: "WP RSS Multi Importer < 3.14 - Cross-Site Request Forgery"
+  author: topscoder
+  severity: high
+  description: "The WP RSS Multi Importer plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to 3.14. This is due to missing nonce validation on several GET request functions. This makes it possible for unauthenticated attackers to perform restricted actions, such as arbitrary post deletion, via forged request granted they can trick a site administrator into performing an action such as clicking on a link."
+  reference:
+    - https://vexatioustendencies.com/wordpress-plugin-vulnerability-dump-part-1/
+    - https://patchstack.com/database/vulnerability/wp-rss-multi-importer/wordpress-wp-rss-multi-importer-plugin-3-15-multiple-vulnerabilities
+    - https://wpscan.com/vulnerability/338a1219-928a-4a9c-90cd-cacb73ea154f
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-rss-multi-importer/"
+    google-query: inurl:"/wp-content/plugins/wp-rss-multi-importer/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-rss-multi-importer,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-rss-multi-importer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-rss-multi-importer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.14')

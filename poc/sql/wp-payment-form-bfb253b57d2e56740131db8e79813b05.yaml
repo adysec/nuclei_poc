@@ -1,0 +1,58 @@
+id: wp-payment-form-bfb253b57d2e56740131db8e79813b05
+
+info:
+  name: "Simple Payment Donations <= 4.2.0 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Simple Payment Donations plugin for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 4.2.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&new=2766964%40wp-payment-form%2Ftrunk&old=2766708%40wp-payment-form%2Ftrunk&sfp_email=&sfph_mail=
+    - https://patchstack.com/database/vulnerability/wp-payment-form-/wordpress-best-payments-plugin-for-wp-plugin-4-2-0-reflected-cross-site-scripting-xss-vulnerability
+    - https://wpscan.com/vulnerability/9ff8a652-2340-476d-8430-70b203c023e1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-payment-form/"
+    google-query: inurl:"/wp-content/plugins/wp-payment-form/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-payment-form,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-payment-form/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-payment-form"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.2.0')

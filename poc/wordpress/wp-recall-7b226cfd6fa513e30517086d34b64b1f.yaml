@@ -1,0 +1,59 @@
+id: wp-recall-7b226cfd6fa513e30517086d34b64b1f
+
+info:
+  name: "WP-Recall <= 16.24.47 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The WP-Recall plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'date-start' and 'end-start' parameters in versions up to, and including, 16.24.47 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://ithemes.com/blog/wordpress-vulnerability-report-october-2021-part-2/#ib-toc-anchor-2
+    - https://wpscan.com/vulnerability/29b1bc54-eb51-4061-82d6-bba0404d00c0
+    - https://wordpress.org/plugins/wp-recall/#developers
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=2603869%40wp-recall&new=2603869%40wp-recall&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-recall/"
+    google-query: inurl:"/wp-content/plugins/wp-recall/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-recall,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-recall/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-recall"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 16.24.47')

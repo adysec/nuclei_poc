@@ -1,0 +1,52 @@
+
+id: drupal_module-xray_audit-cross-site-scripting
+info:
+  name: drupal_module-xray_audit-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module is a tool for developers, analysts, and administrators that allows them to generate reports on a given Drupal installation. The module does not sufficiently sanitize some data presented in its reports.  This vulnerability is mitigated by the fact that an attacker must have a role with permissions to administer an impacted content type."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-012
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/xray_audit/"
+    google-query: "inurl:'/sites/all/modules/xray_audit/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/xray_audit/xray_audit.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'xray_audit'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '1.1.0')
+         - compare_versions(version, '1.0.0')

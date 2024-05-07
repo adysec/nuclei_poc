@@ -1,0 +1,58 @@
+id: duplicator-fb26ececcd0ead6381e821b03827237a
+
+info:
+  name: "Duplicator <= 0.5.26 - Authenticated (Admin+) Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Duplicator plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 0.5.26 due to insufficient input sanitization and output escaping. This makes it possible for administrator-level attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - http://cinu.pl/research/wp-plugins/mail_9b9d0695270f1c07eac1abeec3d071c4.html
+    - http://blog.cinu.pl/2015/11/php-static-code-analysis-vs-top-1000-wordpress-plugins.html
+    - https://wordpress.org/plugins/duplicator/#developers
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/duplicator/"
+    google-query: inurl:"/wp-content/plugins/duplicator/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,duplicator,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/duplicator/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "duplicator"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.5.28')

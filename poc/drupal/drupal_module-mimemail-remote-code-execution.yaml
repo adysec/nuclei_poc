@@ -1,0 +1,51 @@
+
+id: drupal_module-mimemail-remote-code-execution
+info:
+  name: drupal_module-mimemail-remote-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "The MIME Mail module allows to send MIME-encoded e-mail messages with embedded images and attachments. The module doesnt sufficiently sanitized some variables for shell arguments when sending email, which could lead to arbitrary remote code execution. This issue is related to the Drupal Core release SA-CORE-2018-006."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-068
+  metadata:
+    security-risk: "Critical 17∕25 AC:Basic/A:User/CI:All/II:All/E:Theoretical/TD:Default"
+    vulnerability: "remote-code-execution"
+    fofa-query: "/sites/all/modules/mimemail/"
+    google-query: "inurl:'/sites/all/modules/mimemail/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/mimemail/mimemail.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'mimemail'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

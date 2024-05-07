@@ -1,0 +1,52 @@
+
+id: drupal_module-phpconfig-arbitrary-php-code-execution
+info:
+  name: drupal_module-phpconfig-arbitrary-php-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to add or overwrite PHP configuration on a drupal website. The module doesnt sufficiently allow access to set these configurations, leading to arbitrary PHP configuration execution by an attacker. This vulnerability is mitigated by the fact that an attacker must have a role with the permission administer phpconfig. After updating the module, its important to review the permissions of your website and if administer phpconfig permission is given to a not fully trusted user role, we advise to revoke it."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-055
+  metadata:
+    security-risk: "Critical 17∕25 AC:Basic/A:Admin/CI:All/II:All/E:Theoretical/TD:All"
+    vulnerability: "arbitrary-php-code-execution"
+    fofa-query: "/sites/all/modules/phpconfig/"
+    google-query: "inurl:'/sites/all/modules/phpconfig/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/phpconfig/phpconfig.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'phpconfig'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.0')
+         - compare_versions(version, '7.x-1.0')

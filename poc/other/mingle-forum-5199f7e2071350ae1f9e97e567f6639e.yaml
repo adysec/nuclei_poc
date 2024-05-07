@@ -1,0 +1,59 @@
+id: mingle-forum-5199f7e2071350ae1f9e97e567f6639e
+
+info:
+  name: "Mingle Forum < 1.0.34 - Unauthenticated SQL Injection"
+  author: topscoder
+  severity: high
+  description: "The Mingle Forum plugin for WordPress is vulnerable to generic SQL Injection in versions up to 1.0.34 due to insufficient escaping on the user-supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database."
+  reference:
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-mingle-forum-edit_post_id-parameter-sql-injection-1-0-31/
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=662550%40mingle-forum&new=662550%40mingle-forum&sfp_email=&sfph_mail=
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=664865%40mingle-forum&new=664865%40mingle-forum&sfp_email=&sfph_mail=
+    - https://www.exploit-db.com/exploits/17894
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/mingle-forum/"
+    google-query: inurl:"/wp-content/plugins/mingle-forum/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,mingle-forum,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mingle-forum/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mingle-forum"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.34')

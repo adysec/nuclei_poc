@@ -1,0 +1,54 @@
+
+id: drupal_module-expandable_formatter-cross-site-scripting
+info:
+  name: drupal_module-expandable_formatter-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to render a field in an expandable/collapsible region. The module doesnt sufficiently sanitize the field content when displaying it to an end user. This vulnerability is mitigated by the fact that an attacker must have a role capable of creating content that uses the field formatter."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-028
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/expandable_formatter/"
+    google-query: "inurl:'/sites/all/modules/expandable_formatter/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/expandable_formatter/expandable_formatter.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'expandable_formatter'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

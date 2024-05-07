@@ -1,0 +1,58 @@
+id: mainwp-child-58c8f5d69615f602d92d90394db9d64f
+
+info:
+  name: "MainWP Child < 3.4.5 - Authentication Bypass"
+  author: topscoder
+  severity: high
+  description: "The MainWP Child plugin for WordPress is vulnerable to authentication bypass due to insufficient validation on the check_login function in versions up to, and including, 3.4.4. This makes it possible for attackers to become administrative users and take full control of the affected website."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset/1826377/mainwp-child
+    - https://github.com/mainwp/mainwp-child/commit/1b03e47300d1ee30776a63f4d526e45e1baef4e3#diff-b7c78d39c028166665d187e06e5058a7
+    - https://web.archive.org/web/20191101130017/https%3A//medium.com/websec/authentication-bypass-rce-on-300k-live-websites-using-mainwp-child-3-4-5-30a69097f633
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/mainwp-child/"
+    google-query: inurl:"/wp-content/plugins/mainwp-child/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,mainwp-child,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mainwp-child/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mainwp-child"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.4.5')

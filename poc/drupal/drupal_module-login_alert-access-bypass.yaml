@@ -1,0 +1,52 @@
+
+id: drupal_module-login_alert-access-bypass
+info:
+  name: drupal_module-login_alert-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module provides a field on user profiles which allows users to get a notification when their account logs in to the site. The notification e-mail includes a link which will terminate all sessions for that user. This is useful in the case of unauthorised access to the account. The module doesnt employ sufficient randomness in the generation of URLs, which represents an Access Bypass vulnerability."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-013
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:None/CI:None/II:Some/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/login_alert/"
+    google-query: "inurl:'/sites/all/modules/login_alert/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/login_alert/login_alert.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'login_alert'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')

@@ -1,0 +1,60 @@
+id: gutenberg-beef3baf11d4695a6d5a75aab0ad1eba
+
+info:
+  name: "WordPress Core < 6.0.3 & Gutenberg < 14.3.1 - Authenticated Cross-Site Scripting in Various Blocks"
+  author: topscoder
+  severity: medium
+  description: "WordPress Core in versions up to 6.0.3 and the Gutenberg plugin for WordPress in versions up to 14.3.1 are vulnerable to Stored Cross-Site Scripting due to insufficient output escaping on user supplied input. The RSS widget, Search Block, Featured Image Block, RSS Block, and Navigation Block are all affected components. This makes it possible for authenticated users with access to the block editor to inject malicious web scripts that may execute whenever accessing the page."
+  reference:
+    - https://www.wordfence.com/blog/2022/10/patch-now-the-wordpress-6-0-3-security-update-contains-important-fixes/
+    - https://wordpress.org/news/2022/10/wordpress-6-0-3-security-release/
+    - https://core.trac.wordpress.org/changeset/54543
+    - https://github.com/WordPress/gutenberg/releases/tag/v14.3.1
+    - https://plugins.trac.wordpress.org/changeset/2800223
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/gutenberg/"
+    google-query: inurl:"/wp-content/plugins/gutenberg/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,gutenberg,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gutenberg/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gutenberg"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 14.3.0')

@@ -1,0 +1,52 @@
+
+id: drupal_module-mosaik-cross-site-scripting
+info:
+  name: drupal_module-mosaik-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "The Mosaik module enables you to create pages or complex blocks in Drupal with the logic of a real mosaic and its pieces. The module doesnt sufficiently sanitize the titles of fieldsets on its administration pages or the titles of blocks that it creates. This vulnerability is mitigated by the fact that an attacker must have a role with the permission administer mosaik."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-080
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/mosaik/"
+    google-query: "inurl:'/sites/all/modules/mosaik/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/mosaik/mosaik.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'mosaik'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

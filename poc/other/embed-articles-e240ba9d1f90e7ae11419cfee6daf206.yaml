@@ -1,0 +1,58 @@
+id: embed-articles-e240ba9d1f90e7ae11419cfee6daf206
+
+info:
+  name: "Embed Articles <= 7.0.3 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Embed Articles plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘API Key’ parameter in versions up to, and including, 7.0.3 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://packetstormsecurity.com/files/131797/
+    - https://wordpress.org/plugins/embed-articles/#developers
+    - https://plugins.trac.wordpress.org/browser/embed-articles/trunk/dashboard.php?rev=2749898#:~:text=%C2%A0_e(-,%22API%20Key%22,-)%3B%C2%A0%3F%3E
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/embed-articles/"
+    google-query: inurl:"/wp-content/plugins/embed-articles/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,embed-articles,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/embed-articles/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "embed-articles"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.0.3')

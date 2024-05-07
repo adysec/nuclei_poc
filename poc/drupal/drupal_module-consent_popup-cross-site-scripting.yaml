@@ -1,0 +1,53 @@
+
+id: drupal_module-consent_popup-cross-site-scripting
+info:
+  name: drupal_module-consent_popup-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "The Consent Popup provides a configurable popup that requires acceptance of a question before the visitor can continue, typically used for age consent. The module doesnt sufficiently sanitizes the text on the block leading to a cross site scripting (XSS) vulnerability. This vulnerability is mitigated by the fact that an attacker must have a role with the permission to create blocks."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-017
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/consent_popup/"
+    google-query: "inurl:'/sites/all/modules/consent_popup/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/consent_popup/consent_popup.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'consent_popup'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '1.0.2')
+         - compare_versions(version, '1.0.1')
+         - compare_versions(version, '1.0.0')

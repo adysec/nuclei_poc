@@ -1,0 +1,31 @@
+id: dockerfile-disclosure
+
+info:
+  name: Dockerfile File Detection
+  author: morgenm
+  severity: medium
+  description: Searches for exposed Dockerfiles.
+  tags: exposure,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/dockerfile"
+      - "{{BaseURL}}/Dockerfile"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - '^(?:FROM(?:CACHE)?|RUN|ADD|WORKDIR|ENV|EXPOSE|\#)\s+[ -~]+'
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+        negative: true

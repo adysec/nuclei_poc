@@ -1,0 +1,58 @@
+id: paid-member-subscriptions-34a1971cc6f270818ec4d58e38d5658c
+
+info:
+  name: "Paid Member Subscriptions <= 2.4.1 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Paid Member Subscriptions plugin for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 2.4.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-membership-content-restriction-paid-member-subscriptions-multiple-vulnerabilities-2-4-1/
+    - https://sploitus.com/exploit?id=WPEX-ID:A6FEF63C-D588-4431-B06F-72D1FA25B2F7
+    - https://www.trustwave.com/en-us/resources/security-resources/security-advisories/?fid=29172
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/paid-member-subscriptions/"
+    google-query: inurl:"/wp-content/plugins/paid-member-subscriptions/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,paid-member-subscriptions,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/paid-member-subscriptions/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "paid-member-subscriptions"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.4.2')
