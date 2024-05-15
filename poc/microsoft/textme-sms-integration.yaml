@@ -1,0 +1,58 @@
+id: textme-sms-integration
+
+info:
+  name: "TextMe SMS <= 1.8.8 - Authenticated Stored Cross-Site Scripting"
+  author: topscoder
+  severity: high
+  description: "The TextMe SMS plugin for WordPress is vulnerable to Stored Cross-Site Scripting via several parameters in versions up to, and including, 1.8.8 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset/2577659
+    - https://plugins.trac.wordpress.org/changeset/2587023
+    - https://wpscan.com/vulnerability/142ff815-5e14-405f-a1ab-69cb4fd79f84
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 7.4
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/textme-sms-integration/"
+    google-query: inurl:"/wp-content/plugins/textme-sms-integration/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,textme-sms-integration,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/textme-sms-integration/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "textme-sms-integration"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.8.9')
