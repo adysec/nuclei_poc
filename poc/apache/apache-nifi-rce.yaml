@@ -1,23 +1,36 @@
-id: Apache-NiFi-rce
+id: apache-nifi-rce
+
 info:
-  name: Apache NiFi系统API命令执行
-  author: Str1am
+  name: Apache NiFi RCE
+  author: arliya
   severity: high
-  reference: https://github.com/imjdl/Apache-NiFi-Api-RCE/blob/master/exp.py
-  tags: NiFi,rce
+  description: |
+    Apache NiFi is designed for data streaming. It supports highly configurable data routing, transformation, and system mediation logic that indicate graphs. The system has unauthorized remote command execution vulnerability.
+  metadata:
+    verified: "true"
+    shodan-query: title:"NiFi"
+  tags: apache,nifi,rce
+
 requests:
   - method: GET
     path:
-      - "{{BaseURL}}/nifi-api/access/config"
+      - "{{BaseURL}}/nifi-api/process-groups/root"
+
     matchers-condition: and
     matchers:
+      - type: word
+        part: body
+        words:
+          - "revision"
+          - "canRead"
+          - "permissions"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
       - type: status
         status:
           - 200
-      - type: word
-        words:
-          - "supportsLogin"
-          - "config"
-          - "true"
-        part: body
-        condition: and

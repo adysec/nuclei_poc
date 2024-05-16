@@ -1,35 +1,22 @@
 id: alibaba-canal-info-leak
-
+donce: true
 info:
   name: Alibaba Canal Info Leak
-  author: pikpikcu
-  severity: info
-  tags: config,exposure,alibaba
-  reference:
-    - https://github.com/alibaba/canal/issues/632
-    - https://netty.io/wiki/reference-counted-objects.html
-    - https://my.oschina.net/u/4581879/blog/4753320
+  risk: Medium
+
+params:
+  - root: "{{.BaseURL}}"
 
 requests:
   - method: GET
-    path:
-      - "{{BaseURL}}/api/v1/canal/config/1/1"
+    redirect: false
     headers:
-      Content-Type: application/json
+      - User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3984.0 Safari/537.36
+    url: >-
+      {{.root}}/api/v1/canal/config/1/1
+    detections:
+      - >-
+        StatusCode() == 200 && RegexSearch("resHeaders", "application/json") && StringSearch("body", 'ncanal.aliyun.accessKey') && StringSearch("body", 'ncanal.aliyun.secretKey') && !RegexSearch("body", "(?i)(\<\!doctype|\<html|\<head|\<body)")
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
-      - type: word
-        words:
-          - "application/json"
-        condition: and
-        part: header
-      - type: word
-        words:
-          - "ncanal.aliyun.accessKey"
-          - "ncanal.aliyun.secretKey"
-        condition: and
-        part: body
+references:
+  - link: https://github.com/alibaba/canal/issues/632

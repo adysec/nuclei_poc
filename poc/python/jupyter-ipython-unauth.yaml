@@ -1,24 +1,21 @@
 id: jupyter-ipython-unauth
-
 info:
   name: Jupyter ipython Unauth
-  author: pentest_swissky
-  severity: critical
-  description: Unauthenticated access to Jupyter instance
-  tags: unauth
+  risk: Critical
+
+params:
+  - root: '{{.BaseURL}}'
 
 requests:
   - method: GET
-    path:
-      - "{{BaseURL}}/ipython/tree"
+    redirect: false
+    url: >-
+      {{.root}}/ipython/tree
+    headers:
+      - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
+    detections:
+      - >-
+        StatusCode() == 200 && StringSearch("body", "ipython/static/components") && StringSearch("response", "ipython/kernelspecs")
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
-      - type: word
-        words:
-          - ipython/static/components
-          - ipython/kernelspecs
-        part: body
+references:
+  - poc: "import os;os.popen('cat /etc/passwd').read()"

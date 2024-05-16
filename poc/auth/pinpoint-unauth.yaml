@@ -1,31 +1,21 @@
 id: pinpoint-unauth
-
 info:
   name: PinPoint Unauth
-  author: dhiyaneshDk
-  severity: high
-  reference: https://github.com/pinpoint-apm/pinpoint
-  tags: pippoint,unauth
+  risk: High
+
+params:
+  - root: '{{.BaseURL}}'
 
 requests:
   - method: GET
-    path:
-      - '{{BaseURL}}/applications.pinpoint'
+    redirect: false
+    url: >-
+      {{.root}}/applications.pinpoint
+    headers:
+      - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
+    detections:
+      - >-
+        StatusCode() == 200 && && StringSearch("resHeaders", "application/json") && StringSearch("response", "applicationName") && StringSearch("response", "serviceType")
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "applicationName"
-          - "serviceType"
-        condition: and
-        part: body
-
-      - type: word
-        words:
-          - "application/json"
-        part: header
-
-      - type: status
-        status:
-          - 200
+references:
+  - repo: https://github.com/naver/pinpoint
