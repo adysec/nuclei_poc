@@ -1,26 +1,35 @@
-id: clickjacking
-
+id: detect-clickjacking
 info:
-  name: Clickjacking (Missing X-frame-options or CSP directive 'frame-ancestors')
-  author: sklnhunt
-  severity: medium
-  description: Clickjacking is caused due to allowing permission to a third party website to embed the vulnerable site using Iframe.
-  tags: misconfig
+  name: Detect Clickjacking Vulnerability
+  description: Detects if a URL is vulnerable to clickjacking.
+  severity: high
+  tags:
+    - security
+    - clickjacking
+inputs:
+  target:
+    type: url
+    description: The target URL to scan for clickjacking vulnerability.
+author:
+  name: [Satya Prakash]
+  twitter: [@0xKayala]
+  website: [0xKayala.medium.com]
+  github: [0xKayala]
 
-http:
+requests:
   - method: GET
-    path:
-      - "{{BaseURL}}"
-  
-    max-redirects: 3
+    url: '{{input "target"}}'
+    headers:
+      - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36
+      - Referer: '{{input "target"}}'
+      - Origin: '{{input "target"}}'
     matchers-condition: and
     matchers:
-      - type: dsl
-        name: missing x-frame-options
-        dsl:
-          - "!regex('(?i)x-frame-options:',all_headers)"
-      
-      - type: dsl
-        name: missing frame-ancestors directive
-        dsl:
-          - "!regex('(?i)frame-ancestors',all_headers)"
+      - type: regex
+        regex:
+          - "(<iframe.*src=.*/>)i"
+        condition: present
+      - type: regex
+        regex:
+          - "(<meta.*http-equiv=.X-Frame-Options.*/>)i"
+        condition: not present
