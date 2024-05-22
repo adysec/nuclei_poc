@@ -1,7 +1,7 @@
 id: aviatrix-panel
 
 info:
-  name: Aviatrix Cloud Controller Panel
+  name: Aviatrix Cloud Controller Panel Login
   author: pikpikcu,philippedelteil,daffainfo
   severity: info
   description: An Aviatrix Cloud Controller login panel was detected.
@@ -10,26 +10,29 @@ info:
   classification:
     cwe-id: CWE-200
   metadata:
-    max-request: 1
     shodan-query: http.title:"Aviatrix Cloud Controller"
   tags: panel,aviatrix
 
-http:
+requests:
   - method: GET
     path:
       - "{{BaseURL}}"
+      - "{{BaseURL}}/assets/img/favicon-32x32.png"
 
-    matchers-condition: and
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
-      - type: word
-        part: body
-        words:
-          - '<title>Aviatrix'
-          - 'Controller</title>'
+      - type: dsl
+        name: "title"
         condition: and
+        dsl:
+          - 'contains(body, "<title>Aviatrix")'
+          - 'contains(body, "Controller</title>")'
+          - 'status_code == 200'
 
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        name: "favicon"
+        dsl:
+          - "status_code==200 && (\"7c1c26856345cd7edbf250ead0dc9332\" == md5(body))"
 
-# digest: 4b0a00483046022100aec9d16189d1c580d13a29afec728eab1043bca8c710eb6c4bc77f7fbfd450ec022100ac24e35c952341c1fa6b6e748ee8eb716201e0adb246f038717ce6f664110ed2:922c64590222798bb761d5b6d8e72950
+# Enhanced by mp on 2022/03/23
