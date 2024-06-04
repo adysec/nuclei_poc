@@ -1,0 +1,53 @@
+
+id: drupal_module-email_contact-access-bypass
+info:
+  name: drupal_module-email_contact-access-bypass
+  author: me
+  severity: medium
+  description: "The Email Contact module provides email field display formatters that can display the field as a link to the contact form, or as an inline contact form. The module does not sufficiently handle restricted entity or field access to the mail sending form, when the Email contact link formatter is used. This vulnerability is mitigated by the fact that it requires the Email contact link formatter to be used."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-020
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/email_contact/"
+    google-query: "inurl:'/sites/all/modules/email_contact/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/email_contact/email_contact.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'email_contact'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 2.0.4')

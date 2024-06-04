@@ -1,0 +1,53 @@
+
+id: drupal_module-content_moderation_notifications-information-disclosure
+info:
+  name: drupal_module-content_moderation_notifications-information-disclosure
+  author: me
+  severity: medium
+  description: "This module enables notifications to be sent to all users of a particular role, or to the contents author when a piece of content is transitioned from one state to another via cores content_moderation module. The module doesnt sufficiently check access to content when sending notifications. This vulnerability is mitigated by the fact that an attacker must have been assigned to receive notifications for the given content. Additionally, only data sent in the email is visible, so the attacker cannot access the content on the site."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-047
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Complex/A:User/CI:Some/II:None/E:Proof/TD:All"
+    vulnerability: "information-disclosure"
+    fofa-query: "/sites/all/modules/content_moderation_notifications/"
+    google-query: "inurl:'/sites/all/modules/content_moderation_notifications/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/content_moderation_notifications/content_moderation_notifications.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'content_moderation_notifications'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '>=3.0.0 <= 3.6.0')
