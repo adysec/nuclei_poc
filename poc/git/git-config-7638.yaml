@@ -1,49 +1,31 @@
 id: git-config
-
 info:
-  name: Git Configuration - Detect
-  author: pdteam,pikpikcu,Mah3Sec_,m4lwhere
+  name: Git Config Disclosure
+  author: pdteam,pikpikcu,Mah3Sec_
   severity: medium
-  description: Git configuration was detected via the pattern /.git/config and log file on passed URLs.
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
-    cvss-score: 5.3
-    cwe-id: CWE-200
-  metadata:
-    max-request: 1
+  description: Searches for the pattern /.git/config and log file on passed URLs.
   tags: config,git,exposure
-
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/.git/config"
-
+requests:
+  - raw:
+      - |
+        GET /.git/config HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 1
+        Connection: close
     matchers-condition: and
     matchers:
       - type: word
-        part: body
         words:
-          - "[credentials]"
           - "[core]"
-        condition: or
-
       - type: dsl
         dsl:
           - "!contains(tolower(body), '<html')"
           - "!contains(tolower(body), '<body')"
         condition: and
-
       - type: status
         status:
           - 200
-
-    extractors:
-      - type: regex
-        part: body
-        group: 1
-        regex:
-          - "url ?= ?https?://(.*:.*)@"
-          - "AUTHORIZATION: basic (.*)"
-          - "pass = (.*)"
-
-# digest: 4b0a00483046022100868867eb2c914442ac8ea1e7eecdce5eea99a3fb45aba31948abb038e8d901490221008eec29dd0500c508866239e959ec9e52690d31892168289da3a56a40aca7c4fc:922c64590222798bb761d5b6d8e72950
