@@ -1,38 +1,38 @@
 id: gitlab-user-enumeration
 
 info:
-  author: Suman_Kar
-  name: GitLab - User Enumeration
+  name: Gitlab User enumeration
+  author: pikpikcu
   severity: info
-  tags: gitlab,enumeration
-  reference: https://github.com/danielmiessler/SecLists/blob/master/Usernames/Names/malenames-usa-top1000.txt
+  tags: gitlab,enum
+
 
 requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/graphql"
+    headers:
+      Content-Type: application/json
+    body: |
+        {
+           "query":"{\nusers {\nedges {\n  node {\n    username\n    email\n    avatarUrl\n    }\n   }\n  }\n }"
+        }
 
-  - raw:
-      - |
-        GET /users/{{user}}/exists HTTP/1.1
-        Host: {{Hostname}}
-        Accept: application/json, text/plain, */*
-        Referer: {{BaseURL}}
-
-    threads: 50
-    payloads:
-      user: helpers/wordlists/user-list.txt
 
     matchers-condition: and
     matchers:
-
-      - type: regex
-        part: body
-        regex:
-          - "exists.*:true"
-
-      - type: status
-        status:
-          - 200
-
       - type: word
         words:
           - "application/json"
         part: header
+
+      - type: word
+        words:
+          - avatarUrl
+          - username
+          - email
+        condition: and
+
+      - type: status
+        status:
+          - 200
