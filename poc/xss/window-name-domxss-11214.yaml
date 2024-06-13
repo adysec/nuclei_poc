@@ -1,11 +1,18 @@
 id: window-name-domxss
+
 info:
   name: window.name - DOM Cross-Site Scripting
   author: pdteam
-  severity: medium
+  severity: high
+  description: The window-name is vulnerable to DOM based cross-site scripting.
   reference:
     - https://public-firing-range.appspot.com/dom/index.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
   tags: headless,xss,domxss
+
 headless:
   - steps:
       - action: setheader
@@ -13,6 +20,7 @@ headless:
           part: response
           key: Content-Security-Policy
           value: "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;"
+
       - action: script
         args:
           hook: true
@@ -61,21 +69,27 @@ headless:
                 return oldEval.apply(this, arguments);
               };
             }
+
       - args:
           url: "{{BaseURL}}"
         action: navigate
       - action: waitload
+
       - action: script
         name: alerts
         args:
-          code: window.alerts
+          code: |
+            () => { window.alerts }
+
     matchers:
       - type: word
         part: alerts
         words:
           - "sink:"
+
     extractors:
       - type: kval
         part: alerts
         kval:
           - alerts
+# digest: 490a004630440220440ff260d9c59333dc1481acd3df4e4c68997bb43f6834f8e0dc24f522d7bbc3022038a8a9ab98ef7c71a0f749a408a2bc682fd38954282666b671651ee2df5f77c5:922c64590222798bb761d5b6d8e72950
