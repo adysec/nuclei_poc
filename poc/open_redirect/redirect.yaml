@@ -1,37 +1,48 @@
-id: redirect
+id: open-redirect
 
 info:
-  name: Check for redirects with common query parameters
-  author: tedm.infosec
+  name: Open Redirect Detection
+  author: princechaddha, shelled
   severity: medium
-  description: Basic redirection check
+  tags: redirect,dast
 
 requests:
-  - raw:
-      - |
-        GET /?next=https://z.com&url=https://z.com&target=https://z.com&rurl=https://z.com&dest=https://z.com HTTP 2.0
-        Host: {{Hostname}}
-      - |
-        GET /&destination=https://z.com&redir=https://z.com&redirect_uri=https://z.com&redirect_url=https://z.com&redirect=https://z.com HTTP 2.0
-        Host: {{Hostname}}
-      - |
-        GET /redirect/https://z.com HTTP 2.0
-        Host: {{Hostname}}
-      - |
-        GET /cgi-bin/redirect.cgi?https://z.com HTTP 2.0
-        Host: {{Hostname}}
-      - |
-        GET /?out/https://z.com&out?https://z.com&view=https://z.com&login?to=https://z.com&image_url=https://z.com HTTP 2.0
-        Host: {{Hostname}}
-      - |
-        GET /?go=https://z.com&return=https://z.com&returnTo=https://z.com&return_to=https://z.com HTTP 2.0
-        Host: {{Hostname}}
-      - |
-        GET /?checkout_url=https://z.com&continue=https://z.com&return_path=https://z.com HTTP 2.0
-        Host: {{Hostname}}
+  - method: GET
+    path:
+      - "{{BaseURL}}"
 
+    payloads:
+      redirect:
+        - "evil.com"
+
+    fuzzing:
+      - part: query
+        mode: single
+        fuzz:
+          - "https://{{redirect}}"
+          - "//{{redirect}}"
+          - ".{{redirect}}"
+          - "/\/\{{redirect}}"
+          - "hTTps://{{redirect}}"
+          - "https:{{redirect}}"
+          - "////{{redirect}}"
+          - "////{{redirect}}/%2f.."
+          - "//{{redirect}}/%2f.."
+          - "http://{{redirect}}"
+          - "htTP://{{redirect}}"
+          - "HTTPS://{{redirect}}"
+          - "HTTP://{{redirect}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "Location: https://z.com"
+      - type: regex
         part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)evil\.com\/?(\/|[^.].*)?$' # https://regex101.com/r/ZDYhFh/1
+
+      - type: status
+        status:
+          - 301
+          - 302
+          - 307

