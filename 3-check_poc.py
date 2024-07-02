@@ -1,6 +1,6 @@
 import os
 
-POC_DIR = "poc"
+POC_DIR = "clone-templates"
 
 yaml_files = [f for f in os.listdir(POC_DIR) if f.endswith('.yaml') or f.endswith('.yml')]
 
