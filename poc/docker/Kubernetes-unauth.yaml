@@ -1,15 +1,31 @@
-id: kubernetes-unauth
+id: Kubernetes-unauth
 
 info:
-    name: kubernetes Unauth
-    author: mumu0215(https://github.com/mumu0215)
-    severity: high
-    verified: false
+  name: Kubernetes 未授权远程命令执行漏洞
+  author: Str1am
+  severity: high
+  reference: https://blog.binaryedge.io/2018/12/06/kubernetes-being-hijacked-worldwide/
+  tags: Kubernetes,rce
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /api/v1/nodes
-        expression: 'response.status == 200 && response.content_type.contains("application/json") && response.body.bcontains(b"\"kubeletVersion\": \"v") && response.body.bcontains(b"\"containerRuntimeVersion\"")'
-expression: r0()
+requests:
+  - raw:
+      - |
+        POST /api/v1/pods HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0
+        
+        
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "namespace"
+          - "containers"
+          - "nodeName"
+        part: body
+        condition: and

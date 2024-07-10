@@ -3,7 +3,7 @@ name: 🕷 Wordfence crawler
 on:
   schedule:
     - cron: '25 3 * * *'
-  
+
   workflow_dispatch:
 
 jobs:
@@ -24,10 +24,14 @@ jobs:
           pip install flake8 pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      # run main.py for API if there are new vulns found
-      - name: Process vulnerabilities of Wordfence API source
+      # run src/main.py for API if there are new vulns found
+      - name: Process vulnerabilities of Wordfence API source (production)
         run: |
-          python main.py --api_endpoint https://www.wordfence.com/api/intelligence/v2/vulnerabilities/production
+          python src/main.py --api_endpoint https://www.wordfence.com/api/intelligence/v2/vulnerabilities/production
+
+      - name: Process vulnerabilities of Wordfence API source (scanner aka fresh/unfinished issues)
+        run: |
+          python src/main.py --api_endpoint https://www.wordfence.com/api/intelligence/v2/vulnerabilities/scanner
 
       - name: Commit new vulnerability templates
         run: |
@@ -39,5 +43,5 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.SECRET_TOKEN }}
-        
-        
+
+

