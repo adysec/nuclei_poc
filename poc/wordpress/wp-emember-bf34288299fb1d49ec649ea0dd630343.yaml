@@ -1,0 +1,59 @@
+id: wp-emember-bf34288299fb1d49ec649ea0dd630343
+
+info:
+  name: >
+    WP eMember <= 10.6.6 - Reflected Cross-Site Scripting via Member Edit
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fac1e55f-7027-494d-8beb-9a23e0fc2e00?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-emember/"
+    google-query: inurl:"/wp-content/plugins/wp-emember/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-emember,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-emember/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-emember"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 10.6.6')
