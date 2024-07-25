@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [ linux, macos, macos_m1, win-msvc, linux-arm-v7, linux-aarch64 ]
+        build: [linux, macos, macos_m1, win-msvc, linux-arm-v7, linux-aarch64]
         include:
           - build: linux
             os: ubuntu-latest
@@ -116,6 +116,20 @@ jobs:
             bin_file="target/${{ matrix.target }}/release/${{ env.BIN_NAME }}"
             echo "BIN_FILE=$bin_file" >> $GITHUB_ENV
           fi
+      - name: Install Cargo deb (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo install cargo-deb
+          cargo deb --target ${{ matrix.target }} --output target/${{ matrix.target }}/debian/observer-ward_${{ matrix.target }}.deb
+      - name: Upload deb to release
+        if: matrix.os == 'ubuntu-latest'
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/debian/observer-ward_${{ matrix.target }}.deb
+          asset_name: observer-ward_${{ matrix.target }}.deb
+          tag: defaultv4
+          overwrite: true
       - name: Upload binary to release
         uses: svenstaro/upload-release-action@v1-release
         with:

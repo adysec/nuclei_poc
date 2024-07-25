@@ -1,31 +1,32 @@
-version: "{build}"
+version: build-{build}.{branch}
 
-clone_folder: c:\gopath\src\github.com\mholt\archiver
+clone_folder: C:\gopath\src\github.com\pkg\errors
+shallow_clone: true # for startup speed
 
 environment:
-  GOPATH: c:\gopath
-  CGO_ENABLED: 0
+  GOPATH: C:\gopath
 
-stack: go 1.11
+platform:
+  - x64
 
+# http://www.appveyor.com/docs/installed-software
 install:
-  - go get ./...
-  - go get golang.org/x/lint/golint
-  - go get github.com/gordonklaus/ineffassign
-  - set PATH=%GOPATH%\bin;%PATH%
-
-build: off
-
-before_test:
+  # some helpful output for debugging builds
   - go version
   - go env
+  # pre-installed MinGW at C:\MinGW is 32bit only
+  # but MSYS2 at C:\msys64 has mingw64
+  - set PATH=C:\msys64\mingw64\bin;%PATH%
+  - gcc --version
+  - g++ --version
+
+build_script:
+  - go install -v ./...
 
 test_script:
-  - go vet ./...
-  - go test ./...
-  - ineffassign .
+  - set PATH=C:\gopath\bin;%PATH%
+  - go test -v ./...
 
-after_test:
-  - golint ./...
-
+#artifacts:
+#  - path: '%GOPATH%\bin\*.exe'
 deploy: off
