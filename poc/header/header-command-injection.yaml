@@ -1,30 +1,27 @@
 id: header-command-injection
 
 info:
-  name: Header - Remote Command Injection
+  name: Header Command Injection
   author: geeknik
-  severity: critical
-  description: Headers were tested for remote command injection vulnerabilities.
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
-    cvss-score: 10.0
-    cwe-id: CWE-77
+  severity: high
+  description: Fuzzing headers for command injection
   tags: fuzz,rce
 
 requests:
-  - raw:
+  - payloads:
+      header: helpers/payloads/request-headers.txt
+      payload: helpers/payloads/command-injection.txt
+
+    raw:
       - |
-        GET /?{{header}} HTTP/1.1
+        GET /?§header§ HTTP/1.1
         Host: {{Hostname}}
-        {{header}}: {{payload}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+        §header§: §payload§
+        Connection: close
 
-    payloads:
-      header: ../../../helpers/payloads/request-headers.txt
-      payload: ../../../helpers/payloads/command-injection.txt
     attack: clusterbomb
-
-    host-redirects: true
-    stop-at-first-match: true
+    redirects: true
     matchers-condition: or
     matchers:
       - type: word
@@ -36,6 +33,4 @@ requests:
 
       - type: regex
         regex:
-          - "root:.*:0:0:"
-
-# Enhanced by mp on 2022/10/12
+          - "root:[x*]:0:0:"
