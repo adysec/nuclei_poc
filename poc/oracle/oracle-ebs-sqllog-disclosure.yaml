@@ -1,29 +1,38 @@
 id: oracle-ebs-sqllog-disclosure
+
 info:
-  name: Oracle EBS SQL Log Disclosure
-  risk: Medium
-  confidence: Tentative
-
-params:
-  - root: "{{.BaseURL}}"
-
-variables:
-  - prefix: |
-      /html
-      //html/
-      //OA_HTML/
+  name: Oracle EBS - SQL Log Disclosure
+  author: dhiyaneshDk
+  severity: medium
+  description: An Oracle EBS SQL log was discovered.
+  reference:
+    - https://the-infosec.com/2017/03/29/do-you-know-what-your-erp-is-telling-us/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  tags: oracle,ebs,logs,exposure
 
 requests:
   - method: GET
-    redirect: false
-    url: >-
-      {{.root}}{{.prefix}}/bin//sqlnet.log
-    headers:
-      - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
-    detections:
-      - >-
-        StatusCode() == 200 && StringSearch("body", "DESCRIPTION=") && StringSearch("body", "USER=") && StringSearch("resHeaders", "text/plain")
+    path:
+      - '{{BaseURL}}/OA_HTML/bin/sqlnet.log'
 
-references:
-  - links:
-      - https://the-infosec.com/2017/03/29/do-you-know-what-your-erp-is-telling-us/
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "DESCRIPTION="
+          - "USER="
+        part: body
+
+      - type: word
+        words:
+          - "text/plain"
+        part: header
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/10/06
