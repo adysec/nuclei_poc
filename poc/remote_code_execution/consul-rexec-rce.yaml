@@ -1,34 +1,16 @@
 id: consul-rexec-rce
 
 info:
-  name: Consul Rexec RCE
-  author: SleepingBag945
-  severity: critical
-  description: |
-    Under a specific configuration, a malicious attacker can remotely execute commands on the Consul server without authorization by sending a carefully constructed HTTP request.
-  metadata:
-    fofa-query: protocol="consul(http)"
-  tags: rce
+    name: Consul rexec RCE
+    author: imlonghao(https://imlonghao.com/)
+    severity: high
+    verified: false
 
-http:
-  - raw:
-      - |
-        GET /v1/agent/self  HTTP/1.1
-        Host: {{Hostname}}
+rules:
+    r0:
+        request:
+            method: GET
+            path: /v1/agent/self
+        expression: 'response.status == 200 && response.content_type.contains("json") && response.body.bcontains(b"\"DisableRemoteExec\": false")'
+expression: r0()
 
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - '"EnableRemoteScriptChecks":true'
-        condition: and
-
-      - type: status
-        status:
-          - 200
-
-
-# msf
-# search Hashicorp
-# exploit/multi/misc/consul_service_exec

@@ -4,18 +4,51 @@ info:
   name: RedMine Detection
   author: YashVardhanTripathi
   severity: info
-  description: RedMine Detection
+  description: RedMine Default Login Extraction
   metadata:
     max-request: 1
   tags: tech, RedMine
 
-http:
+requests:
   - method: GET
     path:
       - "{{BaseURL}}/login"
-    host-redirects: true
+    extractors:
+      - type: regex
+        name: Coocoo
+        group: 1
+        part: header
+        regex:
+          - "Redmine=([a-zA-Z0-9]+);"
+      - type: regex
+        name: authtok
+        group: 1
+        part: body
+        regex:
+          - '<meta name="csrf-token" content="([^"]+)"'
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/login.php"
+    body:
+      authenticity_token={{authtok}}&username={{username}}&password={{password}}
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+      Origin: "{{BaseURL}}"
+      Cookie: Redmine={{Coocoo}}
+    attack: pitchfork
+    payloads:
+      username:
+        - user
+      password:
+        - bitnami
+
+    matchers-condition: and
     matchers:
       - type: word
-        part: header
+        part: body
         words:
-          - "Set-Cookie: Redmine="
+          - "Issues assigned to me"
+      - type: status
+        status:
+          - 200
