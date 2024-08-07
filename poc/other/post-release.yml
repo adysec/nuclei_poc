@@ -59,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [linux, macos, macos_m1, win-msvc, linux-arm-v7, linux-aarch64]
+        build: [ linux, macos, macos_m1, win-msvc, linux-arm-v7, linux-aarch64 ]
         include:
           - build: linux
             os: ubuntu-latest
@@ -106,7 +106,7 @@ jobs:
           sudo apt-get install -y gcc-multilib xz-utils liblz4-tool libc6-dev libssl-dev musl-tools pkg-config patchelf
           sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
           sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" observer_ward/Cargo.toml
-          sed -i -e "s/\"observer_ward version\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
+          sed -i -e "s/\"observer_ward\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
       - name: Cache Choco
         if: matrix.os == 'windows-latest'
         uses: actions/cache@v4
@@ -121,7 +121,7 @@ jobs:
           choco install llvm openssl
           export CARGO_PKG_VERSION=`date +'%-Y.%-m.%-d'`
           sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" observer_ward/Cargo.toml
-          sed -i -e "s/\"observer_ward version\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
+          sed -i -e "s/\"observer_ward\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
           echo "CARGO_PKG_VERSION=`date +'%Y.%m.%d'`" >>$GITHUB_ENV
           echo "OPENSSL_DIR=C:\Program Files\OpenSSL-Win64" >>$GITHUB_ENV
           echo "RUSTFLAGS=-C target-feature=+crt-static" >>$GITHUB_ENV
@@ -129,7 +129,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" observer_ward/Cargo.toml
-          sed -i -e "s/\"observer_ward version\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
+          sed -i -e "s/\"observer_ward\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -174,21 +174,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ env.BIN_FILE }}
           asset_name: ${{ matrix.file }}
-          tag: defaultv4
+          tag: default
           overwrite: true
-      - name: Install Cargo deb (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          cargo install cargo-deb
-          cargo deb --target ${{ matrix.target }} --output target/${{ matrix.target }}/debian/observer-ward_${{ needs.create-release.outputs.release_version }}_${{ matrix.target }}.deb
-      - name: Upload deb to release
-        if: matrix.os == 'ubuntu-latest'
-        uses: svenstaro/upload-release-action@v1-release
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/debian/observer-ward_${{ needs.create-release.outputs.release_version }}_${{ matrix.target }}.deb
-          asset_name: observer-ward_${{ needs.create-release.outputs.release_version }}_${{ matrix.target }}.deb
-          tag: ${{ needs.create-release.outputs.release_version }}
   homebrew:
     runs-on: ubuntu-latest
     needs:

