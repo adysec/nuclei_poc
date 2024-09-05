@@ -2,32 +2,30 @@ id: aviatrix-detect
 
 info:
   name: Aviatrix Detect
-  author: pikpikcu
+  author: pikpikcu,philippedelteil
   severity: info
   tags: tech,aviatrix
+  metadata:
+    shodan-query: http.title:"AviatrixController", http.title:"Aviatrix Cloud Controller"
 
 requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/assets/img/favicon-32x32.png"
 
-    raw:
-      - |
-        GET / HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
-        
-    matchers-condition: and
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
+      - type: dsl
+        name: "title"
+        condition: and
+        dsl:
+          - 'contains(body, "<title>Aviatrix")'
+          - 'contains(body, "Controller</title>")'
+          - 'status_code == 200'
 
-      - type: word
-        part: body
-        words:
-          - "<title>Aviatrix Controller</title>"
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        name: "favicon"
+        dsl:
+          - "status_code==200 && (\"7c1c26856345cd7edbf250ead0dc9332\" == md5(body))"
