@@ -8,7 +8,9 @@ info:
   impact: |
     When the Umbraco Delivery API is enabled, all published content is made
     available to the public by default. This may result in sensitive
-    information being exposed and should be investigated.
+    information being exposed and should be investigated. For example, it is
+    common for Umbraco sites to have a "site settings" node which may contain
+    properties like API keys.
   remediation: |
     If the Delivery API is intended to be public facing, then ensure that it
     does not return any sensitive information. Use the
@@ -29,9 +31,18 @@ http:
       - "{{BaseURL}}/umbraco/delivery/api/v2/content"
       - "{{BaseURL}}/umbraco/delivery/api/v1/media?fetch=children:/"
       - "{{BaseURL}}/umbraco/delivery/api/v2/media?fetch=children:/"
+      - "{{BaseURL}}/umbraco/delivery/api/v1/content/item/site-settings"
+      - "{{BaseURL}}/umbraco/delivery/api/v2/content/item/site-settings"
+      - "{{BaseURL}}/umbraco/delivery/api/v1/content/item/settings"
+      - "{{BaseURL}}/umbraco/delivery/api/v2/content/item/settings"
     redirects: true
     max-redirects: 3
     matchers:
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        condition: and
+        dsl:
+          # Match will succeed when we receive an HTTP 200 OK response with a
+          # JSON body and a header named `api-supported-versions`.
+          - "status_code == 200"
+          - "contains(content_type, 'application/json')"
+          - "len(api_supported_versions) > 0"

@@ -3,19 +3,16 @@ id: rubygems-api-key
 info:
   name: RubyGems API Key
   author: DhiyaneshDK
-  severity: high
+  severity: info
   reference:
-    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/rubygems.yml
+    - https://github.com/praetorian-inc/noseyparker/blob/main/data/default/rules/rubygems.yml
     - https://guides.rubygems.org/rubygems-org-api/
     - https://guides.rubygems.org/api-key-scopes/
   metadata:
-    verified: true
-    max-request: 1
+    verified: "true"
   tags: rubygems,token,exposure,ruby
 
-flow: http(1) && http(2)
-
-http:
+requests:
   - method: GET
     path:
       - "{{BaseURL}}"
@@ -23,24 +20,5 @@ http:
     extractors:
       - type: regex
         part: body
-        name: token
         regex:
           - "(rubygems_[a-f0-9]{48})"
-        internal: true
-
-  - raw:
-      - |
-        @Host: https://rubygems.org:443
-        GET /api/v1/web_hooks.json HTTP/1.1
-        Host: rubygems.org
-        Authorization: {{token}}
-
-    self-contained: true
-
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 200'
-          - '!contains(body, "Access Denied")'
-          - 'contains(content_type, "application/json")'
-        condition: and

