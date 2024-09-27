@@ -1,33 +1,27 @@
-id: cache-poisoning
+id: cache-poisoning    
 
 info:
-  name: Cache Poisoning
-  author: melbadry9,xelkomy,akincibor,dogasantos
-  severity: low
-  reference:
-    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
-    - https://portswigger.net/research/practical-web-cache-poisoning
-  tags: cache,generic
+  name: HTTP Cache Poisoning
+  author: sirpedrotavares / seguranca-informatica.pt
+  severity: medium
 
 requests:
   - raw:
       - |
-        GET /?{{randstr}}=9 HTTP/1.1
-        X-Forwarded-Prefix: prefix.cache.interact.sh
-        X-Forwarded-Host: host.cache.interact.sh
-        X-Forwarded-For: for.cache.interact.sh
+        GET /?evil=007 HTTP/1.1
+        X-Forwarded-Prefix: cache.my.evil.dns.com
+        X-Forwarded-Host: cache.my.evil.dns.com
+        X-Forwarded-For: cache.my.evil.dns.com
+        X-Originating-IP: cache.my.evil.dns.com
+        X-Remote-IP: cache.my.evil.dns.com
+        X-Remote-Addr: cache.my.evil.dns.com
+        X-Client-IP: cache.my.evil.dns.com
 
       - |
-        GET /?{{randstr}}=9 HTTP/1.1
+        GET /?evil=007 HTTP/1.1
 
     req-condition: true
     matchers:
       - type: dsl
         dsl:
-          - 'contains(body_2, "cache.interact.sh")'
-
-    extractors:
-      - type: regex
-        part: response
-        regex:
-          - "(prefix|host|for).cache.interact.sh"
+          - 'contains(body_2, "cache.my.evil.dns.com") == true'
