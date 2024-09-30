@@ -1,4 +1,5 @@
 id: jmx-default-login
+
 info:
   name: JBoss JMX Console Weak Credential Discovery
   author: paradessia
@@ -11,12 +12,20 @@ info:
     cvss-score: 8.3
     cwe-id: CWE-522
   tags: jboss,jmx,default-login
-requests:
+  metadata:
+    max-request: 28
+
+http:
   - raw:
       - |
         GET /jmx-console/ HTTP/1.1
         Host: {{Hostname}}
+
+      - |
+        GET /jmx-console/ HTTP/1.1
+        Host: {{Hostname}}
         Authorization: Basic {{base64(user + ':' + pass)}}
+
     attack: clusterbomb
     payloads:
       user:
@@ -30,13 +39,16 @@ requests:
         - 123456789
         - 123qwe
         - root
+
+    req-condition: true
     matchers-condition: and
     matchers:
+      - type: dsl
+        dsl:
+          - "!contains(body_1, 'JMImplementation') && contains(body_2, 'JMImplementation')"
+
       - type: status
         status:
           - 200
-      - type: word
-        words:
-          - 'JMImplementation'
 
 # Enhanced by mp on 2022/03/10
