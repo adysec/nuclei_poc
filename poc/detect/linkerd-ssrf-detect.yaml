@@ -1,4 +1,5 @@
 id: linkerd-ssrf-detect
+
 # Detect the Linkerd service by overriding the delegation table and
 # inspect the response for:
 #   - a "Via: .. linkerd .."
@@ -13,16 +14,19 @@ id: linkerd-ssrf-detect
 #
 #   - "l5d-dtab: /svc/* => /$/inet/yourserver.com/80", to get to other external hosts
 #   - "l5d-dtab: /svc/* => /$/inet/169.254.169.254/80", to get to cloud metadata
+
 info:
   name: Linkerd SSRF detection
   author: dudez
   severity: info
+
 requests:
   - method: GET
     path:
       - "{{BaseURL}}/"
     headers:
       l5d-dtab: /svc/* => /$/inet/example.com/443
+
     matchers-condition: or
     matchers:
       - type: regex
@@ -30,26 +34,31 @@ requests:
         regex:
           - '(?mi)^Via\s*?:.*?linkerd.*$'
         part: header
+
       - type: regex
         name: l5d-err-present
         regex:
           - '(?mi)^l5d-err:.*$'
         part: header
+
       - type: regex
         name: l5d-success-class-present
         regex:
           - '(?mi)^l5d-success-class: 0.*$'
         part: header
+
       - type: word
         name: ssrf-response-body
         words:
           - '<p>This domain is for use in illustrative examples in documents.'
         part: body
+
       - type: regex
         name: resolve-timeout-error-present
         regex:
           - '(?mi)Exceeded .*? binding timeout while resolving name'
         part: body
+
       - type: regex
         name: dynbind-error-present
         regex:
