@@ -1,0 +1,38 @@
+id: exposed-laravel-log
+
+info:
+  name: Exposed Laravel Log File
+  author: Redflare-Cyber
+  severity: high
+  description: Detects the presence of an exposed Laravel log file at '/storage/logs/laravel.log' which may contain sensitive information.
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/storage/logs/laravel.log"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - 'Illuminate\\Foundation\\Bootstrap\\HandleExceptions'
+          - '/vendor/laravel/framework/src/'
+          - '/app/Http/Controllers/'
+        condition: and
+        part: body
+
+      - type: word
+        words:
+          - '<html'
+          - '<body'
+          - '<title'
+        negative: true
+        part: body
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 1000 && len(body) < 500000'
+                                                        
