@@ -1,27 +1,17 @@
 id: confluence-detect
 
 info:
-  name: Confluence Detection
-  author: philippedelteil,AdamCrosser,6mile
+  name: Confluence Detect
+  author: philippedelteil
   severity: info
-  description: |
-    This nuclei template is used to detect the presence of Confluence, a popular collaboration software.
-  classification:
-    cpe: cpe:2.3:a:atlassian:confluence_server:*:*:*:*:*:*:*:*
+  description: Allows you to detect Atlassian Confluence instances
+  tags: tech,confluence,atlassian
   metadata:
-    max-request: 5
-    vendor: atlassian
-    product: confluence_server
-    shodan-query:
-      - http.component:"Atlassian Confluence"
-      - http.component:"atlassian confluence"
-    category: productivity
-  tags: tech,confluence,atlassian,detect
+    shodan-query: https://www.shodan.io/search?query=http.component%3A%22atlassian+confluence%22
 
-http:
+requests:
   - method: GET
     path:
-      - "{{BaseURL}}/dologin.action"
       - "{{BaseURL}}"
       - "{{BaseURL}}/pages"
       - "{{BaseURL}}/confluence"
@@ -29,25 +19,23 @@ http:
 
     redirects: true
     stop-at-first-match: true
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - contains(to_lower(header), '-confluence-')
-          - contains(to_lower(body), 'confluence-base-url')
+      - type: word
+        words:
+          - '-Confluence-'
+          - '-confluence-'
+        part: header
+        condition: or
+
+      - type: word
+        words:
+          - 'confluence-base-url'
+        part: body
 
     extractors:
       - type: regex
-        name: version
+        part: body
         group: 1
         regex:
-          - '<meta name="ajs-version-number" content="(.*)">'
           - 'Atlassian Confluence ([a-z0-9-._]+)'
-
-      - type: regex
-        name: hostname
-        group: 1
-        regex:
-          - '<meta id="confluence-base-url" name="confluence-base-url" content="https://(.*)">'
-          - '<meta name="ajs-base-url" content="https://(.*)">'
-          - '<meta name="ajs-server-name" content="(.*)">'
-# digest: 4a0a004730450221009bf2f9a3fec8732657aa0e11ec7a7bad6998606a6fdf448adb743732992b14f3022027018043be481632180a2d55600542cba51743a087e2657c16dbd23428ea2382:922c64590222798bb761d5b6d8e72950
