@@ -1,0 +1,59 @@
+id: wpschoolpress-5be232e47afad799c4dc951ed536f967
+
+info:
+  name: >
+    School Management System – WPSchoolPress <= 2.2.10 - Insecure Direct Object Reference to Authenticated (Teacher+) Account Takeover/Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/411693fc-9df3-44b1-9a6f-58a6e8ef23b8?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpschoolpress/"
+    google-query: inurl:"/wp-content/plugins/wpschoolpress/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wpschoolpress,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpschoolpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpschoolpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.2.10')
