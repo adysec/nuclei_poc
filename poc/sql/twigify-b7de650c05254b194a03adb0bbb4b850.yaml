@@ -1,0 +1,59 @@
+id: twigify-b7de650c05254b194a03adb0bbb4b850
+
+info:
+  name: >
+    Twigify <= 1.1.2 - Running Vulnerable Twig Package
+  author: topscoder
+  severity: high
+  description: >
+    The Twigify plugin for WordPress is running a vulnerable version of Twig (1.16.3) in all versions up to, and including, 1.1.2. This version of Twig contains many security vulnerabilities, though none have been confirmed exploitable in the Twigify plugin.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/82b78826-b256-4612-a830-d44a9bc97541?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/twigify/"
+    google-query: inurl:"/wp-content/plugins/twigify/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,twigify,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/twigify/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "twigify"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.2')
