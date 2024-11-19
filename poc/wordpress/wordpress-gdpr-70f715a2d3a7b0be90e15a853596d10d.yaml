@@ -1,0 +1,59 @@
+id: wordpress-gdpr-70f715a2d3a7b0be90e15a853596d10d
+
+info:
+  name: >
+    WordPress GDPR <= 2.0.2 - Missing Authorization to Unauthenticated Arbitrary User Deletion
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a089026a-5da9-467c-a1e4-622bb74363e2?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wordpress-gdpr/"
+    google-query: inurl:"/wp-content/plugins/wordpress-gdpr/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wordpress-gdpr,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordpress-gdpr/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordpress-gdpr"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.2')
