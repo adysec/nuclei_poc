@@ -1,0 +1,56 @@
+
+id: drupal_module-smartling-multiple-vulnerabilities
+info:
+  name: drupal_module-smartling-multiple-vulnerabilities
+  author: me
+  severity: medium
+  description: "Smartling module allows you to translate content in Drupal 7 using the Smartling Translation Management Platform. The module includes an outdated version of the Guzzle package (guzzlehttp/guzzle 6.3.3), which has known security vulnerabilities."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-053
+  metadata:
+    security-risk: "Less critical 9 ∕ 25 AC:Complex/A:Admin/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "multiple-vulnerabilities"
+    fofa-query: "/sites/all/modules/smartling/"
+    google-query: "inurl:'/sites/all/modules/smartling/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/smartling/smartling.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'smartling'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '9.x-99.99')

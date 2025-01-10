@@ -1,0 +1,56 @@
+
+id: drupal_module-basic_auth-access-bypass
+info:
+  name: drupal_module-basic_auth-access-bypass
+  author: me
+  severity: medium
+  description: "The module provides a possibility to restrict access to specific paths using basic HTTP authentication, in addition to standard Drupal access checks.  In some cases, the module removes existing access checks from some paths, resulting in an access bypass vulnerability."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-057
+  metadata:
+    security-risk: "Critical 16 ∕ 25 AC:None/A:None/CI:Some/II:Some/E:Theoretical/TD:Uncommon"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/basic_auth/"
+    google-query: "inurl:'/sites/all/modules/basic_auth/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/basic_auth/basic_auth.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'basic_auth'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '9.x-99.99')
