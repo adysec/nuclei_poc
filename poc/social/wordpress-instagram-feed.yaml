@@ -1,49 +1,59 @@
-id: wordpress-instagram-feed
+id: wordpress-instagram-feed-c6f7df5b11c5d64e4d637b8f3456595f
 
 info:
-  name: Smash Balloon Social Photo Feed Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    WD Instagram Feed Premium <= 1.3.0 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
   reference:
-    - https://wordpress.org/plugins/instagram-feed/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4a2c11bb-88cb-43ae-b9b7-5b6262a315e0?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
   metadata:
-    plugin_namespace: instagram-feed
-    wpscan: https://wpscan.com/plugin/instagram-feed
-  tags: tech,wordpress,wp-plugin,top-100,top-200
+    fofa-query: "wp-content/plugins/wordpress-instagram-feed/"
+    google-query: inurl:"/wp-content/plugins/wordpress-instagram-feed/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wordpress-instagram-feed,high
 
-requests:
+http:
   - method: GET
-
+    redirects: true
+    max-redirects: 3
     path:
-      - "{{BaseURL}}/wp-content/plugins/instagram-feed/readme.txt"
-
-    payloads:
-      last_version: helpers/wordpress/plugins/instagram-feed.txt
+      - "{{BaseURL}}/wp-content/plugins/wordpress-instagram-feed/readme.txt"
 
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "wordpress-instagram-feed"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.0')

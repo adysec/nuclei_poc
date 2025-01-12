@@ -1,58 +1,49 @@
-id: simple-history
+id: wordpress-simple-history
 
 info:
-  name: >
-    Simple History <= 1.0.7 - Sensitive Information Disclosure
-  author: topscoder
-  severity: medium
-  description: >
-    The Simple History plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 1.0.7 via the 'rss_secret' parameter. This can allow unauthenticated attackers to view sensitive information from the RSS feed.
+  name: Simple History – Track, Log, and Audit WordPress Changes Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f30af3c4-82be-40d5-be9f-82631b8f3ee2?source=api-prod
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
-    cvss-score: 5.3
-    cve-id: 
+    - https://wordpress.org/plugins/simple-history/
   metadata:
-    fofa-query: "wp-content/plugins/simple-history/"
-    google-query: inurl:"/wp-content/plugins/simple-history/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,simple-history,medium
+    plugin_namespace: simple-history
+    wpscan: https://wpscan.com/plugin/simple-history
+  tags: tech,wordpress,wp-plugin,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/simple-history/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/simple-history.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "simple-history"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.0.7')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502206739bd808c780d45970a99e4ec8c7e677058eafedc6dbe8a1e076f0e7f35960f022100f9c11724cd65b4154be0db9a4288be6239580858b31d02b181b5b0c766318aad:922c64590222798bb761d5b6d8e72950

@@ -1,26 +1,23 @@
 id: header-command-injection
-
 info:
   name: Header Command Injection
   author: geeknik
   severity: high
   description: Fuzzing headers for command injection
   tags: fuzz,rce
-
 requests:
-  - raw:
+  - payloads:
+      header: helpers/payloads/request-headers.txt
+      payload: helpers/payloads/command-injection.txt
+    raw:
       - |
         GET /?§header§ HTTP/1.1
         Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
         §header§: §payload§
-
-    payloads:
-      header: helpers/payloads/request-headers.txt
-      payload: helpers/payloads/command-injection.txt
+        Connection: close
     attack: clusterbomb
-
     redirects: true
-    stop-at-first-match: true
     matchers-condition: or
     matchers:
       - type: word
@@ -29,7 +26,6 @@ requests:
           - "gid="
           - "groups="
         condition: and
-
       - type: regex
         regex:
-          - "root:.*:0:0:"
+          - "root:[x*]:0:0:"

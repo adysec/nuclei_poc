@@ -21,30 +21,28 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == '0x727/FingerprintHub'
     steps:
-
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
       - name: Check out code
         uses: actions/checkout@master
         with:
           persist-credentials: false
           fetch-depth: 0
-
+      - uses: Swatinem/rust-cache@v1
+      - name: Build
+        run: cargo build --release
       - name: Clone nuclei-templates
         run: |
           git clone --depth 100 --branch main https://github.com/projectdiscovery/nuclei-templates
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.11.0"
+          ./target/release/helper --sync
 
       - name: Update Nuclei
         id: update-nuclei
         run: |
-          python -m pip install --upgrade pip
-          pip install PyYAML
-          pip install GitPython
-          python .github/scripts/tags_to_plugins.py
-          find . -path "*.pyc" -delete
           echo "::set-output name=changes::$(git status -s | wc -l)"
           echo "::set-output name=changes_name::$(git status -s)"
 
@@ -71,5 +69,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: plugins.zip
           asset_name: plugins.zip
-          tag: default
+          tag: defaultv4
           overwrite: true

@@ -12,26 +12,31 @@ info:
   tags: sqli,error,dast
 
 http:
-  - raw:
-      - |
-        POST {{Path}}{{File}} HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
-
-        {{username_param}}={{payload}}&{{password_param}}={{payload}}
+  - filters:
+      - type: dsl
+        dsl:
+          - method == POST
+          - len(body) > 0
+        condition: and
 
     payloads:
       payload: payloads/sql-injection.txt
-      username_param: wordlists/username-forums.txt
-      password_param: wordlists/password-forums.txt
-    attack: clusterbomb
+
+    fuzzing:
+      - part: body
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{payload}}"
 
     stop-at-first-match: true
-    matchers-condition: and
+    matchers-condition: or
     matchers:
       - type: status
         status:
+          - 500
           - 302
+          - 200
       - type: regex
         regex:
           - "SQL syntax.*?MySQL"

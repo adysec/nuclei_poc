@@ -16,28 +16,25 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == '0x727/FingerprintHub'
     steps:
-
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
       - name: Check out code
         uses: actions/checkout@master
         with:
           persist-credentials: false
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.11.0"
-
+      - uses: Swatinem/rust-cache@v1
+      - name: Build
+        run: cargo build --release
       - name: Update FingerPrint
         id: update-fingerprint
         run: |
-          python -m pip install --upgrade pip
-          pip install PyYAML
-          pip install GitPython
-          python .github/scripts/auto_update.py
-          git clone --depth 100 --branch main https://github.com/projectdiscovery/nuclei-templates
-          python .github/scripts/tags_to_plugins.py
-          find . -path "*.pyc" -delete
+          ./target/release/helper --convert
+          ./target/release/helper --format
           echo "::set-output name=changes::$(git status -s | wc -l)"
 
       - name: Commit files

