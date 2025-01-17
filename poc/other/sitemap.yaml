@@ -1,59 +1,40 @@
-id: sitemap-1a15e3c8698ac399bae0dd78554652c3
+id: sitemap-detect
 
 info:
-  name: >
-    Sitemap <= 4.3 - Authenticated (Contributor+) Stored Cross-Site Scripting via Shortcode
-  author: topscoder
-  severity: low
-  description: >
-    
-  reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ffce535f-620d-40f8-a944-11ea87a67380?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+  name: Sitemap Detection
+  author: houdinis
+  severity: info
+  description: |
+    A sitemap is a file where you provide information about the pages, videos, and other files on your site, and the relationships between them.
   metadata:
-    fofa-query: "wp-content/plugins/sitemap/"
-    google-query: inurl:"/wp-content/plugins/sitemap/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,sitemap,low
+    verified: true
+    max-request: 3
+    google-query: intext:"sitemap" filetype:txt,filetype:xml inurl:sitemap,inurl:"/sitemap.xsd" ext:xsd
+  tags: misc,generic,sitemap
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
-      - "{{BaseURL}}/wp-content/plugins/sitemap/readme.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/sitemap.xsl"
+      - "{{BaseURL}}/sitemap.xsd"
 
-    extractors:
-      - type: regex
-        name: version
-        part: body
-        group: 1
-        internal: true
-        regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
-
-      - type: regex
-        name: version
-        part: body
-        group: 1
-        regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+    stop-at-first-match: true
 
     matchers-condition: and
     matchers:
+      - type: word
+        words:
+          - "sitemap>"
+        case-insensitive: true
+
+      - type: word
+        part: header
+        words:
+          - 'application/xml'
+
       - type: status
         status:
           - 200
 
-      - type: word
-        words:
-          - "sitemap"
-        part: body
-
-      - type: dsl
-        dsl:
-          - compare_versions(version, '<= 4.3')
+# digest: 4a0a004730450221008a81d638c6e5b4d57ccb3e1bea2a5f4b3329fb9b997c44a69ff407885c97657002201084ce876d67e848ebdfddafe5971be5f975d54deb95dbab9a7d23826cd1594d:922c64590222798bb761d5b6d8e72950
