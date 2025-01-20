@@ -33,6 +33,7 @@ jobs:
 
     - name: 3 Check POC
       run: |
+        set +e
         POC_DIR="clone-templates"
         # 使用 find 递归查找 YAML 文件
         yaml_files=$(find "$POC_DIR" -type f \( -name "*.yml" -o -name "*.yaml" \))
@@ -40,18 +41,17 @@ jobs:
           echo "未找到 YAML 文件，跳过。"
           exit 0
         fi
-        # 遍历找到的 YAML 文件
         for file in $yaml_files; do
           echo "检查 POC $file 中..."
           result=$(./nuclei -t "$file" -silent 2>&1)
-          # 检查输出中是否包含 FTL
           if echo "$result" | grep -q "FTL"; then
             echo "$file 格式无效，已删除。"
-            rm -f "$file"
+            rm -f "$file" || echo "无法删除 $file，跳过。"
           else
             echo "$file 格式有效。"
           fi
         done
+        echo "POC 检查完成。"
 
     - name: 4 Move Duplicated
       run: python 4-remove_duplicated.py
