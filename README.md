@@ -45,8 +45,8 @@ python main.py
 
 - `main.py`: 批量运行脚本文件。
 - `1-clone_repos.py`: 批量克隆监控的 GitHub 项目。
-- `2-remove_duplicated.py`: 删除重复POC脚本，并归档到分类文件夹。
-- `3-get_pocname.py`: 读取并将POC列表写入`poc.txt`。
+- `4-remove_duplicated.py`: 删除重复POC脚本，并归档到分类文件夹。
+- `5-get_pocname.py`: 读取并将POC列表写入`poc.txt`。
 - `repo.csv`: Nuclei POC仓库列表。
 - `poc.txt`: 已存档POC列表。
 - `poc/`: 存放分类后的 Nuclei POC 文件夹。
