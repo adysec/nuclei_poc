@@ -9,15 +9,16 @@ for file in yaml_files:
     file_path = os.path.join(POC_DIR, file)
     print(f"检查 POC {file_path} 中...")
 
-    # =捕获输出
+    # 捕获输出和错误信息
     command = ["./nuclei", "-t", file_path, "-silent"]
     try:
         result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode == 0 and not result.stderr.strip():
-            print(f"{file_path} 格式有效")
-        else:
+        # 检查输出中是否包含 FTL
+        if "FTL" in result.stderr or "FTL" in result.stdout:
             print(f"{file_path} 格式无效，已删除")
             os.remove(file_path)
+        else:
+            print(f"{file_path} 格式有效")
     except Exception as e:
         print(f"执行命令时发生错误: {e}")
         print(f"{file_path} 格式无效，已删除")
