@@ -22,26 +22,42 @@ jobs:
         
     - name: 1 Clone Repos
       run: python 1-clone_repos.py
+
     - name: 2 Download Nuclei
       run: |
         pip install requests
         python 2-download_nuclei.py
         unzip nuclei.zip nuclei
+        chmod +x nuclei
         rm -rf nuclei.zip
+
     - name: 3 Check POC
-      run: python 3-check_poc.py
+      run: |
+        POC_DIR="clone-templates"
+        if [ ! -d "$POC_DIR" ]; then
+          echo "$POC_DIR 文件夹不存在，跳过检查。"
+          exit 0
+        fi
+        for file in "$POC_DIR"/*.yml "$POC_DIR"/*.yaml; do
+          if [ ! -e "$file" ]; then
+            echo "未找到 YAML 文件，跳过。"
+            break
+          fi
+          echo "检查 POC $file 中..."
+          result=$(./nuclei -t "$file" -silent 2>&1)
+          if echo "$result" | grep -q "FTL"; then
+            echo "$file 格式无效，已删除。"
+            rm -f "$file"
+          else
+            echo "$file 格式有效。"
+          fi
+        done
+
     - name: 4 Move Duplicated
       run: python 4-remove_duplicated.py
+
     - name: 5 Get POC Name
       run: python 5-get_pocname.py
+
     - name: 6 Delete Nuclei
       run: rm -rf nuclei
-      
-    - name: Commit and Push changes
-      run: |
-        echo $(date +'%Y%m%d') > date.txt
-        git add .
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git commit -am "$(date +'%Y%m%d')"
-        git push -v --progress
