@@ -33,11 +33,15 @@ jobs:
     - name: 3 Delete Duplicated
       run: |
         python 3-delete_duplicated.py
-    - name: 4 Check POC
+
+    - name: 4 Move Duplicated
+      run: python 4-move_file.py
+      
+    - name: 5 Check POC
       run: |
         set +e
-        POC_DIR="clone-templates"
-        TIMEOUT=18000  # 设置超时时间为5小时（秒）
+        POC_DIR="poc"
+        TIMEOUT=19800  # 设置超时时间为5小时（秒）
         START_TIME=$(date +%s)
         yaml_files=$(find "$POC_DIR" -type f \( -name "*.yml" -o -name "*.yaml" \))
         if [ -z "$yaml_files" ]; then
@@ -51,7 +55,6 @@ jobs:
             echo "运行时间已超过 5 小时，强制退出。"
             exit 0
           fi
-          echo "检查 POC $file 中..."
           result=$(./nuclei -t "$file" -silent 2>&1)
           if echo "$result" | grep -q "FTL"; then
             echo "检查 POC 格式无效，已删除 $file"
@@ -61,9 +64,6 @@ jobs:
           fi
         done
         echo "POC 检查完成。"
-
-    - name: 5 Move Duplicated
-      run: python 5-move_file.py
 
     - name: 6 Get POC Name
       run: python 6-get_pocname.py
