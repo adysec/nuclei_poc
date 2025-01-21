@@ -1,0 +1,59 @@
+id: agency-toolkit-c4d0da08ce2ccde8e115ab3f856365e3
+
+info:
+  name: >
+    Agency Toolkit <= 1.0.23 - Missing Authorization to Unauthenticated Arbitrary Options Update
+  author: topscoder
+  severity: high
+  description: >
+    The Agency Toolkit plugin for WordPress is vulnerable to unauthorized modification of data that can lead to privilege escalation due to a missing capability check on the 'agency_toolkit_import' action in all versions up to, and including, 1.0.23. This makes it possible for unauthenticated attackers to update arbitrary options on the WordPress site. This can be leveraged to update the default role for registration to administrator and enable user registration for attackers to gain administrative user access to a vulnerable site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9f5cdb47-205a-4c03-a8a9-f39d1b4fc769?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/agency-toolkit/"
+    google-query: inurl:"/wp-content/plugins/agency-toolkit/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,agency-toolkit,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/agency-toolkit/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "agency-toolkit"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.23')

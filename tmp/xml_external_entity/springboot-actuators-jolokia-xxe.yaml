@@ -10,19 +10,18 @@ info:
     - https://www.veracode.com/blog/research/exploiting-spring-boot-actuators
     - https://github.com/mpgn/Spring-Boot-Actuator-Exploit
   tags: springboot,jolokia,xxe
+  metadata:
+    max-request: 2
 
-requests:
+http:
   - method: GET
     path:
       - "{{BaseURL}}/jolokia/exec/ch.qos.logback.classic:Name=default,Type=ch.qos.logback.classic.jmx.JMXConfigurator/reloadByURL/http:!/!/nonexistent:31337!/logback.xml"
       - "{{BaseURL}}/actuator/jolokia/exec/ch.qos.logback.classic:Name=default,Type=ch.qos.logback.classic.jmx.JMXConfigurator/reloadByURL/http:!/!/random:915!/logback.xml"
 
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
       - type: word
         part: body
         words:
@@ -30,3 +29,7 @@ requests:
           - "reloadByURL"
           - "JoranException"
         condition: and
+
+      - type: status
+        status:
+          - 200

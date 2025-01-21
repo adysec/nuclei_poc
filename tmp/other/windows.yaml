@@ -1,21 +1,26 @@
-id: windows
-info:
-  name: windows
-  author: cn-kali-team
-  tags: detect,tech,windows
-  severity: info
-  metadata:
-    product: windows
-    shodan-query:
-    - title:"filemage"
-    - cpe:"cpe:2.3:o:microsoft:windows"
-    vendor: microsoft
-    verified: true
-http:
-- method: GET
-  path:
-  - '{{BaseURL}}/'
-  matchers:
-  - type: regex
-    regex:
-    - (?mi)<title[^>]*>filemage.*?</title>
+env:
+  - GO111MODULE=on
+before:
+  hooks:
+    - go mod tidy
+project_name: vscan
+builds:
+  - id: vscan-windows
+    ldflags:
+      - -s -w
+    binary: vscan
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
+    main: main.go
+    goos:
+      - windows
+    goarch:
+      - amd64
+
+archives:
+- format: zip
+
+checksum:
+  name_template: "{{ .ProjectName }}-windows-checksums.txt"

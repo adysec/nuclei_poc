@@ -1,58 +1,50 @@
 name: 🗒 Templates Stats
 
 on:
+  schedule:
+    - cron: '25 6 * * *'
+
   push:
-    tags:
-      - '*'
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-        with: 
-          fetch-depth: 0
+    - uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.19
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
 
-      - name: Installing Template Stats
-        run: |
-          go install github.com/projectdiscovery/templates-stats@main
-        shell: bash
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Markdown Stats
-        run: |
-          templates-stats -output TEMPLATES-STATS.md -path /home/runner/work/nuclei-templates/nuclei-templates/
-        shell: bash
+    - name: Parse readme
+      run: |
+        python /home/runner/work/nuclei-wordfence-cve/nuclei-wordfence-cve/src/scripts/parse_readme.py
 
-      - name: JSON Stats
-        run: |
-          templates-stats -output TEMPLATES-STATS.json -json -path /home/runner/work/nuclei-templates/nuclei-templates/
-        shell: bash
+    - name: Get statistical changes
+      id: stats
+      run: git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
 
-      - name: Top 10 Stats
-        run: |
-          templates-stats -output TOP-10.md -top 10 -path /home/runner/work/nuclei-templates/nuclei-templates/
-        shell: bash
+    - name: Commit files
+      if: steps.stats.outputs.CHANGES > 0
+      run: |
+        git add README.md
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "Auto Updated README statistics [$(date)] :robot:" -a
 
-      - name: Get statistical changes
-        id: stats
-        run: git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
-
-      - name: Commit files
-        if: steps.stats.outputs.CHANGES > 0
-        run: |
-          git add TEMPLATES-STATS.*
-          git add TOP-10.md
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "Auto Generated Templates Stats [$(date)] :robot:" -a
-
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}

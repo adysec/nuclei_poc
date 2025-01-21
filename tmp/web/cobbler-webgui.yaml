@@ -4,28 +4,16 @@ info:
   name: Cobbler WebGUI Detection
   author: c-sh0
   severity: info
-  description: Detection of Cobbler WebGUI
-  metadata:
+  verified: true
+  description: |
+    Detection of Cobbler WebGUI 
     shodan-query: http.title:"Cobbler Web Interface"
-  tags: cobbler,webserver,panel
 
-requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/cobbler_web"
-
-    redirects: true
-    max-redirects: 2
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: body
-        words:
-          - "<title>Cobbler Web Interface</title>"
-          - "/cobbler_webui_content/"
-          - "/cobbler_web/do_login"
-        condition: or
+rules:
+  r0:
+    request:
+      method: GET
+      path: /cobbler_web
+      follow_redirects: true
+    expression: response.status == 200 && response.body.bcontains(b'<title>Cobbler Web Interface</title>') && response.body.bcontains(b'/cobbler_webui_content/') && response.body.bcontains(b'/cobbler_web/do_login')
+expression: r0()

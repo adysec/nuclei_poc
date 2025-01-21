@@ -4,24 +4,18 @@ info:
   name: Exposed Cobbler Directories
   author: c-sh0
   severity: medium
+  verified: false
   description: Searches for exposed Cobbler Directories
-  tags: cobbler,exposure,misconfig
 
-requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/cobbler/"
-      - "{{BaseURL}}/cblr/"
-
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: body
-        words:
-          - "Index of /cobbler"
-          - "Index of /cblr"
-        condition: or
+rules:
+  r0:
+    request:
+      method: GET
+      path: /cobbler/
+    expression: response.status == 200 && response.body.bcontains(b'Index of /cobbler')
+  r1:
+    request:
+      method: GET
+      path: /cblr/
+    expression: response.status == 200 && response.body.bcontains(b'Index of /cblr')
+expression: r0() && r1()
