@@ -9,19 +9,20 @@ Nuclei POC，每日更新
 
 ## 如何使用
 
-### 克隆项目
-
-克隆这个项目到本地：
+解压poc.zip文件
 
 ```bash
-git clone https://github.com/adysec/nuclei_poc.git
+wget https://raw.githubusercontent.com/adysec/nuclei_poc/refs/heads/main/poc.zip
+unzip poc.zip
 ```
 
-进入项目目录：
+使用 nuclei 调用 poc 扫描站点
 
 ```bash
-cd nuclei_poc
 ./nuclei -t poc/ -u http://example.com
+# 只扫描部分poc
+./nuclei -t poc/web/ -u http://example.com
+./nuclei -t poc/wordpress/ -u http://example.com
 ```
 
 ### 配置
@@ -37,10 +38,14 @@ cd nuclei_poc
 ## 文件结构
 
 - `1-clone_repos.py`: 批量克隆监控的 GitHub 项目。
-- `3-delete_duplicated.py`: 删除重复POC脚本
-- `5-remove_duplicated.py`: POC脚本归档到分类文件夹。
+- `2-download_nuclei.py`: 下载nuclei以便验证POC有效性。
+- `3-delete_duplicated.py`: 删除重复POC脚本。
+- `4-move_file.py`: POC脚本归档。
+- `5-get_count.py`: 获取POC脚本数量。
 - `6-get_pocname.py`: 读取并将POC列表写入`poc.txt`。
+- `check_poc.sh`: 验证POC有效性并打包为`poc.zip`文件。
 - `repo.csv`: Nuclei POC仓库列表。
 - `poc.txt`: 已存档POC列表。
-- `poc/`: 存放分类后的 Nuclei POC 文件夹。
+- `poc/`: 存放分类后的 Nuclei POC 文件夹(未完全验证有效性)。
+- `poc.zip`:: 已验证有效性 Nuclei POC 压缩文件。
 
