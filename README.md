@@ -21,19 +21,12 @@ git clone https://github.com/adysec/nuclei_poc.git
 
 ```bash
 cd nuclei_poc
+./nuclei -t poc/ -u http://example.com
 ```
 
 ### 配置
 
 在 `repo.csv` 文件中配置监控 GitHub 项目信息。
-
-### 运行脚本
-
-运行 Python 脚本：
-
-```bash
-python main.py
-```
 
 ### GitHub Action
 
@@ -43,7 +36,6 @@ python main.py
 
 ## 文件结构
 
-- `main.py`: 批量运行脚本文件。
 - `1-clone_repos.py`: 批量克隆监控的 GitHub 项目。
 - `3-delete_duplicated.py`: 删除重复POC脚本
 - `5-remove_duplicated.py`: POC脚本归档到分类文件夹。
