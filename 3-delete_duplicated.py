@@ -1,16 +1,16 @@
 import os
 import hashlib
 
+# 计算文件的SHA256哈希值
 def calculate_file_hash(filepath):
-    """计算文件的SHA256哈希值"""
     hash_sha256 = hashlib.sha256()
     with open(filepath, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_sha256.update(chunk)
     return hash_sha256.hexdigest()
 
+# 递归遍历目录，查找并删除重复的yml/yaml文件
 def find_and_remove_duplicates(directory):
-    """递归遍历目录，查找并删除重复的yml/yaml文件"""
     hash_map = {}
     for root, _, files in os.walk(directory):
         for file in files:

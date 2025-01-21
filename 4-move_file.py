@@ -2,6 +2,7 @@ import os
 import shutil
 import hashlib
 
+# 分类映射，定义了各种分类与其对应的关键词
 category_map = {
     "wordpress": ["wp", "wordpress"],
     "xss": ["xss"],
@@ -89,6 +90,7 @@ category_map = {
     "web": ["web"],
 }
 
+# 获取目录下所有的yaml文件，返回文件名和路径的字典
 def get_all_yaml_files(dir_path):
     all_yaml_files = {}
     for dirpath, dirs, files in os.walk(dir_path):
@@ -98,6 +100,7 @@ def get_all_yaml_files(dir_path):
                 all_yaml_files[filename] = os.path.join(dirpath, filename)
     return all_yaml_files
 
+# 根据文件名和关键词映射，分类文件
 def categorize_file(file_name, category_map):
     categories = []
     for category, keywords in category_map.items():
@@ -105,6 +108,7 @@ def categorize_file(file_name, category_map):
             categories.append(category)
     return categories if categories else ["other"]
 
+# 计算文件的哈希值
 def file_hash(file_path):
     hasher = hashlib.md5()
     with open(file_path, "rb") as f:
@@ -112,6 +116,7 @@ def file_hash(file_path):
         hasher.update(buf)
     return hasher.hexdigest()
 
+# 将文件移动到对应分类目录下，避免重复文件
 def copy_file_to_categories(file_path, base_dir, category_map, file_hashes):
     categories = categorize_file(os.path.basename(file_path), category_map)
     file_hash_value = file_hash(file_path)
@@ -123,22 +128,50 @@ def copy_file_to_categories(file_path, base_dir, category_map, file_hashes):
             shutil.copy(file_path, os.path.join(target_dir, os.path.basename(file_path)))
             file_hashes.setdefault(category, set()).add(file_hash_value)
 
+# 获取poc目录下所有文件的哈希值
+def get_poc_file_hashes(poc_dir_path):
+    poc_file_hashes = set()
+    for dirpath, dirs, files in os.walk(poc_dir_path):
+        for filename in files:
+            if filename.endswith(".yml") or filename.endswith(".yaml"):
+                file_path = os.path.join(dirpath, filename)
+                poc_file_hashes.add(file_hash(file_path))
+    return poc_file_hashes
+
+# 在复制文件前，先通过哈希值与poc目录进行对比
+def copy_file_if_unique(file_path, base_dir, category_map, file_hashes, poc_file_hashes):
+    file_hash_value = file_hash(file_path)
+    if file_hash_value not in poc_file_hashes:
+        categories = categorize_file(os.path.basename(file_path), category_map)
+        for category in categories:
+            target_dir = os.path.join(base_dir, category)
+            os.makedirs(target_dir, exist_ok=True)
+            
+            if file_hash_value not in file_hashes.get(category, set()):
+                shutil.copy(file_path, os.path.join(target_dir, os.path.basename(file_path)))
+                file_hashes.setdefault(category, set()).add(file_hash_value)
+
+# 获取poc目录下的所有文件的哈希值
+poc_file_hashes = get_poc_file_hashes('poc')
+
 community_path = "clone-templates"
 source_of_truth = "clone-templates/projectdiscovery/nuclei-templates"
-output_path = "poc"
+output_path = "tmp"
 
+# 获取所有社区模板和模板源
 community = get_all_yaml_files(community_path)
 nucleiTemplates = get_all_yaml_files(source_of_truth)
 
+# 获取共同的模板
 common_templates = set(community.keys()) & set(nucleiTemplates.keys())
-
 file_hashes = {}
 
+# 遍历社区模板，进行处理
 for template, community_file in community.items():
     if template in common_templates and os.path.getsize(community_file) == os.path.getsize(nucleiTemplates[template]):
         os.remove(community_file)
         continue
-
-    copy_file_to_categories(community_file, output_path, category_map, file_hashes)
+    # 在复制文件前，先通过哈希值与poc目录进行对比
+    copy_file_if_unique(community_file, output_path, category_map, file_hashes, poc_file_hashes)
 
 os.system('rm -rf clone-templates')
