@@ -2,6 +2,7 @@
 
 # 设置变量
 POC_DIR="poc"
+ZIP_FILE="poc.zip"
 TIMEOUT=19800  # 设置超时时间为5小时30分钟
 START_TIME=$(date +%s)
 
@@ -39,11 +40,17 @@ for file in $yaml_files; do
   fi
 done
 
+# 删除旧的 poc.zip 文件（若存在）
+if [ -f "$ZIP_FILE" ]; then
+  echo "发现已有 $ZIP_FILE 文件，正在删除旧文件..."
+  rm -f "$ZIP_FILE"
+fi
+
 # 打包 POC 文件夹
 echo "POC 检查完成，开始打包。"
-zip -r poc.zip "$POC_DIR" > /dev/null 2>&1
+zip -r "$ZIP_FILE" "$POC_DIR" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
-  echo "POC 文件夹已成功打包为 poc.zip"
+  echo "POC 文件夹已成功打包为 $ZIP_FILE"
 else
   echo "POC 文件夹打包失败。"
 fi
