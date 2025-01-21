@@ -1,4 +1,5 @@
 # Nuclei POCs
+
 <a href="https://github.com/adysec/nuclei_poc/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/adysec/nuclei_poc?color=yellow&logo=riseup&logoColor=yellow&style=flat-square"></a>
 <a href="https://github.com/adysec/nuclei_poc/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/adysec/nuclei_poc?color=orange&style=flat-square"></a>
 <a href="https://github.com/adysec/nuclei_poc/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/adysec/nuclei_poc?color=red&style=flat-square"></a>
@@ -9,11 +10,11 @@ Nuclei POC，每日更新
 
 ## 如何使用
 
-解压poc.zip文件
+克隆项目并进入目录
 
 ```bash
-wget https://raw.githubusercontent.com/adysec/nuclei_poc/refs/heads/main/poc.zip
-unzip poc.zip
+git clone https://github.com/adysec/nuclei_poc
+cd nuclei_poc
 ```
 
 使用 nuclei 调用 poc 扫描站点
@@ -38,14 +39,15 @@ unzip poc.zip
 ## 文件结构
 
 - `1-clone_repos.py`: 批量克隆监控的 GitHub 项目。
-- `2-download_nuclei.py`: 下载nuclei以便验证POC有效性。
-- `3-delete_duplicated.py`: 删除重复POC脚本。
-- `4-move_file.py`: POC脚本归档。
-- `5-get_count.py`: 获取POC脚本数量。
-- `6-get_pocname.py`: 读取并将POC列表写入`poc.txt`。
-- `check_poc.sh`: 验证POC有效性并打包为`poc.zip`文件。
-- `repo.csv`: Nuclei POC仓库列表。
-- `poc.txt`: 已存档POC列表。
-- `poc/`: 存放分类后的 Nuclei POC 文件夹(未完全验证有效性)。
-- `poc.zip`:: 已验证有效性 Nuclei POC 压缩文件。
-
+- `2-download_nuclei.py`: 下载nuclei以便验证Poc有效性。
+- `3-delete_duplicated.py`: 删除重复Poc脚本。
+- `4-move_file.py`: Poc脚本归档至tmp目录。
+- `5-check_poc.sh`: 校验Poc有效性并移动至`poc`目录下。
+- `6-get_count.py`: 获取已归档Poc数量。
+- `7-get_pocname.py`: 读取并将Poc列表写入`poc.txt`。
+- `check_poc.sh`: 验证Poc有效性并打包为`poc.zip`文件。
+- `repo.csv`: Nuclei Poc仓库列表。
+- `poc.txt`: 已存档Poc列表。
+- `poc/`: 存放分类后的 Nuclei Poc 文件夹。
+- ~~`clone-templates/`: 克隆 GitHub 项目的临时文件夹。~~
+- ~~`tmp/`: Nuclei Poc脚本去重并分类后的临时文件夹。~~
