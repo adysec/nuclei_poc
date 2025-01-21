@@ -8,6 +8,8 @@ Nuclei POC，每日更新
 
 这个项目是一个 Python 脚本，用于批量克隆 GitHub 项目，获取 Nuclei POC，并将 POC 按类别分类存放到文件夹中。同时，使用 GitHub Action 每日自动运行脚本。
 
+已更新优化poc格式验证相关代码。
+
 ## 如何使用
 
 克隆项目并进入目录
