@@ -34,6 +34,34 @@ jobs:
       run: |
         python 3-delete_duplicated.py
 
+    - name: 3 Check POC
+      run: |
+        set +e
+        POC_DIR="clone-templates"
+        TIMEOUT= 10  # 设置超时时间为5.5小时
+        START_TIME=$(date +%s)
+        yaml_files=$(find "$POC_DIR" -type f \( -name "*.yml" -o -name "*.yaml" \))
+        if [ -z "$yaml_files" ]; then
+          echo "未找到 YAML 文件，跳过。"
+          exit 0
+        fi
+        for file in $yaml_files; do
+          CURRENT_TIME=$(date +%s)
+          ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+          if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
+            echo "运行时间已超过 5.5 小时，强制退出。"
+            exit 0
+          fi
+          result=$(./nuclei -t "$file" -silent 2>&1)
+          if echo "$result" | grep -q "FTL"; then
+            echo "检查 POC 格式无效，已删除 $file"
+            rm -f "$file" || echo "无法删除 $file，跳过。"
+          else
+            echo "检查 POC 格式有效 $file"
+          fi
+        done
+        echo "POC 检查完成。"
+        
     - name: 4 Move Duplicated
       run: python 4-move_file.py
       
@@ -41,7 +69,7 @@ jobs:
       run: |
         set +e
         POC_DIR="poc"
-        TIMEOUT= 60  # 设置超时时间为5.5小时
+        TIMEOUT= 10  # 设置超时时间为5.5小时
         START_TIME=$(date +%s)
         yaml_files=$(find "$POC_DIR" -type f \( -name "*.yml" -o -name "*.yaml" \))
         if [ -z "$yaml_files" ]; then
