@@ -41,9 +41,9 @@ cd nuclei_poc
 ## 文件结构
 
 - `1-clone_repos.py`: 批量克隆监控的 GitHub 项目。
-- `2-download_nuclei.py`: 下载nuclei以便验证Poc有效性。
-- `3-delete_duplicated.py`: 删除重复Poc脚本。
-- `4-move_file.py`: Poc脚本归档至tmp目录。
+- `2-delete_duplicated.py`: 删除重复Poc脚本。
+- `3-move_file.py`: Poc脚本归档至tmp目录。
+- `4-download_nuclei.py`: 下载nuclei以便验证Poc有效性。
 - `5-check_poc.sh`: 校验Poc有效性并移动至`poc`目录下。
 - `6-get_count.py`: 获取已归档Poc数量。
 - `7-get_pocname.py`: 读取并将Poc列表写入`poc.txt`。

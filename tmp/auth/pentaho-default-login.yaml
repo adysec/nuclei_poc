@@ -4,26 +4,33 @@ info:
   name: Pentaho Default Login
   author: pussycat0x
   severity: high
+  description: Pentaho default admin credentials were discovered.
+  reference:
+    - https://www.hitachivantara.com/en-us/pdfd/training/pentaho-lesson-1-user-console-overview.pdf
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
   metadata:
-    shodan-query: 'pentaho'
+    shodan-query: pentaho
   tags: pentaho,default-login
 
 requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
-
-    raw:
+  - raw:
       - |
         POST /pentaho/j_spring_security_check HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
+        Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-        
-        j_username=admin&j_password=password
+
+        j_username={{user}}&j_password={{pass}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+      pass:
+        - password
+
     matchers-condition: and
     matchers:
       - type: word
@@ -36,3 +43,5 @@ requests:
       - type: status
         status:
           - 302
+
+# Enhanced by mp on 2022/03/10

@@ -3,34 +3,25 @@ id: unauthenticated-airflow-instance
 info:
   name: Unauthenticated Airflow Instance
   author: dhiyaneshDK
-  severity: high
-  tags: apache,airflow,unauth
+  severity: critical
+  metadata:
+    max-request: 2
+    shodan-query: title:"Airflow - DAGs"
+  tags: apache,airflow,unauth,misconfig
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/admin/"
 
-    raw:
-      - |
-        GET /admin/ HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
       - type: word
-        words:
-          - "Content-Type: text/html"
-        part: header
-
-      - type: word
+        part: body
         words:
           - "<title>Airflow - DAGs</title>"
-        part: body
-        condition: and
 
       - type: status
         status:
