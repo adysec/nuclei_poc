@@ -20,10 +20,17 @@ if [ ! -d "$TMP_DIR" ]; then
 fi
 
 # 查找 YAML 文件
-find "$TMP_DIR" -type f \( -name "*.yml" -o -name "*.yaml" \) | while IFS= read -r file; do
+yaml_files=$(find "$TMP_DIR" -type f \( -name "*.yml" -o -name "*.yaml" \))
+if [ -z "$yaml_files" ]; then
+  echo "未找到 YAML 文件，退出。"
+  exit 0
+fi
+
+# 遍历每个 YAML 文件
+while IFS= read -r -d '' file; do
   CURRENT_TIME=$(date +%s)
   ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
-
+  
   # 检查是否超时
   if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
     echo "运行时间已超过 5 小时 30 分钟，强制退出。"
@@ -49,6 +56,6 @@ find "$TMP_DIR" -type f \( -name "*.yml" -o -name "*.yaml" \) | while IFS= read 
     # 移动文件
     mv "$file" "$dest_file" && echo "已将文件 $file 移动至 $dest_file"
   fi
-done
+done < <(find "$TMP_DIR" -type f \( -name "*.yml" -o -name "*.yaml" \) -print0)
 
 echo "POC 检查完成。"
