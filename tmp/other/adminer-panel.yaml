@@ -1,64 +1,51 @@
 id: adminer-panel
 
 info:
-  name: Adminer Login Panel
-  author: random_robbie,meme-lord
+  name: Adminer Login Panel - Detect
+  author: random_robbie,meme-lord,ritikchaddha
   severity: info
-  verified: true
-  description: |
-    An Adminer login panel was detected.
-    app="Adminer"
+  description: An Adminer login panel was detected.
   reference:
     - https://blog.sorcery.ie/posts/adminer/
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    max-request: 8
+    verified: true
+    shodan-query: title:"Login - Adminer"
+  tags: panel,adminer
 
-rules:
-  r0:
-    request:
-      method: GET
-      path: /adminer.php
-      headers:
-        Accept-Language: en-US,en;q=0.5
-    expression: response.status == 200 && response.body.bcontains(b'Login - Adminer') && "<span class=\"version\">([0-9.]+)".bmatches(response.body)
-  r1:
-    request:
-      method: GET
-      path: /_adminer.php
-      headers:
-        Accept-Language: en-US,en;q=0.5
-    expression: response.status == 200 && response.body.bcontains(b'Login - Adminer') && "<span class=\"version\">([0-9.]+)".bmatches(response.body)
-  r2:
-    request:
-      method: GET
-      path: /adminer/
-      headers:
-        Accept-Language: en-US,en;q=0.5
-    expression: response.status == 200 && response.body.bcontains(b'Login - Adminer') && "<span class=\"version\">([0-9.]+)".bmatches(response.body)
-  r3:
-    request:
-      method: GET
-      path: /editor.php
-      headers:
-        Accept-Language: en-US,en;q=0.5
-    expression: response.status == 200 && response.body.bcontains(b'Login - Adminer') && "<span class=\"version\">([0-9.]+)".bmatches(response.body)
-  r4:
-    request:
-      method: GET
-      path: /mysql.php
-      headers:
-        Accept-Language: en-US,en;q=0.5
-    expression: response.status == 200 && response.body.bcontains(b'Login - Adminer') && "<span class=\"version\">([0-9.]+)".bmatches(response.body)
-  r5:
-    request:
-      method: GET
-      path: /sql.php
-      headers:
-        Accept-Language: en-US,en;q=0.5
-    expression: response.status == 200 && response.body.bcontains(b'Login - Adminer') && "<span class=\"version\">([0-9.]+)".bmatches(response.body)
-  r6:
-    request:
-      method: GET
-      path: /wp-content/plugins/adminer/adminer.php
-      headers:
-        Accept-Language: en-US,en;q=0.5
-    expression: response.status == 200 && response.body.bcontains(b'Login - Adminer') && "<span class=\"version\">([0-9.]+)".bmatches(response.body)
-expression: r0() || r1() || r2() || r3() || r4() || r5() || r6()
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/adminer.php'
+      - '{{BaseURL}}/_adminer.php'
+      - '{{BaseURL}}/adminer/'
+      - '{{BaseURL}}/editor.php'
+      - '{{BaseURL}}/mysql.php'
+      - '{{BaseURL}}/sql.php'
+      - '{{BaseURL}}/wp-content/plugins/adminer/adminer.php'
+      - '{{BaseURL}}/admin.php'
+
+    headers:
+      Accept-Language: en-US,en;q=0.5
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Adminer</title>"
+          - "Adminer</a>"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<span class="version">([0-9.]+)'

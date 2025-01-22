@@ -1,43 +1,24 @@
 id: tapjacking
 
 info:
-  name: TapJacking
+  name: Android Tapjacking Vulnerability Detection
   author: YoruYagami
-  severity: low
+  severity: medium
   description: |
-    "TapJacking" is an attack strategy where a malicious application displays a fake user interface that seems to accept user interactions but actually passes events such as finger presses to a hidden user interface behind it. This attack, similar to the web counterpart known as "Clickjacking," can be accomplished using the screen overlay functionality present in all recent versions of Android.
+    This template identifies potential Tapjacking vulnerabilities by searching for exported activities in the `AndroidManifest.xml` file. Tapjacking is an attack where a malicious application obscures a victim application's interface and tricks the user into interacting with it. Activities that are exported and lack permission requirements are particularly susceptible to this attack. Additionally, it checks for the `android:filterTouchesWhenObscured` attribute in the layout, which can help mitigate such vulnerabilities.
   remediation: |
-    Developers can prevent this attack by ensuring that the attribute `filterTouchesWhenObscured` is set to true on all views or by implementing the method `onFilterTouchEventForSecurity()`.
-
-    Example:
-
-    ```xml
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:filterTouchesWhenObscured="true" />
-    ```
-
-    or
-
-    ```java
-    @Override
-    public boolean onFilterTouchEventForSecurity(MotionEvent event) {
-        if ((event.getFlags() & MotionEvent.FLAG_WINDOW_IS_OBSCURED) != 0) {
-            // Drop the touch event.
-            return false;
-        }
-        return super.onFilterTouchEventForSecurity(event);
-    }
-    ```
-
+    Set `android:filterTouchesWhenObscured="true"` in all sensitive views and ensure that exported activities require proper permissions. Also, ensure that the app targets Android 12 (API 31) or higher, where tapjacking protection is enforced by default.
+    
 file:
   - extensions:
-      - xml
-      - java
+      - all
 
     matchers:
-      - type: word
-        words:
-          - "filterTouchesWhenObscured"
-          - "onFilterTouchEventForSecurity"
+      - type: regex
+        regex:
+          - '<activity[^>]*android:exported="true"'
+          - 'android:filterTouchesWhenObscured="false"'
+          - 'android:filterTouchesWhenObscured="true"'
+          - '<activity[^>]*android:permission=".*"'
+          - 'setFilterTouchesWhenObscured\(false\)'
+          - 'setFilterTouchesWhenObscured\(true\)'

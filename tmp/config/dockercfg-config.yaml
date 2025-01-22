@@ -1,21 +1,32 @@
 id: dockercfg-config
 
 info:
-    name: Detect .dockercfg
-    author: geeknik
-    severity: high
-    description: Docker registry authentication data
+  name: Detect .dockercfg
+  author: geeknik
+  severity: high
+  description: Docker registry authentication data
+  tags: docker,exposure,config
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /.dockercfg
-        expression: response.status == 200 && response.content_type.contains("text/plain") && response.body.bcontains(b'"email":') && response.body.bcontains(b'"auth":') 
-    r1:
-        request:
-            method: GET
-            path: /.docker/config.json
-        expression: response.status == 200 && response.content_type.contains("text/plain") && response.body.bcontains(b'"email":') && response.body.bcontains(b'"auth":') 
-expression: r0() && r1()
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.dockercfg"
+      - "{{BaseURL}}/.docker/config.json"
 
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        words:
+          - '"email":'
+          - '"auth":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+
+      - type: status
+        status:
+          - 200

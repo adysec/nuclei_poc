@@ -1,18 +1,42 @@
 id: alibaba-canal-info-leak
 
 info:
-    name: Alibaba Canal Information Leak
-    author: Aquilao(https://github.com/Aquilao)
-    severity: high
-    verified: true
-    description: app="Alibaba-Canal"
+  name: Alibaba Canal Config - Detect
+  author: pikpikcu
+  severity: info
+  description: Alibaba Canal configuration information was detected.
+  reference:
+    - https://github.com/alibaba/canal/issues/632
+    - https://netty.io/wiki/reference-counted-objects.html
+    - https://my.oschina.net/u/4581879/blog/4753320
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0.0
+    cwe-id: CWE-200
+  tags: config,exposure,alibaba
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /api/v1/canal/config/1/1
-            headers:
-                Content-Type: application/json
-        expression: response.status == 200 && response.content_type.icontains("application/json") && response.body.bcontains(b"ncanal.aliyun.accessKey") && response.body.bcontains(b"ncanal.aliyun.secretKey")
-expression: r0()
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/canal/config/1/1"
+    headers:
+      Content-Type: application/json
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "application/json"
+        condition: and
+        part: header
+      - type: word
+        words:
+          - "ncanal.aliyun.accessKey"
+          - "ncanal.aliyun.secretKey"
+        condition: and
+        part: body
+
+# Enhanced by mp on 2023/02/05

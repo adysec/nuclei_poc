@@ -1,9 +1,29 @@
 id: git-config
-name: Git Config Exposure
-severity: medium
+
+info:
+  name: Git Config Disclosure
+  author: pdteam,pikpikcu,Mah3Sec_
+  severity: medium
+  description: Searches for the pattern /.git/config and log file on passed URLs.
+  tags: config,git,exposure
+
 requests:
   - method: GET
-    paths: 
-      - "HOSTNAME/.git/config"
-    patterns:
-      - \[core\]
+    path:
+      - "{{BaseURL}}/.git/config"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "[core]"
+
+      - type: dsl
+        dsl:
+          - "!contains(tolower(body), '<html')"
+          - "!contains(tolower(body), '<body')"
+        condition: and
+
+      - type: status
+        status:
+          - 200

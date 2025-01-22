@@ -1,24 +1,18 @@
-id: magento-config-disclosure
+id: magento-information-disclosure
 
 info:
-  name: Magento Configuration Panel - Detect
-  author: ptonewreckin,danigoland,geeknik
+  name: Magento - Information Disclosure
+  author: ptonewreckin,danigoland
   severity: high
   description: |
-    Magento configuration panel was detected. Misconfigured instances of Magento may disclose usernames, passwords, and database configurations via /app/etc/local.xml.
+    Misconfigured instances of Magento may disclose usernames, passwords, and database configurations via /app/etc/local.xml
   reference:
     - https://github.com/ptonewreckin/cmsDetector/blob/master/signatures/magento.py
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
-    cvss-score: 7.5
-    cwe-id: CWE-200
   metadata:
     verified: true
-    max-request: 3
-    shodan-query: http.component:"Magento"
   tags: magento,exposure,credential,config
 
-http:
+requests:
   - method: GET
     path:
       - "{{BaseURL}}/app/etc/local.xml"
@@ -26,7 +20,6 @@ http:
       - "{{BaseURL}}/store/app/etc/local.xml"
 
     stop-at-first-match: true
-
     matchers-condition: and
     matchers:
       - type: word
@@ -46,12 +39,11 @@ http:
           - 200
 
     extractors:
-      - type: xpath
+      - type: regex
         part: body
-        xpath:
-          - "/config/global/resources/default_setup/connection/host"
-          - "/config/global/resources/default_setup/connection/username"
-          - "/config/global/resources/default_setup/connection/password"
-          - "/config/global/resources/default_setup/connection/dbname"
-
-# digest: 490a0046304402207519853cd567cd549e998a7da46410340995dcdeb71463495ebdbf6016923fc90220372cbe41d68f8f4384c6a84e9f0fc083b1b9f7eb333a9a37b1f80d49c8059ee4:922c64590222798bb761d5b6d8e72950
+        group: 1
+        regex:
+          - "<host><!\\[CDATA\\[(.+)\\]\\]><\\/host>"
+          - "<username><!\\[CDATA\\[(.+)\\]\\]><\\/username>"
+          - "<password><!\\[CDATA\\[(.+)\\]\\]><\\/password>"
+          - "<dbname><!\\[CDATA\\[(.+)\\]\\]><\\/dbname>"

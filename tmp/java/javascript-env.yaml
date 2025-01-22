@@ -1,17 +1,44 @@
 id: javascript-env
 
-name: JavaScript Environment Config
-severity: low
-  
+info:
+  name: JavaScript Environment Config
+  author: pdp
+  severity: low
+  description: Detects common JavaScript environment configuration files.
+  tags: javascript,config,exposure
+
 requests:
   - method: GET
-    paths:
-      - "HOSTNAME/env.js"
-      - "HOSTNAME/env.development.js"
-      - "HOSTNAME/env.production.js"
-      - "HOSTNAME/env.test.js"
-      - "HOSTNAME/env.dev.js"
-      - "HOSTNAME/env.prod.js"
-    patterns:
-      - "module.exports|const audience|const domain|NODE_ENV|LOG_LEVEL|TOKEN|KEY|PASSWORD|VERSION"
+    path:
+      - "{{BaseURL}}/env.js"
+      - "{{BaseURL}}/env.development.js"
+      - "{{BaseURL}}/env.production.js"
+      - "{{BaseURL}}/env.test.js"
+      - "{{BaseURL}}/env.dev.js"
+      - "{{BaseURL}}/env.prod.js"
 
+    matchers-condition: and
+    matchers:
+
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        part: header
+        dsl:
+          - "contains(tolower(all_headers), 'content-type: application/javascript')"
+
+      - type: word
+        part: body
+        words:
+          - "module.exports"
+          - "const audience"
+          - "const domain"
+          - "NODE_ENV"
+          - "LOG_LEVEL"
+          - "TOKEN"
+          - "KEY"
+          - "PASSWORD"
+          - "VERSION"
+        condition: or

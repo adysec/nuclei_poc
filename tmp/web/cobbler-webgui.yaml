@@ -1,19 +1,37 @@
 id: cobbler-webgui
 
 info:
-  name: Cobbler WebGUI Detection
+  name: Cobbler WebGUI Login Panel - Detect
   author: c-sh0
   severity: info
-  verified: true
-  description: |
-    Detection of Cobbler WebGUI 
+  description: Cobbler WebGUI login panel was detected.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0.0
+    cwe-id: CWE-200
+  metadata:
     shodan-query: http.title:"Cobbler Web Interface"
+  tags: cobbler,webserver,panel
 
-rules:
-  r0:
-    request:
-      method: GET
-      path: /cobbler_web
-      follow_redirects: true
-    expression: response.status == 200 && response.body.bcontains(b'<title>Cobbler Web Interface</title>') && response.body.bcontains(b'/cobbler_webui_content/') && response.body.bcontains(b'/cobbler_web/do_login')
-expression: r0()
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/cobbler_web"
+
+    host-redirects: true
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "<title>Cobbler Web Interface</title>"
+          - "/cobbler_webui_content/"
+          - "/cobbler_web/do_login"
+        condition: or
+
+# Enhanced by md on 2022/11/10
