@@ -1,0 +1,31 @@
+id: header-blind-ssrf
+
+info:
+  name: Header Blind SSRF Injection
+  author: geeknik,nullrabbit
+  severity: high
+  description: Checks for Blind SSR via popular browser headers.
+  tags: ssrf
+
+requests:
+  - payloads:
+      header: helpers/payloads/proxy-headers.txt
+
+    raw:
+      - |
+        GET /?§header§ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+        §header§: {{interactsh-url}}
+        Connection: close
+
+    redirects: true
+    max-redirects: 5
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or
