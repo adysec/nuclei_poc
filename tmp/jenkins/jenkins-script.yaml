@@ -1,33 +1,35 @@
 id: jenkins-script
 
 info:
-  name: Jenkins RCE due to accesible script functionality
+  name: Jenkins - Remote Code Execution
   author: philippedelteil
   severity: critical
-  reference: https://hackerone.com/reports/403402
+  description: |
+    Jenkins is susceptible to a remote code execution vulnerability due to accessible script functionality.
+  reference:
+    - https://hackerone.com/reports/403402
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
   tags: jenkins,rce,devops
 
 requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+  - method: GET
+    path:
+      - "{{BaseURL}}/script/"
 
-    raw:
-      - |
-        GET /script/ HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - "println(Jenkins.instance.pluginManager.plugins)"
           - "Scriptconsole"
         condition: and
-        part: body
+
       - type: status
         status:
           - 200
+
+# Enhanced by mp on 2022/05/26

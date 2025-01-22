@@ -1,40 +1,47 @@
-id: php_errors
+id: php-errors
 
 info:
   name: PHP errors
-  author: w4cky_
+  author: w4cky_,geeknik,dhiyaneshDK
   severity: info
-  tags: debug
+  metadata:
+    max-request: 1
+    shodan-query: http.title:"PHP warning" || "Fatal error"
+  tags: debug,php,misconfig
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
 
-    raw:
-      - |
-        GET / HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
-    matchers:
-      - type: word
-        words:
-          - "Fatal error"
-          - "Call to undefined method"
-          - "You have an error in your SQL syntax;"
-          - "MySQL server version for the right syntax to use near"
-          - "PHP Warning"
-          - "PHP Error"
-          - "Warning: mysql_connect():"
-          - "Warning: mysql_query()"
-          - "Warning: pg_connect():"
-          - "failed to open stream: HTTP request failed"
-          - "SAFE MODE Restriction in effect."
-          - "Cannot modify header information"
-          - "ORA-00921: unexpected end of SQL command"
-          - "ORA-00933: SQL command not properly ended"
-          - "ORA-00936: missing expression"
-          - "ORA-12541: TNS:no listener"
+    extractors:
+      - type: regex
+        regex:
+          - '(?i)Fatal error'
+          - '(?i)Call to undefined method'
+          - '(?i)You have an error in your SQL syntax'
+          - '(?i)MySQL server version for the right syntax to use near'
+          - '(?i)MySQL cannot create a temporary file'
+          - '(?i)PHP (Warning|Error)'
+          - '(?m)^<title>([a-z /A-Z.(0-9):]+)?PHP warning([a-z /A-Z.(0-9):]+)?<\/title>$'
+          - '(?i)Warning\: (pg|mysql)_(query|connect)\(\)'
+          - '(?i)failed to open stream\:'
+          - '(?i)SAFE MODE Restriction in effect'
+          - '(?i)Cannot modify header information'
+          - '(?i)ORA-00921\: unexpected end of SQL command'
+          - '(?i)ORA-00933\: SQL command not properly ended'
+          - '(?i)ORA-00936\: missing expression'
+          - '(?i)ORA-12541\: TNS\:no listener'
+          - '(?i)uncaught exception'
+          - '(?i)include_path'
+          - '(?i)undefined index'
+          - '(?i)undefined variable\:'
+          - '(?i)stack trace\:'
+          - '(?i)expects parameter [0-9]*'
+          - '(?i)Debug Trace'
+          - '(?i)<b>Parse error</b>'
+          - '(?i)syntax error, unexpected'
+          - '(?i)Allowed Memory Size of \d* Bytes Exhausted'
+          - '(?i)Maximum execution time of \d* seconds exceeded'
+
+# digest: 4a0a004730450220253c9cfefeec7f15310fe83d714b5ca6145b0a01cf27947bebe4b9de25acdf4e022100b95ea3ebd9a8458311947ef44210a5752d427f1f37e68bdf5dd996655e909702:922c64590222798bb761d5b6d8e72950

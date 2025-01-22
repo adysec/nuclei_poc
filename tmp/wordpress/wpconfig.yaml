@@ -1,28 +1,24 @@
-id: wpconfig
-
+id: Wordpress-Config-Disclosure
 info:
-  name: Database account information for WordPress blog leaked via txt configuration file
-  author: c4sper0
-  severity: High
-  tags: config,backup,wordpress
-    
-http:
+  name: Wordpress Configuration Disclosure
+  description: 'Attacker can view the config file which contains the username and password'
+  author: nithissh
+  severity: high
+  tags: wordpress,wp-admin,sde
+  reference: |
+    - null
+
+requests:
   - method: GET
     path:
-      - "{{BaseURL}}/home/{{DN}}WORDPRESS.txt"
-      - "{{BaseURL}}/home/{{DN}}-WORDPRESS.txt"
-    
-    stop-at-first-match: true
+      - '{{BaseURL}}/wp-admin/setup-config.php?step=1' #endpoint
+    cookie-reuse: true
     matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "DB_USER"
-          - "DB_PASSWORD"
-          - "DB_HOST"
-        part: body
-        condition: and
-
       - type: status
         status:
-          - 304
+          - 200
+      - type: regex
+        regex:
+          - 'Username'
+        part: body

