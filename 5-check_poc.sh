@@ -43,11 +43,11 @@ while IFS= read -r -d '' file; do
   if echo "$result" | grep -q "FTL"; then
     echo "检查 POC 格式无效，已删除 $file"
     
-    # 删除文件，处理特殊字符问题
-    if [ -n "$file" ]; then
+    # 删除文件前验证文件是否存在
+    if [ -e "$file" ]; then
       rm -- "$file" && echo "已删除 $file" || echo "无法删除 $file，跳过。"
     else
-      echo "文件名无效，跳过删除操作。"
+      echo "文件 $file 不存在，可能已被删除或路径异常。"
     fi
   else
     # 获取相对路径并创建目标目录
