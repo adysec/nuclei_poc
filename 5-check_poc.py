@@ -46,7 +46,7 @@ def get_file_hash(file_path):
 ensure_dir(POC_DIR)
 if not os.path.exists(TMP_DIR):
     print("tmp/ 目录不存在，退出。")
-    exit(1)
+    exit(0)
 
 yaml_files = [os.path.join(root, file) for root, _, files in os.walk(TMP_DIR)
               for file in files if file.endswith(('.yml', '.yaml'))]
