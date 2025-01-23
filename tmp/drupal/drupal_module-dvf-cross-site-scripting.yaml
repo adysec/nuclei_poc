@@ -1,0 +1,53 @@
+
+id: drupal_module-dvf-cross-site-scripting
+info:
+  name: drupal_module-dvf-cross-site-scripting
+  author: me
+  severity: medium
+  description: "This module allows you to turn various data sources (Eg CSV or JSON file) into interactive visualisation. The DVF module provides a field (storage, widget & formatter) that can be added to any entity.  This module uses two third-party JS libraries having from low to medium vulnerabilities. One of the vulnerabilities is a Cross Site Scripting vulnerability that may affect Drupal sites as a Persistent Cross Site Scripting vulnerability (i.e. not reflected). This release updates the libraries. The issue is mitigated by the fact an attacker needs the permission to create or edit content that is displayed using the Data Visualization Framework."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-055
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/dvf/"
+    google-query: "inurl:'/sites/all/modules/dvf/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/dvf/dvf.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'dvf'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<=  2.0.2')

