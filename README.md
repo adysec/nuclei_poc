@@ -55,3 +55,15 @@ cd nuclei_poc
 - `poc/`: 存放分类后的 Nuclei Poc 文件夹。
 - ~~`clone-templates/`: 克隆 GitHub 项目的临时文件夹。~~
 - ~~`tmp/`: Nuclei Poc脚本去重并分类后的临时文件夹。~~
+
+## 致谢
+
+在本项目的开发过程中，得到了很多支持和帮助。在此特别感谢以下人员和项目：
+
+### 项目
+
+感谢 [ProjectDiscovery](https://github.com/projectdiscovery/nuclei) 提供的Nuclei工具和开源社区支持。
+
+### 人员
+
+感谢 [TajangSec](https://github.com/TajangSec) 对部分代码的优化和改进建议。
