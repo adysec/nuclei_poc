@@ -1,0 +1,34 @@
+id: HTML-Injection
+
+#USUAGE example >> $ echo "http://testphp.vulnweb.com/listproducts.php?cat=" | nuclei -t htmli.yaml
+
+info:
+  name: HTML-Injection
+  author: 25
+  severity: high
+
+requests:
+  - method: GET
+    path:
+       - '{{BaseURL}}'
+
+    payloads:
+       injection: 
+             - '''"><img src=https://bit.ly/3rI7qfr>'
+             - '''"><A HREF="http://bing.com/">25</A>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<img src=https://bit.ly/3rI7qfr>'
+          - '<A HREF="http://bing.com/">25</A>'
