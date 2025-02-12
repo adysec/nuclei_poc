@@ -1,0 +1,60 @@
+id: reflection
+info:
+    name: search for reflection in header and body
+    author: roninja
+    severity: low
+    description: Potential Cross-Site Scripting (XSS), Cross-Site Request Forgery (CSRF) attacks, Cache Poisoning and Open URL Redirection.
+    reference:
+      - https://{{Hostname}}.{{interactsh-url}}
+    tags: reflection,header,cookies
+    metadata:
+      max-request: 2
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36
+        Referer: https://r.{{Host}}.{{interactsh-url}}
+        Origin: https://o.{{Host}}.{{interactsh-url}}
+        Location: https://l.{{Host}}.{{interactsh-url}}
+        X-Forwarded-Host: xfh.{{Host}}.{{interactsh-url}}
+        X-Forwarded-For: xff.{{Host}}.{{interactsh-url}}
+        X-Host: xh.{{Host}}.{{interactsh-url}}
+        X-Original-Host: xoh.{{Host}}.{{interactsh-url}}
+        X-Original-URL: xou.{{Host}}.{{interactsh-url}}
+        Cookie: gude=tama.{{interactsh-url}}
+        Gudetama: {{interactsh-url}}
+        Accept-Encoding: gzip, deflate, br, zstd
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Host}}.{{interactsh-url}}
+        User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36
+        Cookie: gude=tama.{{interactsh-url}}
+        Set-Cookie: gude=tama.{{interactsh-url}}
+        Accept-Encoding: gzip, deflate, br, zstd
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebkit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36
+        Cookie: gude=tama.{{interactsh-url}}
+        Set-Cookie: gude=tama.{{interactsh-url}}
+        Accept-Encoding: gzip, deflate, br, zstd
+    
+    redirects: false
+    stop-at-first-match: false
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - '(?m)^(?:(?:Set-Cookie\s*?:(?:\s*?|.*?;\s*?))(gude=tama)(?:\s*?)(?:$|;))'
+          - '(?mi)^(.*:\s*.*oast.*)'
+        part: header
+
+      - type: regex
+        regex:
+          - '(?m)^(?:(?:Set-Cookie\s*?:(?:\s*?|.*?;\s*?))(gude=tama)(?:\s*?)(?:$|;))'
+          - '(?mi)^(.*:\s*.*oast.*)'
+        part: body

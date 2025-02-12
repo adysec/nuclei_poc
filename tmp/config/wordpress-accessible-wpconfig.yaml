@@ -1,0 +1,177 @@
+id: wordpress-accessible-wpconfig
+
+info:
+  name: WordPress wp-config File Exposure
+  author: Kiblyn11,zomsop82,madrobot,geeknik,daffainfo,r12w4n,tess,0xpugal,mastercho,c4sper0,ab00d
+  severity: high
+  description: |
+    WordPress wp-config file was discovered exposed. This configuration file contains database credentials, 
+    authentication keys, and other sensitive settings that could lead to full site compromise.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200
+  metadata:
+    max-request: 32
+    verified: true
+    max-redirects: 1
+    supported-versions: '>=3.0.0'
+  reference:
+    - https://wordpress.org/support/article/hardening-wordpress/#securing-wp-config-php
+    - https://www.exploit-db.com/ghdb/4032
+  tags: wordpress,backup,exposure,config,file,wp,credentials,database
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{paths}}"
+    payloads:
+      paths:
+        - "/.wp-config.bak"
+        - "/.wp-config.good"
+        - "/.wp-config.php"
+        - "/.wp-config.php-bak"
+        - "/.wp-config.php-original"
+        - "/.wp-config.php.0"
+        - "/.wp-config.php.1"
+        - "/.wp-config.php.2"
+        - "/.wp-config.php.3"
+        - "/.wp-config.php.4"
+        - "/.wp-config.php.5"
+        - "/.wp-config.php.6"
+        - "/.wp-config.php.7"
+        - "/.wp-config.php.8"
+        - "/.wp-config.php.9"
+        - "/.wp-config.php.a"
+        - "/.wp-config.php.b"
+        - "/.wp-config.php.backup"
+        - "/.wp-config.php.bak"
+        - "/.wp-config.php.bak1"
+        - "/.wp-config.php.bk"
+        - "/.wp-config.php.cust"
+        - "/.wp-config.php.disabled"
+        - "/.wp-config.php.new"
+        - "/.wp-config.php.old"
+        - "/.wp-config.php.orig"
+        - "/.wp-config.php.original"
+        - "/.wp-config.php.save"
+        - "/.wp-config.php.swn"
+        - "/.wp-config.php.swo"
+        - "/.wp-config.php.swp"
+        - "/.wp-config.php_"
+        - "/.wp-config.php_1"
+        - "/.wp-config.php_Old"
+        - "/.wp-config.php_bak"
+        - "/.wp-config.php_new"
+        - "/.wp-config.php_orig"
+        - "/.wp-config.php_original"
+        - "/.wp-config.phporiginal"
+        - "/.wp-config.php~"
+        - "/_wpeprivate/config.json"
+        - "/common/config.php.new"
+        - "/config.php.new"
+        - "/config.php.tar.gz"
+        - "/config.php.zip"
+        - "/home/{{DN}}-WORDPRESS.txt"
+        - "/home/{{DN}}WORDPRESS.txt"
+        - "/wp-config-backup.txt"
+        - "/wp-config-sample.php"
+        - "/wp-config.backup"
+        - "/wp-config.bak"
+        - "/wp-config.good"
+        - "/wp-config.inc"
+        - "/wp-config.old"
+        - "/wp-config.php"
+        - "/wp-config.php-backup"
+        - "/wp-config.php-bak"
+        - "/wp-config.php-original"
+        - "/wp-config.php.0"
+        - "/wp-config.php.1"
+        - "/wp-config.php.2"
+        - "/wp-config.php.3"
+        - "/wp-config.php.4"
+        - "/wp-config.php.5"
+        - "/wp-config.php.6"
+        - "/wp-config.php.7"
+        - "/wp-config.php.8"
+        - "/wp-config.php.9"
+        - "/wp-config.php.BAK"
+        - "/wp-config.php.OLD"
+        - "/wp-config.php.SAVE"
+        - "/wp-config.php.a"
+        - "/wp-config.php.b"
+        - "/wp-config.php.backup"
+        - "/wp-config.php.bak"
+        - "/wp-config.php.bak1"
+        - "/wp-config.php.bk"
+        - "/wp-config.php.cust"
+        - "/wp-config.php.disabled"
+        - "/wp-config.php.dist"
+        - "/wp-config.php.html"
+        - "/wp-config.php.inc"
+        - "/wp-config.php.new"
+        - "/wp-config.php.old"
+        - "/wp-config.php.orig"
+        - "/wp-config.php.original"
+        - "/wp-config.php.save"
+        - "/wp-config.php.swn"
+        - "/wp-config.php.swo"
+        - "/wp-config.php.swp"
+        - "/wp-config.php.txt"
+        - "/wp-config.php_"
+        - "/wp-config.php_1"
+        - "/wp-config.php_Old"
+        - "/wp-config.php_bak"
+        - "/wp-config.php_new"
+        - "/wp-config.php_orig"
+        - "/wp-config.php_original"
+        - "/wp-config.phporiginal"
+        - "/wp-config.php~"
+        - "/wp-config.txt"
+
+    stop-at-first-match: true
+    
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        condition: or
+        words:
+          - "DB_NAME"
+          - "DBNAME"
+          - "DB_USER"
+          - "DB_PASSWORD"
+        part: body
+
+      - type: word
+        words:
+          - "<?php"
+          - "define"
+        condition: and
+        part: body
+
+      - type: dsl
+        dsl:
+          - "!contains(tolower(body), '<!doctype html')"
+
+    extractors:
+      - type: regex
+        name: db_creds
+        regex:
+          - "define\\s*\\(\\s*['\"]DB_(NAME|USER|PASSWORD|HOST)['\"]\\s*,\\s*['\"]([^'\"]+)['\"]\\s*\\)"
+        part: body
+
+      - type: regex
+        name: auth_keys
+        regex:
+          - "define\\s*\\(\\s*['\"](?:AUTH|SECURE_AUTH|LOGGED_IN|NONCE)_(?:KEY|SALT)['\"]\\s*,\\s*['\"]([^'\"]+)['\"]\\s*\\)"
+        part: body
+
+      - type: regex
+        name: wp_prefix
+        regex:
+          - "\\$table_prefix\\s*=\\s*['\"]([^'\"]+)['\"]"
+        part: body

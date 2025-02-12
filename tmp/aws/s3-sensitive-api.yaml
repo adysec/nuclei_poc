@@ -1,0 +1,95 @@
+id: s3-sensitive-api
+info:
+  author: Esonhugh-self-maintained
+  name: s3 buckect sensitive policy acl misconfiguration
+  severity: medium
+  description: |
+    This is a S3 bucket sensitive policy/acl misconfiguration vulnerability. 
+    It always happens when your bucket acl is set to public-read or private, but policy is set to allow everyone to access the bucket. ( like Princple: "*" )
+    Even you put "Action": "s3:*" and "Effect": "Allow" in the policy, that can let you have full control of the bucket.
+
+  reference:
+    - "https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketAcl.html"
+    - "https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketAcl.html"
+    - "https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketPolicy.html"
+    - "https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketPolicy.html"
+    - "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_grammar.html"
+  tags: s3,aws,aliyun,cloud,acl,policy
+
+http:
+  - raw:
+      - |
+        GET /?acl HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        condition: and
+        words:
+          - "<AccessControlPolicy>"
+          - "</AccessControlPolicy>"
+          - "<Owner>"
+          - "</Owner>"
+          - "<ID>"
+          - "</ID>"
+          - "<AccessControlList>"
+          - "</AccessControlList>"
+          - "<Grant>"
+          - "</Grant>"
+
+  - raw:
+      - |
+        GET /?policy HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+    matchers-condition:
+      and
+      # according to the aws document, the policy is a json string
+      # And it must have a "Statement" field
+      # with the "Effect" field and "Action" field and "Resource" field
+      # Action Couldbe "Action" or "NotAction"
+      # Resource Couldbe "Resource" or "NotResource"
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        condition: and
+        words:
+          - '"Statement"'
+          - '"Effect"'
+      - type: word
+        part: body
+        condition: or
+        words:
+          - '"Action"'
+          - '"NotAction"'
+      - type: word
+        part: body
+        condition: or
+        words:
+          - '"Resource"'
+          - '"NotResource"'
+    extractors:
+      - type: regex
+        name: bucket_url
+        regex:
+          - "arn:aws:s3:::([^/]+)"
+          - "acs:oss:([^/]+)"
+          - "qcs::cos:([^/]+)"
+      - type: regex
+        name: iam
+        regex:
+          - 'arn:aws:iam::\d{12}:(root|([^/]+)/[^/]+)'
+          # - "arn:aws:iam::([^:]+):root"
+          # - "arn:aws:iam::([^:]+):(user|group|role|instance-profile|federated-user|assumed-role|mfa|u2f|server-certificate|saml-provider|oidc-provider)/([^/]+)"
+          - "acs:ram::([^:]+):(root|([^/]+)/[^/]+)"
+          - "qcs::cam::([^:]+):(root|([^/]+)/[^/]+)"
+# digest: 4a0a0047304502203ce1a620234421550dbd7ee50468ecf28d6a14719dd198de377d56b2bd75a9550221009e22dfa3bcad4e3c8b0e63fe7bcd598091ab152c99d607786d40d61d788c8c81:569246fd1e83ae0648e1a21ffb4fe811

