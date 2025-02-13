@@ -1,0 +1,58 @@
+
+id: drupal_module-rabbit_hole-access-bypass
+info:
+  name: drupal_module-rabbit_hole-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "The Rabbit Hole module allows administrators to control what should happen when a regular user tries to view an entity at its own page; for example, it may deliver a 403 Access Denied or 404 Page Not Found response, or redirect the user to another path. The module doesnt respect the Rabbit Hole settings when an entity is being requested with a certain header. This could lead to certain data being exposed even if it shouldnt be. The vulnerability is mitigated by the fact that the user also needs permission to view the content being requested."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-029
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/rabbit_hole/"
+    google-query: "inurl:'/sites/all/modules/rabbit_hole/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/rabbit_hole/rabbit_hole.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'rabbit_hole'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.24')
+         - compare_versions(version, '7.x-2.23')
+         - compare_versions(version, '7.x-2.22')
+         - compare_versions(version, '7.x-2.21')
+         - compare_versions(version, '7.x-2.3')
+         - compare_versions(version, '7.x-2.2')
+         - compare_versions(version, '7.x-2.1')
+         - compare_versions(version, '7.x-2.0')

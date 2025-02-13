@@ -1,0 +1,53 @@
+
+id: drupal_module-rest_api_authentication-access-bypass
+info:
+  name: drupal_module-rest_api_authentication-access-bypass
+  author: me
+  severity: medium
+  description: "Drupal REST & JSON API Authentication module restricts and secures unauthorized access to your Drupal site APIs using different authentication methods including Basic Authentication , API Key Authentication , JWT Authentication , OAuth Authentication , External / Third-Party Provider Authentication, etc. The module doesnt sufficiently control user access when using Basic Authentication."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-022
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Basic/A:User/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/rest_api_authentication/"
+    google-query: "inurl:'/sites/all/modules/rest_api_authentication/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/rest_api_authentication/rest_api_authentication.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'rest_api_authentication'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 2.0.13')

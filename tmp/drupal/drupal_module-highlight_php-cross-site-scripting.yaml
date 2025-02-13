@@ -1,0 +1,53 @@
+
+id: drupal_module-highlight_php-cross-site-scripting
+info:
+  name: drupal_module-highlight_php-cross-site-scripting
+  author: me
+  severity: medium
+  description: "Provides highlight.php integration to Drupal, allowing <code> blocks to be automatically highlighted with the correct language. The modules Twig function doesnt sufficiently filter user-entered data."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-043
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/highlight_php/"
+    google-query: "inurl:'/sites/all/modules/highlight_php/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/highlight_php/highlight_php.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'highlight_php'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<=  1.0.1')

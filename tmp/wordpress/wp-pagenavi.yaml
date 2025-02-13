@@ -1,0 +1,49 @@
+id: wordpress-wp-pagenavi
+
+info:
+  name: WP-PageNavi Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/wp-pagenavi/
+  metadata:
+    plugin_namespace: wp-pagenavi
+    wpscan: https://wpscan.com/plugin/wp-pagenavi
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-pagenavi/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/wp-pagenavi.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100ba35b9d66c01b9cd36c8b65a7b93da6c3ee0e650c6331a77a529a48c54a3093a022100bcff79a6d91c432bf19bbf1c4bc55dccc060b2199c82efb2e4cd3bb6e026e4f4:922c64590222798bb761d5b6d8e72950

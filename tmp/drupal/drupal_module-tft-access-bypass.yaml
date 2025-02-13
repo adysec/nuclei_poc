@@ -1,0 +1,51 @@
+
+id: drupal_module-tft-access-bypass
+info:
+  name: drupal_module-tft-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "Taxonomy File Tree allows site managers to create file trees. For files managed as Drupal files, the module does not properly check that a user has access to a file before letting the user download the file. This vulnerability only affects sites that use private files."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-061
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/tft/"
+    google-query: "inurl:'/sites/all/modules/tft/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/tft/tft.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'tft'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

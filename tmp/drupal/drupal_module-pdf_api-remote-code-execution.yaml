@@ -1,0 +1,54 @@
+
+id: drupal_module-pdf_api-remote-code-execution
+info:
+  name: drupal_module-pdf_api-remote-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to generate PDF versions of content. Some installations of the module make use of the dompdf/dompdf third-party dependency. Security vulnerabilities exist for versions of dompdf/dompdf before 2.0.0 as described in the 2.0.0 release notes."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-050
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Complex/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "remote-code-execution"
+    fofa-query: "/sites/all/modules/pdf_api/"
+    google-query: "inurl:'/sites/all/modules/pdf_api/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/pdf_api/pdf_api.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'pdf_api'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '2.2.1')
+         - compare_versions(version, '2.2.0')
+         - compare_versions(version, '2.1.0')
+         - compare_versions(version, '2.0.0')
