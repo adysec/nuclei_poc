@@ -1,0 +1,42 @@
+id: wordpress-plugins-detect
+info:
+  name: WordPress Plugins Detection
+  author: 0xcrypto, foulenzer
+  severity: high
+  tags: fuzz,wordpress
+requests:
+  - raw:
+      - |
+        GET /wp-content/plugins/{{plugin}}/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+    threads: 50
+    payloads:
+      plugin:
+        - contact-form-7
+        - wordpress-seo
+        - elementor
+        - woocommerce
+        - all-in-one-wp-migration
+        - updraftplus
+        - all-in-one-seo-pack
+        - duplicator
+        - essential-addons-for-elementor-lite
+        - optinmonster
+        - w3-total-cache
+        - redux-framework
+        - ninja-forms
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "== Description =="
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "===\\s(.*)\\s===" # extract the plugin name
+          - "(?m)Stable tag: ([0-9.]+)" # extract the plugin version

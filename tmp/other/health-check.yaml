@@ -1,0 +1,49 @@
+id: wordpress-health-check
+
+info:
+  name: Health Check & Troubleshooting Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/health-check/
+  metadata:
+    plugin_namespace: health-check
+    wpscan: https://wpscan.com/plugin/health-check
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/health-check/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/health-check.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022100f6c5d074b53e5412f9dbf7c2a469e3d3223deb6227b1ddab6750c7e1b8ee55ec0220273920d05a8346035891ad2c7a4df950a1055e56e2416aad90b0aa367b724c87:922c64590222798bb761d5b6d8e72950
