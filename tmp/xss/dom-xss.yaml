@@ -1,0 +1,40 @@
+id: dom-xss
+
+info:
+  name: DOM Cross Site Scripting
+  author: shelled
+  severity: medium
+  tags: xss,dom-xss
+
+variables:
+  first: 'javascript:alert(1)'
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      reflection:
+        - 'href="javascript:alert(1)"'
+        - 'href=javascript:alert(1)'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
