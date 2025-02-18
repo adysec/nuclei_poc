@@ -1,0 +1,45 @@
+id: ilo-detect
+
+info:
+  name: HP iLO
+  author: milo2012
+  severity: info
+  description: Version of HP iLO
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /xmldata?item=all HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - text/xml
+        part: header
+
+      - type: word
+        words:
+          - <RIMP>
+          - <HSI>
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "<FWRI>([0-9.]+)</FWRI>"
