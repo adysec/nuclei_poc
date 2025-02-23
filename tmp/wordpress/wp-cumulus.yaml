@@ -1,0 +1,58 @@
+id: wp-cumulus
+
+info:
+  name: "WP-Cumulus <= 1.22 - Cross-Site Scripting via xmlpath"
+  author: topscoder
+  severity: medium
+  description: "The WP-Cumulus plugin for WordPress is vulnerable to Cross-Site Scripting via the 'xmlpath' parameter in versions up to, and including, 1.22 due to insufficient input sanitization and output escaping. This makes it possible for unauthorized attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - https://seclists.org/fulldisclosure/2011/Nov/340
+    - https://wpscan.com/vulnerability/a374e9ef-dd36-45ad-94ab-a02853b1fbac
+    - http://websecurity.com.ua/5505/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-cumulus/"
+    google-query: inurl:"/wp-content/plugins/wp-cumulus/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-cumulus,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-cumulus/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-cumulus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.22')

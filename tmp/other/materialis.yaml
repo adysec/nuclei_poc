@@ -1,0 +1,61 @@
+id: materialis
+
+info:
+  name: "Mesmerize <= 1.6.89 & Materialis <= 1.0.172 - Authenticated Arbitrary Options Update"
+  author: topscoder
+  severity: high
+  description: "The Mesmerize & Materialis themes for WordPress are vulnerable to authenticated options change in versions up to, and including,1.6.89 (Mesmerize) and 1.0.172 (Materialis). This is due to 'companion_disable_popup' function only checking the nonce while sending user input to the 'update_option' function. This makes it possible for authenticated attackers to change otherwise restricted options."
+  reference:
+    - https://blog.nintechnet.com/wordpress-mesmerize-and-materialis-themes-fixed-an-authenticated-options-change-vulnerability/
+    - https://wpscan.com/vulnerability/e4d70f03-69d5-4cca-8300-985f68d19ddc
+    - https://wordpress.org/themes/mesmerize/
+    - https://wordpress.org/themes/materialis/
+    - https://themes.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=121291%40mesmerize&new=121291%40mesmerize&sfp_email=&sfph_mail=
+    - https://themes.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=121290%40materialis&new=121290%40materialis&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:H
+    cvss-score: 8.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/materialis/"
+    google-query: inurl:"/wp-content/themes/materialis/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,materialis,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/materialis/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "materialis"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.172')

