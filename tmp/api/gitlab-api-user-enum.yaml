@@ -1,66 +1,47 @@
 id: gitlab-api-user-enum
-
 info:
   name: GitLab - User Information Disclosure Via Open API
-  author: Suman_Kar
-  severity: medium
+  author:
+  - l0ne1y
+  tags:
+  - gitlab
+  - enum
+  - misconfig
+  - disclosure
+  description: |-
+    GITLAB 未经身份验证的用户帐户及其数据枚举漏洞
+    GitLab是美国GitLab公司的一款使用Ruby on Rails开发的、自托管的、Git（版本控制系统）项目仓库应用程序。该程序可用于查阅项目的文件内容、提交历史、Bug列表等。其API接口允许用户未经授权查看其他用户信息，诸如使用https://URL/api/v4/users/*就能遍历出用户账户，进而可尝试爆破其他用户密码。
   reference:
-    - https://gitlab.com/gitlab-org/gitlab-foss/-/issues/40158
-
-rules:
-  r0:
-    request:
-      method: GET
-      path: /api/v4/users/1
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r1:
-    request:
-      method: GET
-      path: /api/v4/users/2
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r2:
-    request:
-      method: GET
-      path: /api/v4/users/3
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r3:
-    request:
-      method: GET
-      path: /api/v4/users/4
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r4:
-    request:
-      method: GET
-      path: /api/v4/users/5
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r5:
-    request:
-      method: GET
-      path: /api/v4/users/6
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r6:
-    request:
-      method: GET
-      path: /api/v4/users/7
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r7:
-    request:
-      method: GET
-      path: /api/v4/users/8
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r8:
-    request:
-      method: GET
-      path: /api/v4/users/9
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r9:
-    request:
-      method: GET
-      path: /api/v4/users/10
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-  r10:
-    request:
-      method: GET
-      path: /api/v4/users/2
-    expression: response.status == 200 && response.body.bcontains(b'"id":') && response.body.bcontains(b'"username":') && response.body.bcontains(b'"name":')
-expression: r0() || r1() || r2() || r3() || r4() || r5() || r6() || r7() || r8() || r9() || r10()
+  - https://gitlab.com/gitlab-org/gitlab-foss/-/issues/40158
+  severity: medium
+  metadata:
+    shodan-query: http.title:"GitLab"
+  remediation: |-
+    **官方修复方案**
+    修改配置文件，将"Restricted visibility levels" 设置为不允许公共访问 not allow "Public"
+requests:
+- matchers:
+  - type: regex
+    condition: and
+    part: body
+    regex:
+    - username.*
+    - id.*
+    - name.*
+  - type: word
+    part: header
+    words:
+    - application/json
+  - type: status
+    status:
+    - 200
+  matchers-condition: and
+  raw:
+  - |
+    GET /api/v4/users/{{uid}} HTTP/1.1
+    Host: {{Hostname}}
+    Accept: application/json, text/plain, */*
+    Referer: {{BaseURL}}
+  payloads:
+    uid: helpers/wordlists/numbers.txt
+  stop-at-first-match: true

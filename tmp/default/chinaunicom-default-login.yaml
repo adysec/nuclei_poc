@@ -1,17 +1,32 @@
 id: chinaunicom-default-login
 
 info:
-  name: China Unicom Modem Default Login
+  name: Chinaunicom Modem Default Login
   author: princechaddha
   severity: high
-  verified: false
-  description: Default login credentials were discovered for a China Unicom modem.
+  tags: chinaunicom,default-login
 
-rules:
-    r0:
-        request:
-            method: POST
-            path: /cu.html
-            body: frashnum=&action=login&Frm_Logintoken=1&Username=CUAdmin&Password=CUAdmin&Username=&Password=
-        expression: response.status == 302 && response.raw_header.bcontains(b"/menu.gch")
-expression: r0()
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        POST /cu.html HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Content-Type: application/json
+        
+        frashnum=&action=login&Frm_Logintoken=1&Username=CUAdmin&Password=CUAdmin&Username=&Password=
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 302
+      - type: word
+        words:
+          - "/menu.gch"
+        part: header

