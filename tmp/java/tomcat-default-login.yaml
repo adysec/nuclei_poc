@@ -1,78 +1,36 @@
 id: tomcat-default-login
 
 info:
-  name: Apache Tomcat Manager Default Login
+  name: Apahce Tomcat Manager Default Login
   author: pdteam
   severity: high
-  description: Apache Tomcat Manager default login credentials were discovered. This template checks for multiple variations.
-  reference:
-    - https://www.rapid7.com/db/vulnerabilities/apache-tomcat-default-ovwebusr-password/
-  metadata:
-    shodan-query: title:"Apache Tomcat"
-  tags: tomcat,apache,default-login
+  verified: true
 
-requests:
-  - raw:
-      - |
-        GET /manager/html HTTP/1.1
-        Host: {{Hostname}}
-        Authorization: Basic {{base64(username + ':' + password)}}
 
-    payloads:
-      username:
-        - tomcat
-        - admin
-        - ovwebusr
-        - j2deployer
-        - cxsdk
-        - ADMIN
-        - xampp
-        - tomcat
-        - QCC
-        - admin
-        - root
-        - role1
-        - role
-        - tomcat
-        - admin
-        - role1
-        - both
-        - admin
-
-      password:
-        - tomcat
-        - admin
-        - OvW*busr1
-        - j2deployer
-        - kdsxc
-        - ADMIN
-        - xampp
-        - s3cret
-        - QLogic66
-        - tomcat
-        - root
-        - role1
-        - changethis
-        - changethis
-        - j5Brn9
-        - tomcat
-        - tomcat
-        - 123456
-
-    attack: pitchfork  # Available options: sniper, pitchfork and clusterbomb
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - "Apache Tomcat"
-          - "Server Information"
-          - "Hostname"
-        condition: and
-
-      - type: status
-        status:
-          - 200
-
-# Enhanced by mp on 2022/03/03
+set:
+  adminb64: base64('admin:admin')
+  tomcatb64: base64('tomcat:tomcat')
+  admin123: base64('admin:123456')
+rules:
+  r0:
+    request:
+      method: GET
+      path: /manager/html
+      headers:
+        Authorization: "Basic {{adminb64}}"
+    expression: response.status == 200 && response.headers["set-cookie"].contains('JSESSIONID') && response.body.bcontains(b"<title>/manager</title>") 
+  r1:
+    request:
+      method: GET
+      path: /manager/html
+      headers:
+        Authorization: "Basic {{tomcatb64}}"
+    expression: response.status == 200 && response.headers["set-cookie"].contains('JSESSIONID') && response.body.bcontains(b"<title>/manager</title>") 
+  r2:
+    request:
+      method: GET
+      path: /manager/html
+      headers:
+        Authorization: "Basic {{admin123}}"
+    expression: response.status == 200 && response.headers["set-cookie"].contains('JSESSIONID') && response.body.bcontains(b"<title>/manager</title>") 
+expression: r0() || r1() || r2()

