@@ -1,0 +1,58 @@
+id: email-subscribe
+
+info:
+  name: "Email Subscription Popup <= 1.2.16 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Email Subscription Popup plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via several GET parameters parameter in versions up to, and including, 1.2.16 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://plugins.svn.wordpress.org/email-subscribe/tags/1.2.17/readme.txt
+    - https://plugins.svn.wordpress.org/email-subscribe/tags/1.2.17/readme.md
+    - https://www.i13websolution.com/product/wordpress-newsletter-subscription-pro-plugin/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 4.7
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/email-subscribe/"
+    google-query: inurl:"/wp-content/plugins/email-subscribe/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,email-subscribe,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/email-subscribe/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "email-subscribe"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.17')

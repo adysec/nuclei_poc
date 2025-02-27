@@ -1,0 +1,58 @@
+id: social-share-button
+
+info:
+  name: "Social Share Button <= 2.1 - Stored Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Social Share Button plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'ssb_share_content_icon_margin', 'ssb_social_sites_domain', 'ssb_social_sites_domain_url', etc. parameters in versions up to, and including, 2.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated Admin+ attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - http://cinu.pl/research/wp-plugins/mail_93a5ff53a0c8ba98dae824ea2c3e76c9.html
+    - http://blog.cinu.pl/2015/11/php-static-code-analysis-vs-top-1000-wordpress-plugins.html
+    - https://wpscan.com/vulnerability/86fb690d-117d-4091-b5a8-aae814832ce8
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/social-share-button/"
+    google-query: inurl:"/wp-content/plugins/social-share-button/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,social-share-button,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/social-share-button/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "social-share-button"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1')

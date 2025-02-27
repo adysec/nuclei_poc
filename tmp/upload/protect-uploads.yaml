@@ -1,0 +1,56 @@
+id: protect-uploads
+
+info:
+  name: "Protect uploads <= 0.3 - Authorization Bypass"
+  author: topscoder
+  severity: high
+  description: "The Protect uploads plugin for WordPress failed to use a capability check and leaked the nonce necessary to save changes in the protect-uploads-admin-settings-page.php file. This meant that attackers able to successfully load this file in the context of WordPress, such as through a separate local file inclusion vulnerability, could save changes to the plugin settings. Note that while the file did allow direct access, this was not sufficient to obtain sensitive information or make changes on its own."
+  reference:
+
+  classification:
+    cvss-metrics:
+    cvss-score:
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/protect-uploads/"
+    google-query: inurl:"/wp-content/plugins/protect-uploads/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,protect-uploads,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/protect-uploads/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "protect-uploads"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<=  0.3')

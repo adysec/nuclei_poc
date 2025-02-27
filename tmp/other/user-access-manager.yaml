@@ -1,0 +1,59 @@
+id: user-access-manager
+
+info:
+  name: >
+    User Access Manager <= 2.0.8 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7c6e233f-c612-4625-8097-0637e976190d?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/user-access-manager/"
+    google-query: inurl:"/wp-content/plugins/user-access-manager/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,user-access-manager,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-access-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "user-access-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.9')
