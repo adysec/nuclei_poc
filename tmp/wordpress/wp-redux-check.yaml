@@ -1,0 +1,58 @@
+id: redux-check
+
+info:
+    name: WordPress Redux Check
+    author: Caddyshack
+    severity: medium
+    description: |
+      WordPress Redux Detected. # This template must be run with -code flag
+    reference:
+      - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-redux-framework-multiple-cross-site-scripting-vulnerabilities-3-6-0-2/
+      - https://medium.com/@chessp526/cve-2021-38314-sensitive-information-disclosure-getting-plugin-db-authors-0d210c5ced7f
+    classification:
+      cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+      cvss-score: 5.3
+      cve-id: CVE-2021-38314
+      cwe-id: CWE-94
+    metadata:
+      max-request: 1
+    tags: redux,wordpress
+
+variables:
+  url: "{{BaseURL}}"
+
+flow: |
+  code(1);
+  http(1);
+
+code:
+  - engine:
+      - py
+      - python3
+    source: |
+      import hashlib
+      import os
+      url = os.getenv('url')
+      hash = str(url + "/-redux").encode()
+      result = hashlib.md5(hash)
+      print(result.hexdigest())
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-admin/admin-ajax.php?action={{code_response}}"
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "[a-fA-F0-9]{32}"
+      - type: status
+        status:
+          - 200
+    extractors:
+      - type: regex
+        name: "Redux Hash"
+        group: 1
+        regex:
+          - '[a-fA-F0-9]{32}'
+# digest: 4a0a00473045022100f610ce8ff54be65f10d6d132cadf90dbcee9862a0a62f19ee4b11a209a7890e7022060bed38915ca084edc5961e9845d1f39c71ec0a1b3278e77b8a18d209bd3c9f6:dab76ff613761e0e06267a501cc0bfd8
