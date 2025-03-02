@@ -1,0 +1,104 @@
+id: exposed-keycloak-config
+
+info:
+    name: Exposed Keycloak Configuration & Endpoints
+    author: JavaliMZ
+    severity: high
+    description: |
+        Detects publicly accessible Keycloak configurations, admin consoles, and authentication endpoints.
+        Exposed instances may allow unauthorized access to authentication flows, user credentials, and internal realm configurations.
+    metadata:
+        max-request: 1
+        verified: true
+        tags: keycloak, oidc, sso, authentication, exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/auth/"
+      - "{{BaseURL}}/auth/admin/"
+      - "{{BaseURL}}/auth/realms/master"
+      - "{{BaseURL}}/auth/realms/master/.well-known/openid-configuration"
+      - "{{BaseURL}}/auth/realms/master/protocol/openid-connect/auth"
+      - "{{BaseURL}}/auth/realms/master/protocol/openid-connect/token"
+      - "{{BaseURL}}/auth/realms/master/protocol/openid-connect/userinfo"
+      - "{{BaseURL}}/auth/realms/master/protocol/openid-connect/logout"
+      - "{{BaseURL}}/auth/realms/master/protocol/openid-connect/certs"
+      - "{{BaseURL}}/auth/realms/master/account"
+      - "{{BaseURL}}/auth/realms/master/account/"
+      - "{{BaseURL}}/auth/realms/master/clients-registrations/openid-connect"
+      - "{{BaseURL}}/auth/realms/master/clients"
+      - "{{BaseURL}}/auth/realms/master/users"
+      - "{{BaseURL}}/auth/admin/master/console/"
+      - "{{BaseURL}}/auth/admin/realms/"
+      - "{{BaseURL}}/auth/admin/realms/master/users"
+      - "{{BaseURL}}/auth/admin/realms/master/clients"
+      - "{{BaseURL}}/auth/admin/realms/master/groups"
+      - "{{BaseURL}}/auth/admin/serverinfo"
+      - "{{BaseURL}}/realms/master/.well-known/openid-configuration"
+      - "{{BaseURL}}/realms/master/protocol/openid-connect/auth"
+      - "{{BaseURL}}/realms/master/protocol/openid-connect/token"
+      - "{{BaseURL}}/realms/master/protocol/openid-connect/userinfo"
+      - "{{BaseURL}}/realms/master/protocol/openid-connect/certs"
+      - "{{BaseURL}}/realms/master/protocol/openid-connect/logout"
+      - "{{BaseURL}}/realms/master/account"
+      - "{{BaseURL}}/realms/master/clients"
+      - "{{BaseURL}}/realms/master/users"
+      - "{{BaseURL}}/realms/master/groups"
+      - "{{BaseURL}}/realms/master/clients-registrations/openid-connect"
+      - "{{BaseURL}}/admin/master/console/"
+      - "{{BaseURL}}/admin/realms/"
+      - "{{BaseURL}}/admin/realms/master/users"
+      - "{{BaseURL}}/admin/realms/master/clients"
+      - "{{BaseURL}}/admin/realms/master/groups"
+      - "{{BaseURL}}/admin/serverinfo"
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(http_body, "Keycloak")
+      - type: word
+        part: header
+        words:
+          - "Keycloak"
+          - "X-Powered-By: Keycloak"
+      - type: regex
+        regex:
+          - '"realm":"[^"]+"'
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '"realm":"([^"]+)"'
+      - type: regex
+        group: 1
+        regex:
+          - '"issuer":"([^"]+)"'
+      - type: regex
+        group: 1
+        regex:
+          - '"authorization_endpoint":"([^"]+)"'
+      - type: regex
+        group: 1
+        regex:
+          - '"token_endpoint":"([^"]+)"'
+      - type: regex
+        group: 1
+        regex:
+          - '"userinfo_endpoint":"([^"]+)"'
+      - type: regex
+        group: 1
+        regex:
+          - '"end_session_endpoint":"([^"]+)"'
+      - type: regex
+        group: 1
+        regex:
+          - '"jwks_uri":"([^"]+)"'
+      - type: regex
+        group: 1
+        regex:
+          - '"registration_endpoint":"([^"]+)"'
+      - type: regex
+        group: 1
+        regex:
+          - '"introspection_endpoint":"([^"]+)"'

@@ -1,0 +1,58 @@
+id: missing-or-weak-code-obfuscation
+
+info:
+  name: Missing or Weak Code Obfuscation
+  author: YoruYagami
+  severity: high
+  description: |
+    A reverse engineering process involves analyzing an existing software system 
+    to understand its functionality and, in some cases, produce modifications to it. 
+    By performing a reverse engineering activity, it was found that the application's code 
+    is not protected according to the de facto standards of obfuscation strategies, 
+    aimed at hindering static analysis for reconstructing the application's functionality 
+    (reverse engineering). An attacker could exploit this issue to identify potential security 
+    vulnerabilities in the application code, reveal the source code, and/or investigate the 
+    application's dynamic behavior in edge cases.
+  remediation: |
+    To mitigate this vulnerability, it is recommended to use code obfuscation techniques to make 
+    reverse engineering more complex. Use obfuscation tools like ProGuard or R8 and ensure that the 
+    configuration is properly set in the `proguard-rules.pro` or `proguard-rules-r8.pro` file.
+
+    Example of enabling ProGuard in the build.gradle file:
+
+    ```gradle
+    android {
+        buildTypes {
+            release {
+                minifyEnabled true
+                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            }
+        }
+    }
+    ```
+
+    Example of a basic ProGuard configuration (`proguard-rules.pro`):
+
+    ```
+    -keep class com.example.** { *; }
+    -dontwarn com.example.**
+    -optimizations !code/simplification/arithmetic
+    -overloadaggressively
+    ```
+
+file:
+  - extensions:
+      - all
+
+    matchers:
+      - type: word
+        words:
+          - "proguard"
+          - "minifyEnabled"
+          - "-keep"
+          - "-dontwarn"
+          - "-optimizations"
+          - "-overloadaggressively"
+
+    condition: and
+    part: file
