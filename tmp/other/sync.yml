@@ -1,0 +1,32 @@
+# Your GitHub Actions workflow
+name: Sync Repositories
+
+on: [push] # This line is defining a push event trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Repo
+        uses: actions/checkout@v2
+        with:
+          repository: 'src_user/src_repo'
+          token: ${{ secrets.YOUR_GITHUB_TOKEN }}
+          path: src_repo
+
+      - name: Checkout Destination Repo
+        uses: actions/checkout@v2
+        with:
+          repository: 'dest_user/dest_repo'
+          token: ${{ secrets.YOUR_GITHUB_TOKEN }}
+          path: dest_repo
+
+      - name: Sync Repositories
+        run: |
+          rsync -a --delete src_repo/ dest_repo/
+          cd dest_repo
+          git config user.name 'Your Name'
+          git config user.email 'your-email@example.com'
+          git add .
+          git commit -m "Sync with source repo"
+          git push
