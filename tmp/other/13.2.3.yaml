@@ -1,0 +1,46 @@
+id: ASVS-4-0-3-V13-2-3
+
+info:
+  name: ASVS 13.2.3 Check
+  author: Masoud Abdaal
+  severity: medium
+  classification:
+    cwe-id: CWE-352
+  reference:
+    - https://github.com/OWASP/ASVS/blob/master/4.0/en/0x21-V13-API.md#v132-restful-web-service
+  tags: asvs,13.2.3
+  description: |
+     Verify that RESTful web services that utilize cookies are protected from Cross-Site Request Forgery via the use of at least one or more of the following: double submit cookie pattern, CSRF nonces, or Origin request header checks
+
+http:
+  - raw:
+      - |
+        GET {{BaseURL}} HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{origin_schema}}{{origin_host}}{{origin_port}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+        Accept: */*
+
+    cookie-reuse: true
+    payloads:
+      origin_host:
+        - 127.0.0.1
+        - localhost
+        - '{{resolve("{{FQDN}}")}}'
+      origin_schema:
+        - http://
+        - https://
+      origin_port:
+        -
+        - :80
+        - :443
+    attack: clusterbomb
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        name: 'Access Restriction Bypass Via Origin Spoof'
+        dsl:
+          - status_code < 210 && status_code >= 200
+          - to_number(forbidden_status_code) != status_code
+# digest: 490a00463044022050741006143f221ad95a93394da23c3bd73610d9f22873f039394a22c85958b602205cf0afc9b7f7a0628148c24168902290446034a0a136daab47024b7cd8750ef8:236a7c23afe836fbe231d6e037cff444
