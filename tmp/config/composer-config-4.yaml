@@ -1,0 +1,29 @@
+id: composer-config 4
+
+info:
+  name: composer-config-file
+  author: Mahendra Purbia (Mah3Sec_)
+  severity: info
+  tags: config,exposure
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /vendor/composer/installed.json HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
+    matchers:
+      - type: dsl
+        name: composer.lock
+        dsl:
+          - "contains(body, 'packages') && contains(tolower(all_headers), 'application/octet-stream') && status_code == 200"
+
+      - type: dsl
+        name: composer.json
+        dsl:
+          - "contains(body, 'require') && contains(tolower(all_headers), 'application/json') && status_code == 200"

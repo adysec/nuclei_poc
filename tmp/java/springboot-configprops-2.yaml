@@ -1,0 +1,41 @@
+id: springboot-configprops 2
+
+info:
+  name: Detect Springboot Configprops Actuator
+  author: that_juan_,dwisiswant0,wdahlenb
+  severity: low
+  description: Sensitive environment variables may not be masked
+  tags: springboot,disclosure
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /actuator/configprops HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "org.springframework.boot.actuate"
+          - "beans"
+          - "contexts"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "application/json"
+          - "application/vnd.spring-boot.actuator"
+          - "application/vnd.spring-boot.actuator.v1+json"
+        condition: or
+        part: header
