@@ -1,0 +1,48 @@
+id: open-redirect
+
+info:
+  name: Open Redirect Detection
+  author: princechaddha, shelled
+  severity: medium
+  tags: redirect,dast
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      redirect:
+        - "evil.com"
+
+    fuzzing:
+      - part: query
+        mode: single
+        fuzz:
+          - "https://{{redirect}}"
+          - "//{{redirect}}"
+          - ".{{redirect}}"
+          - "/\/\{{redirect}}"
+          - "hTTps://{{redirect}}"
+          - "https:{{redirect}}"
+          - "////{{redirect}}"
+          - "////{{redirect}}/%2f.."
+          - "//{{redirect}}/%2f.."
+          - "http://{{redirect}}"
+          - "htTP://{{redirect}}"
+          - "HTTPS://{{redirect}}"
+          - "HTTP://{{redirect}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)evil\.com\/?(\/|[^.].*)?$' # https://regex101.com/r/ZDYhFh/1
+
+      - type: status
+        status:
+          - 301
+          - 302
+          - 307
