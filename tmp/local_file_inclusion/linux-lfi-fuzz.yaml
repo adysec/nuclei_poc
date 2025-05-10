@@ -1,0 +1,40 @@
+id: linux-lfi-fuzz
+
+info:
+  name: Local File Inclusion - Linux
+  author: DhiyaneshDK
+  severity: high
+  description: Linux is subject to local file Inclusion on searches for /etc/passwd on passed URLs.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-89
+  reference:
+    - https://github.com/danielmiessler/SecLists/tree/master/Fuzzing/LFI
+  tags: lfi,dast,linux
+  metadata:
+    max-request: 32
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    payloads:
+      payload: payloads/linux-lfi-payloads.txt
+    
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{payload}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        name: linux
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
