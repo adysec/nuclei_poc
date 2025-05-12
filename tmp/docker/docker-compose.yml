@@ -1,0 +1,88 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    command: "-c max_connections=512"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - AUTH_TYPE=scram-sha-256
+      - DEFAULT_POOL_SIZE=512
+      - MAX_CLIENT_CONN=10000
+      - POOL_MODE=transaction
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: always
+    volumes:
+      - mq_data:/var/lib/rabbitmq/
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 60s
+      retries: 5
+  web:
+    build: .
+    restart: always
+    image: ghcr.io/bitthebyte/monitorizer:main
+    command: /webserver-entrypoint.sh
+    environment:
+      POSTGRES_HOST: pgbouncer
+      CELERY_BROKER_URL: 'amqp://guest:guest@rabbitmq:5672'
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - rabbitmq
+
+  beat_worker:
+    restart: always
+    image: ghcr.io/bitthebyte/monitorizer:main
+    command: celery -A monitorizer.server beat -l info
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      CELERY_BROKER_URL: 'amqp://guest:guest@rabbitmq:5672'
+      POSTGRES_HOST: pgbouncer
+
+  report_worker:
+    restart: always
+    image: ghcr.io/bitthebyte/monitorizer:main
+    command: celery -A monitorizer.server worker -Q reports -l info
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      CELERY_BROKER_URL: 'amqp://guest:guest@rabbitmq:5672'
+      POSTGRES_HOST: pgbouncer
+
+  job_worker:
+    restart: always
+    privileged: true
+    image: ghcr.io/bitthebyte/monitorizer:main
+    command: celery -A monitorizer.server worker -Q default -l info
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      CELERY_BROKER_URL: 'amqp://guest:guest@rabbitmq:5672'
+      POSTGRES_HOST: pgbouncer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/.monitorizer:/home/.monitorizer:shared
+
+volumes:
+  db_data:
+  mq_data:
