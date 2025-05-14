@@ -1,0 +1,34 @@
+id: default-sql-dump 7
+
+info:
+  name: MySQL Dump Files
+  author: geeknik,dwisiswant0
+  severity: medium
+  tags: exposure,backup
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /db.sql HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Range: bytes=0-3000
+    max-size: 2000 # Size in bytes - Max Size to read from server response
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "(?m)(?:DROP|CREATE|(?:UN)?LOCK) TABLE|INSERT INTO"
+        part: body
+      - type: status
+        status:
+          - 200
+          - 206
+        condition: or
