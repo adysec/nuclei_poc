@@ -1,0 +1,193 @@
+id: backup-files
+
+info:
+  name: Compressed Backup File - Detect
+  author: reewardius
+  severity: medium
+  description: Multiple compressed backup files were detected.
+  tags: backup
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{FILENAME}}-backup.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}-dump.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}-{{Host}}.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}_backup.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}_dump.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}_{{Host}}.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}backup.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}dump.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}{{Host}}.{{EXT}}"
+      - "{{BaseURL}}/{{FILENAME}}{{date_time('%Y')}}.{{EXT}}"
+      - "{{BaseURL}}/{{Host}}-{{FILENAME}}.{{EXT}}"
+      - "{{BaseURL}}/{{Host}}_{{FILENAME}}.{{EXT}}"
+      
+    attack: clusterbomb
+    payloads:
+      FILENAME:
+        - "admin"
+        - "adnim"
+        - "api"
+        - "app"
+        - "app-dev"
+        - "app-prod"
+        - "app-qa"
+        - "backend"
+        - "backup"
+        - "backup-2021"
+        - "backup-2022"
+        - "backup-2023"
+        - "backup-2024"
+        - "backup-2025"
+        - "backup-2026"
+        - "backup-2027"
+        - "backup-server"
+        - "backup-site"
+        - "backup2021"
+        - "backup2022"
+        - "backup2023"
+        - "backup2024"
+        - "backup2025"
+        - "backup2026"
+        - "backup2027"
+        - "backup_2021"
+        - "backup_2022"
+        - "backup_2023"
+        - "backup_2024"
+        - "backup_2025"
+        - "backup_2026"
+        - "backup_2027"
+        - "code"
+        - "conf"
+        - "config"
+        - "dashboard"
+        - "data"
+        - "database"
+        - "db"
+        - "deploy"
+        - "dev"
+        - "dev-stage"
+        - "dump"
+        - "dump2021"
+        - "dump2022"
+        - "dump2023"
+        - "dump2024"
+        - "dump2025"
+        - "dump2026"
+        - "dumps"
+        - "files"
+        - "frontend"
+        - "ftp"
+        - "old"
+        - "output"
+        - "package"
+        - "preprod"
+        - "preprod-stage"
+        - "prod"
+        - "prod-2020"
+        - "prod-2021"
+        - "prod-2022"
+        - "prod-2023"
+        - "prod-2024"
+        - "prod-2025"
+        - "prod-2026"
+        - "prod-2027"
+        - "prod-2028"
+        - "prod-2029"
+        - "prod-2030"
+        - "prod-stage"
+        - "prod2020"
+        - "prod2021"
+        - "prod2022"
+        - "prod2023"
+        - "prod2024"
+        - "prod2025"
+        - "prod2026"
+        - "prod2027"
+        - "prod2028"
+        - "prod2029"
+        - "prod2030"
+        - "qa"
+        - "qa-stage"
+        - "root"
+        - "server"
+        - "site"
+        - "source"
+        - "sourcecode"
+        - "src"
+        - "stage"
+        - "temp"
+        - "test"
+        - "tmp"
+        - "upload"
+        - "uploads"
+        - "users"
+        - "web"
+        - "website"
+        - "website-files"
+        - "website_backup"
+        - "website_source"
+        - "www"
+        - "wwwsite"
+        - "{{Host}}"
+        - "{{date_time('%Y')}}"
+        
+      EXT:
+        - "7z"
+        - "sql"
+        - "bz2"
+        - "gz"
+        - "lz"
+        - "rar"
+        - "tar.gz"
+        - "tar.bz2"
+        - "xz"
+        - "zip"
+        - "z"
+        - "tar.z"
+        - "db"
+        - "sqlite"
+        - "sqlite3"
+        - "sqlitedb"
+        - "sql.7z"
+        - "sql.bz2"
+        - "sql.gz"
+        - "sql.lz"
+        - "sql.rar"
+        - "sql.tar.gz"
+        - "sql.xz"
+        - "sql.zip"
+        - "sql.z"
+        - "sql.tar.z"
+        - "war"
+        
+    max-size: 500  # Size in bytes - Max Size to read from server response
+    matchers-condition: and
+    matchers:
+      - type: binary
+        binary:
+          - "377ABCAF271C"  # 7z
+          - "314159265359"  # bz2
+          - "53514c69746520666f726d6174203300"  # SQLite format 3.
+          - "1f8b"  # gz tar.gz
+          - "526172211A0700"  # rar RAR archive version 1.50
+          - "526172211A070100"  # rar RAR archive version 5.0
+          - "FD377A585A0000"  # xz tar.xz
+          - "1F9D"  # z tar.z
+          - "1FA0"  # z tar.z
+          - "4C5A4950"  # lz
+          - "504B0304"  # zip
+        condition: or
+        part: body
+        
+      - type: regex
+        regex:
+          - "application/[-\\w.]+"
+        part: header
+        
+      - type: status
+        status:
+          - 200
+          - 206

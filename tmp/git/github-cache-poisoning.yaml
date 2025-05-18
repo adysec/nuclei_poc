@@ -1,0 +1,24 @@
+id: github-cache-poisoning
+
+info:
+  name: Github Cache Poisoning Detection
+  author: reewardius
+  severity: high
+  tags: cache
+  reference: https://youst.in/posts/cache-poisoning-at-scale/
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=test HTTP/1.1
+        content-type: invalid_value
+        
+      - |
+        GET /?{{randstr}}=test HTTP/1.1
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && status_code_2 == 406'

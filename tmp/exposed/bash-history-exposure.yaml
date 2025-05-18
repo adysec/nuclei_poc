@@ -1,0 +1,49 @@
+id: bash-history-exposure
+
+info:
+  name: Bash History Exposure
+  author: reewardius
+  severity: high
+  tags: exposed,generic
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.bash_history"
+      
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "db_newmdb.sql"
+          - "mysql -u"
+          - "whoami"
+          - "id"
+          - "mysql"
+          - "ssh"
+          - "cd"
+          - "cat"
+          - "ls"
+        condition: or
+        
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "404 - File or directory not found."
+          
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "octet-stream"
+          - "application/x-sh"
+          - "application/x-shellscript"
+        condition: or
+        
+      - type: status
+        status:
+          - 200
+          - 206
+        condition: or

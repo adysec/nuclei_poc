@@ -1,0 +1,73 @@
+id: config-file-exposure
+
+info:
+  name: Config file exposure
+  description: This template can be used to detect config files containing sensitive information.
+  author: reewardius
+  severity: low
+  tags: generic,config-files
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/sftp-config.json"
+      - "{{BaseURL}}/config/sftp-config.json"
+      - "{{BaseURL}}/.vscode/sftp.json"
+      - "{{BaseURL}}/deployment-config.json"
+      - "{{BaseURL}}/user-config.json"
+      - "{{BaseURL}}/ssh-config.json"
+      - "{{BaseURL}}/database-config.json"
+      - "{{BaseURL}}/config/database-config.json"
+      - "{{BaseURL}}/database.json"
+      - "{{BaseURL}}/config/database.json"
+      - "{{BaseURL}}/config.json"
+      - "{{BaseURL}}/config/sftp-config.json"
+      - "{{BaseURL}}/config/config.json"
+      - "{{BaseURL}}/git_config.json"
+      
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "sftp_password"
+          - "ftp_password"
+          - "ssh_password"
+          - "ssh_username"
+          - "credentials:"
+        condition: or  
+        part: body
+        case-insensitive: true
+        
+      - type: word
+        words:
+          - "MAIL_HOST="
+          - "MAIL_FROM_ADDRESS="
+          - "MAIL_ENCRYPTION="
+        part: body
+        condition: or
+        
+      - type: regex
+        regex:
+          - "(?m)^APP_(NAME|ENV|KEY|DEBUG|URL|PASSWORD|SECRET)"
+          - "(?m)^DB_(HOST|NAME|DEBUG|PASSWORD|DATABASE|PASS)"
+          - "(?m)^ADMIN_(HOST|NAME|DEBUG|PASSWORD|DATABASE|PASS)"
+          - "(?m)^AWS_(SESSION|LAMBDA|SECRET|REGION|ACCESS)"
+          - 'jdbc:[a-z:]+://[A-Za-z0-9\.\-_:;=/@?,&]+'
+          - '((?i)password|pwd|pass|secretkey|secret_key)='
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "USER"
+          - "PASS"
+          - "HOST"
+        condition: and
+        
+      - type: word
+        part: body
+        words:
+          - "env"
+          - "debug"
+          - "variable"
+        condition: and

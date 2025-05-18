@@ -1,0 +1,25 @@
+id: x-forwarded-scheme-rack-middleware
+
+info:
+  name: X-Forwarded-Scheme Rack Middleware Ruby on Rails
+  author: reewardius
+  severity: high
+  tags: cache
+  reference: https://youst.in/posts/cache-poisoning-at-scale/
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        x-forwarded-scheme: http
+
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && status_code_2 == 301'
+          - 'status_code_1 == 200 && status_code_2 == 302'

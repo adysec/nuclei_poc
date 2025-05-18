@@ -1,0 +1,26 @@
+id: cache-poisoning-via-xf-host
+
+info:
+  name: Cache Poisoning via X-Forwarded-Host
+  author: reewardius
+  severity: high
+  reference:
+    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+  tags: cache
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Host: attacker.com
+
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "attacker.com")'
+          - 'contains(header_1, "attacker.com")'
+        condition: or

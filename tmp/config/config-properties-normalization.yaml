@@ -1,0 +1,54 @@
+id: config-properties-normalization
+
+info:
+  name: Config Properties Exposure
+  author: j4vaovo,DhiyaneshDK,reewardius
+  severity: high
+  reference:
+    - https://twitter.com/win3zz/status/1657624974851702784/photo/1
+  tags: config-files
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/;/config.properties"
+      - "{{BaseURL}}/;/config.properties.old"
+      - "{{BaseURL}}/;/ui_config.properties"
+      - "{{BaseURL}}/config.properties"
+      - "{{BaseURL}}/config.properties.old"
+      - "{{BaseURL}}/ui_config.properties"
+      
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "MAIL_HOST="
+          - "MAIL_FROM_ADDRESS="
+          - "MAIL_ENCRYPTION="
+        part: body
+        condition: or
+        
+      - type: regex
+        regex:
+          - "(?m)^APP_(NAME|ENV|KEY|DEBUG|URL|PASSWORD|SECRET)"
+          - "(?m)^DB_(HOST|PASSWORD|DATABASE|PASS)"
+          - "(?m)^AWS_(SESSION|LAMBDA|SECRET|REGION|ACCESS)"
+          - 'jdbc:[a-z:]+://[A-Za-z0-9\.\-_:;=/@?,&]+'
+          - '((?i)password|pwd|pass|secretkey|secret_key)='
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "USER"
+          - "PASS"
+          - "HOST"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "env"
+          - "debug"
+          - "variable"
+        condition: and

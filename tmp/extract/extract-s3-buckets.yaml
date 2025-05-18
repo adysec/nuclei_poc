@@ -1,0 +1,44 @@
+id: extract-s3-buckets
+info:
+  name: Extract S3 Buckets and Links
+  author: ProjectDiscoveryAI
+  severity: info
+  description: |
+    Extracts S3 bucket identifiers and links from responses including image, href, and script sources.
+  tags: aws,amazon
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "s3.amazonaws.com"
+          - ".s3.amazonaws.com"
+    extractors:
+      - type: regex
+        part: body
+        name: s3_buckets
+        regex:
+          - "(?:https?:\\/\\/)?[a-zA-Z0-9.-]+\\.s3\\.amazonaws\\.com(?:\\/[a-zA-Z0-9._-]+)*"
+
+      - type: xpath
+        part: body
+        name: images_s3_links
+        xpath:
+          - "//img[starts-with(@src, 'https://s3.amazonaws.com') or contains(@src, '.s3.amazonaws.com')]/@src"
+
+      - type: xpath
+        part: body
+        name: href_s3_links
+        xpath:
+          - "//a[starts-with(@href, 'https://s3.amazonaws.com') or contains(@href, '.s3.amazonaws.com')]/@href"
+
+      - type: xpath
+        part: body
+        name: script_s3_links
+        xpath:
+          - "//script[starts-with(@src, 'https://s3.amazonaws.com') or contains(@src, '.s3.amazonaws.com')]/@src"

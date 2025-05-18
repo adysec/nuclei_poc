@@ -1,0 +1,26 @@
+id: web-cache-port-poisoning
+
+info:
+  name: Web Cache Poisoning via Host Header
+  author: reewardius
+  severity: high
+  tags: cache
+  reference: https://hackerone.com/reports/1096609
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        Host: {{Host}}:1337
+        
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "{{Host}}:1337")'
+          - 'contains(header_2, "{{Host}}:1337")'
+        condition: or

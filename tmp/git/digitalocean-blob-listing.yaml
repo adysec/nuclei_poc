@@ -1,0 +1,37 @@
+id: digitalocean-blob-listing
+
+info:
+  name: DigitalOcean blob with Object listing
+  author: reewardius
+  severity: medium
+  reference:
+    - https://mikey96.medium.com/cloud-based-storage-misconfigurations-critical-bounties-361647f78a29
+    - https://DNS.blob.core.windows.net/containerName?restype=container&comp=list
+  tags: provider,bucket
+  metadata:
+    max-request: 2
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - '{{Hostname}}/'
+      
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'ListBucketResult'
+          - 'Name'
+          - 'Contents'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+          
+      - type: word
+        part: header
+        words:
+          - application/xml

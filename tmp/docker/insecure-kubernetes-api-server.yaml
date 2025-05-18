@@ -1,0 +1,37 @@
+id: insecure-kubernetes-api-server
+
+info:
+  name: Kubernetes Api Server
+  author: reewardius
+  reference: ./kubectl -shttp://IP:PORT get nodes / get pods / get ns
+  severity: high
+  tags: kubernetes,k8s,generic
+  metadata:
+    max-request: 4
+    
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api"
+      - "{{Host}}:443/api"
+      - "{{Host}}:6443/api"
+      - "{{Host}}:8443/api"
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "APIVersions"
+          - "clientCIDR"
+        condition: and
+        
+      - type: word
+        words:
+          - "application/json"
+        part: header
+        
+      - type: status
+        status:
+          - 200

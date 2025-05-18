@@ -1,0 +1,50 @@
+id: do-object-listing
+
+info:
+  name: Digital Ocean bucket with Object listing
+  author: reewardius
+  severity: medium
+  reference:
+    - https://mikey96.medium.com/cloud-based-storage-misconfigurations-critical-bounties-361647f78a29
+  tags: bucket,do,digitalocean,provider,generic,listing,fuzzing
+  
+http:
+  - method: GET
+    path:
+      - "{{Hostname}}/"
+      - "{{Host}}.ams3.digitaloceanspaces.com"
+      - "{{Host}}.sfo2.digitaloceanspaces.com"
+      - "{{Host}}.fra1.digitaloceanspaces.com"
+      - "{{Host}}.nyc3.digitaloceanspaces.com"
+      - "{{Host}}.sgp1.digitaloceanspaces.com"
+      - "{{Host}}.syd1.digitaloceanspaces.com"
+      - "{{Host}}.lon1.digitaloceanspaces.com"
+      - "{{Host}}.tor1.digitaloceanspaces.com"
+      - "{{Host}}.blr1.digitaloceanspaces.com"
+      - "{{Host}}.sfo3.digitaloceanspaces.com"
+      
+    max-size: 1000
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<ListBucketResult xmlns='
+          - '<Marker/>'
+          - '<ID>'
+          - '<DisplayName>'
+          - '<StorageClass>'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/xml
+          
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<Name>([a-z0-9-._]+)'

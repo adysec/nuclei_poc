@@ -1,0 +1,23 @@
+id: cache-poisoning-x-amz-server-side-encryption
+
+info:
+  name: cache poisoning via X-Amz-Server-Side-Encryption
+  author: reewardius
+  severity: high
+  tags: cache
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=008 HTTP/1.1
+        X-Amz-Server-Side-Encryption: AES256xss
+        
+      - |
+        GET /?{{randstr}}=008 HTTP/1.1
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "AES256xss") && status_code_2 == 400'

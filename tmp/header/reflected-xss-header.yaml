@@ -1,0 +1,28 @@
+id: reflected-xss-header
+
+info:
+  name: Reflected XSS via header
+  author: reewardius
+  severity: high
+  tags: generic,xss,reflected
+  
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: </script>'\"><img src="//js.rip/bugbounty">
+        Referer: https://bing.com\"></script>'\"><img src="//js.rip/bugbounty">
+        X-Forwarded-Host: bing.com\"></script>'\"><img src="//js.rip/bugbounty">
+        X-Forwarded-For: bing.com\"></script>'\"><img src="//js.rip/bugbounty">
+        
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<img src="//js.rip/bugbounty">'
+          
+      - type: status
+        status:
+          - 200

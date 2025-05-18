@@ -1,0 +1,46 @@
+id: cache-poisoning-erickfernandox
+
+info:
+  name: Cache Poisoning Detection
+  author: melbadry9,xelkomy,akincibor,dogasantos
+  severity: medium
+  reference:
+    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+    - https://portswigger.net/web-security/web-cache-poisoning
+  tags: cache
+  
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Prefix: defabc.xfp
+        X-Forwarded-Host: defabc.xfh
+        X-Forwarded-For: defabc.xff
+        X-Forwarded-Scheme: http
+        X-Forwarded: defabc.xfa
+        X-Originating-IP: defabc.xfq
+        X-Remote-IP: defabc.xfr
+        X-Remote-Addr: defabc.xfs
+        X-Client-IP: defabc.xft
+        X-Proxyuser-IP: defabc.xfb
+        X-Original-Url: defabc.xfc
+        True-Client-Ip: defabc.xfd
+        Cluster-Client-Ip: defabc.xfe
+        Token: defabc.xfg
+        Referer: defabc.xfh
+        User-Agent: defabc.xfi
+        Cookie: Teste: defabc.xfj
+        From: defabc.xfk
+
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        Host: {{Hostname}}
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "defabc")'

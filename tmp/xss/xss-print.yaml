@@ -1,0 +1,36 @@
+id: xss-print
+
+info:
+  name: XSS Print
+  author: reewardius
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      xss:
+        - "&'><script>print()</script>"
+        
+    fuzzing:
+      - part: query
+        mode: single
+        type: replace
+        fuzz:
+          - "{{xss}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "&'><script>print()</script>"
+          
+      - type: word
+        part: header
+        words:
+          - text/html

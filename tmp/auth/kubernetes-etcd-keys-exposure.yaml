@@ -1,0 +1,37 @@
+id: kubernetes-etcd-keys-exposure
+
+info:
+  name: Kubernetes etcd Keys Exposure
+  author: reewardius
+  severity: medium
+  reference:
+    - https://github.com/maurosoria/dirsearch/blob/master/db/dicc.txt
+  metadata:
+    max-request: 2
+    verified: true
+  tags: kubernetes,k8s,generic
+  
+http:
+  - method: GET
+    path:
+      - "{{Host}}:2379/v2/keys/?recursive=true"
+      - "{{Host}}:2379/v2/keys/"
+      
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'action'
+          - 'node'
+          - 'cluster_type'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+          
+      - type: word
+        part: header
+        words:
+          - "application/json"

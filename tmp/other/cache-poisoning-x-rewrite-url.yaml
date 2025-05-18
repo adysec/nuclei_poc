@@ -1,0 +1,26 @@
+id: cache-poisoning-x-rewrite-url
+
+info:
+  name: Cache Poisoning via X-Rewrite-URL
+  author: reewardius
+  severity: high
+  reference:
+    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+  tags: cache
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=test HTTP/1.1
+        x-rewrite-url: /NotFound
+        
+      - |
+        GET /?{{randstr}}=test HTTP/1.1
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header_2, "/NotFound") || contains(body_2, "/NotFound")'

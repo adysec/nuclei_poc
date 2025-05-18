@@ -1,0 +1,45 @@
+id: reflected-xss-body
+
+info:
+  name: Reflected Cross-Site Scripting
+  author: pdteam,0xKayala,AmirHossein Raeisi
+  severity: medium
+  tags: fuzzing-req-body,fuzzing-req,fuzzing-req-reflected,fuzzing-req-xss,reflected,dast
+
+variables:
+  first: "{{rand_int(10000, 99999)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "PATCH"'
+          - 'method == "DELETE"'
+
+    payloads:
+      reflection:
+        - "'\"><{{first}}>"
+        - "'><{{first}}>"
+        - "\"><{{first}}>"
+        
+    fuzzing:
+      - part: body
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"

@@ -1,0 +1,47 @@
+id: exposing-django-debug-panel
+
+info:
+  name: Exposing Django Debug Panel and Sensitive Infrastructure Information
+  author: aliend89
+  severity: high
+  tags: debug,django
+  reference:
+    - https://twitter.com/Alra3ees/status/1397660633928286208
+    - https://hackerone.com/reports/2078707
+    - https://blog.scrt.ch/2018/08/24/remote-code-execution-on-a-facebook-server/
+    - https://hacklido.com/blog/704-exploiting-django-debug-mode-for-unrestricted-access-to-the-internal-dashboard
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/app/tmp/healthcheck.json"
+      - "{{BaseURL}}/fxa-rp-events"
+      - "{{BaseURL}}/widgets/platformx/-/svg-badge.svg"
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: or
+        words:
+          - "ADMIN_ENABLED"
+          - "ALLOWED_HOSTS"
+          - "AUTHENTICATION_BACKENDS"
+          - "AUTH_USER_MODEL"
+          - "AWS_REGION"
+          - "AWS_SES_CONFIGSET"
+          - "AWS_SNS_TOPIC"
+          - "AWS_SQS_EMAIL_QUEUE_URL"
+          - "AWS_SQS_QUEUE_URL"
+          - "BASKET_ORIGIN"
+          - "BUNDLE_PLAN_ID_US"
+          - "CORS_ALLOWED_ORIGINS"
+          - "DATABASES"
+          - "INSTALLED_APPS"
+          - "INTERNAL_IPS"
+          - "LOGGING"
+          - "REST_FRAMEWORK"
+
+      - type: status
+        status:
+          - 200

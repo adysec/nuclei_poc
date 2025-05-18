@@ -1,0 +1,38 @@
+id: web-cache-poisoning-2
+
+info:
+  name: Cache Poisoning Detection
+  author: melbadry9,xelkomy,akincibor,dogasantos
+  severity: low
+  description: This template detects Cache poisoning.
+  reference:
+    - https://web.archive.org/web/20210422000653/https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+    - https://portswigger.net/web-security/web-cache-poisoning
+  metadata:
+    max-request: 2
+  tags: cache
+
+variables:
+  cache_key: "{{to_lower(rand_base(6))}}"
+  cache_header: "{{to_lower(rand_base(6))}}"
+
+http:
+  - raw:
+      - |
+        GET /?{{cache_key}}=9 HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Prefix: {{cache_header}}.xfp
+        X-Forwarded-Host: {{cache_header}}.xfh
+        X-Forwarded-For: {{cache_header}}.xff
+
+      - |
+        GET /?{{cache_key}}=9 HTTP/1.1
+        Host: {{Hostname}}
+
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "{{cache_header}}")'

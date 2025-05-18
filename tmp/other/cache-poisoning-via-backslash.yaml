@@ -1,0 +1,25 @@
+id: cache-poisoning-via-backslash
+
+info:
+  name: Cache Poisoning Protocol via backslash
+  author: reewardius
+  severity: high
+  reference: https://youst.in/posts/cache-poisoning-at-scale/
+  tags: cache
+
+http:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        \: 1
+        
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        
+    stop-at-first-match: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && status_code_2 == 403'
+          - 'status_code_1 == 200 && status_code_2 == 400'

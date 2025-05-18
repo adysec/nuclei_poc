@@ -1,0 +1,57 @@
+id: jboss-webconsole-default-login
+
+info:
+  name: JBoss Web Console Default Login - Detect
+  author: reewardius
+  reference: https://medium.com/@madrobot/exploiting-jboss-like-a-boss-223a8b108206
+  severity: low
+  tags: java,jboss,default-login
+
+http:
+  - raw:
+      - |
+        GET /web-console/ServerInfo.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /web-console/ServerInfo.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(user + ':' + pass)}}
+        
+    attack: clusterbomb
+    payloads:
+      user:
+        - admin
+        - root
+        - administrator
+        - manager
+        - test
+        - demo
+        - guest
+        - user
+      pass:
+        - admin
+        - 12345
+        - 123456
+        - 1234
+        - 123456789
+        - 123qwe
+        - test
+        - demo
+        - guest
+        - root
+        - changeme
+        - password
+        
+    cookie-reuse: true
+    stop-at-first-match: true
+    req-condition: true
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "JBoss Management Console - Server Information")'
+          
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "JBoss Management Console - Server Information")'
