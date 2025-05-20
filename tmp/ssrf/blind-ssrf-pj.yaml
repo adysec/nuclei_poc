@@ -1,0 +1,42 @@
+id: blind-ssrf-pj
+
+info:
+  name: Blind SSRF OAST Detection
+  author: pdteam
+  severity: high
+  tags: fuzzing-ssrf,fuzzing-req
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      ssrf:
+        - "{{interactsh-url}}"
+        - "{{FQDN}}.{{interactsh-url}}"
+        - "{{RDN}}.{{interactsh-url}}"
+        - "{{RDN}}%2E{{interactsh-url}}"
+        - "http%3A%2F%2F{{interactsh-url}}"
+        
+    fuzzing:
+      - part: query
+        mode: single
+        values:
+          - "https?://" # Replace HTTP URLs with alternatives
+        fuzz:
+          - "https://{{ssrf}}"
+
+      - part: query
+        mode: single
+        values:
+          - "^[A-Za-z0-9-._]+:[0-9]+$" # Replace <host>:<port> with alternative
+        fuzz:
+          - "{{ssrf}}:80"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the HTTP Interaction
+        words:
+          - "http"

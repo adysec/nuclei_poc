@@ -1,0 +1,50 @@
+id: cockpit-project-panel
+
+info:
+  name: Cockpit Project Login Panel - Detect
+  author: righettod
+  severity: info
+  description: |
+    Cockpit Project products was detected.
+  reference:
+    - https://github.com/cockpit-project/cockpit
+    - https://cockpit-project.org/
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: http.html:"cockpit/static/login.css"
+  tags: panel,cockpit,login
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(to_lower(body), "cockpit/", "is_cockpit_client")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: os
+        group: 1
+        regex:
+          - '(?i)"PRETTY_NAME"\s*:\s*"(.*?)"'
+        internal: true
+
+      - type: regex
+        part: body
+        name: hostname
+        group: 1
+        regex:
+          - '(?i)"hostname"\s*:\s*"(.*?)"'
+        internal: true
+
+      - type: dsl
+        dsl:
+          - '"OS: " + os + " | Hostname: " + hostname'
+# digest: 4a0a00473045022100d67b29efbba1bc2543f441bd8f3ef9945f956dfe961ec6c038ecf4bd4df81c5d0220342d0ebadfdca13e94250f36d32ef4fe6dc33ca217cd11a92b806347e614d767:922c64590222798bb761d5b6d8e72950

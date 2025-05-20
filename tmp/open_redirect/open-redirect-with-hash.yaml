@@ -1,0 +1,46 @@
+id: open-redirect-with-hash
+
+info:
+  name: Open Redirect
+  author: reewardius
+  severity: low
+  tags: fuzzing-redirect,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      redir:
+        - "https://oast.me&hash={{md5('https://oast.me')}}"
+        - "https://oast.me&hash={{sha1('https://oast.me')}}"
+        - "https://oast.me&hash={{sha256('https://oast.me')}}"
+        - "https://oast.me&token={{md5('https://oast.me')}}"
+        - "https://oast.me&token={{sha1('https://oast.me')}}"
+        - "https://oast.me&token={{sha256('https://oast.me')}}"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{redir}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)oast\.me\/?(\/|[^.].*)?$'
+
+      - type: status
+        status:
+          - 301
+          - 302
+          - 303
+          - 304
+          - 306
+          - 307
+          - 308

