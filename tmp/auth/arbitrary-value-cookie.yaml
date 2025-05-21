@@ -1,0 +1,35 @@
+id: arbitrary-value-cookie
+
+info:
+  name: Arbitrary Value Cookie
+  author: reewardius
+  reference: https://hackerone.com/reports/806577
+  severity: medium
+  tags: fuzzing-xss
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    payloads:
+      cookie:
+        - "HERE;+Cookie1=XXXXX;+Cookie2=WWWWWWW;+Cookie3=EOF"
+        - "HERE%3B%2BCookie1%3DXXXXX%3B%2BCookie2%3DWWWWWWW%3B%2BCookie3%3DEOF"
+        - "HERE;%2BCookie1=XXXXX;%2BCookie2=WWWWWWW;%2BCookie3=EOF"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{cookie}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: header
+        condition: or
+        words:
+          - "HERE; Cookie1=XXXXX; Cookie2=WWWWWWW; Cookie3=EOF"
+          - "HERE;+Cookie1=XXXXX;+Cookie2=WWWWWWW;+Cookie3=EOF"

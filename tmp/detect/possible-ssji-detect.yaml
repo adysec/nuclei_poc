@@ -1,0 +1,45 @@
+id: possible-ssji-detect
+
+info:
+  name: Blind Time Based SSJI Detection via POST
+  author: reewardius
+  severity: high
+  reference: https://www.hahwul.com/cullinan/ssji/
+  tags: time,ssji,fuzzing
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      ssji:
+        - "setInterval(() => a=1, 10000);"
+        - "setTimeout(a%3d1,%2010000)"
+        - "setTimeout(() => a=1, 10000);"
+        - "'a';sleep(1) and 'a';sleep(10000)"
+        - "a;sleep(1) and a;sleep(10000)"
+        - "and sleep(10000)"
+        - "';sleep(1);var xyz='0 and ';sleep(10000);var xyz='0"
+
+    fuzzing:
+      - part: query
+        mode: single
+        type: replace
+        fuzz:
+          - "{{ssji}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=9'
+      - type: word
+        words:
+          - "Access Denied"
+          - "Error 1006"
+          - "Cloudflare"
+        condition: or
+        part: body
+        negative: true

