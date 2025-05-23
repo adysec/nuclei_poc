@@ -1,0 +1,59 @@
+id: ldap-code-injection
+
+info:
+  name: LDAP Code Injection
+  author: reewardius
+  severity: critical
+  tags: ldap,sqli,fuzzing
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      ldap:
+        - "*)(&"
+        - "!(()&&!|*|\\"
+        - "^(#$!@#$)(()))"
+        - "*))%00"
+        - ")(cn=))\x00"
+        - "*()|&'"
+        
+    fuzzing:
+      - part: query
+        mode: single
+        type: replace
+        fuzz:
+          - "{{ldap}}"
+          
+    redirects: true
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "A constraint violation occurred"
+          - "An inappropriate matching occurred"
+          - "com.sun.jndi.ldap"
+          - "Invalid DN syntax"
+          - "javax.naming.NameNotFoundException"
+          - "Bad search filter"
+          - "LDAPException"
+          - "No Such Object"
+          - "Object does not exist"
+          - "Protocol error occurred"
+          - "Results returned are too large"
+          - "Search: Operations error in"
+          - "Size limit has exceeded"
+          - "The alias is invalid"
+          - "The distinguished name has an invalid syntax"
+          - "The search filter cannot be recognized"
+          - "The search filter is incorrect"
+          - "The search filter is invalid"
+          - "The server does not handle directory requests"
+          - "The syntax is invalid"
+          - "There was a naming violation"
+          - "There was an object class violation"
+          - "Undefined index: cn"
+        condition: or

