@@ -1,0 +1,49 @@
+id: wordpress-child-theme-configurator
+
+info:
+  name: Child Theme Configurator Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/child-theme-configurator/
+  metadata:
+    plugin_namespace: child-theme-configurator
+    wpscan: https://wpscan.com/plugin/child-theme-configurator
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/child-theme-configurator/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/child-theme-configurator.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022039d2d0a2d703b376a2e869892ab4090b7c188c4d4504e12ae1b89c54e4837904022100dcae799e544b92d32186c78255e64b797999f46dc546307eaefdba6be91b9415:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,49 @@
+id: wordpress-webp-express
+
+info:
+  name: WebP Express Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/webp-express/
+  metadata:
+    plugin_namespace: webp-express
+    wpscan: https://wpscan.com/plugin/webp-express
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/webp-express/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/webp-express.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a004730450221008920e2763ceb17427cece0d907eb4045e827e47a173a9ebb3f93eedfcaa4e45e02200e2059a3d5efe95b5664a243ea8ceabf9660fbd8f44747f96195af24cc6ab805:922c64590222798bb761d5b6d8e72950

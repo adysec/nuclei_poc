@@ -1,0 +1,49 @@
+id: wordpress-host-webfonts-local
+
+info:
+  name: OMGF | GDPR/DSGVO Compliant, Faster Google Fonts. Easy. Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/host-webfonts-local/
+  metadata:
+    plugin_namespace: host-webfonts-local
+    wpscan: https://wpscan.com/plugin/host-webfonts-local
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/host-webfonts-local/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/host-webfonts-local.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a00463044022043f4d94b041583f781cd54ecc7e2c9028c4c62ac4aadd3be1d5bc47035558c5602206cd321fbefae31bce54a6ae2c3d63eb7959f359fdf2d06f1e037bb1ed00162f7:922c64590222798bb761d5b6d8e72950

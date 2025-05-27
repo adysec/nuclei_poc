@@ -1,0 +1,49 @@
+id: wordpress-code-snippets
+
+info:
+  name: Code Snippets Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/code-snippets/
+  metadata:
+    plugin_namespace: code-snippets
+    wpscan: https://wpscan.com/plugin/code-snippets
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/code-snippets/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/code-snippets.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022100ba2a1f7f409de8937d334165c47b2fb962026b2bbe1776bc683863d8dd0698f4022068129fb080c367c9538b4ea4c8b5b6248a603c222b0160f4aec134c49000d68d:922c64590222798bb761d5b6d8e72950

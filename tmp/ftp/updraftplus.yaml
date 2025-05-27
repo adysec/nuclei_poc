@@ -1,0 +1,49 @@
+id: wordpress-updraftplus
+
+info:
+  name: UpdraftPlus' WP Backup & Migration Plugin Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/updraftplus/
+  metadata:
+    plugin_namespace: updraftplus
+    wpscan: https://wpscan.com/plugin/updraftplus
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/updraftplus/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/updraftplus.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a0046304402207ee590f53d8269bfe44c2c4e382d36e029c7fdc1469b6bec9beefaddc3ac32ba02207edcc93a195995becb279dba8d9e3a54bccd899d6654b4fc31be483449baea49:922c64590222798bb761d5b6d8e72950
