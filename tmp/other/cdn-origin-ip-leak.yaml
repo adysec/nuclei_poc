@@ -1,0 +1,30 @@
+id: cdn-origin-ip-leak
+
+info:
+  name: Origin IP Leak via X-Forwarded-For
+  author: reewardius
+  severity: high
+  description: |
+    Some misconfigured backends return different responses based on spoofed IP in X-Forwarded-For.
+  tags: cloud
+    
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: 127.0.0.1
+        
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: 8.8.8.8
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_2 == 200"
+          - "body_1 != body_2"
+        condition: and
