@@ -1,0 +1,80 @@
+id: ssti-query
+
+info:
+  name: Scanner SSTI Reflected
+  author: reewardius
+  severity: critical
+  description: SSTI or CSTI via GET parameter
+  reference: 
+    - https://www.linkedin.com/in/hernanrodriguez-/
+    - https://twitter.com/SuhradMakwana/status/1721405829298176205
+  tags: fuzzing-req,fuzzing-req-ssti,fuzzing-req-body-query,fuzzing-req-query,ssti,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+          
+    payloads:
+      ssti:
+        - "#set($x=9123*12)${x}"
+        - "#{9123*12}"
+        - "${9123*12}"
+        - "${= 9123*12}"
+        - "${xyz|9123*12}"
+        - "${{9123*12}}"
+        - "*{9123*12}"
+        - ";}{9123*12}"
+        - ";}{9123*12}{"
+        - ";}}{9123*12}"
+        - "<# 9123*12 #>"
+        - "<% 9123*12 %>"
+        - "<%= 9123*12 %>"
+        - "<?=9123*12?>"
+        - "@(9123*12)"
+        - "@{9123*12}"
+        - "[% 9123*12 %]"
+        - "[%= 9123*12 %]"
+        - "[- 9123*12 -]"
+        - "[=9123*12]"
+        - "[[ 9123*12 ]]"
+        - "]][[ 9123*12 ]]"
+        - "{9123*12}"
+        - "{{# 9123*12 }}"
+        - "{{% 9123*12 %}}"
+        - "{{9123*12}}"
+        - "{{<% 9123*12 %>}}"
+        - "{{= 9123*12}}"
+        - "{{{9123*12}}}"
+        - "}{9123*12}"
+        - "}{9123*12}{"
+        - "}}{{# 9123*12 }}"
+        - "}}{{# 9123*12 }}{{"
+        - "}}{{% 9123*12 %}}"
+        - "}}{{% 9123*12 %}}{{"
+        - "}}{{9123*12}}"
+        - "}}{{9123*12}}{{"
+        - "}}{{<% 9123*12 %>}}"
+        - "}}{{<% 9123*12 %>}}{{"
+        - "}}{{= 9123*12}}"
+        - "}}{{= 9123*12}}{{"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{ssti}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "109476"
+          
+      - type: status
+        status:
+          - 200
+          - 404

