@@ -1,0 +1,39 @@
+id: php-backup-files 3
+info:
+  name: PHP source disclosure through backup files
+  author: StreetOfHackerR007 (Rohit Soni)
+  severity: medium
+  tags: exposure,backup,php
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /main.php.bak HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "<?php"
+          - "<?="
+        condition: or
+        part: body
+      - type: word
+        words:
+          - "?>"
+        part: body
+      - type: word
+        words:
+          - "text/plain"
+          - "bytes"
+        part: header
+        condition: or
