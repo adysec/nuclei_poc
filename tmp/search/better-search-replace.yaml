@@ -1,0 +1,49 @@
+id: wordpress-better-search-replace
+
+info:
+  name: Better Search Replace Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/better-search-replace/
+  metadata:
+    plugin_namespace: better-search-replace
+    wpscan: https://wpscan.com/plugin/better-search-replace
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/better-search-replace/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/better-search-replace.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a004830460221009727fbd7158401c85cccbb0057ff09d6d2864dce38a5670629035937b7e8d8d9022100d3fe75a9fbb56560bf3b09e8ed94b4377d81aa179294dde1405d9345c3eafb88:922c64590222798bb761d5b6d8e72950

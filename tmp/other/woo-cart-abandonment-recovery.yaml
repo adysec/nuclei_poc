@@ -1,0 +1,49 @@
+id: wordpress-woo-cart-abandonment-recovery
+
+info:
+  name: WooCommerce Cart Abandonment Recovery Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/woo-cart-abandonment-recovery/
+  metadata:
+    plugin_namespace: woo-cart-abandonment-recovery
+    wpscan: https://wpscan.com/plugin/woo-cart-abandonment-recovery
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-cart-abandonment-recovery/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/woo-cart-abandonment-recovery.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100c85790ed3df55264b89f7d6222bee4aba43efaba5cfe67dd79b56e6a1d9b96fd022100c66bd9890ec8454624cb4c60b836939f25d4224c5bec531de473b9af43ba5843:922c64590222798bb761d5b6d8e72950

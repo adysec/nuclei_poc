@@ -1,0 +1,49 @@
+id: wordpress-wp-statistics
+
+info:
+  name: WP Statistics – The Most Popular Privacy-Friendly Analytics Plugin Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/wp-statistics/
+  metadata:
+    plugin_namespace: wp-statistics
+    wpscan: https://wpscan.com/plugin/wp-statistics
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-statistics/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/wp-statistics.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502204503bd426683b9b4f367e3793d4483885d9ba5108f5e3c68fb1e4e002378ca8a022100b9144799b9956de8f8fdbad69bc822dcdb1547fe4ada4a943c35e9aeddd037f9:922c64590222798bb761d5b6d8e72950
