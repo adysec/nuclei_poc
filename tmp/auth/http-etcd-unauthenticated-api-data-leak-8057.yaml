@@ -1,0 +1,35 @@
+id: http-etcd-unauthenticated-api-data-leak
+info:
+  name: etcd Unauthenticated HTTP API Leak
+  author: dhiyaneshDk
+  severity: high
+  reference: https://hackerone.com/reports/1088429
+  tags: unauth
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /v2/auth/roles HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"roles"'
+          - '"permissions"'
+          - '"role"'
+          - '"kv"'
+        condition: and
+        part: body
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "text/plain"

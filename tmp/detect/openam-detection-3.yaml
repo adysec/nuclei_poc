@@ -1,0 +1,37 @@
+id: openam-detection 3
+info:
+  name: Detect OpenAM and OpenSSO
+  author: philippedelteil
+  severity: info
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /UI HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'urlArgs : "v='
+          - 'Sign in to OpenAM'
+          - 'ForgeRock'
+          - 'forgerock'
+          - 'FRForgotUsername'
+          - 'successfulUserRegistrationDestination'
+        condition: or
+      - type: status
+        status:
+          - 200
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'urlArgs : "v=([0-9.abcd]+)'
