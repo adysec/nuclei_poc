@@ -1,0 +1,49 @@
+id: wordpress-woocommerce-gateway-stripe
+
+info:
+  name: WooCommerce Stripe Payment Gateway Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/woocommerce-gateway-stripe/
+  metadata:
+    plugin_namespace: woocommerce-gateway-stripe
+    wpscan: https://wpscan.com/plugin/woocommerce-gateway-stripe
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-gateway-stripe/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/woocommerce-gateway-stripe.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a00463044022051185cd789d0e9f048dc4f9f6b303bee40c7d4a6fab0e4b9ea40677f55334bc1022061de9cbf91b3a8985cc92b72b6730f3c8abf8174ab64f1dd17acdb967d8c7e0b:922c64590222798bb761d5b6d8e72950

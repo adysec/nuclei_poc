@@ -1,0 +1,49 @@
+id: wordpress-copy-delete-posts
+
+info:
+  name: Duplicate Post Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/copy-delete-posts/
+  metadata:
+    plugin_namespace: copy-delete-posts
+    wpscan: https://wpscan.com/plugin/copy-delete-posts
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/copy-delete-posts/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/copy-delete-posts.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022100892010ea3f404a136bb0495c8a69a69f72450d85bf54b21d0d2c9674972830de0220542db0cd3b300e425961106b6e369f21d0a4b8299a10d3aadde35a60dc82d53a:922c64590222798bb761d5b6d8e72950

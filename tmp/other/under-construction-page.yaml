@@ -1,0 +1,49 @@
+id: wordpress-under-construction-page
+
+info:
+  name: Under Construction Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/under-construction-page/
+  metadata:
+    plugin_namespace: under-construction-page
+    wpscan: https://wpscan.com/plugin/under-construction-page
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/under-construction-page/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/under-construction-page.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a004730450220294359ebbc38f00d42b7f48fc569d1e4fea1d9fc3ceda221ac5d358d74288603022100ad7dca4f68dbedd4de2fee65dead6a3f0dde6d9008f5884d69439dc2c38f67f1:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,49 @@
+id: wordpress-hostinger
+
+info:
+  name: Hostinger Tools Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/hostinger/
+  metadata:
+    plugin_namespace: hostinger
+    wpscan: https://wpscan.com/plugin/hostinger
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hostinger/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/hostinger.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a0046304402200834504bb74fb2d7ec468a3ee851213c744c0e9dc5cc172ec9fffe8bba424d66022040176b0e9d4a83b840d01e107cf3cc6f16760004b58d1a909e5f6e6a0cc66985:922c64590222798bb761d5b6d8e72950

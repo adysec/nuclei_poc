@@ -1,0 +1,49 @@
+id: wordpress-members
+
+info:
+  name: Members – Membership & User Role Editor Plugin Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/members/
+  metadata:
+    plugin_namespace: members
+    wpscan: https://wpscan.com/plugin/members
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/members/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/members.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502202bd0dfb86267983a5ea376714237073c06043a517bd0af82f9602c44c41f4cbe02210081883565dec960170b4fe83b27b63245c3fc00c9d0bd07f8bfadad4e557b6aa8:922c64590222798bb761d5b6d8e72950

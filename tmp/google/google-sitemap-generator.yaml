@@ -1,0 +1,49 @@
+id: wordpress-google-sitemap-generator
+
+info:
+  name: XML Sitemap Generator for Google Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/google-sitemap-generator/
+  metadata:
+    plugin_namespace: google-sitemap-generator
+    wpscan: https://wpscan.com/plugin/google-sitemap-generator
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/google-sitemap-generator/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/google-sitemap-generator.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022033e6219279b40bb2aa753dd8d5c0582989b73b6f0e9e6460571ecb7b4db92ed502210081ba1b414c3751b083aa1703403920a6eea6f312e069d5a3921b76aba556535d:922c64590222798bb761d5b6d8e72950

