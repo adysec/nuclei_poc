@@ -1,0 +1,51 @@
+id: springboot-jolokia
+
+info:
+  name: Detects Springboot Jolokia Actuator
+  author: DhiyaneshDK
+  severity: low
+  reference:
+    - https://raw.githubusercontent.com/maurosoria/dirsearch/master/db/dicc.txt
+    - https://thinkloveshare.com/hacking/1001_ways_to_pwn_prod/
+    - https://github.com/mpgn/Spring-Boot-Actuator-Exploit
+    - https://github.com/laluka/jolokia-exploitation-toolkit
+  metadata:
+    verified: true
+    shodan-query: title:"Eureka"
+  tags: java,generic,jolokia
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/jolokia"
+      - "{{BaseURL}}/..;/jolokia"
+      - "{{BaseURL}}/;/jolokia"
+      - "{{BaseURL}}/%2e/jolokia"
+      - "{{BaseURL}}////jolokia"
+      - "{{BaseURL}}/../jolokia"
+      - "{{BaseURL}}/..%09/jolokia"
+      - "{{BaseURL}}/..;\\jolokia"
+      - "{{BaseURL}}/actuator/jolokia"
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"config":{'
+          - '"agentId":"'
+        condition: and
+        
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "application/vnd.spring-boot.actuator"
+          - "application/vnd.spring-boot.actuator.v1+json"
+          - "text/plain"
+        condition: or
+        
+      - type: status
+        status:
+          - 200

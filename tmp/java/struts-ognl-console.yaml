@@ -1,0 +1,42 @@
+id: struts-ognl-console
+
+info:
+  name: Apache Struts - OGNL Console
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    This development console allows the evaluation of OGNL expressions that could lead to Remote Command Execution
+  remediation: Restrict access to the struts console on the production server
+  reference:
+    - https://github.com/PortSwigger/j2ee-scan/blob/master/src/main/java/burp/j2ee/issues/impl/ApacheStrutsWebConsole.java
+    - https://medium.com/@yousefmoh15/how-i-got-rce-in-one-of-bugcrowds-public-programs-5725c8dc46ce
+  metadata:
+    verified: "true"
+    shodan-query: html:"Struts Problem Report"
+  tags: java,apache,generic
+  
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/struts/webconsole.html?debug=console'
+      - '{{BaseURL}}/sdp/struts/webconsole.html?debug=console'
+      - '{{BaseURL}}/webconsole.html?debug=console'
+      - '{{BaseURL}}/..;/webconsole.html?debug=console'
+      - '{{BaseURL}}/struts/webconsole.html'
+      - '{{BaseURL}}/..;/struts/webconsole.html'
+      - '{{BaseURL}}/..;/struts/webconsole.html?debug=console'
+      - '{{BaseURL}}/admin/struts/webconsole.html?debug=console'
+      - '{{BaseURL}}/api/struts/webconsole.html?debug=console'
+      - '{{BaseURL}}/admin/..;/struts/webconsole.html?debug=console'
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Welcome to the OGNL console!'
+
+      - type: status
+        status:
+          - 200

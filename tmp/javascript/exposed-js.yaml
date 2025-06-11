@@ -1,0 +1,81 @@
+id: exposed-js
+info:
+  name: Exposed Credentials Extraction from JS Files
+  author: Redflare-Cyber
+  severity: high
+  description: |
+    This template scans JavaScript files for exposed tokens, API keys, and credentials.
+    It flags only endpoints where a valid, non-placeholder credential is captured.Run against parsed output from katana,urlfinder,gau,waymore etc.
+  tags: token,api,credential,sensitive,js,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/*.js"
+    matchers-condition: or
+    matchers:
+      # PNO JWT Token: strict format with three segments, each at least 20 characters.
+      - type: regex
+        name: PNO JWT Token
+        regex:
+          - "(?i)(?:pno[_-]jwt[_-]token)\\s*[:=]\\s*[\"'](pno-[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,})[\"']"
+        part: body
+
+      # Generic API Key / Token: Only match if the value is long enough.
+      - type: regex
+        name: Generic API Key or Token
+        regex:
+          - "(?i)(?:api[_-]?key)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:access[_-]?token)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:authToken)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:client[_-]?secret)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:token)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+      # Generic Password: Min 8 chars.
+      - type: regex
+        name: Password
+        regex:
+          - "(?i)(?:password)[\"']?\\s*[:=]\\s*[\"']([^\"']{8,})[\"']"
+      # AWS Creds.
+      - type: regex
+        name: AWS Access Key
+        regex:
+          - "(?i)(?:aws[_-]?access[_-]?key)[\"']?\\s*[:=]\\s*[\"'](AKIA[0-9A-Z]{16})[\"']"
+      - type: regex
+        name: AWS Secret Access Key
+        regex:
+          - "(?i)(?:aws[_-]?secret[_-]?access[_-]?key)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9/+=]{40})[\"']"
+      # Refresh Token: Requires longer token values.
+      - type: regex
+        name: Refresh Token
+        regex:
+          - "(?i)(?:refresh[_-]?token)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+      # JWT Token (Generic): Use standard JWT format.
+      - type: regex
+        name: JWT Token (Generic)
+        regex:
+          - "(?i)(?:jwt|json[_-]?web[_-]?token)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+)[\"']"
+        part: body
+      # Private Key: Look for PEM markers.
+      - type: regex
+        name: Private Key Marker
+        regex:
+          - "(-----BEGIN [A-Z ]+PRIVATE KEY-----.*-----END [A-Z ]+PRIVATE KEY-----)"
+        part: body
+
+    extractors:
+      - type: regex
+        name: exposed_credentials
+        part: body
+        regex:
+          - "(?i)(?:pno[_-]jwt[_-]token)\\s*[:=]\\s*[\"'](pno-[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,})[\"']"
+          - "(?i)(?:api[_-]?key)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:access[_-]?token)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:authToken)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:client[_-]?secret)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:token)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:password)[\"']?\\s*[:=]\\s*[\"']([^\"']{8,})[\"']"
+          - "(?i)(?:aws[_-]?access[_-]?key)[\"']?\\s*[:=]\\s*[\"'](AKIA[0-9A-Z]{16})[\"']"
+          - "(?i)(?:aws[_-]?secret[_-]?access[_-]?key)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9/+=]{40})[\"']"
+          - "(?i)(?:refresh[_-]?token)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9\\-_]{16,})[\"']"
+          - "(?i)(?:jwt|json[_-]?web[_-]?token)[\"']?\\s*[:=]\\s*[\"']([A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+)[\"']"
+          - "(-----BEGIN [A-Z ]+PRIVATE KEY-----.*-----END [A-Z ]+PRIVATE KEY-----)"

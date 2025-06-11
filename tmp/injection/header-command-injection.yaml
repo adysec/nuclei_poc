@@ -1,0 +1,34 @@
+id: header-command-injection
+
+info:
+  name: Header - Remote Command Injection
+  author: geeknik
+  severity: critical
+  description: Headers were tested for remote command injection vulnerabilities.
+
+http:
+  - raw:
+      - |
+        GET /?{{header}} HTTP/1.1
+        Host: {{Hostname}}
+        {{header}}: {{payload}}
+
+    payloads:
+      header: helpers/payloads/request-headers.txt
+      payload: helpers/payloads/command-injection.txt
+    attack: clusterbomb
+    host-redirects: true
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "uid="
+          - "gid="
+          - "groups="
+        condition: and
+
+      - type: regex
+        regex:
+          - "root:.*:0:0:"

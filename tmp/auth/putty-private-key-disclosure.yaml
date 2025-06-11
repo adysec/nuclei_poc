@@ -1,0 +1,39 @@
+id: putty-private-key-disclosure
+
+info:
+  name: Putty Private Key Disclosure
+  author: DhiyaneshDk,geeknik
+  severity: medium
+  reference:
+    - https://github.com/detectify/ugly-duckling/blob/master/modules/crowdsourced/putty-private-key-disclosure.json
+  metadata:
+    max-request: 8
+    verified: true
+    github-query: filename:putty.ppk
+  tags: generic,config-files,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/my.ppk"
+      - "{{BaseURL}}/putty.ppk"
+      - "{{BaseURL}}/{{Host}}.ppk"
+      - "{{BaseURL}}/.ssh/putty.ppk"
+      - "{{BaseURL}}/.ssh/{{Host}}.ppk"
+      - "{{BaseURL}}/.putty/my.ppk"
+      - "{{BaseURL}}/.putty/putty.ppk"
+      - "{{BaseURL}}/.putty/{{Host}}.ppk"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "PuTTY-User-Key-File"
+          - "Encryption:"
+        condition: and
+
+      - type: status
+        status:
+          - 200

