@@ -1,34 +1,49 @@
-id: cloudflare
+id: wordpress-cloudflare
 
 info:
-  name: Cloudflare User Name Information - Detect
-  author: dwisiswant0
+  name: Cloudflare Detection
+  author: ricardomaia
   severity: info
-  description: Cloudflare user name information check was conducted.
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cvss-score: 0
-    cwe-id: CWE-200
+  reference:
+    - https://wordpress.org/plugins/cloudflare/
   metadata:
-    max-request: 1
-  tags: osint,osint-tech,cloudflare
+    plugin_namespace: cloudflare
+    wpscan: https://wpscan.com/plugin/cloudflare
+  tags: tech,wordpress,wp-plugin,top-200
 
-self-contained: true
-
-http:
+requests:
   - method: GET
+
     path:
-      - "https://community.cloudflare.com/u/{{user}}"
+      - "{{BaseURL}}/wp-content/plugins/cloudflare/readme.txt"
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/cloudflare.txt
 
-      - type: word
+    extractors:
+      - type: regex
         part: body
-        words:
-          - "- Cloudflare Community"
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-# digest: 490a004630440220459d44299df9c1804e11aff4b1649ad51ea70b975d059a9a6fac301f71ac8f2402202c1d6a6c6599be94b401dc125d4ccd7a54c8461d6aafbd148a9f1acb0ff1ecb7:922c64590222798bb761d5b6d8e72950
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

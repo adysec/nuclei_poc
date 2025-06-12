@@ -1,0 +1,35 @@
+id: ivanti-connect-secure-detect
+
+info:
+  name: Ivanti Connect Secure - Detect
+  author: darses
+  severity: info
+  description: Detects the version of Ivanti Connect Secure (formerly Pulse Secure) installations
+  reference:
+    - https://github.com/BishopFox/CVE-2025-0282-check
+  metadata:
+    max-request: 1
+    shodan-query: "Set-Cookie: DSBrowserID"
+  tags: ivanti,ics,version,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/dana-na/auth/url_admin/welcome.cgi?type=inter"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "PulseSecure_Host_Checker"
+
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        regex:
+          - 'ProductVersion"\s+VALUE="([0-9.]+)"'
