@@ -1,0 +1,50 @@
+name: Check Nuclei POCs
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '10 12 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        
+    - name: 4 Download Nuclei
+      run: |
+        pip install requests
+        python 4-download_nuclei.py
+        unzip nuclei.zip nuclei
+        chmod +x nuclei
+        rm -rf nuclei.zip
+
+    - name: 5 Check POC
+      run: python 5-check_poc.py
+      
+    - name: 6 Get Count
+      run: python 6-get_count.py
+      
+    - name: 7 Get POC Name
+      run: python 7-get_pocname.py
+
+    - name: 8 Delete Nuclei
+      run: rm -rf nuclei
+      
+    - name: Commit and Push changes
+      run: |
+        echo $(date +'%Y%m%d') > date.txt
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -am "$(date +'%Y%m%d')"
+        git push -v --progress

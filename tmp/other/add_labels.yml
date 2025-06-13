@@ -1,0 +1,49 @@
+name: add labels
+
+on:
+  issues:
+    types: [ labeled ]
+
+jobs:
+  check-issues:
+    runs-on: ubuntu-latest
+    env:
+      PAYLOAD: ${{toJSON(github.event)}}
+    if: contains(github.event.issue.title,'[') && contains(github.event.issue.title,']') && github.event.sender.login == 'cn-kali-team' && github.event.label.name == 'Reviewed'
+    steps:
+      - name: Check out code
+        uses: actions/checkout@master
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Check Issue
+        id: issue_helper
+        run: |
+          python .github/scripts/issue_helper.py > /tmp/verify.log
+          echo "::set-output name=changes::$(git status -s | wc -l)"
+
+      - name: Commit files
+        if: steps.issue_helper.outputs.changes > 0
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Auto Update FingerPrint [$(date)] :robot:" -a
+
+      - name: Push changes
+        if: steps.issue_helper.outputs.changes > 0
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+      - name: Create Pending Review Comment
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'create-comment,close-issue'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## 审核通过:
+            - 指纹规则已经合并，感谢提交。
