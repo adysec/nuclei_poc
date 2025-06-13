@@ -1,0 +1,49 @@
+id: open-redirect-path-fragment-check
+
+info:
+  name: Open Redirect in Path Fragment
+  author: Zahir
+  severity: medium
+  description: Detects open redirect vulnerabilities in URL path fragments by testing various payloads.
+  tags: open-redirect,misconfiguration
+
+variables:
+  payloads: |
+    //bing.com/
+    ///bing.com/
+    /////bing.com/
+    ////bing%E3%80%82com/
+    %2f%2f%2fbing.com/
+    //bing%00.com
+    //Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ
+    //;@Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ
+    /////Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ/
+    /////Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ
+    ////Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ//
+    ////Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ/
+    ///\;@Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ
+    ///Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ//
+///Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ/
+    ///Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ
+    //\/Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ/
+    //Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ//
+    //Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ/
+    //Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{payloads}}"
+    redirects: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 301
+          - 302  # Check if the response is a redirect
+      - type: word
+        part: header
+        words:
+          - "Location: https://bing.com"  # Check if the Location header redirects to Bing
+          - "Location: Ⓛ𝐨𝗰�𝕝ⅆ𝓸ⓜₐℹⓃ｡Ｐⓦ"  # Check if the Location header redirects to the Unicode domain
+

