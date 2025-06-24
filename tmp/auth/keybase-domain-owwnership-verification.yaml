@@ -1,0 +1,39 @@
+id: keybase-domain-owwnership-verification
+
+info:
+  name: Keybase Domain Ownership Verification
+  author: rxerium
+  severity: info
+  description: |
+    Detects presence of keybase.txt used to prove domain ownership via Keybase identity.
+  reference:
+    - https://book.keybase.io/account#proofs
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"keybase.txt"
+  tags: keybase,identity,well-known,pgp,discovery,osint,misc
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/keybase.txt"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200 && contains(body, 'https://keybase.io/')"
+
+    extractors:
+      - type: regex
+        name: keybase-username
+        part: body
+        regex:
+          - "([a-zA-Z0-9_-]+) \\(https://keybase.io/[a-zA-Z0-9_-]+\\)"
+
+      - type: regex
+        name: pgp-message
+        part: body
+        regex:
+          - "-----BEGIN PGP MESSAGE-----[\\s\\S]+?-----END PGP MESSAGE-----"
+# digest: 4b0a00483046022100f66f0a714dbe58c13c29f4b7d4b5e1948873dbe0264a96c0b9675b015799ed36022100dc917f2a4febb9c0661eb96387e510126fb082cf0a7206e4d3d971b408412332:922c64590222798bb761d5b6d8e72950
