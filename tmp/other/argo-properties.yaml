@@ -1,0 +1,65 @@
+id: argo-properties
+
+info:
+  name: Argo Properties Exposure
+  author: reewardius
+  severity: high
+  reference:
+    - https://twitter.com/ynsmroztas/status/1657842876406013955/photo/2
+  tags: java,generic
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/WEB-INF/classes/argo.properties"
+      - "{{BaseURL}}/..;/WEB-INF/classes/argo.properties"
+      - "{{BaseURL}}/%2e/WEB-INF/classes/argo.properties"
+      - "{{BaseURL}}/WEB-INF/classes/argo.properties.bak"
+      - "{{BaseURL}}/argo.properties"
+      - "{{BaseURL}}///argo.properties"
+      - "{{BaseURL}}/argo.properties~"
+      - "{{BaseURL}}/%2e%2e%2f/argo.properties"
+      - "{{BaseURL}}/..%3B/argo.properties"
+      - "{{BaseURL}}/argo.properties.bak"
+      - "{{BaseURL}}/../argo.properties"
+      - "{{BaseURL}}/;/argo.properties"
+      - "{{BaseURL}}/..;/argo.properties"
+      - "{{BaseURL}}/%2e/argo.properties"
+      
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '((?i)db_pass|db|db_user|db_port|db_host|host|url|database)='
+          - '((?i)password|user|port|pwd|pass|debug|path|secret)='
+          - '((?i)password|user|port|pwd|pass|debug|path|secret)'
+          - '((?i)db_pass|db|db_user|db_port|db_host|host|url|database)'
+        condition: or
+          
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "bytes"
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "argo.database.host"
+          - "argo.database.user"
+        condition: and
+        
+      - type: word
+        part: header
+        words:
+          - "text/html"
+        negative: true
+        
+      - type: status
+        status:
+          - 200
+          - 206
+        condition: or
