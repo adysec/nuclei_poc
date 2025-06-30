@@ -1,0 +1,83 @@
+id: ssti-body
+
+info:
+  name: Scanner SSTI Reflected
+  author: reewardius
+  severity: critical
+  description: SSTI or CSTI via GET parameter
+  reference: 
+    - https://www.linkedin.com/in/hernanrodriguez-/
+    - https://twitter.com/SuhradMakwana/status/1721405829298176205
+  tags: fuzzing-req,fuzzing-req-ssti,fuzzing-req-body,fuzzing-req-body-query,ssti,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        
+    payloads:
+      ssti:
+        - "#set($x=9123*12)${x}"
+        - "#{9123*12}"
+        - "${9123*12}"
+        - "${= 9123*12}"
+        - "${xyz|9123*12}"
+        - "${{9123*12}}"
+        - "*{9123*12}"
+        - ";}{9123*12}"
+        - ";}{9123*12}{"
+        - ";}}{9123*12}"
+        - "<# 9123*12 #>"
+        - "<% 9123*12 %>"
+        - "<%= 9123*12 %>"
+        - "<?=9123*12?>"
+        - "@(9123*12)"
+        - "@{9123*12}"
+        - "[% 9123*12 %]"
+        - "[%= 9123*12 %]"
+        - "[- 9123*12 -]"
+        - "[=9123*12]"
+        - "[[ 9123*12 ]]"
+        - "]][[ 9123*12 ]]"
+        - "{9123*12}"
+        - "{{# 9123*12 }}"
+        - "{{% 9123*12 %}}"
+        - "{{9123*12}}"
+        - "{{<% 9123*12 %>}}"
+        - "{{= 9123*12}}"
+        - "{{{9123*12}}}"
+        - "}{9123*12}"
+        - "}{9123*12}{"
+        - "}}{{# 9123*12 }}"
+        - "}}{{# 9123*12 }}{{"
+        - "}}{{% 9123*12 %}}"
+        - "}}{{% 9123*12 %}}{{"
+        - "}}{{9123*12}}"
+        - "}}{{9123*12}}{{"
+        - "}}{{<% 9123*12 %>}}"
+        - "}}{{<% 9123*12 %>}}{{"
+        - "}}{{= 9123*12}}"
+        - "}}{{= 9123*12}}{{"
+        
+    fuzzing:
+      - part: body
+        type: replace
+        mode: single
+        fuzz:
+          - "{{ssti}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "109476"
+          
+      - type: status
+        status:
+          - 200
+          - 404
