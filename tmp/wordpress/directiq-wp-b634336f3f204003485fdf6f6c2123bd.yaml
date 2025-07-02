@@ -1,0 +1,59 @@
+id: directiq-wp-b634336f3f204003485fdf6f6c2123bd
+
+info:
+  name: >
+    DirectIQ Email Marketing <= 2.0 - Unauthenticated SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/80b6d533-b282-4c13-bb0b-6be3f456203c?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/directiq-wp/"
+    google-query: inurl:"/wp-content/plugins/directiq-wp/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,directiq-wp,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/directiq-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "directiq-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0')

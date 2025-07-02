@@ -1,0 +1,59 @@
+id: booking-calendar-3cef85b83989ff3dadb778c929d8fb64
+
+info:
+  name: >
+    Booking calendar, Appointment Booking System <= 3.2.17 - Unauthenticated Time-Based SQL Injection via 'wpdevart_id'
+  author: topscoder
+  severity: critical
+  description: >
+    The Booking calendar, Appointment Booking System plugin for WordPress is vulnerable to time-based SQL Injection via the ‘wpdevart_id’ parameter in all versions up to, and including, 3.2.17 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. In order to exploit the vulnerability, the Pro version of the plugin must be installed and activated, with the 'Delete previous dates' option checked.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8c052622-ac99-4069-b7df-41aea303ed9d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 5.9
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/booking-calendar/"
+    google-query: inurl:"/wp-content/plugins/booking-calendar/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,booking-calendar,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/booking-calendar/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "booking-calendar"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.17')
