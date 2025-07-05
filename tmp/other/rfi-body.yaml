@@ -1,0 +1,44 @@
+id: rfi-body
+
+info:
+  name: Remote File Inclusion
+  author: reewardius
+  severity: high
+  tags: fuzzing-req,fuzzing-req-lfi,fuzzing-req-body-query,fuzzing-req-body,lfi,rfi,dast
+  reference:
+    - https://www.invicti.com/learn/remote-file-inclusion-rfi/
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+        
+    payloads:
+      rfi:
+        - "https://rfi.nessus.org/rfi.txt"
+        - "https%3A%2F%2Frfi.nessus.org%2Frfi.txt"
+        - "https%253A%252F%252Frfi.nessus.org%252Frfi.txt"
+        - "https://rfi.nessus.org/rfi.txt#image.jpg"
+        - "https://rfi.nessus.org/rfi.txt#image.png"
+        - "\\rfi.nessus.org\rfi.txt"
+        - "https://cirt.net/rfiinc.txt"
+        
+    fuzzing:
+      - part: body
+        type: replace
+        mode: single
+        fuzz:
+          - "{{rfi}}"
+          
+    stop-at-first-match: true
+    redirects: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "NessusCodeExecTest"
+          - "nikto:10227245764.38:<br>"
