@@ -1,30 +1,35 @@
-id: laravel-debug-enabled
 info:
-  name: Laravel Debug Enabled
-  author: notsoevilweasel
-  description: Laravel with APP_DEBUG set to true prone to showing verbose errors.
-  severity: medium
-  tags: debug,laravel,misconfig
+  id: laravel-debug-enabled
+  name: Laravel Debug Method Enabled
+  author: Fábio Castro
+  description: List of common regular expression patterns to detect Laravel debug method enabled in HTTP response bodies.
+  severity: Medium
+  classification:
+    tags:
+      - debug
+      - laravel
+      - development
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+  references:
+    - "Laravel Debugging documentation"
 
-    raw:
-      - |
-        GET /_ignition/health-check HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - can_execute_commands
+  matcher-condition: or
 
-      - type: status
-        status:
-          - 200
+  requests:
+    method: GET
+    path:
+      - "/"
+    description: Attempt to access the main page
+    condition: and
+
+  matchers:
+    - pattern: "(\\\\\\\\)?\\\\['debug'\\\\]\\\\s?=\\\\s?true"
+      type: body
+      description: "Matches Laravel debug mode enabled in request bodies."
+    - pattern: "Whoops! There was an error"
+      type: body
+      description: "Matches Laravel Whoops error message in request bodies."
+      
+  response:
+    - status: 
+      - 200

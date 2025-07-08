@@ -1,27 +1,40 @@
 id: phpmyadmin-setup
 
 info:
-  name: phpMyAdmin setup page
-  author: thevillagehacker
+  name: PhpMyAdmin Setup File - Detect
+  author: 0xpugazh
   severity: medium
-  tags: phpmyadmin
-  reference: https://hackerone.com/reports/297339
+  description: Multiple phpMyAdmin setup files were detected.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: http.html:"phpMyAdmin"
+  tags: phpmyadmin,misconfig
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/phpmyadmin/setup/"
+      - "{{BaseURL}}/setup/index.php"
+      - "{{BaseURL}}/admin/"
+      - "{{BaseURL}/phpMyAdminOLD/setup/index.php"
 
-    raw:
-      - |
-        GET /phpmyadmin/setup/index.php HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
+    stop-at-first-match: true
+
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
+          - "You want to configure phpMyAdmin using web interface"
           - "<title>phpMyAdmin setup</title>"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
