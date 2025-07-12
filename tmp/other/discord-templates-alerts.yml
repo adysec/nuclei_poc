@@ -1,0 +1,79 @@
+name: 🔄 Sync & Alert on new Nuclei templates
+
+# Fires on your pushes + every 5 min
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.yaml'
+      - '**/*.yml'
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write      # gives GITHUB_TOKEN push rights
+
+jobs:
+  sync-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+
+      # 1) Checkout with write-enabled token
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # <-- important so push works
+
+      # 2) Only on schedule: configure git + merge upstream
+      - name: Configure Git for merge
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch & merge upstream
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          git remote add upstream https://github.com/projectdiscovery/nuclei-templates.git
+          git fetch upstream main
+          git merge --no-edit upstream/main
+
+      # 2.1) Push that merge back so your fork’s main updates
+      - name: Push merge commit
+        if: ${{ github.event_name == 'schedule' }}
+        run: git push origin main
+
+      # 3) Install deps & find new templates
+      - name: Set up Python & deps
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install 'pyyaml>=6' 'requests>=2'
+
+      - name: Find newly added templates
+        id: find_new
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            RANGE="HEAD~1..HEAD"
+          else
+            RANGE="HEAD^..HEAD"
+          fi
+          git diff --name-status $RANGE \
+            | awk '$1=="A" && ($2 ~ /\.ya?ml$/){print $2}' \
+            > new_templates.txt || true
+          lines=$(wc -l < new_templates.txt)
+          echo "count=$lines" >> $GITHUB_OUTPUT
+
+      - name: No new templates? skip
+        if: steps.find_new.outputs.count == '0'
+        run: echo "Nothing new."
+
+      - name: Notify Discord of each new template
+        if: steps.find_new.outputs.count != '0'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          while read -r tpl; do
+            python .github/scripts/notify.py "$tpl"
+          done < new_templates.txt

