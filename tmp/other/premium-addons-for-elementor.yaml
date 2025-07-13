@@ -1,0 +1,49 @@
+id: wordpress-premium-addons-for-elementor
+
+info:
+  name: Premium Addons for Elementor Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/premium-addons-for-elementor/
+  metadata:
+    plugin_namespace: premium-addons-for-elementor
+    wpscan: https://wpscan.com/plugin/premium-addons-for-elementor
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/premium-addons-for-elementor/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/premium-addons-for-elementor.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022049b6e3713bf8e66c40361341d6112cb0fffea53c144972287313204e3a300987022100bbd0b69d0cd95160e3a81af8c2034463730e996c6ea3db5bcbb24d10e5fb404b:922c64590222798bb761d5b6d8e72950
