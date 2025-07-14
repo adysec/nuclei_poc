@@ -1,32 +1,98 @@
-# Your GitHub Actions workflow
-name: Sync Repositories
+name: 🔄 Sync & Alert
 
-on: [push] # This line is defining a push event trigger
+# Fires on your own pushes + every 5 min
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.yaml'
+      - '**/*.yml'
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write   # allow GITHUB_TOKEN to push changes
 
 jobs:
-  sync:
+  sync-and-notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source Repo
-        uses: actions/checkout@v2
-        with:
-          repository: 'src_user/src_repo'
-          token: ${{ secrets.YOUR_GITHUB_TOKEN }}
-          path: src_repo
 
-      - name: Checkout Destination Repo
-        uses: actions/checkout@v2
+      # 1) Full checkout & credentials for push
+      - name: Check out repository
+        uses: actions/checkout@v4
         with:
-          repository: 'dest_user/dest_repo'
-          token: ${{ secrets.YOUR_GITHUB_TOKEN }}
-          path: dest_repo
+          fetch-depth: 0
+          persist-credentials: true
 
-      - name: Sync Repositories
+      # 2) Save where we started (pre-merge)
+      - name: Save HEAD before merge
+        run: echo "OLD_HEAD=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      # 3) Only on schedule: configure Git & merge upstream
+      - name: Configure Git for merge
+        if: ${{ github.event_name == 'schedule' }}
         run: |
-          rsync -a --delete src_repo/ dest_repo/
-          cd dest_repo
-          git config user.name 'Your Name'
-          git config user.email 'your-email@example.com'
-          git add .
-          git commit -m "Sync with source repo"
-          git push
+          git config --global user.name  "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Fetch & merge upstream
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          git remote add upstream https://github.com/projectdiscovery/nuclei-templates.git
+          git fetch upstream main
+          git merge --no-edit upstream/main
+
+      # 4) Push the merge commit back to your fork
+      - name: Push merge commit
+        if: ${{ github.event_name == 'schedule' }}
+        run: git push origin main
+
+      # 5) Save where we ended up (post-merge)
+      - name: Save HEAD after merge
+        run: echo "NEW_HEAD=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      # 6) Install Python & dependencies
+      - name: Set up Python & deps
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install packages
+        run: pip install 'pyyaml>=6' 'requests>=2'
+
+      # 7) Detect only truly new templates
+      - name: Find newly added templates
+        id: find_new
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            RANGE="HEAD~1..HEAD"
+          elif [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
+            RANGE="$OLD_HEAD..$NEW_HEAD"
+          else
+            echo "No new upstream commits"
+            echo "count=0" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Diff range: $RANGE"
+          git diff --name-status $RANGE \
+            | awk '$1=="A" && ($2 ~ /\.ya?ml$/){print $2}' \
+            > new_templates.txt || true
+
+          lines=$(wc -l < new_templates.txt)
+          echo "count=$lines" >> $GITHUB_OUTPUT
+
+      # 8) Bail out if nothing new
+      - name: No new templates? skip
+        if: steps.find_new.outputs.count == '0'
+        run: echo "Nothing new to alert."
+
+      # 9) Notify Discord for each new template
+      - name: Notify Discord of each new template
+        if: steps.find_new.outputs.count != '0'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          while read -r tpl; do
+            python .github/scripts/notify.py "$tpl"
+          done < new_templates.txt
