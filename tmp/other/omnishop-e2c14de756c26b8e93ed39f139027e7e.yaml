@@ -1,0 +1,59 @@
+id: omnishop-e2c14de756c26b8e93ed39f139027e7e
+
+info:
+  name: >
+    Omnishop <= 1.0.9 - Cross-Site Request Forgery to Arbitrary User Deletion via /users/delete REST Endpoint
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e7c936b8-3132-45e1-92ed-32ecdc9cbb1e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/omnishop/"
+    google-query: inurl:"/wp-content/plugins/omnishop/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,omnishop,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/omnishop/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "omnishop"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.9')
