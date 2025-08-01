@@ -1,0 +1,53 @@
+name: 📝 fingerprint-update
+
+on:
+  push:
+    branches:
+      - main
+  workflow_run:
+    workflows: [ "add labels" ]
+    types:
+      - completed
+env:
+  IS_GITHUB: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.repository == '0x727/FingerprintHub'
+    steps:
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - name: Check out code
+        uses: actions/checkout@master
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: Swatinem/rust-cache@v1
+      - name: Build
+        run: cargo build --release
+      - name: Update FingerPrint
+        id: update-fingerprint
+        run: |
+          ./target/release/helper --convert
+          ./target/release/helper --format
+          echo "::set-output name=changes::$(git status -s | wc -l)"
+
+      - name: Commit files
+        if: steps.update-fingerprint.outputs.changes > 0
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Auto Update FingerPrint [$(date)] :robot:" -a
+
+      - name: Push changes
+        if: steps.update-fingerprint.outputs.changes > 0
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
