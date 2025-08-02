@@ -1,0 +1,200 @@
+id: flow-multi-protocol-fingerprinting
+
+info:
+  name: Multi-Protocol Service Fingerprinting
+  author: geeknik
+  severity: info
+  description: |
+    Advanced service detection across multiple protocols using Flow Protocol for
+    comprehensive fingerprinting. This template coordinates HTTP, DNS, and SSL protocols
+    to build a complete service profile including technology stack identification,
+    security configuration analysis, and risk assessment for defensive reconnaissance.
+  reference:
+    - https://tools.ietf.org/html/rfc2616
+    - https://tools.ietf.org/html/rfc1035
+  tags: fingerprinting,flow,services,reconnaissance,multi-protocol,defensive
+
+flow: |
+  // Initialize service fingerprinting
+  template["service_profile"] = {};
+  template["technologies"] = [];
+  template["security_indicators"] = {};
+
+  // HTTP Service Analysis
+  http("http-fingerprint");
+
+  const httpResponse = template["http_response"];
+  const httpHeaders = template["http_headers"];
+
+  if (httpResponse && httpHeaders) {
+    // Extract server information
+    const serverMatch = httpHeaders.match(/server:\s*([^\r\n]+)/i);
+    template["server_info"] = serverMatch ? serverMatch[1].trim() : null;
+
+    // Extract powered-by information
+    const poweredByMatch = httpHeaders.match(/x-powered-by:\s*([^\r\n]+)/i);
+    template["powered_by"] = poweredByMatch ? poweredByMatch[1].trim() : null;
+
+    // Detect web frameworks
+    if (httpResponse.includes("Django")) template["technologies"].push("Django");
+    if (httpResponse.includes("Laravel")) template["technologies"].push("Laravel");
+    if (httpResponse.includes("wp-content")) template["technologies"].push("WordPress");
+    if (httpResponse.includes("drupal")) template["technologies"].push("Drupal");
+    if (httpResponse.includes("jQuery")) template["technologies"].push("jQuery");
+    if (httpResponse.includes("Bootstrap")) template["technologies"].push("Bootstrap");
+
+    // Security header analysis
+    template["security_headers"] = {
+      "x_frame_options": httpHeaders.includes("x-frame-options"),
+      "content_security_policy": httpHeaders.includes("content-security-policy"),
+      "strict_transport_security": httpHeaders.includes("strict-transport-security"),
+      "x_content_type_options": httpHeaders.includes("x-content-type-options")
+    };
+  }
+
+  // DNS Service Analysis
+  dns("dns-analysis");
+
+  const dnsRecords = template["dns_records"];
+  if (dnsRecords) {
+    // Analyze DNS for service indicators
+    template["dns_services"] = {
+      "spf_configured": dnsRecords.includes("v=spf1"),
+      "dmarc_configured": dnsRecords.includes("v=DMARC1"),
+      "has_mx_records": dnsRecords.includes("MX"),
+      "has_txt_records": dnsRecords.includes("TXT")
+    };
+
+    // Cloud service detection from DNS
+    if (dnsRecords.includes("amazonaws.com")) template["technologies"].push("AWS");
+    if (dnsRecords.includes("cloudflare")) template["technologies"].push("Cloudflare");
+    if (dnsRecords.includes("azure")) template["technologies"].push("Azure");
+    if (dnsRecords.includes("googleapis.com")) template["technologies"].push("Google Cloud");
+  }
+
+  // SSL Certificate Analysis
+  ssl("ssl-fingerprint");
+
+  const sslCert = template["ssl_certificate"];
+  if (sslCert) {
+    template["ssl_profile"] = {
+      "issuer": sslCert.issuer,
+      "subject": sslCert.subject,
+      "signature_algorithm": sslCert.signature_algorithm,
+      "has_san": sslCert.subject_alt_names && sslCert.subject_alt_names.length > 0
+    };
+
+    // Certificate authority analysis
+    if (sslCert.issuer.includes("Let's Encrypt")) template["technologies"].push("Let's Encrypt");
+    if (sslCert.issuer.includes("DigiCert")) template["technologies"].push("DigiCert");
+    if (sslCert.issuer.includes("Cloudflare")) template["technologies"].push("Cloudflare SSL");
+  }
+
+  // Compile comprehensive service profile
+  template["service_profile"] = {
+    "http_services": {
+      "server": template["server_info"],
+      "powered_by": template["powered_by"],
+      "security_headers": template["security_headers"]
+    },
+    "dns_services": template["dns_services"],
+    "ssl_services": template["ssl_profile"],
+    "detected_technologies": template["technologies"],
+    "security_score": calculateSecurityScore()
+  };
+
+  // Calculate security score based on findings
+  function calculateSecurityScore() {
+    let score = 100;
+
+    // Deduct for missing security headers
+    if (template["security_headers"]) {
+      if (!template["security_headers"]["x_frame_options"]) score -= 10;
+      if (!template["security_headers"]["content_security_policy"]) score -= 15;
+      if (!template["security_headers"]["strict_transport_security"]) score -= 10;
+    }
+
+    // Deduct for missing DNS security
+    if (template["dns_services"]) {
+      if (!template["dns_services"]["spf_configured"]) score -= 10;
+      if (!template["dns_services"]["dmarc_configured"]) score -= 10;
+    }
+
+    // Add points for good practices
+    if (template["ssl_profile"]) {
+      if (template["ssl_profile"]["signature_algorithm"] &&
+          template["ssl_profile"]["signature_algorithm"].includes("SHA256")) {
+        score += 5;
+      }
+    }
+
+    return Math.max(score, 0);
+  }
+
+http:
+  - id: http-fingerprint
+    method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 403
+          - 404
+        internal: true
+
+    extractors:
+      - type: regex
+        name: http_response
+        internal: true
+        regex:
+          - "(?s).*"
+      - type: regex
+        name: http_headers
+        part: header
+        internal: true
+        regex:
+          - "(?s).*"
+
+dns:
+  - id: dns-analysis
+    name: "{{FQDN}}"
+    type: ANY
+
+    matchers:
+      - type: word
+        words:
+          - "IN"
+        internal: true
+
+    extractors:
+      - type: regex
+        name: dns_records
+        internal: true
+        regex:
+          - "(?s).*"
+
+ssl:
+  - id: ssl-fingerprint
+    address: "{{Host}}:{{Port}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+        internal: true
+
+    extractors:
+      - type: json
+        name: ssl_certificate
+        internal: true
+        json:
+          - ".subject"
+          - ".issuer"
+          - ".signature_algorithm"
+          - ".subject_alt_names"
+
+# Flow template - matchers and extractors handled by Flow logic

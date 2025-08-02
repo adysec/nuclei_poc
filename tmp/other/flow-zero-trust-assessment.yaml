@@ -1,0 +1,269 @@
+id: flow-zero-trust-assessment
+
+info:
+  name: Zero Trust Network Assessment
+  author: geeknik
+  severity: medium
+  description: |
+    Comprehensive Zero Trust architecture evaluation using Flow Protocol for
+    micro-segmentation and access control analysis. This template performs advanced
+    Zero Trust security assessment including network segmentation testing, access
+    control validation, and trust boundary analysis while maintaining defensive
+    research principles for identifying Zero Trust architecture gaps.
+  reference:
+    - https://www.nist.gov/publications/zero-trust-architecture
+    - https://www.cisa.gov/zero-trust-maturity-model
+  tags: zero-trust,network-security,flow,access-control,defensive
+
+flow: |
+  // Initialize Zero Trust assessment parameters
+  template["zero_trust_principles"] = [
+    "verify_explicitly",
+    "least_privilege_access",
+    "assume_breach",
+    "continuous_monitoring",
+    "defense_in_depth"
+  ];
+
+  template["critical_endpoints"] = [
+    "/admin",
+    "/api/admin",
+    "/management",
+    "/dashboard",
+    "/config",
+    "/api/users",
+    "/api/keys",
+    "/internal",
+    "/debug"
+  ];
+
+  template["trust_boundaries"] = [];
+  template["access_controls"] = [];
+  let zeroTrustScore = 100;
+
+  // Analyze initial response for Zero Trust indicators
+  http("initial-assessment");
+
+  const initialResponse = template["initial_response"];
+  const initialHeaders = template["initial_headers"];
+
+  if (initialResponse && initialHeaders) {
+    template["zero_trust_indicators"] = {
+      "authentication_required": initialResponse.includes("login") ||
+                                initialResponse.includes("authentication") ||
+                                initialHeaders.includes("WWW-Authenticate"),
+      "authorization_headers": initialHeaders.includes("Authorization") ||
+                             initialHeaders.includes("X-API-Key") ||
+                             initialHeaders.includes("Bearer"),
+      "session_management": initialHeaders.includes("Set-Cookie") &&
+                          (initialHeaders.includes("Secure") || initialHeaders.includes("HttpOnly")),
+      "rate_limiting": initialHeaders.includes("X-RateLimit") ||
+                     initialHeaders.includes("X-Rate-Limit"),
+      "security_monitoring": initialHeaders.includes("X-Request-ID") ||
+                           initialHeaders.includes("X-Trace-ID")
+    };
+
+    // Calculate initial security posture
+    if (!template["zero_trust_indicators"]["authentication_required"]) zeroTrustScore -= 25;
+    if (!template["zero_trust_indicators"]["session_management"]) zeroTrustScore -= 20;
+    if (!template["zero_trust_indicators"]["rate_limiting"]) zeroTrustScore -= 15;
+    if (!template["zero_trust_indicators"]["security_monitoring"]) zeroTrustScore -= 10;
+  }
+
+  // Test each critical endpoint for access controls
+  for (let endpoint of iterate(template["critical_endpoints"])) {
+    set("current_endpoint", endpoint);
+
+    // Test endpoint accessibility
+    http("endpoint-access-test");
+
+    const endpointStatus = template["endpoint_status"];
+    const endpointResponse = template["endpoint_response"];
+
+    template["endpoint_accessible"] = (endpointStatus === "200");
+    template["requires_authentication"] = (endpointStatus === "401" || endpointStatus === "403");
+
+    // Track trust boundary violations
+    if (endpointStatus === "200" && endpoint.includes("admin")) {
+      template["trust_boundaries"].push({
+        "endpoint": endpoint,
+        "violation": "admin_endpoint_publicly_accessible",
+        "severity": "high"
+      });
+      zeroTrustScore -= 30;
+    }
+
+    // Test authentication bypass attempts if endpoint requires auth
+    if (template["requires_authentication"]) {
+      http("auth-bypass-test");
+
+      const bypassStatus = template["auth_bypass_status"];
+      const bypassResponse = template["auth_bypass_response"];
+
+      template["auth_bypass_successful"] = (
+        bypassStatus === "200" &&
+        bypassResponse &&
+        !bypassResponse.includes("unauthorized")
+      );
+
+      if (template["auth_bypass_successful"]) {
+        template["trust_boundaries"].push({
+          "endpoint": endpoint,
+          "violation": "authentication_bypass",
+          "severity": "critical"
+        });
+        zeroTrustScore -= 40;
+      }
+    }
+
+    // Test privilege escalation
+    if (template["endpoint_accessible"]) {
+      http("privilege-escalation-test");
+
+      const privilegeStatus = template["privilege_status"];
+      const privilegeResponse = template["privilege_response"];
+
+      template["privilege_escalation"] = (
+        privilegeStatus === "200" &&
+        privilegeResponse &&
+        (privilegeResponse.includes("admin") ||
+         privilegeResponse.includes("root") ||
+         privilegeResponse.includes("elevated"))
+      );
+
+      if (template["privilege_escalation"]) {
+        template["trust_boundaries"].push({
+          "endpoint": endpoint,
+          "violation": "privilege_escalation",
+          "severity": "critical"
+        });
+        zeroTrustScore -= 35;
+      }
+    }
+  }
+
+  // Calculate final Zero Trust maturity assessment
+  template["zero_trust_score"] = Math.max(zeroTrustScore, 0);
+  template["zero_trust_maturity"] = zeroTrustScore > 90 ? "Advanced" :
+                                   zeroTrustScore > 70 ? "Intermediate" :
+                                   zeroTrustScore > 50 ? "Basic" : "Initial";
+
+  template["risk_level"] = zeroTrustScore > 80 ? "Low" :
+                          zeroTrustScore > 60 ? "Medium" :
+                          zeroTrustScore > 40 ? "High" : "Critical";
+
+http:
+  - id: initial-assessment
+    method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 401
+          - 403
+        internal: true
+
+    extractors:
+      - type: regex
+        name: initial_response
+        internal: true
+        regex:
+          - "(?s).*"
+      - type: regex
+        name: initial_headers
+        part: header
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: endpoint-access-test
+    method: GET
+    path:
+      - "{{BaseURL}}{{current_endpoint}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 401
+          - 403
+          - 404
+        internal: true
+
+    extractors:
+      - type: regex
+        name: endpoint_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+      - type: regex
+        name: endpoint_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: auth-bypass-test
+    method: GET
+    path:
+      - "{{BaseURL}}{{current_endpoint}}"
+
+    headers:
+      X-Forwarded-For: "127.0.0.1"
+      X-Real-IP: "127.0.0.1"
+      X-Original-URL: "/admin"
+      X-Rewrite-URL: "/admin"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 401
+          - 403
+        internal: true
+
+    extractors:
+      - type: regex
+        name: auth_bypass_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+      - type: regex
+        name: auth_bypass_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: privilege-escalation-test
+    method: GET
+    path:
+      - "{{BaseURL}}{{current_endpoint}}"
+
+    headers:
+      Authorization: "Bearer invalid_token"
+      X-User-Role: "admin"
+      X-Privilege-Level: "elevated"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 401
+          - 403
+        internal: true
+
+    extractors:
+      - type: regex
+        name: privilege_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+      - type: regex
+        name: privilege_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+# Flow template - matchers and extractors handled by Flow logic

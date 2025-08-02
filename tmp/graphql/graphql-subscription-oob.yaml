@@ -1,0 +1,116 @@
+id: graphql-subscription-oob
+
+info:
+  name: GraphQL Subscription OOB Callback Detection
+  author: geeknik
+  severity: medium
+  description: |
+    Detects GraphQL endpoints that support subscriptions with external callback URLs,
+    potentially leading to SSRF via subscription webhook notifications or schema fetching.
+  reference:
+    - https://graphql.org/blog/subscriptions-in-graphql-and-relay/
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/19-Testing_for_Server-Side_Request_Forgery
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N
+    cvss-score: 5.8
+    cwe-id: CWE-918
+  tags: graphql,oob,ssrf,subscription,callback
+
+variables:
+  callback_url: "{{interactsh-url}}"
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    body: |
+      {
+        "query": "subscription { __schema { subscriptionType { fields { name description args { name type { name } } } } } }",
+        "variables": {}
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"subscriptionType"'
+          - '"fields"'
+        condition: and
+  
+      - type: status
+        status:
+          - 200
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    body: |
+      {
+        "query": "mutation RegisterWebhook($url: String!) { registerWebhook(callbackUrl: $url) { id status } }",
+        "variables": {
+          "url": "{{callback_url}}"
+        }
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    body: |
+      {
+        "query": "mutation CreateSubscription($callback: String!) { createSubscription(webhookUrl: $callback) { subscriptionId } }",
+        "variables": {
+          "callback": "{{callback_url}}"
+        }
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    body: |
+      {
+        "query": "mutation ImportSchema($url: String!) { importSchema(schemaUrl: $url) { success errors } }",
+        "variables": {
+          "url": "{{callback_url}}/schema.graphql"
+        }
+      }
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
