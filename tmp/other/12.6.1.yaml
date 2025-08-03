@@ -1,0 +1,59 @@
+id: ASVS-4-0-3-V12-6-1
+
+info:
+  name: ASVS 12.6.1 Check
+  author: AmirHossein Raeisi
+  severity: high
+  classification:
+    cwe-id: CWE-918
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/19-Testing_for_Server-Side_Request_Forgery
+    - https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/
+    - https://github.com/projectdiscovery/nuclei-templates/blob/main/dast/vulnerabilities/ssrf/blind-ssrf.yaml
+    - https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+    - https://snbig.github.io/Vulnerable-Pages/ASVS_12_6_1/
+  tags: asvs,12.6.1
+  description: |
+    Verify that the web or application server is configured with an allow list of resources or systems to which the server can send requests or load data/files from.
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      ssrf:
+        - "{{interactsh-url}}"
+        - "{{FQDN}}.{{interactsh-url}}"
+        - "{{RDN}}.{{interactsh-url}}"
+        - "{{FQDN}}@{{interactsh-url}}"
+        - "{{RDN}}@{{interactsh-url}}"
+
+    fuzzing:
+      - part: query
+        mode: single
+        fuzz:
+          - "https://{{ssrf}}"
+          - "{{ssrf}}:80"
+
+      - part: body
+        mode: single
+        fuzz:
+          - "https://{{ssrf}}"
+          - "{{ssrf}}:80"
+
+      - part: header
+        mode: single
+        fuzz:
+          - "https://{{ssrf}}"
+          - "{{ssrf}}:80"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+# digest: 4a0a00473045022100df54f16772e7070065be0f76b4a0729bd9aaceb11093982424ad29dd4d13056f022026b642707e4b17641c3029a8d20b0b9d968353e6f425e29980b535a77c3e06f7:236a7c23afe836fbe231d6e037cff444
