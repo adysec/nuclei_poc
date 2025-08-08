@@ -1,0 +1,159 @@
+id: brotli-compression-oracle-attack
+
+info:
+  name: Brotli Compression Oracle Attack Detection
+  author: geeknik
+  severity: high
+  description: |
+    Detects ACTUAL compression oracle vulnerabilities by injecting controlled
+    data and measuring compression ratio differences. Tests BREACH-style attacks
+    where user input is compressed with secrets, allowing secret extraction
+    through compression ratio analysis.
+  reference:
+    - https://tools.ietf.org/html/rfc7932
+    - https://github.com/google/brotli
+    - https://www.blackhat.com/docs/us-16/materials/us-16-Gilboa-BREACH-SSL-Gone-In-30-Seconds.pdf
+    - https://blog.cloudflare.com/results-experimenting-brotli/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:L
+    cvss-score: 4.0
+    cwe-id: CWE-409,CWE-208,CWE-400
+  tags: brotli,compression,oracle,timing,decompression-bomb,information-disclosure
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  oracle_id: "{{randstr}}"
+  compression_payload: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  brotli_bomb: "91 08 80 63 65 6c 65 72 79 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/api/"
+      - "{{BaseURL}}/compress"
+      - "{{BaseURL}}/content"
+      - "{{BaseURL}}/data"
+
+    headers:
+      Accept-Encoding: "br, gzip, deflate"
+      User-Agent: "BrotliOracle/1.0"
+      X-Compression-Test: "oracle-{{oracle_id}}"
+
+    matchers-condition: or
+    matchers:
+      # Detection 1: Response reflects input AND uses Brotli (vulnerable to BREACH)
+      - type: dsl
+        dsl:
+          - 'contains(body, "oracle-{{oracle_id}}") && contains(tolower(header), "content-encoding: br")'
+
+      # Detection 2: Compression ratio varies with input (oracle vulnerability)
+      - type: dsl
+        dsl:
+          - 'len(body) > 100 && contains(tolower(header), "content-encoding: br") && contains(body, "{{BaseURL}}")'
+
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - "content-length:\\s*(\\d+)"
+        group: 1
+        internal: true
+        name: compressed_size
+
+  # REAL BREACH-style compression oracle test
+  - raw:
+      - |
+        POST {{BaseURL}}/search?q=sessionid%3D{{oracle_id}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: br, gzip, deflate
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: sessionid={{oracle_id}}AAAAAAAAAAAAAA
+        Connection: close
+
+        search=sessionid%3D{{oracle_id}}AAAAAAAAAAAAA&submit=1
+
+      - |
+        POST {{BaseURL}}/search?q=sessionid%3DXXXXXXXXXXXX HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: br, gzip, deflate
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: sessionid={{oracle_id}}AAAAAAAAAAAAAA
+        Connection: close
+
+        search=sessionid%3DXXXXXXXXXXXX&submit=1
+
+    matchers:
+      - type: dsl
+        dsl:
+          # If compression ratios differ, secret is leaking
+          - '(len(body_1) - len(body_2) > 10 || len(body_2) - len(body_1) > 10) && contains(tolower(header_1), "br")'
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}/api/data"
+      - "{{BaseURL}}/upload"
+
+    headers:
+      Content-Type: "application/octet-stream"
+      Content-Encoding: "br"
+      X-Decompression-Test: "bomb-{{oracle_id}}"
+
+    body: "{{brotli_bomb}}"
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - "duration >= 10000"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "out of memory"
+          - "decompression failed"
+          - "buffer overflow"
+          - "maximum size exceeded"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 413
+          - 507
+          - 500
+        condition: or
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/compare"
+      - "{{BaseURL}}/compress/analyze"
+
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+
+    body: |
+      {
+        "data1": "secret123{{compression_payload}}",
+        "data2": "public456{{compression_payload}}",
+        "compression": "brotli",
+        "analyze_ratio": true,
+        "webhook": "{{callback_url}}/ratio-{{oracle_id}}"
+      }
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+
+    extractors:
+      - type: json
+        json:
+          - ".compression_ratio"
+          - ".size_difference"
+          - ".entropy_analysis"

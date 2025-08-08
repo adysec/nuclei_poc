@@ -1,0 +1,115 @@
+id: http3-protocol-downgrade-attack
+
+info:
+  name: HTTP/3 to HTTP/2 Protocol Downgrade Attack Detection
+  author: geeknik
+  severity: medium
+  description: |
+    Detects servers vulnerable to HTTP/3 to HTTP/2 protocol downgrade attacks
+    where malicious clients can force fallback to HTTP/2 for exploitation of
+    HTTP/2-specific vulnerabilities while maintaining HTTP/3 session context.
+    Tests Alt-Svc header manipulation and QUIC connection degradation vectors.
+  reference:
+    - https://tools.ietf.org/html/rfc9114
+    - https://datatracker.ietf.org/doc/html/rfc7838
+    - https://datatracker.ietf.org/doc/html/rfc9000
+    - https://blog.cloudflare.com/http-3-the-past-present-and-future/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 4.8
+    cwe-id: CWE-757,CWE-693
+  tags: http3,http2,protocol-downgrade,quic,alt-svc,tls
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  downgrade_id: "{{randstr}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/api/"
+      - "{{BaseURL}}/secure/"
+      - "{{BaseURL}}/admin/"
+
+    headers:
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+      Alt-Used: "{{callback_url}}"
+      Alt-Svc: 'h3=":443"; ma=86400, h2=":443"; ma=86400'
+      HTTP2-Settings: "AAMAAABkAARAAAAAAAIAAAAA"
+      Connection: "HTTP2-Settings, Upgrade, close"
+      Upgrade: "h2c"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "alt-svc"
+          - "Alt-Svc"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: header
+        words:
+          - "h3="
+          - "h2="
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 101
+          - 426
+        condition: or
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/alt-svc"
+      - "{{BaseURL}}/.well-known/quic-alt-svc"
+
+    headers:
+      Accept: application/json
+      User-Agent: "HTTP3-Downgrade-Test/1.0"
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "quic"
+          - "h3-"
+          - "h2"
+        condition: and
+        case-insensitive: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/version"
+      - "{{BaseURL}}/protocol/negotiate"
+
+    headers:
+      Content-Type: "application/json"
+      Alt-Svc-Clear: "1"
+
+    body: |
+      {
+        "protocol_versions": ["h3", "h2", "http/1.1"],
+        "force_downgrade": true,
+        "callback_url": "{{callback_url}}/protocol-{{downgrade_id}}"
+      }
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - "alt-svc:\\s*([^\\r\\n]+)"
+        group: 1

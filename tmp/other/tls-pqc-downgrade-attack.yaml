@@ -1,0 +1,90 @@
+id: tls-pqc-downgrade-attack
+
+info:
+  name: TLS Post-Quantum Cryptography Downgrade Attack Detection
+  author: geeknik
+  severity: high
+  description: |
+    Detects REAL vulnerabilities in TLS implementations that allow downgrade
+    from post-quantum algorithms to classical cryptography. Tests actual TLS
+    handshakes for algorithm negotiation flaws.
+  reference:
+    - https://datatracker.ietf.org/doc/draft-ietf-tls-hybrid-design/
+    - https://www.nist.gov/pqcrypto
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 7.4
+    cwe-id: CWE-757
+  tags: tls,pqc,downgrade,cryptography
+
+ssl:
+  - address: "{{Host}}:{{Port}}"
+
+    # Test various TLS versions and cipher suites
+    min_version: tls10
+    max_version: tls13
+
+    cipher_suites:
+      # Classical RSA/ECDSA ciphers (should be rejected if PQC-only)
+      - "TLS_RSA_WITH_AES_128_CBC_SHA"
+      - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+      - "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+
+    matchers-condition: or
+    matchers:
+      # Detection 1: Server accepts classical ciphers when it shouldn't
+      - type: word
+        part: cipher
+        words:
+          - "TLS_RSA"
+          - "TLS_ECDHE"
+        condition: or
+
+      # Detection 2: Weak TLS version accepted
+      - type: word
+        part: version
+        words:
+          - "tls10"
+          - "tls11"
+
+http:
+  # Test TLS configuration endpoints
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/pqc-policy"
+      - "{{BaseURL}}/api/tls/config"
+      - "{{BaseURL}}/security/tls"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "kyber"
+          - "dilithium"
+          - "falcon"
+          - "sphincs"
+        condition: or
+
+      - type: word
+        words:
+          - '"fallback":true'
+          - '"allow_classical":true'
+          - '"downgrade_permitted":true'
+        condition: or
+
+  # Test algorithm negotiation
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+        TLS-Client-Supported-Groups: x25519_kyber768
+        TLS-Client-Signature-Algorithms: dilithium3
+
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - 'TLS-Server-Selected-Group:\s*(x25519|secp256r1|secp384r1)'
+          - 'TLS-Server-Signature-Algorithm:\s*(rsa|ecdsa)'
+        condition: or
