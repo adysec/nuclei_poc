@@ -1,0 +1,52 @@
+id: microsoft-sharepoint-version
+
+info:
+  name: Microsoft SharePoint Server - Version
+  severity: info
+  author: darses
+  description: |
+    Detects Microsoft SharePoint Server version based on error.aspx page, as discoverd by Stephen Fewer.
+  metadata:
+    vendor: microsoft
+    product: sharepoint_server
+    shodan-query:
+      - http.favicon.hash:-19436759
+      - http.favicon.hash:-146638980
+      - http.favicon.hash:-1969918997
+      - http.html:"/_layouts/15/init.js"
+      - "X-Sharepointhealthscore"
+      - "Sprequestguid"
+      - "X-Ms-Invokeapp"
+      - http.component:"Microsoft SharePoint"
+    fofa-query:
+      - icon_hash="-19436759"
+      - icon_hash="-146638980"
+      - icon_hash="-1969918997"
+      - body="/_layouts/15/init.js"
+      - "X-Sharepointhealthscore"
+      - "Sprequestguid"
+      - "X-Ms-Invokeapp"
+  tags: detect,microsoft,sharepoint
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_layouts/15/error.aspx"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - 'content="Microsoft SharePoint"'
+
+    extractors:
+      - type: regex
+        name: siteClientTag
+        group: 1
+        regex:
+          - '"?siteClientTag"?\s*:\s*"\d*[$]+([^"]+)"'

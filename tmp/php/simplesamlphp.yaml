@@ -1,0 +1,52 @@
+id: simplesamlphp
+
+info:
+  name: SimpleSAMLphp - Detect
+  severity: info
+  author: darses
+  description: |
+    Detect SimpleSAMLphp.
+  metadata:
+    max-request: 4
+    vendor: simplesamlphp
+    product: simplesamlphp
+    shodan-query:
+      - http.favicon.hash:-556981179
+      - "Set-Cookie: SimpleSAMLSessionID="
+  tags: detect,simplesaml,tech
+
+flow: http(1) || http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "This is the front page of the SimpleSAMLphp authentication software"
+          - '<img src="/resources/icons/ssplogo-fish-small.png"'
+        condition: or
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/resources/icons/favicon.ico"
+      - "{{BaseURL}}/assets/base/icons/favicon.ico"
+      - "{{BaseURL}}/simplesaml/resources/icons/favicon.ico"
+      - "{{BaseURL}}/simplesaml/assets/base/icons/favicon.ico"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200 && mmh3(body)=="-558736703"
