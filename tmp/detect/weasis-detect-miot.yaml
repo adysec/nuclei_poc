@@ -1,0 +1,65 @@
+id: weasis-launcher-detect
+info:
+  name: Weasis PACS Connector ViewerHub detect
+  author: r3dcl1ff
+  severity: medium
+  description: |
+    Detects Weasis launch services : classic weasis-pacs-connector (/weasis, /weasis-pacs-connector/weasis)
+    and the ViewerHub successor (/display/weasis), non-invasive.
+  tags: medical,miot,weasis
+  metadata:
+    shodan-query: '"/display/weasis"'
+    references:
+      - https://github.com/nroduit/weasis-pacs-connector
+      - https://weasis.org/en/viewer-hub/
+      - https://weasis.org/en/basics/customize/integration/
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/weasis"
+      - "{{BaseURL}}/weasis-pacs-connector/weasis"
+    max-redirects: 3
+    headers:
+      Accept: "*/*"
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - (?im)^www-authenticate:\s*basic\s+realm="?.*weasis.*"?$
+      - type: regex
+        part: header
+        regex:
+          - (?im)^location:\s*(?:https?://[^/]+)?/(?:weasis|weasis-pacs-connector/weasis)\b
+      - type: regex
+        part: body
+        regex:
+          - (?i)\bweasis-pacs-connector\b
+          - (?i)\blaunch\s+weasis\b
+        condition: or
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/display/weasis"
+    max-redirects: 3
+    headers:
+      Accept: "text/html,*/*;q=0.8"
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - (?i)\bviewerhub\b
+          - (?i)\bweasis\b
+        condition: and
+      - type: regex
+        part: header
+        regex:
+          - (?im)^www-authenticate:\s*basic\s+realm="?.*viewerhub.*"?$
+      - type: regex
+        part: header
+        regex:
+          - (?im)^location:\s*(?:https?://[^/]+)?/display/weasis\b

