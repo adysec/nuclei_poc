@@ -1,0 +1,49 @@
+id: wordpress-redirection
+
+info:
+  name: Redirection Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/redirection/
+  metadata:
+    plugin_namespace: redirection
+    wpscan: https://wpscan.com/plugin/redirection
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/redirection/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/redirection.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a004830460221008c346dd2816209c83c59fca3b3fe6f0dba2aa31721f4ec96bc2d3aea18acf98c022100ece7bb2e5ac6c8ca14a8fcf2456a38fd090afb8dbde8ac4fcf8fc44b7dc19800:922c64590222798bb761d5b6d8e72950

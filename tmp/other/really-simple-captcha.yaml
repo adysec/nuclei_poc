@@ -1,0 +1,49 @@
+id: wordpress-really-simple-captcha
+
+info:
+  name: Really Simple CAPTCHA Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/really-simple-captcha/
+  metadata:
+    plugin_namespace: really-simple-captcha
+    wpscan: https://wpscan.com/plugin/really-simple-captcha
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/really-simple-captcha/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/really-simple-captcha.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502204a965af6ac307201f7949074d825cf6d46d936ccc4c448c2bee6e3ce84cddce60221008bf9241f9076a7ed2d45e0788e8628f3bf9406fe066dc827ac9486601d660677:922c64590222798bb761d5b6d8e72950
