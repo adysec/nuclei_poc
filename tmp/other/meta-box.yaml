@@ -1,0 +1,49 @@
+id: wordpress-meta-box
+
+info:
+  name: Meta Box Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/meta-box/
+  metadata:
+    plugin_namespace: meta-box
+    wpscan: https://wpscan.com/plugin/meta-box
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/meta-box/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/meta-box.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a004630440220733f481f04b42074fe4a8066131ca044e5d2a917bbda91ff52a058784a73e50402200cce9eaf7bcbabbc249c41c2b6582c2eedd136be2bfe9c9f222f2d5f69e3efef:922c64590222798bb761d5b6d8e72950

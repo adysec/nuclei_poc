@@ -1,0 +1,49 @@
+id: wordpress-kirki
+
+info:
+  name: Kirki Customizer Framework Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/kirki/
+  metadata:
+    plugin_namespace: kirki
+    wpscan: https://wpscan.com/plugin/kirki
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/kirki/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/kirki.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022100802144b85f3836bd5c9bd6682615748ca48f9dda4d0d9ac073116ac3a3e1ccdd022004792f57f8298a1036c8c59e5a3cf8068003d8ed4351106f9edb34c358c2bd2e:922c64590222798bb761d5b6d8e72950
