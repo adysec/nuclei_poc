@@ -1,0 +1,36 @@
+id: easyvista-panel
+
+info:
+  name: EasyVista Login Panel - Detect
+  author: righettod
+  severity: info
+  description: |
+    EasyVista login panel was detected.
+  reference:
+    - https://www.easyvista.com/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.title:"Easyvista"
+  tags: panel,easyvista,login,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title>easyvista apps</title>", "easyvista-bundle.min.js", "packages_com_easyvista_core")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)package:\s+"([a-z0-9._-]+)"'
+          - '(?i)version&nbsp;:&nbsp;([a-z0-9._-]+)'
+# digest: 490a0046304402206f5b6ffcebef9dc4b63d0b5085bafc93e3f35523ed7a11309ac4d14264c336c90220612084f95ec598e14fcb8aec84ff189adbbc16097adc6c12b6ef4730b67c7ed3:922c64590222798bb761d5b6d8e72950
