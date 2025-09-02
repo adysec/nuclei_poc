@@ -1,0 +1,59 @@
+id: wp_file_uploader-9ae5b5f1-77a7-4626-a9b5-6f146c32a6db
+
+info:
+  name: >
+    WordPress File Uploader <= 1.1 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The WordPress File Uploader plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the via the process-form.php file in versions up to, and including, 1.1. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9ae5b5f1-77a7-4626-a9b5-6f146c32a6db?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-file-uploader/"
+    google-query: inurl:"/wp-content/plugins/wp-file-uploader/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-file-uploader/"'
+  tags: cve,wordpress,wp-plugin,wp-file-uploader,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-file-uploader/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-file-uploader"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1')

@@ -1,0 +1,59 @@
+id: social_discussions-f5b28fc2-4551-46dc-baa4-29ff19a1bf77
+
+info:
+  name: >
+    Social Discussions <= 6.1.1 - Remote File Inclusion and Full Path Disclosure
+  author: topscoder
+  severity: critical
+  description: >
+    The Social Discussions plugin for WordPress is vulnerable to Remote File Inclusion in versions up to, and including, 6.1.1 via the HTTP_ENV_VARS parameter. This allows unauthenticated attackers to include remote files on the server, resulting in code execution. The plugin is also vulnerable to Full Path Disclosure via direct requests to several .php files.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f5b28fc2-4551-46dc-baa4-29ff19a1bf77?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/social-discussions/"
+    google-query: inurl:"/wp-content/plugins/social-discussions/"
+    shodan-query: 'http.html:"wp-content/plugins/social-discussions/"'
+  tags: cve,wordpress,wp-plugin,social-discussions,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/social-discussions/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "social-discussions"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.1.1')

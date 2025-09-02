@@ -1,0 +1,59 @@
+id: flashnews-58ea0c9c-f63d-4c31-b02e-a86d5fe732aa
+
+info:
+  name: >
+    Flash News (All Versions) - Multiple Vulnerabilities
+  author: topscoder
+  severity: critical
+  description: >
+    The Flash News Theme for WordPress is vulnerable to Cross-Site Scripting in all versions due to inclusion of a vulnerable version of TimThumb. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser. The plugin is also vulnerable to Arbitrary File Upload, Denial of Service Attacks, and Full Path Disclosure. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible, deny availability to legitimate users, and read sensitive information such as the full path of the WordPress installation.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/58ea0c9c-f63d-4c31-b02e-a86d5fe732aa?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/flashnews/"
+    google-query: inurl:"/wp-content/themes/flashnews/"
+    shodan-query: 'http.html:"wp-content/themes/flashnews/"'
+  tags: cve,wordpress,wp-theme,flashnews,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/flashnews/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "flashnews"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

@@ -1,0 +1,61 @@
+id: wordpress-38979e27-2023-4f84-a708-1732b4117066
+
+info:
+  name: >
+    WordPress Core < 6.0.3 - Authenticated (Admin+) Stored Cross-Site Scripting via Customizer
+  author: topscoder
+  severity: low
+  description: >
+    WordPress Core is vulnerable to Stored Cross-Site Scripting via the Customizer in versions up to 6.0.3. This is due to insufficient escaping on the 'Blog Name' value that could be edited and become executable with the right payload while in the theme customizer. This would make it possible for authenticated attacker with access to customize a theme, such as administrators to inject malicious JavaScript into the page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/38979e27-2023-4f84-a708-1732b4117066?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,low,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_js, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_css, '>= 6.0', '<= 6.0.2')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

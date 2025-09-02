@@ -1,0 +1,59 @@
+id: woocommerce_catalog_enquiry-e881ba2f-0e88-4c7b-aa0d-84e816019db9
+
+info:
+  name: >
+    Product Catalog Mode For Woocommerce <= 5.0.2 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Product Catalog Mode For Woocommerce plugin for WordPress is vulnerable to unauthorized modification of data due to a missing capability check on the dismiss_mvx_catalog_servive_notice  function in all versions up to 5.0.3 (exclusive). This makes it possible for authenticated attackers, with subscriber access and above, to dismiss admin notifications.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e881ba2f-0e88-4c7b-aa0d-84e816019db9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-catalog-enquiry/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-catalog-enquiry/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-catalog-enquiry/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-catalog-enquiry,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-catalog-enquiry/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-catalog-enquiry"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.0.3')

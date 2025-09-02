@@ -1,0 +1,59 @@
+id: user_meta_manager-f795a46c-ba0c-45d5-9ff7-638752f1681b
+
+info:
+  name: >
+    User Meta Manager < 3.4.7 - Authenticated Blind SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The User Meta Manager plugin for WordPress is vulnerable to blind SQL Injection via the ‘umm_user’ parameter in versions before 3.4.7 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f795a46c-ba0c-45d5-9ff7-638752f1681b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/user-meta-manager/"
+    google-query: inurl:"/wp-content/plugins/user-meta-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/user-meta-manager/"'
+  tags: cve,wordpress,wp-plugin,user-meta-manager,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-meta-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "user-meta-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.4.7')

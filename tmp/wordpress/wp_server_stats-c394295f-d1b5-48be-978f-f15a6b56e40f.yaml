@@ -1,0 +1,59 @@
+id: wp_server_stats-c394295f-d1b5-48be-978f-f15a6b56e40f
+
+info:
+  name: >
+    WP Server Health Stats <= 1.6.10 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c394295f-d1b5-48be-978f-f15a6b56e40f?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-server-stats/"
+    google-query: inurl:"/wp-content/plugins/wp-server-stats/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-server-stats/"'
+  tags: cve,wordpress,wp-plugin,wp-server-stats,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-server-stats/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-server-stats"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.10')

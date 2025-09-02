@@ -1,0 +1,59 @@
+id: sell_photo-8223f9dd-1c2d-40bd-a17d-1bb317829d3b
+
+info:
+  name: >
+    Sell Photo <= 1.0.5 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Sell Photo plugin for WordPress is vulnerable to Cross-Site Scripting via the 'button_anchor' parameter in versions up to, and including, 1.0.5 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8223f9dd-1c2d-40bd-a17d-1bb317829d3b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sell-photo/"
+    google-query: inurl:"/wp-content/plugins/sell-photo/"
+    shodan-query: 'http.html:"wp-content/plugins/sell-photo/"'
+  tags: cve,wordpress,wp-plugin,sell-photo,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sell-photo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sell-photo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.5')

@@ -1,0 +1,59 @@
+id: ecwid_shopping_cart-af5a58d1-946a-451b-bc8b-a397345ae89a
+
+info:
+  name: >
+    Ecwid Ecommerce Shopping Cart <= 4.4.3 - Unauthenticated PHP Object injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Ecwid Ecommerce Shopping Cart plugin for WordPress is vulnerable to PHP Object Injection in versions before 4.4.4 via deserialization of untrusted input from the vulnerable cookie parameter 'ecwid_oauth_state' in the _load_state function. This allows unauthenticated attackers to inject a PHP Object. No POP chain is present in the vulnerable plugin. If a POP chain is present via an additional plugin or theme installed on the target system, it could allow the attacker to delete arbitrary files, retrieve sensitive data, or execute code.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/af5a58d1-946a-451b-bc8b-a397345ae89a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ecwid-shopping-cart/"
+    google-query: inurl:"/wp-content/plugins/ecwid-shopping-cart/"
+    shodan-query: 'http.html:"wp-content/plugins/ecwid-shopping-cart/"'
+  tags: cve,wordpress,wp-plugin,ecwid-shopping-cart,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ecwid-shopping-cart/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ecwid-shopping-cart"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.4.3')

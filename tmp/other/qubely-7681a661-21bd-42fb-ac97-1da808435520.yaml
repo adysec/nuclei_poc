@@ -1,0 +1,59 @@
+id: qubely-7681a661-21bd-42fb-ac97-1da808435520
+
+info:
+  name: >
+    Qubely <= 1.7.8 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Qubely plugin for WordPress contains a missing authorization weakness that makes it possible for subscriber-level users to update the plugin's settings in versions up to, and including 1.7.8. This is due to missing capability checks on the ajax_update_qubely_options() function called via the wp_ajax_update_qubely_options AJAX action that makes it callable via any authenticated user.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7681a661-21bd-42fb-ac97-1da808435520?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/qubely/"
+    google-query: inurl:"/wp-content/plugins/qubely/"
+    shodan-query: 'http.html:"wp-content/plugins/qubely/"'
+  tags: cve,wordpress,wp-plugin,qubely,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/qubely/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "qubely"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7.8')

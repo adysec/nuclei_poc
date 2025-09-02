@@ -1,0 +1,59 @@
+id: wpgform-968ead80-eed6-4a42-a3cd-73cf4cbbb1e5
+
+info:
+  name: >
+    Google Forms <= 0.93 - Remote Code Execution
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/968ead80-eed6-4a42-a3cd-73cf4cbbb1e5?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpgform/"
+    google-query: inurl:"/wp-content/plugins/wpgform/"
+    shodan-query: 'http.html:"wp-content/plugins/wpgform/"'
+  tags: cve,wordpress,wp-plugin,wpgform,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpgform/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpgform"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.94')

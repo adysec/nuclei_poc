@@ -1,0 +1,59 @@
+id: spam_free_wordpress-8a5bcf8f-9aa0-4a78-b3a8-21571700ea8b
+
+info:
+  name: >
+    Spam Free WordPress <= 1.9.3 - Full Path Disclosure
+  author: topscoder
+  severity: high
+  description: >
+    The Spam Free WordPress plugin for WordPress is vulnerable to full path disclosure in versions up to, and including, 1.9.3 via various files. This makes it possible for unauthenticated attackers to extract sensitive data which consists of full application path details that can be used to exploit additional vulnerabilities that may require that information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8a5bcf8f-9aa0-4a78-b3a8-21571700ea8b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/spam-free-wordpress/"
+    google-query: inurl:"/wp-content/plugins/spam-free-wordpress/"
+    shodan-query: 'http.html:"wp-content/plugins/spam-free-wordpress/"'
+  tags: cve,wordpress,wp-plugin,spam-free-wordpress,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/spam-free-wordpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "spam-free-wordpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.3')

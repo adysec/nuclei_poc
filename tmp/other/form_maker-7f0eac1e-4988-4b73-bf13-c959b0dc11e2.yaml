@@ -1,0 +1,59 @@
+id: form_maker-7f0eac1e-4988-4b73-bf13-c959b0dc11e2
+
+info:
+  name: >
+    Form Maker <= 1.15.16 - Missing Authorization in check_score
+  author: topscoder
+  severity: low
+  description: >
+    The Form Maker plugin for WordPress is vulnerable to unauthorized access of data due to a missing capability check on the check_score function in versions up to, and including, 1.15.16. This makes it possible for authenticated attackers, with subscriber-level privileges and above, to reveal the score of posts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7f0eac1e-4988-4b73-bf13-c959b0dc11e2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/form-maker/"
+    google-query: inurl:"/wp-content/plugins/form-maker/"
+    shodan-query: 'http.html:"wp-content/plugins/form-maker/"'
+  tags: cve,wordpress,wp-plugin,form-maker,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/form-maker/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "form-maker"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.15.16')

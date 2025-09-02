@@ -1,0 +1,59 @@
+id: woc_open_close-3e471ef4-94c1-47d9-98ae-f79f7662e21a
+
+info:
+  name: >
+    Woocommerce Open Close – Best Business Schedules Manager <= 4.3.0  - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Woocommerce Open Close – Best Business Schedules Manager plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via a URL in versions up to, and including 4.3.0 due to insufficient sanitization and escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3e471ef4-94c1-47d9-98ae-f79f7662e21a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woc-open-close/"
+    google-query: inurl:"/wp-content/plugins/woc-open-close/"
+    shodan-query: 'http.html:"wp-content/plugins/woc-open-close/"'
+  tags: cve,wordpress,wp-plugin,woc-open-close,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woc-open-close/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woc-open-close"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.3.0')

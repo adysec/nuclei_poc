@@ -1,0 +1,59 @@
+id: bulletproof_security-e66d0c9c-39a2-4f09-b87f-630f1a8054ea
+
+info:
+  name: >
+    BulletProof Security <= 6.0 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e66d0c9c-39a2-4f09-b87f-630f1a8054ea?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/bulletproof-security/"
+    google-query: inurl:"/wp-content/plugins/bulletproof-security/"
+    shodan-query: 'http.html:"wp-content/plugins/bulletproof-security/"'
+  tags: cve,wordpress,wp-plugin,bulletproof-security,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/bulletproof-security/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "bulletproof-security"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 6.1')

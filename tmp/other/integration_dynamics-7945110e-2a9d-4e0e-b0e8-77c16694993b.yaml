@@ -1,0 +1,59 @@
+id: integration_dynamics-7945110e-2a9d-4e0e-b0e8-77c16694993b
+
+info:
+  name: >
+    Dynamics 365 Integration <= 1.3.12 - Cross-Site Request Forgery via wp_ajax_wpcrm_log
+  author: topscoder
+  severity: medium
+  description: >
+    The Dynamics 365 Integration plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.3.12. This is due to missing or incorrect nonce validation on 'wp_ajax_wpcrm_log' AJAX action. This makes it possible for unauthenticated attackers to trigger the download of log files via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7945110e-2a9d-4e0e-b0e8-77c16694993b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/integration-dynamics/"
+    google-query: inurl:"/wp-content/plugins/integration-dynamics/"
+    shodan-query: 'http.html:"wp-content/plugins/integration-dynamics/"'
+  tags: cve,wordpress,wp-plugin,integration-dynamics,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/integration-dynamics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "integration-dynamics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.12')

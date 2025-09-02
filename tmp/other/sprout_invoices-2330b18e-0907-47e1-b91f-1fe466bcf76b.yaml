@@ -1,0 +1,59 @@
+id: sprout_invoices-2330b18e-0907-47e1-b91f-1fe466bcf76b
+
+info:
+  name: >
+    Sprout Invoices <= 20.5.3 - Sensitive Information Exposure
+  author: topscoder
+  severity: low
+  description: >
+    The Client Invoicing by Sprout Invoices – Easy Estimates and Invoices for WordPress plugin for WordPress is vulnerable to Sensitive Information Exposure in all versions up to 20.5.4 (exclusive) via the system_health_check function. This makes it possible for authenticated attackers with subscriber access and above to extract sensitive data including system configuration information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2330b18e-0907-47e1-b91f-1fe466bcf76b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sprout-invoices/"
+    google-query: inurl:"/wp-content/plugins/sprout-invoices/"
+    shodan-query: 'http.html:"wp-content/plugins/sprout-invoices/"'
+  tags: cve,wordpress,wp-plugin,sprout-invoices,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sprout-invoices/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sprout-invoices"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 20.5.4')

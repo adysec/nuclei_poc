@@ -1,0 +1,59 @@
+id: stats-d60e1a2c-a3f1-4c39-a22f-9c09d0fed2c5
+
+info:
+  name: >
+    stats <= 1.1 - SQL Injection
+  author: topscoder
+  severity: high
+  description: >
+    The stats plugin for WordPress is vulnerable to SQL Injection via the $post_ids parameter in versions up to, and including, 1.1 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d60e1a2c-a3f1-4c39-a22f-9c09d0fed2c5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/stats/"
+    google-query: inurl:"/wp-content/plugins/stats/"
+    shodan-query: 'http.html:"wp-content/plugins/stats/"'
+  tags: cve,wordpress,wp-plugin,stats,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/stats/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "stats"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1')

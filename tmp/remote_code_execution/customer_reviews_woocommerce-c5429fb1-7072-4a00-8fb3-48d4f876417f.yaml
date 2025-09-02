@@ -1,0 +1,59 @@
+id: customer_reviews_woocommerce-c5429fb1-7072-4a00-8fb3-48d4f876417f
+
+info:
+  name: >
+    Customer Reviews for WooCommerce <= 5.36.0 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Customer Reviews for WooCommerce plugin for WordPress is vulnerable to unauthorized access of functionality due to a missing capability check on several AJAX actions in versions up to, and including, 5.36.0. This makes it possible for authenticated attackers with subscriber level access to cancel exports and obtain progress reports on exports.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c5429fb1-7072-4a00-8fb3-48d4f876417f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/customer-reviews-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/customer-reviews-woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/customer-reviews-woocommerce/"'
+  tags: cve,wordpress,wp-plugin,customer-reviews-woocommerce,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/customer-reviews-woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "customer-reviews-woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.36.1')

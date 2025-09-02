@@ -1,0 +1,59 @@
+id: kbslider-416ab7d5-9f3b-4ccc-9a0f-bfe5d38b6f97
+
+info:
+  name: >
+    KenBurner Slider (All Versions) - Path Traversal
+  author: topscoder
+  severity: high
+  description: >
+    The KenBurner Slider plugin for WordPress is vulnerable to Path Traversal in all versions via the kbslider_show_image function. This allows unauthenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/416ab7d5-9f3b-4ccc-9a0f-bfe5d38b6f97?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/kbslider/"
+    google-query: inurl:"/wp-content/plugins/kbslider/"
+    shodan-query: 'http.html:"wp-content/plugins/kbslider/"'
+  tags: cve,wordpress,wp-plugin,kbslider,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/kbslider/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kbslider"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

@@ -1,0 +1,59 @@
+id: devformatter-938be2d0-1e56-42d5-874e-574e78a44932
+
+info:
+  name: >
+    Developer Formatter < 2013.0.1.41 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Developer Formatter plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to 2013.0.1.41. This is due to missing or incorrect nonce validation on the devfmt_addPage() function. This makes it possible for unauthenticated attackers to modify the plugin's settings and inject malicious web scripts via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/938be2d0-1e56-42d5-874e-574e78a44932?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/devformatter/"
+    google-query: inurl:"/wp-content/plugins/devformatter/"
+    shodan-query: 'http.html:"wp-content/plugins/devformatter/"'
+  tags: cve,wordpress,wp-plugin,devformatter,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/devformatter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "devformatter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2013.0.1.41')

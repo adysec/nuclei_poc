@@ -1,0 +1,59 @@
+id: relevanssi_premium-3cd02dbc-6725-4626-844b-df12bad9da37
+
+info:
+  name: >
+    Relevanssi – A Better Search < 4.14.6 & Relevanssi – A Better Search Pro < 2.16.5 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Relevanssi – A Better Search plugin for WordPress is vulnerable to authorization bypass due to missing capability checks on several functions in versions before 4.14.6 in the free version and 2.16.5 in the PRO version. This makes it possible for authenticated attackers with Subscriber-level roles and above to perform unauthorized AJAX actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3cd02dbc-6725-4626-844b-df12bad9da37?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/relevanssi-premium/"
+    google-query: inurl:"/wp-content/plugins/relevanssi-premium/"
+    shodan-query: 'http.html:"wp-content/plugins/relevanssi-premium/"'
+  tags: cve,wordpress,wp-plugin,relevanssi-premium,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/relevanssi-premium/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "relevanssi-premium"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.16.5')

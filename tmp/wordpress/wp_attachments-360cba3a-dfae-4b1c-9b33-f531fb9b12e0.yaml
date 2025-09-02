@@ -1,0 +1,59 @@
+id: wp_attachments-360cba3a-dfae-4b1c-9b33-f531fb9b12e0
+
+info:
+  name: >
+    WP Attachments <= 5.0.4 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/360cba3a-dfae-4b1c-9b33-f531fb9b12e0?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-attachments/"
+    google-query: inurl:"/wp-content/plugins/wp-attachments/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-attachments/"'
+  tags: cve,wordpress,wp-plugin,wp-attachments,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-attachments/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-attachments"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.0.4')

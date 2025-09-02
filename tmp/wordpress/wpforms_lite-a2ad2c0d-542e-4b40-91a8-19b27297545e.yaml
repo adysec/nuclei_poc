@@ -1,0 +1,59 @@
+id: wpforms_lite-a2ad2c0d-542e-4b40-91a8-19b27297545e
+
+info:
+  name: >
+    Contact Form by WPForms <= 1.7.5.3 - Authenticated (Administrator+) Arbitrary File Access via Path Traversal
+  author: topscoder
+  severity: low
+  description: >
+    The Contact Form by WPForms plugin for WordPress is vulnerable to Directory Traversal via email template paths in versions up to, and including, 1.7.5.3. This allows administrator-level attackers to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a2ad2c0d-542e-4b40-91a8-19b27297545e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 6.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpforms-lite/"
+    google-query: inurl:"/wp-content/plugins/wpforms-lite/"
+    shodan-query: 'http.html:"wp-content/plugins/wpforms-lite/"'
+  tags: cve,wordpress,wp-plugin,wpforms-lite,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpforms-lite/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpforms-lite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7.5.3')

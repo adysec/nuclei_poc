@@ -1,0 +1,59 @@
+id: spam_free_wordpress-7f7a8ee7-af69-4aff-abf7-6d69d920fe61
+
+info:
+  name: >
+    Spam Free WordPress <= 1.9.3 - IP Protection Bypass
+  author: topscoder
+  severity: medium
+  description: >
+    The Spam Free WordPress plugin for WordPress is vulnerable to IP Protection Bypass in versions up to, and including, 1.9.3 via the sfw_comment_post_authentication() function due to the fact that the plugin relies on a value that can be user-supplied ('comment_ip' parameter) for the IP address that is checked against the blocklist. This makes it possible for unauthenticated attackers to bypass comment restrictions
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7f7a8ee7-af69-4aff-abf7-6d69d920fe61?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/spam-free-wordpress/"
+    google-query: inurl:"/wp-content/plugins/spam-free-wordpress/"
+    shodan-query: 'http.html:"wp-content/plugins/spam-free-wordpress/"'
+  tags: cve,wordpress,wp-plugin,spam-free-wordpress,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/spam-free-wordpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "spam-free-wordpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.3')

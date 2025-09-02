@@ -1,0 +1,59 @@
+id: nuance-06e90f64-f64e-4871-9106-1d7af02f13d2
+
+info:
+  name: >
+    Nuance <= 1.2 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Nuance theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'VALUMS_UPLOADER_PATH/php. php' file in versions up to, and including, 1.2 (potentially in later versions if available). This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/06e90f64-f64e-4871-9106-1d7af02f13d2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/nuance/"
+    google-query: inurl:"/wp-content/themes/nuance/"
+    shodan-query: 'http.html:"wp-content/themes/nuance/"'
+  tags: cve,wordpress,wp-theme,nuance,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/nuance/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "nuance"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2')

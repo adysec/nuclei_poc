@@ -1,0 +1,59 @@
+id: refraction-7887e0a6-53bf-49c7-a7a6-7c65cec28cae
+
+info:
+  name: >
+    Refraction <= 1.3 - Multiple Vulnerabilities
+  author: topscoder
+  severity: critical
+  description: >
+    The RocketTheme's Refraction Theme is vulnerable to Cross-Site Scripting, Content Spoofing, and Path Traversal in versions up to, and including, 1.3. This is due to inclusion of a vulnerable versions of RokBox and JW Player. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser, create fake content, and read the contents of arbitrary files on the server, which can contain sensitive information. The theme directory can be named either 'refraction' or 'rt_refraction_wp'.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7887e0a6-53bf-49c7-a7a6-7c65cec28cae?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:N
+    cvss-score: 10
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/refraction/"
+    google-query: inurl:"/wp-content/themes/refraction/"
+    shodan-query: 'http.html:"wp-content/themes/refraction/"'
+  tags: cve,wordpress,wp-theme,refraction,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/refraction/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "refraction"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3')

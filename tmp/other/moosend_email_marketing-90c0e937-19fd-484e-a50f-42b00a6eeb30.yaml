@@ -1,0 +1,59 @@
+id: moosend_email_marketing-90c0e937-19fd-484e-a50f-42b00a6eeb30
+
+info:
+  name: >
+    Moosend Website Connector <= 1.0.189 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Moosend Website Connector plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the updateSettings() function in versions up to, and including, 1.0.189. This makes it possible for unauthenticated attackers to set the Moosend Website Tracking ID.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/90c0e937-19fd-484e-a50f-42b00a6eeb30?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/moosend-email-marketing/"
+    google-query: inurl:"/wp-content/plugins/moosend-email-marketing/"
+    shodan-query: 'http.html:"wp-content/plugins/moosend-email-marketing/"'
+  tags: cve,wordpress,wp-plugin,moosend-email-marketing,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/moosend-email-marketing/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "moosend-email-marketing"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.189')

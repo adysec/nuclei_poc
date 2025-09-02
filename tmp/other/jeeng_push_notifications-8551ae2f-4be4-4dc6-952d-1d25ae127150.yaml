@@ -1,0 +1,59 @@
+id: jeeng_push_notifications-8551ae2f-4be4-4dc6-952d-1d25ae127150
+
+info:
+  name: >
+    Jeeng Push Notifications <= 2.0.3 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Jeeng Push Notifications plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.0.3. This is due to missing nonce validation on the jeeng_page() function. This makes it possible for unauthenticated attackers to modify the plugin's settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8551ae2f-4be4-4dc6-952d-1d25ae127150?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/jeeng-push-notifications/"
+    google-query: inurl:"/wp-content/plugins/jeeng-push-notifications/"
+    shodan-query: 'http.html:"wp-content/plugins/jeeng-push-notifications/"'
+  tags: cve,wordpress,wp-plugin,jeeng-push-notifications,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jeeng-push-notifications/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jeeng-push-notifications"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.3')

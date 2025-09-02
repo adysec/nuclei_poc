@@ -1,0 +1,59 @@
+id: real3d_flipbook-dc24d2de-352c-4215-a4db-2966aa6467c7
+
+info:
+  name: >
+    Real3D Flipbook <= 2.8 - Directory Traversal via Uploads
+  author: topscoder
+  severity: low
+  description: >
+    The Real3D Flipbook plugin for WordPress is vulnerable to Directory Traversal via uploads in versions up to, and including, 2.8. This is due to missing path validation checks. This makes it possible for authenticated attackers to upload image files into root, which could potentially lead to deletion of arbitrary files on the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dc24d2de-352c-4215-a4db-2966aa6467c7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:N/I:L/A:N
+    cvss-score: 4.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/real3d-flipbook/"
+    google-query: inurl:"/wp-content/plugins/real3d-flipbook/"
+    shodan-query: 'http.html:"wp-content/plugins/real3d-flipbook/"'
+  tags: cve,wordpress,wp-plugin,real3d-flipbook,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/real3d-flipbook/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "real3d-flipbook"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.9')

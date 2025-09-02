@@ -1,0 +1,59 @@
+id: woocommerce_abandoned_cart-562d0052-7f1a-441b-9ff7-1c8bcb4b74b4
+
+info:
+  name: >
+    Abandoned Cart Lite for WooCommerce <= 5.8.2 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Abandoned Cart Lite for WooCommerce plugin for WordPress is vulnerable to generic SQL Injection via the ‘billing_first_name' parameter in versions up to, and including, 5.8.2 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/562d0052-7f1a-441b-9ff7-1c8bcb4b74b4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-abandoned-cart/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-abandoned-cart/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-abandoned-cart/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-abandoned-cart,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-abandoned-cart/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-abandoned-cart"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.8.2')

@@ -1,0 +1,59 @@
+id: envo_extra-f709fca2-b7b6-4567-8055-1156f510d1ca
+
+info:
+  name: >
+    Envo Extra <= 1.8.3 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Envo Extra plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.8.3. This is due to missing or incorrect nonce validation on the ajax_required_plugins_activate function. This makes it possible for unauthenticated attackers to activate plugins required by Envo Extra via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f709fca2-b7b6-4567-8055-1156f510d1ca?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/envo-extra/"
+    google-query: inurl:"/wp-content/plugins/envo-extra/"
+    shodan-query: 'http.html:"wp-content/plugins/envo-extra/"'
+  tags: cve,wordpress,wp-plugin,envo-extra,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/envo-extra/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "envo-extra"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.8.4')

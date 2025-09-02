@@ -1,0 +1,59 @@
+id: ultimate_product_catalogue-2cff84a4-9264-4789-997b-bc11a8bac449
+
+info:
+  name: >
+    Ultimate Product Catalog <= 3.8.1 - Missing Authorization to Plugin Settings Update
+  author: topscoder
+  severity: low
+  description: >
+    The Ultimate Product Catalog plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the Update_UPCP_Options() function in versions up to, and including, 3.8.1. This makes it possible for authenticated attackers, with contributor-level permissions and above, to edit plugin settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2cff84a4-9264-4789-997b-bc11a8bac449?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ultimate-product-catalogue/"
+    google-query: inurl:"/wp-content/plugins/ultimate-product-catalogue/"
+    shodan-query: 'http.html:"wp-content/plugins/ultimate-product-catalogue/"'
+  tags: cve,wordpress,wp-plugin,ultimate-product-catalogue,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ultimate-product-catalogue/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ultimate-product-catalogue"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.8.2')

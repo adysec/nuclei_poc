@@ -1,0 +1,59 @@
+id: gravity_forms_pdf_extended-b489427e-f925-4058-8924-7a9557fc4ebf
+
+info:
+  name: >
+    Gravity PDF <= 6.3.0 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Gravity PDF plugin for WordPress is vulnerable to Reflected Cross-Site Scripting due to the use of add_query_arg without appropriate escaping on the URL in versions up to, and including, 6.3.0. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b489427e-f925-4058-8924-7a9557fc4ebf?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gravity-forms-pdf-extended/"
+    google-query: inurl:"/wp-content/plugins/gravity-forms-pdf-extended/"
+    shodan-query: 'http.html:"wp-content/plugins/gravity-forms-pdf-extended/"'
+  tags: cve,wordpress,wp-plugin,gravity-forms-pdf-extended,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gravity-forms-pdf-extended/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gravity-forms-pdf-extended"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.3.0')

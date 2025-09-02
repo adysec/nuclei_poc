@@ -1,0 +1,59 @@
+id: spider_facebook-fd15f5c3-f4c3-40d3-b0ae-eee7ed9ed434
+
+info:
+  name: >
+    Spider Facebook <= 1.0.8 - SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Spider Facebook plugin for WordPress is vulnerable to generic SQL Injection via the ‘id’ parameter in versions up to, and including, 1.0.8 due to insufficient escaping on the user-supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fd15f5c3-f4c3-40d3-b0ae-eee7ed9ed434?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/spider-facebook/"
+    google-query: inurl:"/wp-content/plugins/spider-facebook/"
+    shodan-query: 'http.html:"wp-content/plugins/spider-facebook/"'
+  tags: cve,wordpress,wp-plugin,spider-facebook,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/spider-facebook/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "spider-facebook"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.8')

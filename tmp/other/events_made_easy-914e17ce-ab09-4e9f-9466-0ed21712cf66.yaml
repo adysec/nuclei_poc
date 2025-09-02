@@ -1,0 +1,59 @@
+id: events_made_easy-914e17ce-ab09-4e9f-9466-0ed21712cf66
+
+info:
+  name: >
+    Events Made Easy < 1.5.50 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Events Made Easy plugin for WordPress is vulnerable to Cross-Site Request Forgery to Stored Cross-Site Scripting in versions before 1.5.50 due to insufficient input sanitization and output escaping and missing nonce validation. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page if they can successfully trick an admin into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/914e17ce-ab09-4e9f-9466-0ed21712cf66?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/events-made-easy/"
+    google-query: inurl:"/wp-content/plugins/events-made-easy/"
+    shodan-query: 'http.html:"wp-content/plugins/events-made-easy/"'
+  tags: cve,wordpress,wp-plugin,events-made-easy,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/events-made-easy/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "events-made-easy"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.50')

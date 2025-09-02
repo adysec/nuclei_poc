@@ -1,0 +1,59 @@
+id: miniorange_2_factor_authentication-f810326f-f84a-4066-aa28-5caa915ba877
+
+info:
+  name: >
+    miniOrange's Google Authenticator <= 5.4.39 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The miniOrange's Google Authenticator plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘user’ parameter in versions up to, and including, 5.4.39 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f810326f-f84a-4066-aa28-5caa915ba877?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/miniorange-2-factor-authentication/"
+    google-query: inurl:"/wp-content/plugins/miniorange-2-factor-authentication/"
+    shodan-query: 'http.html:"wp-content/plugins/miniorange-2-factor-authentication/"'
+  tags: cve,wordpress,wp-plugin,miniorange-2-factor-authentication,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/miniorange-2-factor-authentication/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "miniorange-2-factor-authentication"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.4.39')

@@ -1,0 +1,59 @@
+id: educare-4ad16964-3d0a-4769-a167-5ec62486bfe9
+
+info:
+  name: >
+    Educare <= 1.4.6 - Missing Authorization to Sensitive Information Exposure
+  author: topscoder
+  severity: low
+  description: >
+    The Educare plugin for WordPress is vulnerable to unauthorized access of data due to a missing capability check on the educare_get_data_from_students function in versions up to, and including, 1.4.6. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to expose potentially sensitive student data.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4ad16964-3d0a-4769-a167-5ec62486bfe9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/educare/"
+    google-query: inurl:"/wp-content/plugins/educare/"
+    shodan-query: 'http.html:"wp-content/plugins/educare/"'
+  tags: cve,wordpress,wp-plugin,educare,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/educare/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "educare"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.7')

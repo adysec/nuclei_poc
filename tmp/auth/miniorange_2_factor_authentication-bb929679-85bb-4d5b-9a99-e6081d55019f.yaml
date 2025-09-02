@@ -1,0 +1,59 @@
+id: miniorange_2_factor_authentication-bb929679-85bb-4d5b-9a99-e6081d55019f
+
+info:
+  name: >
+    miniOrange's Google Authenticator <= 5.5.7 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The miniOrange's Google Authenticator plugin for WordPress is vulnerable to Reflected Cross-Site Scripting due to the use of add_query_arg without appropriate escaping on the URL in versions up to, and including, 5.5.7. This makes it possible for attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bb929679-85bb-4d5b-9a99-e6081d55019f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/miniorange-2-factor-authentication/"
+    google-query: inurl:"/wp-content/plugins/miniorange-2-factor-authentication/"
+    shodan-query: 'http.html:"wp-content/plugins/miniorange-2-factor-authentication/"'
+  tags: cve,wordpress,wp-plugin,miniorange-2-factor-authentication,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/miniorange-2-factor-authentication/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "miniorange-2-factor-authentication"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.5.7')

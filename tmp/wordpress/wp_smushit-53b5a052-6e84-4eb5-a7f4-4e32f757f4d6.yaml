@@ -1,0 +1,59 @@
+id: wp_smushit-53b5a052-6e84-4eb5-a7f4-4e32f757f4d6
+
+info:
+  name: >
+    Smush – Lazy Load Images, Optimize & Compress Images <= 2.9.1 - Cross-Site Scripting
+  author: topscoder
+  severity: critical
+  description: >
+    The Smush – Lazy Load Images, Optimize & Compress Images plugin for WordPress is vulnerable to Cross-Site Scripting leading  in versions up to, and including, 2.9.1 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject malicious web scripts into the application.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/53b5a052-6e84-4eb5-a7f4-4e32f757f4d6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-smushit/"
+    google-query: inurl:"/wp-content/plugins/wp-smushit/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-smushit/"'
+  tags: cve,wordpress,wp-plugin,wp-smushit,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-smushit/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-smushit"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.9.1')

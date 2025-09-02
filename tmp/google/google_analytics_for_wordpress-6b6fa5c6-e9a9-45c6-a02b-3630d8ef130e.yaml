@@ -1,0 +1,59 @@
+id: google_analytics_for_wordpress-6b6fa5c6-e9a9-45c6-a02b-3630d8ef130e
+
+info:
+  name: >
+    MonsterInsights - Google Analytics Dashboard for WordPress <= 5.4.4 - Authenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The MonsterInsights - Google Analytics Dashboard plugin for WordPress is vulnerable to Stored Cross-Site Scripting in versions up to, and including, 5.4.4 due to insufficient privilege handling. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6b6fa5c6-e9a9-45c6-a02b-3630d8ef130e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 3.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/google-analytics-for-wordpress/"
+    google-query: inurl:"/wp-content/plugins/google-analytics-for-wordpress/"
+    shodan-query: 'http.html:"wp-content/plugins/google-analytics-for-wordpress/"'
+  tags: cve,wordpress,wp-plugin,google-analytics-for-wordpress,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/google-analytics-for-wordpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "google-analytics-for-wordpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.4.4')

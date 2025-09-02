@@ -1,0 +1,61 @@
+id: wordpress-0fcdfba2-aa19-4d0c-8880-5ee2c0680555
+
+info:
+  name: >
+    WordPress Core < 6.0.3 - Shared User Instance Weakness
+  author: topscoder
+  severity: low
+  description: >
+    WordPress Core in versions up to 6.0.3 had a weakness in how Share User Instances were handled. This fix appears to have been necessary to safely use the wp_set_current_user( 0 ); method to patch the previously mentioned XSS and CSRF in wp-mail.php and wp-trackback.php vulnerabilities. The previous functionality may have resulted in third party plugins or themes using the wp_set_current_user function in a way that could lead to privilege escalation and users being able to perform more actions than originally intended.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0fcdfba2-aa19-4d0c-8880-5ee2c0680555?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 3.7
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,low,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_js, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_css, '>= 6.0', '<= 6.0.2')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

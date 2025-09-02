@@ -1,0 +1,59 @@
+id: podcasting-13b4efa1-3f52-476c-80fe-b36ccb62a24b
+
+info:
+  name: >
+    Podcasting Plugin by TSG < 3.0.5 - Remote File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The Podcasting Plugin by TSG plugin for WordPress is vulnerable to Remote File Inclusion of media files in versions up to, and including, 3.0.4.1 via the mediaplayer.swf file. This allows unauthenticated attackers to include remote files on the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/13b4efa1-3f52-476c-80fe-b36ccb62a24b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/podcasting/"
+    google-query: inurl:"/wp-content/plugins/podcasting/"
+    shodan-query: 'http.html:"wp-content/plugins/podcasting/"'
+  tags: cve,wordpress,wp-plugin,podcasting,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/podcasting/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "podcasting"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.4.1')

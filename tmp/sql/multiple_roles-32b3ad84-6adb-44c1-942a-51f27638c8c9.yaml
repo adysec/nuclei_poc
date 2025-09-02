@@ -1,0 +1,59 @@
+id: multiple_roles-32b3ad84-6adb-44c1-942a-51f27638c8c9
+
+info:
+  name: >
+    Multiple Roles < 1.3.7 - Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    The Multiple Roles plugin for WordPress is vulnerable to privilege escalation in versions before 1.3.7. This could allow authenticated attackers to escalate their privileges by updating user roles on the site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/32b3ad84-6adb-44c1-942a-51f27638c8c9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/multiple-roles/"
+    google-query: inurl:"/wp-content/plugins/multiple-roles/"
+    shodan-query: 'http.html:"wp-content/plugins/multiple-roles/"'
+  tags: cve,wordpress,wp-plugin,multiple-roles,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/multiple-roles/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "multiple-roles"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.3.7')

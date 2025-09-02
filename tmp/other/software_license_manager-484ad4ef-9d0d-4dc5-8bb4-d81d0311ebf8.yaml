@@ -1,0 +1,59 @@
+id: software_license_manager-484ad4ef-9d0d-4dc5-8bb4-d81d0311ebf8
+
+info:
+  name: >
+    Software License Manager <= 4.5.0 - Cross-Site Request Forgery leading to Arbitrary Domain Deletion
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/484ad4ef-9d0d-4dc5-8bb4-d81d0311ebf8?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/software-license-manager/"
+    google-query: inurl:"/wp-content/plugins/software-license-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/software-license-manager/"'
+  tags: cve,wordpress,wp-plugin,software-license-manager,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/software-license-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "software-license-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.5.1')

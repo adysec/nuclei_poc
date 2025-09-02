@@ -1,0 +1,59 @@
+id: ultimate_member-0ae243af-619f-4405-b1e0-9b44c1869501
+
+info:
+  name: >
+    Ultimate Member < 1.0.84 - Authorization Bypass to Arbitrary File Upload/Delete
+  author: topscoder
+  severity: high
+  description: >
+    The Ultimate Member plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the ultimatemember_remove_file() function in versions up to, and including, 1.0.83. This makes it possible for unauthenticated attackers to delete or upload arbitrary files.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0ae243af-619f-4405-b1e0-9b44c1869501?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ultimate-member/"
+    google-query: inurl:"/wp-content/plugins/ultimate-member/"
+    shodan-query: 'http.html:"wp-content/plugins/ultimate-member/"'
+  tags: cve,wordpress,wp-plugin,ultimate-member,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ultimate-member/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ultimate-member"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.84')

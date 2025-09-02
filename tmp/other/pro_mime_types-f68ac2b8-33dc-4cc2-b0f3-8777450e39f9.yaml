@@ -1,0 +1,59 @@
+id: pro_mime_types-f68ac2b8-33dc-4cc2-b0f3-8777450e39f9
+
+info:
+  name: >
+    Pro Mime Types - Manage file media types <= 1.0.7 - Cross-Site Request Forgery via pmt_settings_section_callback_tab_1
+  author: topscoder
+  severity: medium
+  description: >
+    The Pro Mime Types plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.0.7. This is due to missing or incorrect nonce validation on the pmt_settings_section_callback_tab_1 function. This makes it possible for unauthenticated attackers to modify allowed mime types on the site via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f68ac2b8-33dc-4cc2-b0f3-8777450e39f9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:H/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/pro-mime-types/"
+    google-query: inurl:"/wp-content/plugins/pro-mime-types/"
+    shodan-query: 'http.html:"wp-content/plugins/pro-mime-types/"'
+  tags: cve,wordpress,wp-plugin,pro-mime-types,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/pro-mime-types/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "pro-mime-types"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.0')

@@ -1,0 +1,59 @@
+id: pagelines-2b24693f-6b69-4dfb-a18c-e929db09d020
+
+info:
+  name: >
+    Pagelines Theme < 1.4.6 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Pagelines Theme for WordPress is vulnerable to authorization bypass due to a missing capability check on the pagelines_ajax_save_option_callback function in versions up to, and including, 1.4.5. This makes it possible for unauthenticated attackers to escalate privileges and create administrator accounts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2b24693f-6b69-4dfb-a18c-e929db09d020?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/pagelines/"
+    google-query: inurl:"/wp-content/themes/pagelines/"
+    shodan-query: 'http.html:"wp-content/themes/pagelines/"'
+  tags: cve,wordpress,wp-theme,pagelines,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/pagelines/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "pagelines"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.6')

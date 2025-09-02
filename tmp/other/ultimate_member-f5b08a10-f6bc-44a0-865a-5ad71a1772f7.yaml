@@ -1,0 +1,59 @@
+id: ultimate_member-f5b08a10-f6bc-44a0-865a-5ad71a1772f7
+
+info:
+  name: >
+    Ultimate Member – User Profile, Registration, Login, Member Directory, Content Restriction & Membership Plugin <= 2.6.8 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Ultimate Member plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.6.8. This is due to missing or incorrect nonce validation on the admin_init function. This makes it possible for unauthenticated attackers to invoke select functions using the 'um_admin_do_action__' hook via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f5b08a10-f6bc-44a0-865a-5ad71a1772f7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ultimate-member/"
+    google-query: inurl:"/wp-content/plugins/ultimate-member/"
+    shodan-query: 'http.html:"wp-content/plugins/ultimate-member/"'
+  tags: cve,wordpress,wp-plugin,ultimate-member,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ultimate-member/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ultimate-member"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.6.8')

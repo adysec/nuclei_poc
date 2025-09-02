@@ -1,0 +1,59 @@
+id: just_custom_fields-79899dc1-4953-4f95-95f5-853d24e7b9ab
+
+info:
+  name: >
+    Just Custom Fields <= 3.3.2 - Cross-Site Request Forgery on AJAX Actions
+  author: topscoder
+  severity: medium
+  description: >
+    The Just Custom Fields plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 3.3.2. This is due to missing or incorrect nonce validation on multiple AJAX actions. This makes it possible for unauthenticated attackers to create, modify, and delete custom fields via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/79899dc1-4953-4f95-95f5-853d24e7b9ab?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/just-custom-fields/"
+    google-query: inurl:"/wp-content/plugins/just-custom-fields/"
+    shodan-query: 'http.html:"wp-content/plugins/just-custom-fields/"'
+  tags: cve,wordpress,wp-plugin,just-custom-fields,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/just-custom-fields/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "just-custom-fields"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.3.2')

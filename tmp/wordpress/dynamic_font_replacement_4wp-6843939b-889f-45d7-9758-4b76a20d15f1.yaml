@@ -1,0 +1,59 @@
+id: dynamic_font_replacement_4wp-6843939b-889f-45d7-9758-4b76a20d15f1
+
+info:
+  name: >
+    Dynamic Font Replacement DFR4WP EN  <= 1.3 EN - Arbitrary File Deletion
+  author: topscoder
+  severity: critical
+  description: >
+    The Dynamic Font Replacement DFR4WP EN plugin for WordPress is vulnerable to arbitrary file deletion in versions up to , and including 1.3 EN due to insufficient file path validation in the ~/admin/filedelete.php file that can be directly accessed by unauthenticated users. This makes it possible for unauthenticated attackers to delete arbitrary files from the filesystem, including the wp-config.php file that makes it possible for attackers to achieve remote code execution once deleted.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6843939b-889f-45d7-9758-4b76a20d15f1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dynamic-font-replacement-4wp/"
+    google-query: inurl:"/wp-content/plugins/dynamic-font-replacement-4wp/"
+    shodan-query: 'http.html:"wp-content/plugins/dynamic-font-replacement-4wp/"'
+  tags: cve,wordpress,wp-plugin,dynamic-font-replacement-4wp,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dynamic-font-replacement-4wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dynamic-font-replacement-4wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3 EN')

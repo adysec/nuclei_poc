@@ -1,0 +1,59 @@
+id: wordpress_https-49e4dc41-dd5a-4689-9818-e742d1def2f0
+
+info:
+  name: >
+    WordPress HTTPS (SSL) <= 3.4.0 - Missing Authorization to Settings Change
+  author: topscoder
+  severity: low
+  description: >
+    The WordPress HTTPS (SSL) plugin is vulnerable to authenticated settings change in versions up to, and including, 3.4.0 due to using a nonce check in place of a capability check. This allows authenticated users with contributor permissions and above to modify the plugin settings, which can be used to configure the site such that it is not accessible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/49e4dc41-dd5a-4689-9818-e742d1def2f0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wordpress-https/"
+    google-query: inurl:"/wp-content/plugins/wordpress-https/"
+    shodan-query: 'http.html:"wp-content/plugins/wordpress-https/"'
+  tags: cve,wordpress,wp-plugin,wordpress-https,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordpress-https/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordpress-https"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.4.0')

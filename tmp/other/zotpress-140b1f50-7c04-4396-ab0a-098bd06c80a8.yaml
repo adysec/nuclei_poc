@@ -1,0 +1,59 @@
+id: zotpress-140b1f50-7c04-4396-ab0a-098bd06c80a8
+
+info:
+  name: >
+    Zotpress <= 7.3.4 - Reflected Cross-Site Scripting via 'PHP_SELF'
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/140b1f50-7c04-4396-ab0a-098bd06c80a8?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/zotpress/"
+    google-query: inurl:"/wp-content/plugins/zotpress/"
+    shodan-query: 'http.html:"wp-content/plugins/zotpress/"'
+  tags: cve,wordpress,wp-plugin,zotpress,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/zotpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "zotpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.3.4')

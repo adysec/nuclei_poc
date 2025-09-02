@@ -1,0 +1,59 @@
+id: mistape-76e41376-3db0-481b-9f86-bb77b00882e0
+
+info:
+  name: >
+    Mistape 1.4.0 - Backdoor
+  author: topscoder
+  severity: critical
+  description: >
+    The Mistape plugin for WordPress is vulnerable to a developer-created backdoor in version 1.4.0. The backdoor is present in the report_stats() function, when the 'cmb' parameter is set to 'user', the plugin then looks for the first administrative user in the database and logs the person making the request in as that user.  This makes it possible for an attacker to log in as an administrator without knowing information about users on the site. In addition, the function also makes Remote Code Execution possible, if the attacker has the ability to upload files to the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/76e41376-3db0-481b-9f86-bb77b00882e0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mistape/"
+    google-query: inurl:"/wp-content/plugins/mistape/"
+    shodan-query: 'http.html:"wp-content/plugins/mistape/"'
+  tags: cve,wordpress,wp-plugin,mistape,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mistape/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mistape"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '1.4.0')

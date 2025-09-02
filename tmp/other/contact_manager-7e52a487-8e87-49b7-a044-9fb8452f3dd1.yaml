@@ -1,0 +1,59 @@
+id: contact_manager-7e52a487-8e87-49b7-a044-9fb8452f3dd1
+
+info:
+  name: >
+    Contact Manager <= 8.6.5 - Authenticated (Administrator+) Stored Cross-Site Scripting via 'title'
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7e52a487-8e87-49b7-a044-9fb8452f3dd1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/contact-manager/"
+    google-query: inurl:"/wp-content/plugins/contact-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/contact-manager/"'
+  tags: cve,wordpress,wp-plugin,contact-manager,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/contact-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "contact-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 8.6.5')

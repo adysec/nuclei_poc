@@ -1,0 +1,59 @@
+id: thisway-ac1f9d9c-4d4e-4036-95b1-50d09b5cac7c
+
+info:
+  name: >
+    ThisWay <= 1.7.0 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The ThisWay Theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the upload_settings_image.php file in versions up to, and including, 1.7.0. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ac1f9d9c-4d4e-4036-95b1-50d09b5cac7c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/thisway/"
+    google-query: inurl:"/wp-content/themes/thisway/"
+    shodan-query: 'http.html:"wp-content/themes/thisway/"'
+  tags: cve,wordpress,wp-theme,thisway,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/thisway/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "thisway"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7.0')

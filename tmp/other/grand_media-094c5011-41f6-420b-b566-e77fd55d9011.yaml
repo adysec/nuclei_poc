@@ -1,0 +1,59 @@
+id: grand_media-094c5011-41f6-420b-b566-e77fd55d9011
+
+info:
+  name: >
+    Gmedia Photo Gallery < 1.2.2 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Gmedia Photo Gallery plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the addmedia.php file in versions before 1.2.2. This makes it possible for attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/094c5011-41f6-420b-b566-e77fd55d9011?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/grand-media/"
+    google-query: inurl:"/wp-content/plugins/grand-media/"
+    shodan-query: 'http.html:"wp-content/plugins/grand-media/"'
+  tags: cve,wordpress,wp-plugin,grand-media,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/grand-media/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "grand-media"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.2')

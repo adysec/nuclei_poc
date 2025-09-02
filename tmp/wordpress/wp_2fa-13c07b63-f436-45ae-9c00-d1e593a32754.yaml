@@ -1,0 +1,59 @@
+id: wp_2fa-13c07b63-f436-45ae-9c00-d1e593a32754
+
+info:
+  name: >
+    WP 2FA – Two-factor authentication for WordPress <= 2.1.0 - Insecure Direct Object Reference
+  author: topscoder
+  severity: medium
+  description: >
+    The WP 2FA – Two-factor authentication for WordPress plugin for WordPress make it possible for attackers to disable other user's 2FA settings in versions up to, and including, 2.1.0.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/13c07b63-f436-45ae-9c00-d1e593a32754?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-2fa/"
+    google-query: inurl:"/wp-content/plugins/wp-2fa/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-2fa/"'
+  tags: cve,wordpress,wp-plugin,wp-2fa,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-2fa/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-2fa"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.0')

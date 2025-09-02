@@ -1,0 +1,59 @@
+id: woocommerce_checkout_field_editor-ad430706-749f-4582-af07-6c543b8d5aad
+
+info:
+  name: >
+    Checkout Field Editor <= 1.7.4 - Cross-Site Request Forgery to Checkout Fields Update
+  author: topscoder
+  severity: medium
+  description: >
+    The Checkout Field Editor plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.7.4. This is due to missing nonce validation when updating checkout fields. This makes it possible for unauthenticated attackers to update checkout fields via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ad430706-749f-4582-af07-6c543b8d5aad?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-checkout-field-editor/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-checkout-field-editor/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-checkout-field-editor/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-checkout-field-editor,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-checkout-field-editor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-checkout-field-editor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7.4')

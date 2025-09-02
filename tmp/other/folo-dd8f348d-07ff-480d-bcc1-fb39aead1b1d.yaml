@@ -1,0 +1,59 @@
+id: folo-dd8f348d-07ff-480d-bcc1-fb39aead1b1d
+
+info:
+  name: >
+    Folo (Unknown Versions) - Cross Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Folo theme for WordPress is vulnerable to Cross-Site Scripting vai the 'jplayer.swf' file due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dd8f348d-07ff-480d-bcc1-fb39aead1b1d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/folo/"
+    google-query: inurl:"/wp-content/themes/folo/"
+    shodan-query: 'http.html:"wp-content/themes/folo/"'
+  tags: cve,wordpress,wp-theme,folo,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/folo/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "folo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

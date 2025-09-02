@@ -1,0 +1,59 @@
+id: welcome_email_editor-1b9ed184-814d-46cb-979c-908bc9359fae
+
+info:
+  name: >
+    Swift SMTP <= 5.0.6 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Swift SMTP (formerly Welcome Email Editor) plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 5.0.6. This is due to missing or incorrect nonce validation on the ajax_handler() function. This makes it possible for unauthenticated attackers to send emails via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1b9ed184-814d-46cb-979c-908bc9359fae?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/welcome-email-editor/"
+    google-query: inurl:"/wp-content/plugins/welcome-email-editor/"
+    shodan-query: 'http.html:"wp-content/plugins/welcome-email-editor/"'
+  tags: cve,wordpress,wp-plugin,welcome-email-editor,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/welcome-email-editor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "welcome-email-editor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.0.6')

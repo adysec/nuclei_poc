@@ -1,0 +1,59 @@
+id: quotes_for_woocommerce-6954364e-567c-407c-afc6-983b7257cc88
+
+info:
+  name: >
+    Quotes for WooCommerce <= 2.0.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Quotes for WooCommerce plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 2.0.1. This is due to missing nonce validation on the qwc_update_status() and qwc_send_quote() functions hooked via AJAX. This makes it possible for unauthenticated attackers to to modify quote status and send quotes via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6954364e-567c-407c-afc6-983b7257cc88?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/quotes-for-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/quotes-for-woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/quotes-for-woocommerce/"'
+  tags: cve,wordpress,wp-plugin,quotes-for-woocommerce,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/quotes-for-woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "quotes-for-woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.1')

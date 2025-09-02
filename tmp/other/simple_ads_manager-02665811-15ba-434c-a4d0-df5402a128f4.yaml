@@ -1,0 +1,59 @@
+id: simple_ads_manager-02665811-15ba-434c-a4d0-df5402a128f4
+
+info:
+  name: >
+    Simple Ads Manager <= 2.9.8.125 - Unauthenticated PHP Objection Injection
+  author: topscoder
+  severity: high
+  description: >
+    The Simple Ads Manager plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 2.9.8.125 via deserialization of untrusted input in the vulnerable function 'unserialize'. This allows unauthenticated attackers to inject a PHP Object. No POP chain is present in the vulnerable plugin. If a POP chain is present via an additional plugin or theme installed on the target system, it could allow the attacker to delete arbitrary files, retrieve sensitive data, or execute code.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/02665811-15ba-434c-a4d0-df5402a128f4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-ads-manager/"
+    google-query: inurl:"/wp-content/plugins/simple-ads-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-ads-manager/"'
+  tags: cve,wordpress,wp-plugin,simple-ads-manager,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-ads-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-ads-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.10.0.130')

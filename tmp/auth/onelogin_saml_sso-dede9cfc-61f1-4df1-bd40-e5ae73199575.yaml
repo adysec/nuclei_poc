@@ -1,0 +1,59 @@
+id: onelogin_saml_sso-dede9cfc-61f1-4df1-bd40-e5ae73199575
+
+info:
+  name: >
+    OneLogin SAML SSO <= 3.1.2 - Open Redirection
+  author: topscoder
+  severity: medium
+  description: >
+    The OneLogin SAML SSO plugin for WordPress is vulnerable to open redirection in versions up to, and including, 3.1.2.  This makes it possible for unauthorized attackers to redirect traffic to potentially malicious websites.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dede9cfc-61f1-4df1-bd40-e5ae73199575?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:N/I:L/A:N
+    cvss-score: 4.7
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/onelogin-saml-sso/"
+    google-query: inurl:"/wp-content/plugins/onelogin-saml-sso/"
+    shodan-query: 'http.html:"wp-content/plugins/onelogin-saml-sso/"'
+  tags: cve,wordpress,wp-plugin,onelogin-saml-sso,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/onelogin-saml-sso/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "onelogin-saml-sso"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1.2')

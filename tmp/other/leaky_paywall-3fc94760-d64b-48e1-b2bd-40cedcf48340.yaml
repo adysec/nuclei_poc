@@ -1,0 +1,59 @@
+id: leaky_paywall-3fc94760-d64b-48e1-b2bd-40cedcf48340
+
+info:
+  name: >
+    Leaky Paywall <= 4.21.2 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3fc94760-d64b-48e1-b2bd-40cedcf48340?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/leaky-paywall/"
+    google-query: inurl:"/wp-content/plugins/leaky-paywall/"
+    shodan-query: 'http.html:"wp-content/plugins/leaky-paywall/"'
+  tags: cve,wordpress,wp-plugin,leaky-paywall,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/leaky-paywall/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "leaky-paywall"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.21.2')

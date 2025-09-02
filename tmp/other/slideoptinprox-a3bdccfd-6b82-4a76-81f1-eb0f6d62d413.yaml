@@ -1,0 +1,59 @@
+id: slideoptinprox-a3bdccfd-6b82-4a76-81f1-eb0f6d62d413
+
+info:
+  name: >
+    Slideoptinprox (Unspecified Version) - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Slideoptinprox plugin for WordPress is vulnerable to Cross-Site Scripting via the 'id' parameter in the 'ar_submit.php' file due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a3bdccfd-6b82-4a76-81f1-eb0f6d62d413?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/slideoptinprox/"
+    google-query: inurl:"/wp-content/plugins/slideoptinprox/"
+    shodan-query: 'http.html:"wp-content/plugins/slideoptinprox/"'
+  tags: cve,wordpress,wp-plugin,slideoptinprox,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/slideoptinprox/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "slideoptinprox"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

@@ -1,0 +1,59 @@
+id: wp_rokintroscroller-5900d571-dc97-4c81-8ff3-7d7350b4c89f
+
+info:
+  name: >
+    RokIntroScroller <= 1.8 - Full Path Disclosure
+  author: topscoder
+  severity: high
+  description: >
+    The RokIntroScroller plugin for WordPress is vulnerable to Full Path Disclosure via the 'src' parameter in the 'thumb.php' file in versions up to, and including, 1.8. This makes it possible for unauthenticated attackers to read the full path to an arbitrary file within the vulnerable service, the information gathered can potentially be used for subsequent attacks.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5900d571-dc97-4c81-8ff3-7d7350b4c89f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp_rokintroscroller/"
+    google-query: inurl:"/wp-content/plugins/wp_rokintroscroller/"
+    shodan-query: 'http.html:"wp-content/plugins/wp_rokintroscroller/"'
+  tags: cve,wordpress,wp-plugin,wp_rokintroscroller,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp_rokintroscroller/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp_rokintroscroller"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8')

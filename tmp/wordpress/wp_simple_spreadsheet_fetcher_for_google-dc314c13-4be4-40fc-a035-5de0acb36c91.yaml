@@ -1,0 +1,59 @@
+id: wp_simple_spreadsheet_fetcher_for_google-dc314c13-4be4-40fc-a035-5de0acb36c91
+
+info:
+  name: >
+    WP Simple Spreadsheet Fetcher for Google < 0.3.7 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Simple Spreadsheet Fetcher for Google plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions before 0.3.7. This is due to missing or incorrect nonce validation on the render_settings function. This makes it possible for unauthenticated attackers to arbitrarily change plugin settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dc314c13-4be4-40fc-a035-5de0acb36c91?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-simple-spreadsheet-fetcher-for-google/"
+    google-query: inurl:"/wp-content/plugins/wp-simple-spreadsheet-fetcher-for-google/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-simple-spreadsheet-fetcher-for-google/"'
+  tags: cve,wordpress,wp-plugin,wp-simple-spreadsheet-fetcher-for-google,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-simple-spreadsheet-fetcher-for-google/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-simple-spreadsheet-fetcher-for-google"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.3.7')

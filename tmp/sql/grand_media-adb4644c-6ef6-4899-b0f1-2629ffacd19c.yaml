@@ -1,0 +1,59 @@
+id: grand_media-adb4644c-6ef6-4899-b0f1-2629ffacd19c
+
+info:
+  name: >
+    Gmedia Photo Gallery <= 1.6.4 - Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The Gmedia Photo Gallery plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 1.6.4. This makes it possible for unauthenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included. This is only exploitable if ALLOW_NO_EXT == true.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/adb4644c-6ef6-4899-b0f1-2629ffacd19c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/grand-media/"
+    google-query: inurl:"/wp-content/plugins/grand-media/"
+    shodan-query: 'http.html:"wp-content/plugins/grand-media/"'
+  tags: cve,wordpress,wp-plugin,grand-media,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/grand-media/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "grand-media"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.6.5')

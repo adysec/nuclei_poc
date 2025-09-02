@@ -1,0 +1,59 @@
+id: duplicate_page_and_post-113554f9-b8f0-4bdd-be90-0093fb520022
+
+info:
+  name: >
+    Duplicate Page and Post <= 2.1.1 - Malicious Backdoor
+  author: topscoder
+  severity: critical
+  description: >
+    The Duplicate Page and Post plugin for WordPress is vulnerable to a developer-created backdoor in versions up to, and including, 2.1.1. This makes it possible for the developer to inject content to normal site visitors, web crawlers, or the site administrators.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/113554f9-b8f0-4bdd-be90-0093fb520022?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/duplicate-page-and-post/"
+    google-query: inurl:"/wp-content/plugins/duplicate-page-and-post/"
+    shodan-query: 'http.html:"wp-content/plugins/duplicate-page-and-post/"'
+  tags: cve,wordpress,wp-plugin,duplicate-page-and-post,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/duplicate-page-and-post/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "duplicate-page-and-post"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.1')

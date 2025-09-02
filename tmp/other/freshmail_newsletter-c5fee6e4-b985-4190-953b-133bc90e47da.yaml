@@ -1,0 +1,59 @@
+id: freshmail_newsletter-c5fee6e4-b985-4190-953b-133bc90e47da
+
+info:
+  name: >
+    Freshmail <= 1.5.8 - Multiple SQL Injections
+  author: topscoder
+  severity: critical
+  description: >
+    The Freshmail plugin for WordPress is vulnerable to Multiple SQL Injections via the 'include/wp_ajax_fm_form.php' and 'include/wp_ajax_fm_form.php' in versions up to, and including, 1.5.8 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c5fee6e4-b985-4190-953b-133bc90e47da?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/freshmail-newsletter/"
+    google-query: inurl:"/wp-content/plugins/freshmail-newsletter/"
+    shodan-query: 'http.html:"wp-content/plugins/freshmail-newsletter/"'
+  tags: cve,wordpress,wp-plugin,freshmail-newsletter,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/freshmail-newsletter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "freshmail-newsletter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.8')

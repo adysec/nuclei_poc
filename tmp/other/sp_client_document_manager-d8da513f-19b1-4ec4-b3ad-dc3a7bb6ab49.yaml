@@ -1,0 +1,59 @@
+id: sp_client_document_manager-d8da513f-19b1-4ec4-b3ad-dc3a7bb6ab49
+
+info:
+  name: >
+    SP Projects & Document Manager <= 2.5.9.5 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The SP Projects & Document Manager plugin for WordPress is vulnerable to generic SQL Injection in versions up to, and including, 2.5.9.5 due to insufficient escaping on several user-supplied parameters and lack of sufficient preparation on existing SQL queries. This makes it possible for attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d8da513f-19b1-4ec4-b3ad-dc3a7bb6ab49?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sp-client-document-manager/"
+    google-query: inurl:"/wp-content/plugins/sp-client-document-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/sp-client-document-manager/"'
+  tags: cve,wordpress,wp-plugin,sp-client-document-manager,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sp-client-document-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sp-client-document-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5.9.5')

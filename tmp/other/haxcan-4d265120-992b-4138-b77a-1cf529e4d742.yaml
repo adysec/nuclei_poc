@@ -1,0 +1,59 @@
+id: haxcan-4d265120-992b-4138-b77a-1cf529e4d742
+
+info:
+  name: >
+    Haxcan <= 1.0.0 - Authenticated (Admin+) Path Traversal to Arbitrary File Read
+  author: topscoder
+  severity: low
+  description: >
+    The Haxcan plugin for WordPress is vulnerable to Path Traversal in versions up to, and including, 1.0.0 via improper limitation boundaries. This allows high-level authenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4d265120-992b-4138-b77a-1cf529e4d742?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 4.9
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/haxcan/"
+    google-query: inurl:"/wp-content/plugins/haxcan/"
+    shodan-query: 'http.html:"wp-content/plugins/haxcan/"'
+  tags: cve,wordpress,wp-plugin,haxcan,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/haxcan/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "haxcan"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.0')

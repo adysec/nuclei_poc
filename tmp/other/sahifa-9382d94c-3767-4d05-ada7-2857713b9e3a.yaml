@@ -1,0 +1,59 @@
+id: sahifa-9382d94c-3767-4d05-ada7-2857713b9e3a
+
+info:
+  name: >
+    Sahifa <= 2.4.0 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Sahifa theme for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.4.0. This is due to missing or incorrect nonce validation in the 'mpanel-functions.php' file. This makes it possible for unauthenticated attackers to gain otherwise restricted access to administrative actions via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9382d94c-3767-4d05-ada7-2857713b9e3a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/sahifa/"
+    google-query: inurl:"/wp-content/themes/sahifa/"
+    shodan-query: 'http.html:"wp-content/themes/sahifa/"'
+  tags: cve,wordpress,wp-theme,sahifa,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/sahifa/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sahifa"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.4.0')

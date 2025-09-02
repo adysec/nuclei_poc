@@ -1,0 +1,59 @@
+id: gotmls-d76229c9-39e6-48ab-b038-be40b36aa7bd
+
+info:
+  name: >
+    Anti-Malware Security and Brute-Force Firewall <= 4.15.17 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Anti-Malware Security and Brute-Force Firewall plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 4.15.17 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d76229c9-39e6-48ab-b038-be40b36aa7bd?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gotmls/"
+    google-query: inurl:"/wp-content/plugins/gotmls/"
+    shodan-query: 'http.html:"wp-content/plugins/gotmls/"'
+  tags: cve,wordpress,wp-plugin,gotmls,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gotmls/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gotmls"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.15.17')

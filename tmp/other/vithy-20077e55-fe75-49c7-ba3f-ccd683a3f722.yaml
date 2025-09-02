@@ -1,0 +1,59 @@
+id: vithy-20077e55-fe75-49c7-ba3f-ccd683a3f722
+
+info:
+  name: >
+    Vithy (All Versions) - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Vithy theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the uploadify.php file in all known versions. This makes it possible for attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/20077e55-fe75-49c7-ba3f-ccd683a3f722?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/vithy/"
+    google-query: inurl:"/wp-content/themes/vithy/"
+    shodan-query: 'http.html:"wp-content/themes/vithy/"'
+  tags: cve,wordpress,wp-theme,vithy,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/vithy/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "vithy"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

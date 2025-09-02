@@ -1,0 +1,59 @@
+id: nextgen_gallery-47fb0513-bebe-4e09-9402-d7e174ee92ce
+
+info:
+  name: >
+    NextGen Gallery <= 2.0.65 - Arbitrary File Upload
+  author: topscoder
+  severity: low
+  description: >
+    The NextGen Gallery plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the is_image_file function in versions up to, and including, 2.0.65. This makes it possible for authenticated attackers with upload privileges to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/47fb0513-bebe-4e09-9402-d7e174ee92ce?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/nextgen-gallery/"
+    google-query: inurl:"/wp-content/plugins/nextgen-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/nextgen-gallery/"'
+  tags: cve,wordpress,wp-plugin,nextgen-gallery,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/nextgen-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "nextgen-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.65')

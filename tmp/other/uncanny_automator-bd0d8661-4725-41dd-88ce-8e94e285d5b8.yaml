@@ -1,0 +1,59 @@
+id: uncanny_automator-bd0d8661-4725-41dd-88ce-8e94e285d5b8
+
+info:
+  name: >
+    Uncanny Automator <= 4.14 - Cross-Site Request Forgery via update_automator_connect
+  author: topscoder
+  severity: medium
+  description: >
+    The Uncanny Automator plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 4.14. This is due to missing or incorrect nonce validation on the update_automator_connect function. This makes it possible for unauthenticated attackers to perform certain tasks in the setup wizard via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bd0d8661-4725-41dd-88ce-8e94e285d5b8?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:L
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/uncanny-automator/"
+    google-query: inurl:"/wp-content/plugins/uncanny-automator/"
+    shodan-query: 'http.html:"wp-content/plugins/uncanny-automator/"'
+  tags: cve,wordpress,wp-plugin,uncanny-automator,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/uncanny-automator/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "uncanny-automator"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.15')

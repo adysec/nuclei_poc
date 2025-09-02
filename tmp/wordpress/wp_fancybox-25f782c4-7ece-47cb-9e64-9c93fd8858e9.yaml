@@ -1,0 +1,59 @@
+id: wp_fancybox-25f782c4-7ece-47cb-9e64-9c93fd8858e9
+
+info:
+  name: >
+    WordPress fancybox <= 1.0.2 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The WordPress fancybox plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘hyperlink’ parameter in versions up to, and including, 1.0.2 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/25f782c4-7ece-47cb-9e64-9c93fd8858e9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-fancybox/"
+    google-query: inurl:"/wp-content/plugins/wp-fancybox/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-fancybox/"'
+  tags: cve,wordpress,wp-plugin,wp-fancybox,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-fancybox/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-fancybox"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.2')

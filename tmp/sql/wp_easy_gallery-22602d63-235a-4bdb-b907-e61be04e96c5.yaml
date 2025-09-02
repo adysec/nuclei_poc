@@ -1,0 +1,59 @@
+id: wp_easy_gallery-22602d63-235a-4bdb-b907-e61be04e96c5
+
+info:
+  name: >
+    WP Easy Gallery <= 1.7 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The WP Easy Gallery plugin for WordPress is vulnerable to Cross-Site Scripting via the 'select_gallery' and 'galleryId' parameters in versions up to, and including, 1.7 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/22602d63-235a-4bdb-b907-e61be04e96c5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-easy-gallery/"
+    google-query: inurl:"/wp-content/plugins/wp-easy-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-easy-gallery/"'
+  tags: cve,wordpress,wp-plugin,wp-easy-gallery,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-easy-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-easy-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7')

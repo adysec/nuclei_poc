@@ -1,0 +1,59 @@
+id: make_a_statement-3ebc324a-4858-4502-b962-a4e26ca7445e
+
+info:
+  name: >
+    Make A Statement (All Versions) - Arbitrary File Upload
+  author: topscoder
+  severity: high
+  description: >
+    The Make A Statement theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'upload-handler.php' file in all known versions. This makes it possible for attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3ebc324a-4858-4502-b962-a4e26ca7445e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/make_a_statement/"
+    google-query: inurl:"/wp-content/themes/make_a_statement/"
+    shodan-query: 'http.html:"wp-content/themes/make_a_statement/"'
+  tags: cve,wordpress,wp-theme,make_a_statement,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/make_a_statement/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "make_a_statement"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

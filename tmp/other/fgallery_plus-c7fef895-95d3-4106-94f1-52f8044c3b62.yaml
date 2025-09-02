@@ -1,0 +1,59 @@
+id: fgallery_plus-c7fef895-95d3-4106-94f1-52f8044c3b62
+
+info:
+  name: >
+    FGallery Plus (All Versions) - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The fgallery_plus plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘album’ parameter in versions up to, and including, 1.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c7fef895-95d3-4106-94f1-52f8044c3b62?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fgallery_plus/"
+    google-query: inurl:"/wp-content/plugins/fgallery_plus/"
+    shodan-query: 'http.html:"wp-content/plugins/fgallery_plus/"'
+  tags: cve,wordpress,wp-plugin,fgallery_plus,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fgallery_plus/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fgallery_plus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

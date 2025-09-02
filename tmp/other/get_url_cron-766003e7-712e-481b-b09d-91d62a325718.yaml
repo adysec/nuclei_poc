@@ -1,0 +1,59 @@
+id: get_url_cron-766003e7-712e-481b-b09d-91d62a325718
+
+info:
+  name: >
+    Get URL Cron <= 1.4.7 - Missing Authorization via geturlcron_action_handle
+  author: topscoder
+  severity: high
+  description: >
+    The Get URL Cron plugin for WordPress is vulnerable to unauthorized modification of data in versions up to, and including, 1.4.7. This is due to a missing capability check on the geturlcron_action_handle function called via an init hook. This makes it possible for unauthenticated attackers to modify many of the plugin's settings, retrieve cron jobs, and create cron jobs.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/766003e7-712e-481b-b09d-91d62a325718?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/get-url-cron/"
+    google-query: inurl:"/wp-content/plugins/get-url-cron/"
+    shodan-query: 'http.html:"wp-content/plugins/get-url-cron/"'
+  tags: cve,wordpress,wp-plugin,get-url-cron,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/get-url-cron/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "get-url-cron"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.7')

@@ -1,0 +1,59 @@
+id: woocommerce_products_quick_view-39c9f055-2527-4678-bda1-27a29ab24acd
+
+info:
+  name: >
+    Products Quick View for WooCommerce <= 2.2.0 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Products Quick View for WooCommerce plugin for WordPress is vulnerable to unauthorized access of data due to a missing capability check on the quick_view_prettyphoto_custom_template_load() and quick_view_custom_template_load() functions called via AJAX actions in versions up to, and including, 2.2.0. This makes it possible for authenticated attackers, with subscriber-level access and above, to load templates and view products.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/39c9f055-2527-4678-bda1-27a29ab24acd?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-products-quick-view/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-products-quick-view/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-products-quick-view/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-products-quick-view,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-products-quick-view/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-products-quick-view"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.3.0')

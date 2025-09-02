@@ -1,0 +1,59 @@
+id: gift_up-95abec2d-a03a-4b07-8890-18568650c41f
+
+info:
+  name: >
+    Gift Up 2.21.3 - Cross-Site Request Forgery via consume_post
+  author: topscoder
+  severity: medium
+  description: >
+    The Gift Up Gift Cards for WordPress and WooCommerce plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 2.21.3. This is due to missing or incorrect nonce validation on the consume_post function. This makes it possible for unauthenticated attackers to set the plugin's API key and update other plugin settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/95abec2d-a03a-4b07-8890-18568650c41f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gift-up/"
+    google-query: inurl:"/wp-content/plugins/gift-up/"
+    shodan-query: 'http.html:"wp-content/plugins/gift-up/"'
+  tags: cve,wordpress,wp-plugin,gift-up,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gift-up/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gift-up"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.21.3')

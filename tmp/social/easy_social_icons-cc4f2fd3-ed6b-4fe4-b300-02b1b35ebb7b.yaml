@@ -1,0 +1,59 @@
+id: easy_social_icons-cc4f2fd3-ed6b-4fe4-b300-02b1b35ebb7b
+
+info:
+  name: >
+    Easy Social Icons <= 3.2.0 - Authenticated (Admin+) Cross-Site Scripting and Missing Authorization Checks
+  author: topscoder
+  severity: low
+  description: >
+    The Easy Social Icons plugin for WordPress is vulnerable to Admin+ cross-site scripting and unauthenticated icon deletion in versions up to and including 3.2.0.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cc4f2fd3-ed6b-4fe4-b300-02b1b35ebb7b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/easy-social-icons/"
+    google-query: inurl:"/wp-content/plugins/easy-social-icons/"
+    shodan-query: 'http.html:"wp-content/plugins/easy-social-icons/"'
+  tags: cve,wordpress,wp-plugin,easy-social-icons,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/easy-social-icons/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "easy-social-icons"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.0')

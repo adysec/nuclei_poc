@@ -1,0 +1,59 @@
+id: download_monitor-4f7fa5a4-07d7-4815-b393-871568777b0f
+
+info:
+  name: >
+    Download Monitor <= 4.7.2 - Authenticated Directory Traversal to Sensitive Information Exposure
+  author: topscoder
+  severity: low
+  description: >
+    The Download Monitor plugin for WordPress is vulnerable to Directory Traversal in versions up to, and including, 4.7.2 via the list_files function. This allows users with manage_downloads permissions to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4f7fa5a4-07d7-4815-b393-871568777b0f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 4.9
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/download-monitor/"
+    google-query: inurl:"/wp-content/plugins/download-monitor/"
+    shodan-query: 'http.html:"wp-content/plugins/download-monitor/"'
+  tags: cve,wordpress,wp-plugin,download-monitor,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-monitor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-monitor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.7.2')

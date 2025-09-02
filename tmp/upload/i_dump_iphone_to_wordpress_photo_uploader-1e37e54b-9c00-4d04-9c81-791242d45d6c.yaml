@@ -1,0 +1,59 @@
+id: i_dump_iphone_to_wordpress_photo_uploader-1e37e54b-9c00-4d04-9c81-791242d45d6c
+
+info:
+  name: >
+    iDump iPhone to WordPress Photo Uploader <= 1.8 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The iDump iPhone to WordPress Photo Uploader for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the uploader.php file in versions up to, and including, 1.8. This makes it possible for attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1e37e54b-9c00-4d04-9c81-791242d45d6c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/i-dump-iphone-to-wordpress-photo-uploader/"
+    google-query: inurl:"/wp-content/plugins/i-dump-iphone-to-wordpress-photo-uploader/"
+    shodan-query: 'http.html:"wp-content/plugins/i-dump-iphone-to-wordpress-photo-uploader/"'
+  tags: cve,wordpress,wp-plugin,i-dump-iphone-to-wordpress-photo-uploader,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/i-dump-iphone-to-wordpress-photo-uploader/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "i-dump-iphone-to-wordpress-photo-uploader"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8')

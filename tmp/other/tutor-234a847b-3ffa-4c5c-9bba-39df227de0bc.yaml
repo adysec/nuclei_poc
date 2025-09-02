@@ -1,0 +1,59 @@
+id: tutor-234a847b-3ffa-4c5c-9bba-39df227de0bc
+
+info:
+  name: >
+    Tutor LMS <= 1.9.12 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Tutor LMS plugin for WordPress is vulnerable to reflected Cross-Site Scripting in versions up to, and including 1.9.12 due to missing input and output sanitization of some user generated URLs.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/234a847b-3ffa-4c5c-9bba-39df227de0bc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/tutor/"
+    google-query: inurl:"/wp-content/plugins/tutor/"
+    shodan-query: 'http.html:"wp-content/plugins/tutor/"'
+  tags: cve,wordpress,wp-plugin,tutor,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/tutor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "tutor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.12')

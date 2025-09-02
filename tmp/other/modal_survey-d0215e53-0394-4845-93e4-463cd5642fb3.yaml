@@ -1,0 +1,59 @@
+id: modal_survey-d0215e53-0394-4845-93e4-463cd5642fb3
+
+info:
+  name: >
+    Modal Survey < 2.0.1.8.2 - Authorization Bypass
+  author: topscoder
+  severity: high
+  description: >
+    The Modal Survey Plugin for WordPress is vulnerable to Arbitrary Survey Update, Deletion and Creation in versions before 2.0.1.8.2 via the 'ajax_survey' AJAX action due to lacking capability checks. This allows unauthenticated attackers to create, update, or delete arbitrary surveys.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d0215e53-0394-4845-93e4-463cd5642fb3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/modal_survey/"
+    google-query: inurl:"/wp-content/plugins/modal_survey/"
+    shodan-query: 'http.html:"wp-content/plugins/modal_survey/"'
+  tags: cve,wordpress,wp-plugin,modal_survey,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/modal_survey/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "modal_survey"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.1.8.2')

@@ -1,0 +1,59 @@
+id: push_notification_for_post_and_buddypress-228a3c72-fbb0-48bc-8066-6ca954a14421
+
+info:
+  name: >
+    Push Notification for Post and BuddyPress <= 1.63 - Missing Authorization to Unauthenticated Admin Notice Dismissal
+  author: topscoder
+  severity: high
+  description: >
+    The Push Notification for Post and BuddyPress plugin for WordPress is vulnerable to unauthorized modification of data due to a missing capability check on the PNFPB_icpushadmincallback_callback function hooked via a nopriv AJAX action in versions up to, and including, 1.63. This makes it possible for unauthenticated attackers to dismiss admin notices.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/228a3c72-fbb0-48bc-8066-6ca954a14421?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/push-notification-for-post-and-buddypress/"
+    google-query: inurl:"/wp-content/plugins/push-notification-for-post-and-buddypress/"
+    shodan-query: 'http.html:"wp-content/plugins/push-notification-for-post-and-buddypress/"'
+  tags: cve,wordpress,wp-plugin,push-notification-for-post-and-buddypress,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/push-notification-for-post-and-buddypress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "push-notification-for-post-and-buddypress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.64')

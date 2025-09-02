@@ -1,0 +1,59 @@
+id: nextgen_gallery-a67eb1fc-4762-4bdc-b0a0-c043c36659d0
+
+info:
+  name: >
+    NextGen Gallery <= 3.1.5 - PHP Object Injection
+  author: topscoder
+  severity: low
+  description: >
+    The NextGen Gallery plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 3.1.5. This is due to the plugin unserializing serialized data obtained via user supplied input from the `sortorder` parameter. This makes it possible for authenticated attackers to call arbitrary PHP Objects and achieve remote code execution when the right gadgets are available.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a67eb1fc-4762-4bdc-b0a0-c043c36659d0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/nextgen-gallery/"
+    google-query: inurl:"/wp-content/plugins/nextgen-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/nextgen-gallery/"'
+  tags: cve,wordpress,wp-plugin,nextgen-gallery,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/nextgen-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "nextgen-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1.5')

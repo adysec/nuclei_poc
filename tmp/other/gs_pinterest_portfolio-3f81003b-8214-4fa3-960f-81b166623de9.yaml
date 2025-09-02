@@ -1,0 +1,59 @@
+id: gs_pinterest_portfolio-3f81003b-8214-4fa3-960f-81b166623de9
+
+info:
+  name: >
+    GS Pins for Pinterest Lite <= 1.8.0 - Missing Authorization via _update_shortcode
+  author: topscoder
+  severity: low
+  description: >
+    The WordPress Pinterest Plugin – Make a Popup, User Profile, Masonry and Gallery Layout plugin for WordPress is vulnerable to unauthorized modification of data due to a missing capability check and a misconfigured nonce check on the _update_shortcode function in all versions up to and including 1.8.0. This makes it possible for authenticated attackers, with subscriber access and above, to update the plugin's shortcodes.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3f81003b-8214-4fa3-960f-81b166623de9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gs-pinterest-portfolio/"
+    google-query: inurl:"/wp-content/plugins/gs-pinterest-portfolio/"
+    shodan-query: 'http.html:"wp-content/plugins/gs-pinterest-portfolio/"'
+  tags: cve,wordpress,wp-plugin,gs-pinterest-portfolio,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gs-pinterest-portfolio/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gs-pinterest-portfolio"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.8.1')

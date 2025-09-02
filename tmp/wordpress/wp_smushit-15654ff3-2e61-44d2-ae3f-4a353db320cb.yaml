@@ -1,0 +1,59 @@
+id: wp_smushit-15654ff3-2e61-44d2-ae3f-4a353db320cb
+
+info:
+  name: >
+    Smush – Lazy Load Images, Optimize & Compress Images <= 3.0.0 - Authenticated PHAR Deserialization
+  author: topscoder
+  severity: low
+  description: >
+    The Smush – Lazy Load Images, Optimize & Compress Images plugin for WordPress is vulnerable to deserialization of untrusted input via the '$log_file' value in versions up to, and including 3.0.0. This makes it possible for authenticated attackers to call files using a PHAR wrapper that will deserialize the data and call arbitrary PHP Objects that can be used to perform a variety of malicious actions granted a POP chain is also present. It also requires that the attacker is successful in uploading a file with the serialized payload.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/15654ff3-2e61-44d2-ae3f-4a353db320cb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-smushit/"
+    google-query: inurl:"/wp-content/plugins/wp-smushit/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-smushit/"'
+  tags: cve,wordpress,wp-plugin,wp-smushit,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-smushit/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-smushit"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.0')

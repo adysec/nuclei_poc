@@ -1,0 +1,59 @@
+id: user_activity_log-8483196e-f476-41e5-a988-bcd8a9952a64
+
+info:
+  name: >
+    User Activity Log <= 1.6.2 - Unauthenticated SQL Injection via username
+  author: topscoder
+  severity: critical
+  description: >
+    The User Activity Log plugin for WordPress is vulnerable to generic SQL Injection via the username value when logging in in versions up to, and including, 1.6.2 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query in the ual_shook_wp_login_failed function. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The login_failed_non_existing_user option must be enabled for this to be successful.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8483196e-f476-41e5-a988-bcd8a9952a64?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/user-activity-log/"
+    google-query: inurl:"/wp-content/plugins/user-activity-log/"
+    shodan-query: 'http.html:"wp-content/plugins/user-activity-log/"'
+  tags: cve,wordpress,wp-plugin,user-activity-log,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-activity-log/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "user-activity-log"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.2')

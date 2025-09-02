@@ -1,0 +1,59 @@
+id: feed_instagram_lite-c906a988-ad45-49cc-9d77-6b501445ddc5
+
+info:
+  name: >
+    Gallery for Social Photo <= 1.0.0.25 - Subscriber+ SQL Injection
+  author: topscoder
+  severity: high
+  description: >
+    The plugin Gallery for Social Photo is vulnerable to SQL Injection via the post parameter in the function gifeed_duplicate_feed in versions up to, and including 1.0.0.25 due to insufficient sanitization before using it in an unprepared SQL query. This make it possible for subscribers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c906a988-ad45-49cc-9d77-6b501445ddc5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/feed-instagram-lite/"
+    google-query: inurl:"/wp-content/plugins/feed-instagram-lite/"
+    shodan-query: 'http.html:"wp-content/plugins/feed-instagram-lite/"'
+  tags: cve,wordpress,wp-plugin,feed-instagram-lite,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/feed-instagram-lite/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "feed-instagram-lite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.0.25')

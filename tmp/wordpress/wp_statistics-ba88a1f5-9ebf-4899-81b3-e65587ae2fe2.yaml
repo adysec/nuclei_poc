@@ -1,0 +1,59 @@
+id: wp_statistics-ba88a1f5-9ebf-4899-81b3-e65587ae2fe2
+
+info:
+  name: >
+    WP Statistics <= 13.0.9 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Statistic plugin for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 13.0.9 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ba88a1f5-9ebf-4899-81b3-e65587ae2fe2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-statistics/"
+    google-query: inurl:"/wp-content/plugins/wp-statistics/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-statistics/"'
+  tags: cve,wordpress,wp-plugin,wp-statistics,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-statistics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-statistics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 13.0.9')

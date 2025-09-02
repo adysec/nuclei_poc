@@ -1,0 +1,59 @@
+id: flamingo-78760d4d-04fc-4a6c-8c0d-6bf897335651
+
+info:
+  name: >
+    Flamingo <= 2.1 - CSV Injection
+  author: topscoder
+  severity: medium
+  description: >
+    A CSV Injection vulnerability was discovered in Flamingo up to version 2.1. It allows a user with low level privileges to inject OS command that will be included in the exported CSV file, leading to possible command/code execution.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/78760d4d-04fc-4a6c-8c0d-6bf897335651?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/flamingo/"
+    google-query: inurl:"/wp-content/plugins/flamingo/"
+    shodan-query: 'http.html:"wp-content/plugins/flamingo/"'
+  tags: cve,wordpress,wp-plugin,flamingo,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/flamingo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "flamingo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1')

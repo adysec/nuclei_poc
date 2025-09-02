@@ -1,0 +1,59 @@
+id: fastly-0042d5ba-62de-404e-9516-67cae618f684
+
+info:
+  name: >
+    Fastly <= 0.97 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0042d5ba-62de-404e-9516-67cae618f684?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fastly/"
+    google-query: inurl:"/wp-content/plugins/fastly/"
+    shodan-query: 'http.html:"wp-content/plugins/fastly/"'
+  tags: cve,wordpress,wp-plugin,fastly,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fastly/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fastly"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.97')

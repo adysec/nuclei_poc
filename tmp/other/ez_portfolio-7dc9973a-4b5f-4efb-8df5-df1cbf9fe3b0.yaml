@@ -1,0 +1,59 @@
+id: ez_portfolio-7dc9973a-4b5f-4efb-8df5-df1cbf9fe3b0
+
+info:
+  name: >
+    EZ Portfolio (Unmaintained) < 1.0.2 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The EZ Portfolio (Unmaintained) plugin for WordPress is vulnerable to Cross-Site Scripting via several parameters in versions before 1.0.2 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7dc9973a-4b5f-4efb-8df5-df1cbf9fe3b0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ez-portfolio/"
+    google-query: inurl:"/wp-content/plugins/ez-portfolio/"
+    shodan-query: 'http.html:"wp-content/plugins/ez-portfolio/"'
+  tags: cve,wordpress,wp-plugin,ez-portfolio,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ez-portfolio/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ez-portfolio"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.2')

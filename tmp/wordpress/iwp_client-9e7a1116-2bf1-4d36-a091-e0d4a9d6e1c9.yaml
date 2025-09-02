@@ -1,0 +1,59 @@
+id: iwp_client-9e7a1116-2bf1-4d36-a091-e0d4a9d6e1c9
+
+info:
+  name: >
+    InfiniteWP Client <= 1.3.7 - Privilege Escalation
+  author: topscoder
+  severity: critical
+  description: >
+    The InfiniteWP Client plugin for WordPress is vulnerable to Privilege Escalation in versions up to, and including, 1.3.7. This makes it possible for unauthenticated attackers to put the vulnerable site into maintenance mode if the admin's username is known.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9e7a1116-2bf1-4d36-a091-e0d4a9d6e1c9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/iwp-client/"
+    google-query: inurl:"/wp-content/plugins/iwp-client/"
+    shodan-query: 'http.html:"wp-content/plugins/iwp-client/"'
+  tags: cve,wordpress,wp-plugin,iwp-client,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/iwp-client/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "iwp-client"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.7')

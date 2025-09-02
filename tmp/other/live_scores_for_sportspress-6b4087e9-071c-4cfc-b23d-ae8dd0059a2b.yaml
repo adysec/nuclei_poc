@@ -1,0 +1,59 @@
+id: live_scores_for_sportspress-6b4087e9-071c-4cfc-b23d-ae8dd0059a2b
+
+info:
+  name: >
+    Live Scores for SportsPress <= 1.9.0 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Live Scores for SportsPress plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘lsfs_match_date’ parameter in versions up to, and including, 1.9.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6b4087e9-071c-4cfc-b23d-ae8dd0059a2b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/live-scores-for-sportspress/"
+    google-query: inurl:"/wp-content/plugins/live-scores-for-sportspress/"
+    shodan-query: 'http.html:"wp-content/plugins/live-scores-for-sportspress/"'
+  tags: cve,wordpress,wp-plugin,live-scores-for-sportspress,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/live-scores-for-sportspress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "live-scores-for-sportspress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.0')

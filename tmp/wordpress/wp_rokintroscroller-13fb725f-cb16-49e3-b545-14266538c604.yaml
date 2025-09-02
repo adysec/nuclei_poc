@@ -1,0 +1,59 @@
+id: wp_rokintroscroller-13fb725f-cb16-49e3-b545-14266538c604
+
+info:
+  name: >
+    RokIntroScroller <= 1.8 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The RokIntroScroller plugin for WordPress is vulnerable to Cross-Site Scripting via the 'src' parameter in the 'thumb.php' file in versions up to, and including, 1.8 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/13fb725f-cb16-49e3-b545-14266538c604?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp_rokintroscroller/"
+    google-query: inurl:"/wp-content/plugins/wp_rokintroscroller/"
+    shodan-query: 'http.html:"wp-content/plugins/wp_rokintroscroller/"'
+  tags: cve,wordpress,wp-plugin,wp_rokintroscroller,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp_rokintroscroller/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp_rokintroscroller"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8')

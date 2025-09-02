@@ -1,0 +1,59 @@
+id: tdo_mini_forms-7c6be4e1-1b24-4a95-a6fd-3196f47796a6
+
+info:
+  name: >
+    TDO Mini Forms <= 0.13.9 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The TDO Mini Forms plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the tdomf-upload-inline.php file in versions up to, and including, 0.13.9. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7c6be4e1-1b24-4a95-a6fd-3196f47796a6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/tdo-mini-forms/"
+    google-query: inurl:"/wp-content/plugins/tdo-mini-forms/"
+    shodan-query: 'http.html:"wp-content/plugins/tdo-mini-forms/"'
+  tags: cve,wordpress,wp-plugin,tdo-mini-forms,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/tdo-mini-forms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "tdo-mini-forms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.13.9')

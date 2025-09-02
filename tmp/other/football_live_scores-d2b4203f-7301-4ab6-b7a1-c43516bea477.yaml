@@ -1,0 +1,59 @@
+id: football_live_scores-d2b4203f-7301-4ab6-b7a1-c43516bea477
+
+info:
+  name: >
+    Football Live Scores <= 1.5 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Football Live Scores plugin for WordPress is vulnerable to authorization bypass due to missing capability checks on several functions such as ajax_set_lang, ajax_set_gmt, ajax_set_support_link, and ajax_set_support_time all called via AJAX hooks in versions up to, and including, 1.5. This makes it possible for authenticated attackers with subscriber level permissions and above to modify the plugin's settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d2b4203f-7301-4ab6-b7a1-c43516bea477?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/football-live-scores/"
+    google-query: inurl:"/wp-content/plugins/football-live-scores/"
+    shodan-query: 'http.html:"wp-content/plugins/football-live-scores/"'
+  tags: cve,wordpress,wp-plugin,football-live-scores,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/football-live-scores/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "football-live-scores"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5')

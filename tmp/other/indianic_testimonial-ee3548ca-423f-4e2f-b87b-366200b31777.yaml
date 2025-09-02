@@ -1,0 +1,59 @@
+id: indianic_testimonial-ee3548ca-423f-4e2f-b87b-366200b31777
+
+info:
+  name: >
+    Testimonial < 2.3 - Multiple Vulnerabilities
+  author: topscoder
+  severity: critical
+  description: >
+    The Testimonial plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.2. This is due to missing or incorrect nonce validation on the save_testimonial function. This makes it possible for unauthenticated attackers to perform Cross-Site Scripting and SQL Injection attacks via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ee3548ca-423f-4e2f-b87b-366200b31777?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/indianic-testimonial/"
+    google-query: inurl:"/wp-content/plugins/indianic-testimonial/"
+    shodan-query: 'http.html:"wp-content/plugins/indianic-testimonial/"'
+  tags: cve,wordpress,wp-plugin,indianic-testimonial,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/indianic-testimonial/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "indianic-testimonial"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.3')

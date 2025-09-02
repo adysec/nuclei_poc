@@ -1,0 +1,59 @@
+id: woocommerce_payments-9d604200-91b0-4885-8fe2-1323b9d6fed5
+
+info:
+  name: >
+    WooCommerce Payments <= 4.5.0 - Payment Bypass
+  author: topscoder
+  severity: medium
+  description: >
+    The WooCommerce Payments plugin for WordPress is vulnerable to payment bypass in versions up to, and including, 4.5.0. This is due to insufficient controls on checkout payment intent. This makes it possible for unauthenticated users to complete purchases without paying for them.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9d604200-91b0-4885-8fe2-1323b9d6fed5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-payments/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-payments/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-payments/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-payments,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-payments/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-payments"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '4.5.0')

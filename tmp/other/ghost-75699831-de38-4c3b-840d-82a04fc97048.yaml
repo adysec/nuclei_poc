@@ -1,0 +1,59 @@
+id: ghost-75699831-de38-4c3b-840d-82a04fc97048
+
+info:
+  name: >
+    Ghost (All Versions) - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Ghost theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the via the /includes/uploadify/upload_settings_image.php file in all versions. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/75699831-de38-4c3b-840d-82a04fc97048?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/ghost/"
+    google-query: inurl:"/wp-content/themes/ghost/"
+    shodan-query: 'http.html:"wp-content/themes/ghost/"'
+  tags: cve,wordpress,wp-theme,ghost,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/ghost/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ghost"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

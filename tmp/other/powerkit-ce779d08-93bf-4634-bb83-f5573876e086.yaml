@@ -1,0 +1,59 @@
+id: powerkit-ce779d08-93bf-4634-bb83-f5573876e086
+
+info:
+  name: >
+    Powerkit < 2.5.9 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Powerkit plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.5.8 This is due to missing or incorrect nonce validation on an unknown function.  Unauthenticated attackers may be able to conduct unspecified attacks (such as Cross-Site Scripting) via forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ce779d08-93bf-4634-bb83-f5573876e086?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/powerkit/"
+    google-query: inurl:"/wp-content/plugins/powerkit/"
+    shodan-query: 'http.html:"wp-content/plugins/powerkit/"'
+  tags: cve,wordpress,wp-plugin,powerkit,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/powerkit/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "powerkit"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.5.9')

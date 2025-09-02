@@ -1,0 +1,59 @@
+id: google_analytics_for_wordpress-247f6b86-767b-479f-90d4-79345699dd59
+
+info:
+  name: >
+    MonsterInsights – Google Analytics Dashboard for WordPress <= 7.1 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The MonsterInsights – Google Analytics Dashboard for WordPress plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the tab parameter in versions up to, and including 7.1. This makes it possible for lower-privileged attackers to inject arbitrary web scripts in administrative pages that execute whenever a user accesses the page with the stored web scripts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/247f6b86-767b-479f-90d4-79345699dd59?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/google-analytics-for-wordpress/"
+    google-query: inurl:"/wp-content/plugins/google-analytics-for-wordpress/"
+    shodan-query: 'http.html:"wp-content/plugins/google-analytics-for-wordpress/"'
+  tags: cve,wordpress,wp-plugin,google-analytics-for-wordpress,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/google-analytics-for-wordpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "google-analytics-for-wordpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.1')

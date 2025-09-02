@@ -1,0 +1,59 @@
+id: videos_on_admin_dashboard-aae57fed-1003-4b3a-8489-cfc85c250a04
+
+info:
+  name: >
+    Videos on Admin Dashboard < 1.1.4 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Videos on Admin Dashboard plugin for WordPress is vulnerable to Cross-Site Scripting in versions before 1.1.4 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/aae57fed-1003-4b3a-8489-cfc85c250a04?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/videos-on-admin-dashboard/"
+    google-query: inurl:"/wp-content/plugins/videos-on-admin-dashboard/"
+    shodan-query: 'http.html:"wp-content/plugins/videos-on-admin-dashboard/"'
+  tags: cve,wordpress,wp-plugin,videos-on-admin-dashboard,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/videos-on-admin-dashboard/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "videos-on-admin-dashboard"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.1.4')

@@ -1,0 +1,59 @@
+id: email_users-77f0c100-1e33-4f18-80df-ed607faba5f7
+
+info:
+  name: >
+    Email Users < 4.8.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Email Users plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions before 4.8.4. This is due to missing or incorrect nonce validation on several functions. This makes it possible for unauthenticated attackers to send arbitrary bulk emails via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/77f0c100-1e33-4f18-80df-ed607faba5f7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/email-users/"
+    google-query: inurl:"/wp-content/plugins/email-users/"
+    shodan-query: 'http.html:"wp-content/plugins/email-users/"'
+  tags: cve,wordpress,wp-plugin,email-users,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/email-users/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "email-users"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.8.4')

@@ -1,0 +1,59 @@
+id: dc_woocommerce_multi_vendor-afd9046c-5b6a-411e-8e66-ff1ba60d7f9d
+
+info:
+  name: >
+    MultiVendorX <= 4.0.25 - Improper Authorization on REST Routes via 'save_settings_permission'
+  author: topscoder
+  severity: high
+  description: >
+    The MultiVendorX plugin for WordPress is vulnerable to unauthorized access of data, modification of data, and loss of data due to an improper capability check on the 'save_settings_permission' function for the REST routes instantiated by the 'mvx_rest_routes_react_module' function versions up to, and including, 4.0.25. This makes it possible for unauthenticated attackers to create, update, and delete vendors, retrieve sensitive information, and modify plugin settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/afd9046c-5b6a-411e-8e66-ff1ba60d7f9d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:L
+    cvss-score: 8.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dc-woocommerce-multi-vendor/"
+    google-query: inurl:"/wp-content/plugins/dc-woocommerce-multi-vendor/"
+    shodan-query: 'http.html:"wp-content/plugins/dc-woocommerce-multi-vendor/"'
+  tags: cve,wordpress,wp-plugin,dc-woocommerce-multi-vendor,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dc-woocommerce-multi-vendor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dc-woocommerce-multi-vendor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.0.26')

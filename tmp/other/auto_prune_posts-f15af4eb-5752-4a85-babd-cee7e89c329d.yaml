@@ -1,0 +1,59 @@
+id: auto_prune_posts-f15af4eb-5752-4a85-babd-cee7e89c329d
+
+info:
+  name: >
+    Auto Prune Posts <= 1.8.0 - Cross-Site Request Forgery via admin_menu
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f15af4eb-5752-4a85-babd-cee7e89c329d?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/auto-prune-posts/"
+    google-query: inurl:"/wp-content/plugins/auto-prune-posts/"
+    shodan-query: 'http.html:"wp-content/plugins/auto-prune-posts/"'
+  tags: cve,wordpress,wp-plugin,auto-prune-posts,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/auto-prune-posts/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "auto-prune-posts"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.0')

@@ -1,0 +1,59 @@
+id: dt_chocolate-a537f82c-5139-439e-817f-7fd0ece958bd
+
+info:
+  name: >
+    Chocolate WP – Responsive Photography Theme (All Versions) - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Chocolate WP – Responsive Photography Theme for WordPress is vulnerable to arbitrary file uploads due to inclusion of a vulnerable version of TimThumb in all versions. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a537f82c-5139-439e-817f-7fd0ece958bd?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/dt-chocolate/"
+    google-query: inurl:"/wp-content/themes/dt-chocolate/"
+    shodan-query: 'http.html:"wp-content/themes/dt-chocolate/"'
+  tags: cve,wordpress,wp-theme,dt-chocolate,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/dt-chocolate/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dt-chocolate"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

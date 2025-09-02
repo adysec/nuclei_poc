@@ -1,0 +1,59 @@
+id: rsvp-6f73b12b-813d-49fa-84a0-3345023a16c6
+
+info:
+  name: >
+    RSVP and Event Management <= 2.7.4 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The RSVP and Event Management plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 2.7.4  due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6f73b12b-813d-49fa-84a0-3345023a16c6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/rsvp/"
+    google-query: inurl:"/wp-content/plugins/rsvp/"
+    shodan-query: 'http.html:"wp-content/plugins/rsvp/"'
+  tags: cve,wordpress,wp-plugin,rsvp,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/rsvp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "rsvp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.7.5')

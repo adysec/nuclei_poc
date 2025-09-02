@@ -1,0 +1,59 @@
+id: embedpress-a7cf1c70-9778-4b50-b494-d0b1d0277b35
+
+info:
+  name: >
+    EmbedPress <= 3.9.4 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The EmbedPress – Embed PDF, YouTube, Google Docs, Vimeo, Wistia Videos, Audios, Maps & Any Documents in Gutenberg & Elementor plugin for WordPress is vulnerable to unauthorized modification of data due to missing capability checks on the save_source_data() and delete_source_data() functions in all versions up to 3.9.5 (exclusive). This makes it possible for unauthenticated attackers to save and delete source data
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a7cf1c70-9778-4b50-b494-d0b1d0277b35?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/embedpress/"
+    google-query: inurl:"/wp-content/plugins/embedpress/"
+    shodan-query: 'http.html:"wp-content/plugins/embedpress/"'
+  tags: cve,wordpress,wp-plugin,embedpress,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/embedpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "embedpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.9.5')

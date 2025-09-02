@@ -1,0 +1,59 @@
+id: corona-cf2d14ff-d02a-4bed-9604-ff2489d4bef9
+
+info:
+  name: >
+    Corona (All Versions) - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Corona theme for WordPress is vulnerable to Cross-Site Scripting due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cf2d14ff-d02a-4bed-9604-ff2489d4bef9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/corona/"
+    google-query: inurl:"/wp-content/themes/corona/"
+    shodan-query: 'http.html:"wp-content/themes/corona/"'
+  tags: cve,wordpress,wp-theme,corona,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/corona/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "corona"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

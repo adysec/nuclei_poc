@@ -1,0 +1,59 @@
+id: under_construction_maintenance_mode-5f6b88fb-1070-427b-a51f-23fbede3dd59
+
+info:
+  name: >
+    Under Construction, Coming Soon & Maintenance Mode <= 1.1.1 - Server Side Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Under Construction, Coming Soon & Maintenance Mode plugin for WordPress is vulnerable to Server Side Request Forgery (SSRF) in versions up to, and including,1.1.1. This is due to the 'apiKey' POST parameter being improperly sanitized. This makes it possible for unauthenticated attackers to execute arbitrary scripting in other users' browsers, leading to the disclosure of sensitive data or subsequent attacks.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5f6b88fb-1070-427b-a51f-23fbede3dd59?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/under-construction-maintenance-mode/"
+    google-query: inurl:"/wp-content/plugins/under-construction-maintenance-mode/"
+    shodan-query: 'http.html:"wp-content/plugins/under-construction-maintenance-mode/"'
+  tags: cve,wordpress,wp-plugin,under-construction-maintenance-mode,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/under-construction-maintenance-mode/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "under-construction-maintenance-mode"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.1')

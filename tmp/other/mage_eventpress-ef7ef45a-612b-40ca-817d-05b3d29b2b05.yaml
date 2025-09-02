@@ -1,0 +1,59 @@
+id: mage_eventpress-ef7ef45a-612b-40ca-817d-05b3d29b2b05
+
+info:
+  name: >
+    Event Manager and Tickets Selling Plugin for WooCommerce < 3.5.3 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Event Manager and Tickets Selling Plugin for WooCommerce plugin for WordPress is vulnerable to arbitrary template import in versions before 3.5.3 via the mep_import_ajax_template function. This is due to a missing capability check on this function. This makes it possible for unauthenticated attackers to arbitrarily import Elementor templates to the site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ef7ef45a-612b-40ca-817d-05b3d29b2b05?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mage-eventpress/"
+    google-query: inurl:"/wp-content/plugins/mage-eventpress/"
+    shodan-query: 'http.html:"wp-content/plugins/mage-eventpress/"'
+  tags: cve,wordpress,wp-plugin,mage-eventpress,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mage-eventpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mage-eventpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.5.3')

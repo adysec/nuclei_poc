@@ -1,0 +1,59 @@
+id: crisp-6bcc8b84-34ac-4f8f-9a74-43b230877e92
+
+info:
+  name: >
+    Crisp Live Chat <= 0.31 Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6bcc8b84-34ac-4f8f-9a74-43b230877e92?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/crisp/"
+    google-query: inurl:"/wp-content/plugins/crisp/"
+    shodan-query: 'http.html:"wp-content/plugins/crisp/"'
+  tags: cve,wordpress,wp-plugin,crisp,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/crisp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "crisp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.31')

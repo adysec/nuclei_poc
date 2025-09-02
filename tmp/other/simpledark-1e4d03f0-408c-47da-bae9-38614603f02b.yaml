@@ -1,0 +1,59 @@
+id: simpledark-1e4d03f0-408c-47da-bae9-38614603f02b
+
+info:
+  name: >
+    SimpleDark <= 1.2.11 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The SimpleDark Theme for WordPress is vulnerable to Cross-Site Scripting via the 's' parameter in versions up to, and including, 1.2.11 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1e4d03f0-408c-47da-bae9-38614603f02b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/simpledark/"
+    google-query: inurl:"/wp-content/themes/simpledark/"
+    shodan-query: 'http.html:"wp-content/themes/simpledark/"'
+  tags: cve,wordpress,wp-theme,simpledark,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/simpledark/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simpledark"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.11')

@@ -1,0 +1,59 @@
+id: dsubscribers-0e604d56-572f-4d60-b5ad-14c02ba9cc94
+
+info:
+  name: >
+    DSubscribers < 1.2.1 - Authenticated (Admin+) SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The DSubscribers plugin for WordPress is vulnerable to SQL Injection via the ‘dsubscribers’ parameter in versions before 1.2.1 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers with admin-level privileges to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0e604d56-572f-4d60-b5ad-14c02ba9cc94?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dsubscribers/"
+    google-query: inurl:"/wp-content/plugins/dsubscribers/"
+    shodan-query: 'http.html:"wp-content/plugins/dsubscribers/"'
+  tags: cve,wordpress,wp-plugin,dsubscribers,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dsubscribers/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dsubscribers"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.1')

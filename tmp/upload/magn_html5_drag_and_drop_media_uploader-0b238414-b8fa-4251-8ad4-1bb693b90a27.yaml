@@ -1,0 +1,59 @@
+id: magn_html5_drag_and_drop_media_uploader-0b238414-b8fa-4251-8ad4-1bb693b90a27
+
+info:
+  name: >
+    Magn WP Drag And Drop Media Uploader <= 1.2.0 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Magn WP Drag And Drop Media Uploader plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the dndupload.php file in versions up to, and including, 1.2.0. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0b238414-b8fa-4251-8ad4-1bb693b90a27?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/magn-html5-drag-and-drop-media-uploader/"
+    google-query: inurl:"/wp-content/plugins/magn-html5-drag-and-drop-media-uploader/"
+    shodan-query: 'http.html:"wp-content/plugins/magn-html5-drag-and-drop-media-uploader/"'
+  tags: cve,wordpress,wp-plugin,magn-html5-drag-and-drop-media-uploader,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/magn-html5-drag-and-drop-media-uploader/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "magn-html5-drag-and-drop-media-uploader"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.0')

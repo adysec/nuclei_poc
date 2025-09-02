@@ -1,0 +1,59 @@
+id: wp_slimstat_ex-ef104a10-9e47-420b-aba9-71095870bf4f
+
+info:
+  name: >
+    SlimStat-Ex <= 2.1.2 - Arbitrary Code Execution
+  author: topscoder
+  severity: critical
+  description: >
+    The SlimStat-Ex plugin for WordPress is vulnerable to Arbitrary Code Execution via the 'ofc_upload_image.php' file in versions up to, and including, 2.1.2. This makes it possible for unauthenticated attackers to remotely execute potentially malicious code.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ef104a10-9e47-420b-aba9-71095870bf4f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-slimstat-ex/"
+    google-query: inurl:"/wp-content/plugins/wp-slimstat-ex/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-slimstat-ex/"'
+  tags: cve,wordpress,wp-plugin,wp-slimstat-ex,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-slimstat-ex/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-slimstat-ex"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.2')

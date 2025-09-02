@@ -1,0 +1,59 @@
+id: resume_submissions_job_postings-b100ba5a-8aad-4aa1-98bf-a09c5bde7bc1
+
+info:
+  name: >
+    Resume Submissions & Job Postings Plugin <= 2.5.3 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Resume Submissions & Job Postings plugin for WordPress is vulnerable to Stored Cross-Site Scripting in versions up to, and including, 2.5.3 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b100ba5a-8aad-4aa1-98bf-a09c5bde7bc1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/resume-submissions-job-postings/"
+    google-query: inurl:"/wp-content/plugins/resume-submissions-job-postings/"
+    shodan-query: 'http.html:"wp-content/plugins/resume-submissions-job-postings/"'
+  tags: cve,wordpress,wp-plugin,resume-submissions-job-postings,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/resume-submissions-job-postings/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "resume-submissions-job-postings"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5.3')

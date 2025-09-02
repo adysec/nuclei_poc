@@ -1,0 +1,59 @@
+id: smartideo-6be64d8d-fc71-40c2-baa8-985445d953ea
+
+info:
+  name: >
+    SmartIdeo <= 2.7.0 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The SmartIdeo plugin for WordPress is vulnerable to stored Cross-Site Scripting in versions up to, and including, 2.7.0, via a settings update functionality. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6be64d8d-fc71-40c2-baa8-985445d953ea?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/smartideo/"
+    google-query: inurl:"/wp-content/plugins/smartideo/"
+    shodan-query: 'http.html:"wp-content/plugins/smartideo/"'
+  tags: cve,wordpress,wp-plugin,smartideo,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/smartideo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "smartideo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.7.0')

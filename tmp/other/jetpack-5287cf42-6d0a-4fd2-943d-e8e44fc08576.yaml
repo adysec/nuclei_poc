@@ -1,0 +1,59 @@
+id: jetpack-5287cf42-6d0a-4fd2-943d-e8e44fc08576
+
+info:
+  name: >
+    Jetpack <= 7.9 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Jetpack plugin for WordPress is vulnerable to Stored Cross-Site Scripting via a shortcode in versions up to, and including, 7.9. This makes it possible for medium-level authenticated attackers to inject arbitrary web scripts in administrative pages and posts that execute whenever a user accesses the page with the stored web scripts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5287cf42-6d0a-4fd2-943d-e8e44fc08576?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/jetpack/"
+    google-query: inurl:"/wp-content/plugins/jetpack/"
+    shodan-query: 'http.html:"wp-content/plugins/jetpack/"'
+  tags: cve,wordpress,wp-plugin,jetpack,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jetpack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jetpack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 7.9', '< 7.9.1')

@@ -1,0 +1,59 @@
+id: sp_client_document_manager-585d0368-7557-46aa-9ea3-26cd6d7df51b
+
+info:
+  name: >
+    SP Project & Document Manager <= 4.56 - Cross-Site Request Forgery and Cross-Site Scripting
+  author: topscoder
+  severity: critical
+  description: >
+    The SP Project & Document Manager plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 4.56. This is due to missing or incorrect nonce validation in several functions. Furthermore, in several instances user input is not properly sanitized or escaped. This makes it possible for attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/585d0368-7557-46aa-9ea3-26cd6d7df51b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H
+    cvss-score: 9.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sp-client-document-manager/"
+    google-query: inurl:"/wp-content/plugins/sp-client-document-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/sp-client-document-manager/"'
+  tags: cve,wordpress,wp-plugin,sp-client-document-manager,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sp-client-document-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sp-client-document-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.56')

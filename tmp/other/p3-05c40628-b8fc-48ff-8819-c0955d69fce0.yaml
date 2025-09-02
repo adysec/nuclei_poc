@@ -1,0 +1,59 @@
+id: p3-05c40628-b8fc-48ff-8819-c0955d69fce0
+
+info:
+  name: >
+    Pipdig Power Pack (P3) <= 4.7.3 - Backdoor
+  author: topscoder
+  severity: critical
+  description: >
+    The Pipdig Power Pack(p3) plugin for WordPress is contained a backdoor in versions before 4.8.0. Obfuscated code was present which allows for various backdoor functionality including unauthenticated password reset, unauthenticated database deletion, unusual scheduled remote calls, and undisclosed content and configuration rewrites.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/05c40628-b8fc-48ff-8819-c0955d69fce0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/p3/"
+    google-query: inurl:"/wp-content/plugins/p3/"
+    shodan-query: 'http.html:"wp-content/plugins/p3/"'
+  tags: cve,wordpress,wp-plugin,p3,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/p3/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "p3"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.7.3')

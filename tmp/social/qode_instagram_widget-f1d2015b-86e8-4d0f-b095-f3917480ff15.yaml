@@ -1,0 +1,61 @@
+id: qode_instagram_widget-f1d2015b-86e8-4d0f-b095-f3917480ff15
+
+info:
+  name: >
+    Bridge Theme <= 18.2, Qode Instagram Widget <=2.0.1, Qode Twitter Feed <= 2.0.0 - Open Redirect
+  author: topscoder
+  severity: high
+  description: >
+    Helper plugins packaged with Bridge theme possess an Open Redirect vulnerability, allowing a malicious actor to create links to the site that redirect people to malicious domains.
+        
+        The Bridge theme, Qode Instagram Widget plugin, and Qode Twitter Feed plugin for WordPress are vulnerable to open redirects via the url parameter due to missing validation on the redirect location, that makes it possible for attackers to redirect unsuspecting users to malicious sites. This affects versions up to 18.2.1 in the Bridge theme, versions up to 2.0.2 in the Instagram widget plugin, and versions up to 2.0.1 in the Twitter feed plugin, and can be exploited by unauthenticated users.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f1d2015b-86e8-4d0f-b095-f3917480ff15?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/qode-instagram-widget/"
+    google-query: inurl:"/wp-content/plugins/qode-instagram-widget/"
+    shodan-query: 'http.html:"wp-content/plugins/qode-instagram-widget/"'
+  tags: cve,wordpress,wp-plugin,qode-instagram-widget,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/qode-instagram-widget/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "qode-instagram-widget"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.2')

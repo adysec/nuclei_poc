@@ -1,0 +1,59 @@
+id: ignitiondeck-82619274-4339-44ba-b50c-d1194c34b695
+
+info:
+  name: >
+    IgnitionDeck Crowdfunding Platform <= 1.1.6 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The IgnitionDeck Crowdfunding Platform plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 1.1.6. This is due to missing capability checks on various functions called via AJAX actions. This makes it possible for unauthenticated attackers to execute various AJAX actions including one that would grant the attacker various permissions that could be used to modify many of the plugin's settings and features.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/82619274-4339-44ba-b50c-d1194c34b695?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ignitiondeck/"
+    google-query: inurl:"/wp-content/plugins/ignitiondeck/"
+    shodan-query: 'http.html:"wp-content/plugins/ignitiondeck/"'
+  tags: cve,wordpress,wp-plugin,ignitiondeck,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ignitiondeck/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ignitiondeck"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.6')

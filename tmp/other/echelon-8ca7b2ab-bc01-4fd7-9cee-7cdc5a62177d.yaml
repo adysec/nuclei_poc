@@ -1,0 +1,59 @@
+id: echelon-8ca7b2ab-bc01-4fd7-9cee-7cdc5a62177d
+
+info:
+  name: >
+    Echelon (All Versions) -  Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Echelon theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the ~/lib/admin/functions/media-upload.php file in all versions. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8ca7b2ab-bc01-4fd7-9cee-7cdc5a62177d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/echelon/"
+    google-query: inurl:"/wp-content/themes/echelon/"
+    shodan-query: 'http.html:"wp-content/themes/echelon/"'
+  tags: cve,wordpress,wp-theme,echelon,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/echelon/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "echelon"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

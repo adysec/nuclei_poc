@@ -1,0 +1,59 @@
+id: wp_super_cache-51b6c73d-fd4f-4469-9859-fbae61b5924c
+
+info:
+  name: >
+    WP Super Cache <= 1.4.4 - Authenticated File Deletion
+  author: topscoder
+  severity: low
+  description: >
+    The WP Super Cache plugin for WordPress is vulnerable to Authenticated File Deletion in versions up to, and including, 1.4.4. Code that sanitized directory paths when deleting cache files wasn't secure and might allow an attacker to view or delete files named index.html. This makes it possible for authenticated attackers to delete some index files, which can lead to some site accessibility issues and information disclosure.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/51b6c73d-fd4f-4469-9859-fbae61b5924c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-super-cache/"
+    google-query: inurl:"/wp-content/plugins/wp-super-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-super-cache/"'
+  tags: cve,wordpress,wp-plugin,wp-super-cache,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-super-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-super-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.5')

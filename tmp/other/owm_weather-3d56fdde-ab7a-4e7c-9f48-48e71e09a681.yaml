@@ -1,0 +1,59 @@
+id: owm_weather-3d56fdde-ab7a-4e7c-9f48-48e71e09a681
+
+info:
+  name: >
+    OWM Weather <= 5.6.11 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3d56fdde-ab7a-4e7c-9f48-48e71e09a681?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/owm-weather/"
+    google-query: inurl:"/wp-content/plugins/owm-weather/"
+    shodan-query: 'http.html:"wp-content/plugins/owm-weather/"'
+  tags: cve,wordpress,wp-plugin,owm-weather,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/owm-weather/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "owm-weather"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.6.11')

@@ -1,0 +1,59 @@
+id: ripe_hd_player-28a7b80c-8282-4f5c-b442-d6bce9fda25d
+
+info:
+  name: >
+    Ripe HD FLV <= 1.1 - Full Path Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The Ripe HD FLV plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 1.1 via the 'index.php' and 'installer.php' files. This can allow unauthenticated attackers to extract sensitive data including the full path of the installation.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/28a7b80c-8282-4f5c-b442-d6bce9fda25d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ripe-hd-player/"
+    google-query: inurl:"/wp-content/plugins/ripe-hd-player/"
+    shodan-query: 'http.html:"wp-content/plugins/ripe-hd-player/"'
+  tags: cve,wordpress,wp-plugin,ripe-hd-player,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ripe-hd-player/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ripe-hd-player"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1')

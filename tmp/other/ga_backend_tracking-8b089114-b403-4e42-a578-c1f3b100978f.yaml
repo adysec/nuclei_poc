@@ -1,0 +1,59 @@
+id: ga_backend_tracking-8b089114-b403-4e42-a578-c1f3b100978f
+
+info:
+  name: >
+    Cookieless Backend Server Tracking for Google Analytics – WordPress Plugin < 1.2.1 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Cookieless Backend Server Tracking for Google Analytics – WordPress Plugin for WordPress is vulnerable to Cross-Site Scripting via the 'attr' parameter in versions before 1.2.1 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8b089114-b403-4e42-a578-c1f3b100978f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ga-backend-tracking/"
+    google-query: inurl:"/wp-content/plugins/ga-backend-tracking/"
+    shodan-query: 'http.html:"wp-content/plugins/ga-backend-tracking/"'
+  tags: cve,wordpress,wp-plugin,ga-backend-tracking,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ga-backend-tracking/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ga-backend-tracking"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.1')

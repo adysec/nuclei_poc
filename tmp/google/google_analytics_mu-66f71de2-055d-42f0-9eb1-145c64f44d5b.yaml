@@ -1,0 +1,59 @@
+id: google_analytics_mu-66f71de2-055d-42f0-9eb1-145c64f44d5b
+
+info:
+  name: >
+    Google Analytics MU < 2.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Google Analytics MU plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions before 2.4. This is due to missing or incorrect nonce validation on the UAID function. This makes it possible for unauthenticated attackers to arbitrarily manipulate settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/66f71de2-055d-42f0-9eb1-145c64f44d5b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/google-analytics-mu/"
+    google-query: inurl:"/wp-content/plugins/google-analytics-mu/"
+    shodan-query: 'http.html:"wp-content/plugins/google-analytics-mu/"'
+  tags: cve,wordpress,wp-plugin,google-analytics-mu,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/google-analytics-mu/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "google-analytics-mu"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3.1')

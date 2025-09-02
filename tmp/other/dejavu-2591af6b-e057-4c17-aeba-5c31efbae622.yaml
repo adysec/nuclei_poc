@@ -1,0 +1,59 @@
+id: dejavu-2591af6b-e057-4c17-aeba-5c31efbae622
+
+info:
+  name: >
+    DejaVu <= 2.4 - Arbitrary File Download
+  author: topscoder
+  severity: critical
+  description: >
+    The DejaVu Theme for WordPress is vulnerable to Arbitrary File Download in versions up to, and including, 2.4. This is due to the '_mysite_download_skin' parameter in the 'dl-skin.php' file. This makes it possible for unauthenticated attackers to download any file within the server of the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2591af6b-e057-4c17-aeba-5c31efbae622?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H
+    cvss-score: 9.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/dejavu/"
+    google-query: inurl:"/wp-content/themes/dejavu/"
+    shodan-query: 'http.html:"wp-content/themes/dejavu/"'
+  tags: cve,wordpress,wp-theme,dejavu,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/dejavu/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dejavu"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.4')

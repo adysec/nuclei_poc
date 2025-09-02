@@ -1,0 +1,59 @@
+id: get_url_cron-934b2767-eae4-4c2d-a635-2e6a27fd9f49
+
+info:
+  name: >
+    Get URL Cron <= 1.4.7 - Cross-Site Request Forgery via geturlcron_action_handle
+  author: topscoder
+  severity: medium
+  description: >
+    The Get URL Cron plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.4.7. This is due to missing or incorrect nonce validation on the geturlcron_action_handle function called via an init hook. This makes it possible for unauthenticated attackers to modify many of the plugin's settings and create cron jobs, via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/934b2767-eae4-4c2d-a635-2e6a27fd9f49?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/get-url-cron/"
+    google-query: inurl:"/wp-content/plugins/get-url-cron/"
+    shodan-query: 'http.html:"wp-content/plugins/get-url-cron/"'
+  tags: cve,wordpress,wp-plugin,get-url-cron,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/get-url-cron/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "get-url-cron"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.7')

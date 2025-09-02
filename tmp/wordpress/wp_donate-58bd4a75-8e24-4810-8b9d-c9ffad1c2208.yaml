@@ -1,0 +1,59 @@
+id: wp_donate-58bd4a75-8e24-4810-8b9d-c9ffad1c2208
+
+info:
+  name: >
+    WP Donate <= 1.4 - Unauthenticated SQL Injection in donate-display.php
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/58bd4a75-8e24-4810-8b9d-c9ffad1c2208?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-donate/"
+    google-query: inurl:"/wp-content/plugins/wp-donate/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-donate/"'
+  tags: cve,wordpress,wp-plugin,wp-donate,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-donate/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-donate"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4')

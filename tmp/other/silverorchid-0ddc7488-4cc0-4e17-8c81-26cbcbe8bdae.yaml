@@ -1,0 +1,59 @@
+id: silverorchid-0ddc7488-4cc0-4e17-8c81-26cbcbe8bdae
+
+info:
+  name: >
+    silverOrchid <= 1.5.0 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The silverOrchid theme for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘s’ parameter in versions up to, and including, 1.5.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0ddc7488-4cc0-4e17-8c81-26cbcbe8bdae?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/silverorchid/"
+    google-query: inurl:"/wp-content/themes/silverorchid/"
+    shodan-query: 'http.html:"wp-content/themes/silverorchid/"'
+  tags: cve,wordpress,wp-theme,silverorchid,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/silverorchid/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "silverorchid"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.0')

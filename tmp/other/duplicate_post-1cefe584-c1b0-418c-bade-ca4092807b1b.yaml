@@ -1,0 +1,59 @@
+id: duplicate_post-1cefe584-c1b0-418c-bade-ca4092807b1b
+
+info:
+  name: >
+    Yoast Duplicate Post <= 2.5 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1cefe584-c1b0-418c-bade-ca4092807b1b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/duplicate-post/"
+    google-query: inurl:"/wp-content/plugins/duplicate-post/"
+    shodan-query: 'http.html:"wp-content/plugins/duplicate-post/"'
+  tags: cve,wordpress,wp-plugin,duplicate-post,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/duplicate-post/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "duplicate-post"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5')

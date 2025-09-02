@@ -1,0 +1,59 @@
+id: json_rest_api-ec5fa360-6fff-46f5-8221-4b28a6db3e73
+
+info:
+  name: >
+    JSON REST API <= 1.1 - Potential Cross-Site Request Forgery Bypass
+  author: topscoder
+  severity: medium
+  description: >
+    The JSON REST API plugin for WordPress is possibly vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.1 due to a potential SOP bypass. This is due to missing or incorrect nonce validation. This makes it possible for unauthenticated attackers to conduct JSON Flash attacks via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ec5fa360-6fff-46f5-8221-4b28a6db3e73?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/json-rest-api/"
+    google-query: inurl:"/wp-content/plugins/json-rest-api/"
+    shodan-query: 'http.html:"wp-content/plugins/json-rest-api/"'
+  tags: cve,wordpress,wp-plugin,json-rest-api,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/json-rest-api/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "json-rest-api"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1')

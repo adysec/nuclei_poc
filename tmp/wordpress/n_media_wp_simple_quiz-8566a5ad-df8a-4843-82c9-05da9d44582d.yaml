@@ -1,0 +1,59 @@
+id: n_media_wp_simple_quiz-8566a5ad-df8a-4843-82c9-05da9d44582d
+
+info:
+  name: >
+    Easy Quiz Maker <= 1.5 - Unauthenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Easy Quiz Maker plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'wp_quiz' parameter in versions up to, and including, 1.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8566a5ad-df8a-4843-82c9-05da9d44582d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/n-media-wp-simple-quiz/"
+    google-query: inurl:"/wp-content/plugins/n-media-wp-simple-quiz/"
+    shodan-query: 'http.html:"wp-content/plugins/n-media-wp-simple-quiz/"'
+  tags: cve,wordpress,wp-plugin,n-media-wp-simple-quiz,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/n-media-wp-simple-quiz/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "n-media-wp-simple-quiz"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5')

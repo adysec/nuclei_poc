@@ -1,0 +1,59 @@
+id: inpost_gallery-19f737a8-21e6-49d3-95b9-24fb6e5d7af7
+
+info:
+  name: >
+    InPost Gallery < 2.1.2.1 - Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The InPost Gallery Plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 2.1.2 via the popup_shortcode_key parameter. This allows unauthenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/19f737a8-21e6-49d3-95b9-24fb6e5d7af7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/inpost-gallery/"
+    google-query: inurl:"/wp-content/plugins/inpost-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/inpost-gallery/"'
+  tags: cve,wordpress,wp-plugin,inpost-gallery,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/inpost-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "inpost-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.1.2.1')

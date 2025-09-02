@@ -1,0 +1,59 @@
+id: wp_upg-19c370f1-322b-4c35-b100-244547373e1a
+
+info:
+  name: >
+    User Post Gallery - UPG <= 2.19 - Missing Authorization to Remote Command Execution
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/19c370f1-322b-4c35-b100-244547373e1a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-upg/"
+    google-query: inurl:"/wp-content/plugins/wp-upg/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-upg/"'
+  tags: cve,wordpress,wp-plugin,wp-upg,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-upg/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-upg"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '2.19')

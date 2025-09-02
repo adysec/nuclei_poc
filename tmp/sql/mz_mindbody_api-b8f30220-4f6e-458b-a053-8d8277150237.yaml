@@ -1,0 +1,59 @@
+id: mz_mindbody_api-b8f30220-4f6e-458b-a053-8d8277150237
+
+info:
+  name: >
+    MZ Mindbody API <= 2.8.2 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The MZ Mindbody API for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.8.2. This is due to missing or incorrect nonce validation on several functions. This makes it possible for unauthenticated attackers to edit site content via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b8f30220-4f6e-458b-a053-8d8277150237?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mz-mindbody-api/"
+    google-query: inurl:"/wp-content/plugins/mz-mindbody-api/"
+    shodan-query: 'http.html:"wp-content/plugins/mz-mindbody-api/"'
+  tags: cve,wordpress,wp-plugin,mz-mindbody-api,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mz-mindbody-api/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mz-mindbody-api"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.8.2')

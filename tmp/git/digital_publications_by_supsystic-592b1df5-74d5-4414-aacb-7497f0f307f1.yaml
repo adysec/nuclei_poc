@@ -1,0 +1,59 @@
+id: digital_publications_by_supsystic-592b1df5-74d5-4414-aacb-7497f0f307f1
+
+info:
+  name: >
+    Digital Publications by Supsystic <= 1.6.12 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Digital Publications by Supsystic plugin for WordPress is vulnerable to Stored Cross-Site Scripting via all of the input fields when editing a publication in versions up to, and including, 1.6.12 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/592b1df5-74d5-4414-aacb-7497f0f307f1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/digital-publications-by-supsystic/"
+    google-query: inurl:"/wp-content/plugins/digital-publications-by-supsystic/"
+    shodan-query: 'http.html:"wp-content/plugins/digital-publications-by-supsystic/"'
+  tags: cve,wordpress,wp-plugin,digital-publications-by-supsystic,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/digital-publications-by-supsystic/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "digital-publications-by-supsystic"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.12')

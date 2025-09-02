@@ -1,0 +1,59 @@
+id: ultimate_addons_for_gutenberg-242e99d1-db27-45fa-a90d-5a26c2d1901b
+
+info:
+  name: >
+    Spectra – WordPress Gutenberg Blocks <= 2.3.1 - Missing Authorization Checks
+  author: topscoder
+  severity: low
+  description: >
+    The Spectra – WordPress Gutenberg Blocks plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the import_wpforms, import_block, and activate_plugin functions called via AJAX actions in versions up to, and including, 2.3.1. This makes it possible for authenticated attackers, such as subscribers, to activate arbitrary plugins and import blocks and forms from WPForms.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/242e99d1-db27-45fa-a90d-5a26c2d1901b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ultimate-addons-for-gutenberg/"
+    google-query: inurl:"/wp-content/plugins/ultimate-addons-for-gutenberg/"
+    shodan-query: 'http.html:"wp-content/plugins/ultimate-addons-for-gutenberg/"'
+  tags: cve,wordpress,wp-plugin,ultimate-addons-for-gutenberg,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ultimate-addons-for-gutenberg/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ultimate-addons-for-gutenberg"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3.1')

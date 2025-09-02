@@ -1,0 +1,59 @@
+id: w3_total_cache-b19ce745-2cc4-48eb-b5f3-5011be7cceec
+
+info:
+  name: >
+    W3 Total Cache <= 0.9.7.3 - Server Side Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The W3 Total Cache plugin for WordPress is vulnerable to Server Side Request Forgery in versions up to, and including 0.9.7.3, due to insufficient user input validation in the opcache_flush_file file.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b19ce745-2cc4-48eb-b5f3-5011be7cceec?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/w3-total-cache/"
+    google-query: inurl:"/wp-content/plugins/w3-total-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/w3-total-cache/"'
+  tags: cve,wordpress,wp-plugin,w3-total-cache,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/w3-total-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "w3-total-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.9.7.3')

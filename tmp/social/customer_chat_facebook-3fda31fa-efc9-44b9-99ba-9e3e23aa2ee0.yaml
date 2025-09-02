@@ -1,0 +1,59 @@
+id: customer_chat_facebook-3fda31fa-efc9-44b9-99ba-9e3e23aa2ee0
+
+info:
+  name: >
+    Freemius SDK <= 2.2.3 - Missing Authorization to Arbitrary Options Update
+  author: topscoder
+  severity: low
+  description: >
+    The Freemius SDK for WordPress is vulnerable to authorization bypass due to a missing capability check on the _get_db_option and _set_db_option functions in versions up to, and including, 2.2.3. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to change site settings and potentially take over the site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3fda31fa-efc9-44b9-99ba-9e3e23aa2ee0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/customer-chat-facebook/"
+    google-query: inurl:"/wp-content/plugins/customer-chat-facebook/"
+    shodan-query: 'http.html:"wp-content/plugins/customer-chat-facebook/"'
+  tags: cve,wordpress,wp-plugin,customer-chat-facebook,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/customer-chat-facebook/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "customer-chat-facebook"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.1')

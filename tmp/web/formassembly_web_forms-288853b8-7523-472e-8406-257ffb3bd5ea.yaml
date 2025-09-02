@@ -1,0 +1,59 @@
+id: formassembly_web_forms-288853b8-7523-472e-8406-257ffb3bd5ea
+
+info:
+  name: >
+    WP-FormAssembly <= 2.0.8 - Limited Server Side Request Forgery  via 'formassembly' shortcode
+  author: topscoder
+  severity: low
+  description: >
+    The WP-FormAssembly plugin for WordPress is vulnerable to Server-Side Request Forgery in versions up to, and including, 2.0.8 via the 'formassembly' shortcode. This can allow authenticated attackers with subscriber-level privileges or above to make web requests to arbitrary locations that include '/rest' in the path, originating from the web application, and can be used to query and modify information from internal services.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/288853b8-7523-472e-8406-257ffb3bd5ea?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:N/A:N
+    cvss-score: 5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/formassembly-web-forms/"
+    google-query: inurl:"/wp-content/plugins/formassembly-web-forms/"
+    shodan-query: 'http.html:"wp-content/plugins/formassembly-web-forms/"'
+  tags: cve,wordpress,wp-plugin,formassembly-web-forms,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/formassembly-web-forms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "formassembly-web-forms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.9')

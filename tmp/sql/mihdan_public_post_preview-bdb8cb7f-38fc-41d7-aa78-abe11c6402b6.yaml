@@ -1,0 +1,59 @@
+id: mihdan_public_post_preview-bdb8cb7f-38fc-41d7-aa78-abe11c6402b6
+
+info:
+  name: >
+    Mihdan: Public Post Preview <= 1.9.9 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Public Post Preview plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the mppp_toggle function in versions up to, and including, 1.9.9. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to delete post metadata.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bdb8cb7f-38fc-41d7-aa78-abe11c6402b6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mihdan-public-post-preview/"
+    google-query: inurl:"/wp-content/plugins/mihdan-public-post-preview/"
+    shodan-query: 'http.html:"wp-content/plugins/mihdan-public-post-preview/"'
+  tags: cve,wordpress,wp-plugin,mihdan-public-post-preview,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mihdan-public-post-preview/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mihdan-public-post-preview"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.9')

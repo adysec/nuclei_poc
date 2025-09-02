@@ -1,0 +1,59 @@
+id: miniorange_2_factor_authentication-52a03c45-1d65-43aa-b30f-13698019e05f
+
+info:
+  name: >
+    miniOrange's Google Authenticator  <= 5.5.82 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    miniOrange's Google Authenticator plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on an the mo_wpns_malware_redirect function in versions up to, and including, 5.5.82. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to initiate/terminate malware scans or obtain the malware scan status of a currently ongoing or the last scan. Terminating ongoing scans could aid an attacker who is attempting to infect a site, while repeatedly initiating new scans could lead to resource exhaustion. Additionally, knowing the status of the last scan might help an attacker who wishes to further compromise a site or server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/52a03c45-1d65-43aa-b30f-13698019e05f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/miniorange-2-factor-authentication/"
+    google-query: inurl:"/wp-content/plugins/miniorange-2-factor-authentication/"
+    shodan-query: 'http.html:"wp-content/plugins/miniorange-2-factor-authentication/"'
+  tags: cve,wordpress,wp-plugin,miniorange-2-factor-authentication,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/miniorange-2-factor-authentication/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "miniorange-2-factor-authentication"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.5.82')

@@ -1,0 +1,59 @@
+id: wp_gdpr_compliance-79a574c4-1faf-4572-801c-00b50923a669
+
+info:
+  name: >
+    Cookie Information | Free GDPR Consent Solution <= 1.5.5 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Cookie Information | Free GDPR Consent Solution plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘$ipAddress’ parameter in versions up to, and including, 1.5.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/79a574c4-1faf-4572-801c-00b50923a669?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:N/I:L/A:N
+    cvss-score: 4.7
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-gdpr-compliance/"
+    google-query: inurl:"/wp-content/plugins/wp-gdpr-compliance/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-gdpr-compliance/"'
+  tags: cve,wordpress,wp-plugin,wp-gdpr-compliance,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-gdpr-compliance/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-gdpr-compliance"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.5')

@@ -1,0 +1,59 @@
+id: wp_staging-75eab54b-dbe0-4440-b4ab-601c5041e180
+
+info:
+  name: >
+    WP STAGING <= 3.4.3 and WP STAGING Pro <= 5.4.3 - Sensitive Information Exposure via Log File
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/75eab54b-dbe0-4440-b4ab-601c5041e180?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-staging/"
+    google-query: inurl:"/wp-content/plugins/wp-staging/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-staging/"'
+  tags: cve,wordpress,wp-plugin,wp-staging,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-staging/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-staging"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.4.3')

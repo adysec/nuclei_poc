@@ -1,0 +1,59 @@
+id: vdz_google_analytics-e9222c74-7f4f-4d20-8c1e-03be125709ff
+
+info:
+  name: >
+    VDZ Google Analytics or Google Tag Manager < 1.4.9 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The VDZ Google Analytics or Google Tag Manager plugin for WordPress is vulnerable to Stored Cross-Site Scripting via several parameters in versions before 1.4.9 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers with admin-level privileges to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e9222c74-7f4f-4d20-8c1e-03be125709ff?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/vdz-google-analytics/"
+    google-query: inurl:"/wp-content/plugins/vdz-google-analytics/"
+    shodan-query: 'http.html:"wp-content/plugins/vdz-google-analytics/"'
+  tags: cve,wordpress,wp-plugin,vdz-google-analytics,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/vdz-google-analytics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "vdz-google-analytics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.9')

@@ -1,0 +1,59 @@
+id: the_events_calendar-9bb026a4-02b1-4422-8c78-9983c49df43e
+
+info:
+  name: >
+    The Events Calendar < 4.1.1.1 - Open Redirect
+  author: topscoder
+  severity: medium
+  description: >
+    The Events Calendar plugin for WordPress is vulnerable to an open redirect vulnerability in versions before 4.1.1.1. This allows attackers to redirect victims to an untrusted site via a crafted link on a vulnerable trusted site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9bb026a4-02b1-4422-8c78-9983c49df43e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:N/I:N/A:L
+    cvss-score: 4.7
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/the-events-calendar/"
+    google-query: inurl:"/wp-content/plugins/the-events-calendar/"
+    shodan-query: 'http.html:"wp-content/plugins/the-events-calendar/"'
+  tags: cve,wordpress,wp-plugin,the-events-calendar,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/the-events-calendar/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "the-events-calendar"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.1.1')

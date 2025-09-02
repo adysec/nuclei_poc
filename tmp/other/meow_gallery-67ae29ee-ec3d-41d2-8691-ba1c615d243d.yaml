@@ -1,0 +1,59 @@
+id: meow_gallery-67ae29ee-ec3d-41d2-8691-ba1c615d243d
+
+info:
+  name: >
+    Meow Gallery (+ Gallery Block) <= 4.1.9 - Missing Authorization to Arbitrary Options Update
+  author: topscoder
+  severity: high
+  description: >
+    The Meow Gallery plugin for WordPress is vulnerable to Arbitrary Options Update via the REST API in versions up to, and including, 4.1.9. This makes it possible for unauthenticated attackers to modify otherwise restricted arbitrary site options. This can be leveraged to create new administrative user accounts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/67ae29ee-ec3d-41d2-8691-ba1c615d243d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/meow-gallery/"
+    google-query: inurl:"/wp-content/plugins/meow-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/meow-gallery/"'
+  tags: cve,wordpress,wp-plugin,meow-gallery,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/meow-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "meow-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.1.9')

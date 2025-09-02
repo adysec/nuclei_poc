@@ -1,0 +1,59 @@
+id: woo_coupon_usage-2657aa8a-b2de-4cb4-b9f8-e7fb0c887a7a
+
+info:
+  name: >
+    WooCommerce Affiliate Plugin – Coupon Affiliates < 4.11.3.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WooCommerce Affiliate Plugin – Coupon Affiliates plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions before 4.11.3.4. This is due to missing or incorrect nonce validation on the delete_click_entry function. This makes it possible for unauthenticated attackers to arbitrarily delete referral visits via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2657aa8a-b2de-4cb4-b9f8-e7fb0c887a7a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woo-coupon-usage/"
+    google-query: inurl:"/wp-content/plugins/woo-coupon-usage/"
+    shodan-query: 'http.html:"wp-content/plugins/woo-coupon-usage/"'
+  tags: cve,wordpress,wp-plugin,woo-coupon-usage,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-coupon-usage/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woo-coupon-usage"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.11.3.4')

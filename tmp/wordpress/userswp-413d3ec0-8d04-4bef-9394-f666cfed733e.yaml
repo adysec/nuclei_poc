@@ -1,0 +1,59 @@
+id: userswp-413d3ec0-8d04-4bef-9394-f666cfed733e
+
+info:
+  name: >
+    UsersWP <= 1.2.3.22 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The UsersWP – Front-end login form, User Registration, User Profile & Members Directory plugin for WordPress plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to 1.2.3.23 (exclusive). This is due to missing or incorrect nonce validation on the ajax_profile_image_remove  function. This makes it possible for unauthenticated attackers to delete user images via a forged request granted they can trick a site user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/413d3ec0-8d04-4bef-9394-f666cfed733e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/userswp/"
+    google-query: inurl:"/wp-content/plugins/userswp/"
+    shodan-query: 'http.html:"wp-content/plugins/userswp/"'
+  tags: cve,wordpress,wp-plugin,userswp,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/userswp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "userswp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.3.23')

@@ -1,0 +1,59 @@
+id: count_per_day-30eda147-f02a-4b3c-a51c-665aa4c75c93
+
+info:
+  name: >
+    Count per Day <= 3.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/30eda147-f02a-4b3c-a51c-665aa4c75c93?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/count-per-day/"
+    google-query: inurl:"/wp-content/plugins/count-per-day/"
+    shodan-query: 'http.html:"wp-content/plugins/count-per-day/"'
+  tags: cve,wordpress,wp-plugin,count-per-day,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/count-per-day/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "count-per-day"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.4.1')

@@ -1,0 +1,59 @@
+id: careerfy-e93ad115-1a0b-4d33-b89f-13e39508c9b0
+
+info:
+  name: >
+    Careerfy <= 7.0 - Cross-Site Request Forgery and Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Careerfy theme for WordPress is vulnerable to authorization bypass & Cross-Site Request Forgery in versions up to, and including, 7.0. This is due to missing nonce validation and capability checks on several functions. This makes it possible for authenticated attackers, with minimal permissions such as a subscriber, to trigger several AJAX actions that can perform operations like importing jobs and modifyig custom settings. This can also be exploited via CSRF.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e93ad115-1a0b-4d33-b89f-13e39508c9b0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/careerfy/"
+    google-query: inurl:"/wp-content/themes/careerfy/"
+    shodan-query: 'http.html:"wp-content/themes/careerfy/"'
+  tags: cve,wordpress,wp-theme,careerfy,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/careerfy/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "careerfy"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.0')

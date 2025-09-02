@@ -1,0 +1,59 @@
+id: woocommerce_abandoned_cart-1ce1316b-674a-4436-968f-9ffca4e8f726
+
+info:
+  name: >
+    Abandoned Cart Lite for WooCommerce <= 5.16.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Abandoned Cart Lite for WooCommerce plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 5.16.1. This is due to missing or incorrect nonce validation on the functions corresponding to AJAX actions. This makes it possible for unauthenticated attackers to dismiss notices and toggle template statuses among other things via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1ce1316b-674a-4436-968f-9ffca4e8f726?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-abandoned-cart/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-abandoned-cart/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-abandoned-cart/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-abandoned-cart,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-abandoned-cart/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-abandoned-cart"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.16.1')

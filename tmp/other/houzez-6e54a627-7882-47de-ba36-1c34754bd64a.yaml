@@ -1,0 +1,59 @@
+id: houzez-6e54a627-7882-47de-ba36-1c34754bd64a
+
+info:
+  name: >
+    Houzez <= 1.8.3 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Houzez theme for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'keyword' and 'agent_name' parameters in versions up to, and including, 1.8.3 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6e54a627-7882-47de-ba36-1c34754bd64a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/houzez/"
+    google-query: inurl:"/wp-content/themes/houzez/"
+    shodan-query: 'http.html:"wp-content/themes/houzez/"'
+  tags: cve,wordpress,wp-theme,houzez,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/houzez/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "houzez"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.3')

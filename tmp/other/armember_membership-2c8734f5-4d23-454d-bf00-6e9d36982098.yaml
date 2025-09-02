@@ -1,0 +1,59 @@
+id: armember_membership-2c8734f5-4d23-454d-bf00-6e9d36982098
+
+info:
+  name: >
+    ARMember <= 4.0.27 - Directory Traversal via X-FILENAME
+  author: topscoder
+  severity: medium
+  description: >
+    The ARMember plugin for WordPress is vulnerable to Directory Traversal in all versions up to, and including, 4.0.27 via the 'X-FILENAME' HTTP header. This makes it possible for unauthenticated attackers to upload and overwrite certain files (e.g., CSS) to directories outside the 'wp-content/uploads/armember' directory.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2c8734f5-4d23-454d-bf00-6e9d36982098?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/armember-membership/"
+    google-query: inurl:"/wp-content/plugins/armember-membership/"
+    shodan-query: 'http.html:"wp-content/plugins/armember-membership/"'
+  tags: cve,wordpress,wp-plugin,armember-membership,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/armember-membership/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "armember-membership"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.0.27')

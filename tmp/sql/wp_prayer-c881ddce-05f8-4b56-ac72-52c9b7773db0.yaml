@@ -1,0 +1,59 @@
+id: wp_prayer-c881ddce-05f8-4b56-ac72-52c9b7773db0
+
+info:
+  name: >
+    WP Prayer <= 1.5.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Prayer plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.5.4. This is due to missing or incorrect nonce validation on the wpe_ajax_call function. This makes it possible for unauthenticated attackers to have users unknowingly execute actions via a forged request.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c881ddce-05f8-4b56-ac72-52c9b7773db0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-prayer/"
+    google-query: inurl:"/wp-content/plugins/wp-prayer/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-prayer/"'
+  tags: cve,wordpress,wp-plugin,wp-prayer,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-prayer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-prayer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.5')

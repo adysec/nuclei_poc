@@ -1,0 +1,59 @@
+id: vithy-114ff636-6b51-43a2-b2c8-19e01e94176f
+
+info:
+  name: >
+    Vithy (Unknown Versions) - Full Path Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The Vithy theme for WordPress is vulnerable to Sensitive Data Exposure in all versions via the index.php file. This can allow unauthenticated attackers to extract sensitive data including the full path of the WordPress installation.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/114ff636-6b51-43a2-b2c8-19e01e94176f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/vithy/"
+    google-query: inurl:"/wp-content/themes/vithy/"
+    shodan-query: 'http.html:"wp-content/themes/vithy/"'
+  tags: cve,wordpress,wp-theme,vithy,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/vithy/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "vithy"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

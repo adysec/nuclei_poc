@@ -1,0 +1,59 @@
+id: login_redirect-e511497d-eb79-4c8c-8b2d-c6ad43d2a3ec
+
+info:
+  name: >
+    Login Redirect <= 1.0.5 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e511497d-eb79-4c8c-8b2d-c6ad43d2a3ec?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/login-redirect/"
+    google-query: inurl:"/wp-content/plugins/login-redirect/"
+    shodan-query: 'http.html:"wp-content/plugins/login-redirect/"'
+  tags: cve,wordpress,wp-plugin,login-redirect,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/login-redirect/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "login-redirect"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.5')

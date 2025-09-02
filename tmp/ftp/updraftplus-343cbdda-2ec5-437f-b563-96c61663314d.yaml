@@ -1,0 +1,59 @@
+id: updraftplus-343cbdda-2ec5-437f-b563-96c61663314d
+
+info:
+  name: >
+    Updraft Plus <= 1.22.24 - Information Disclosure via updraft_ajaxrestore
+  author: topscoder
+  severity: medium
+  description: >
+    The Updraft Plus plugin for WordPress is vulnerable to information disclosure in versions up to, and including, 1.22.24. This is due to the fact that the 'updraft_ajaxrestore' function generates a log file containing system configuration information. This makes it possible for unauthenticated attackers to trigger generation of such a log file, though it is only possible to access it on configurations that do not respect the "deny from all" directive.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/343cbdda-2ec5-437f-b563-96c61663314d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/updraftplus/"
+    google-query: inurl:"/wp-content/plugins/updraftplus/"
+    shodan-query: 'http.html:"wp-content/plugins/updraftplus/"'
+  tags: cve,wordpress,wp-plugin,updraftplus,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/updraftplus/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "updraftplus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.22.24')

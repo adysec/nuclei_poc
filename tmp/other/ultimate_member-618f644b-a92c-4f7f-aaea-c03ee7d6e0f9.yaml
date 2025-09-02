@@ -1,0 +1,59 @@
+id: ultimate_member-618f644b-a92c-4f7f-aaea-c03ee7d6e0f9
+
+info:
+  name: >
+    Ultimate Member – User Profile, User Registration, Login & Membership Plugin <= 2.0.45 - Arbitrary File Deletion/Read
+  author: topscoder
+  severity: critical
+  description: >
+    The Ultimate Member – User Profile, User Registration, Login & Membership Plugin plugin for WordPress is vulnerable to arbitrary file deletion and reading when the file upload functionality is enabled for the user profile and registration forms in versions up to, and including 2.0.45. This is due to the fact that the plugin did not perform sufficient file path validation or restrict the files that users had access to when performing a file download or deletion. This makes it possible for low-level privileged attackers to delete arbitrary files such as the wp-config.php file and ultimately achieve remote code execution.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/618f644b-a92c-4f7f-aaea-c03ee7d6e0f9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:L
+    cvss-score: 9.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ultimate-member/"
+    google-query: inurl:"/wp-content/plugins/ultimate-member/"
+    shodan-query: 'http.html:"wp-content/plugins/ultimate-member/"'
+  tags: cve,wordpress,wp-plugin,ultimate-member,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ultimate-member/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ultimate-member"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.45')

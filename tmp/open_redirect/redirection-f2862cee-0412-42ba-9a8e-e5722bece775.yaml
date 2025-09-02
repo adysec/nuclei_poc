@@ -1,0 +1,59 @@
+id: redirection-f2862cee-0412-42ba-9a8e-e5722bece775
+
+info:
+  name: >
+    Redirection <= 3.6.3 - Cross-Site Request Forgery to Remote Code Execution
+  author: topscoder
+  severity: high
+  description: >
+    The Redirection plugin suffers from a critical Cross-Site Request Forgery vulnerability that allows remote attackers to create a file on the target server and execute arbitrary code.  The attack requires an administrator visit a malicious website set up by the attacker, but does not require more interaction nor do they have to click on anything on the malicious website in order to trigger the exploit.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f2862cee-0412-42ba-9a8e-e5722bece775?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/redirection/"
+    google-query: inurl:"/wp-content/plugins/redirection/"
+    shodan-query: 'http.html:"wp-content/plugins/redirection/"'
+  tags: cve,wordpress,wp-plugin,redirection,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/redirection/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "redirection"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.6.3')

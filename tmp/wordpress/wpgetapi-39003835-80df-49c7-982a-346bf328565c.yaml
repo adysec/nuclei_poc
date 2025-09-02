@@ -1,0 +1,59 @@
+id: wpgetapi-39003835-80df-49c7-982a-346bf328565c
+
+info:
+  name: >
+    WPGetAPI 2.1.0 - 2.2.1 - Authenticated (Subscriber+) Arbitrary Options Update
+  author: topscoder
+  severity: low
+  description: >
+    The WPGetAPI plugin for WordPress is vulnerable to unauthorized modification of data due to a missing capability check on the import_endpoints() function in versions 2.1.0 - 2.2.1. This makes it possible for authenticated attackers, with subscriber-level access and above, to update arbitrary options which can be leveraged for privilege escalation.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/39003835-80df-49c7-982a-346bf328565c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpgetapi/"
+    google-query: inurl:"/wp-content/plugins/wpgetapi/"
+    shodan-query: 'http.html:"wp-content/plugins/wpgetapi/"'
+  tags: cve,wordpress,wp-plugin,wpgetapi,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpgetapi/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpgetapi"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 2.1.0', '< 2.2.2')

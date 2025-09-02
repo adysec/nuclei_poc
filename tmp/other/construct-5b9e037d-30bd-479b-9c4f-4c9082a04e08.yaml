@@ -1,0 +1,59 @@
+id: construct-5b9e037d-30bd-479b-9c4f-4c9082a04e08
+
+info:
+  name: >
+    Construct <= 1.4 - Arbitrary File Deletion
+  author: topscoder
+  severity: high
+  description: >
+    The Construct Theme for WordPress is vulnerable to Arbitrary File Deletion in versions up to, and including, 1.4. This is due to the '_mysite_delete_skin_zip' parameter in the 'dl-skin.php' file. This makes it possible for unauthenticated attackers to delete any file on the server of the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5b9e037d-30bd-479b-9c4f-4c9082a04e08?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/construct/"
+    google-query: inurl:"/wp-content/themes/construct/"
+    shodan-query: 'http.html:"wp-content/themes/construct/"'
+  tags: cve,wordpress,wp-theme,construct,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/construct/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "construct"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4')

@@ -1,0 +1,59 @@
+id: wp_mail_logging-de00d13b-fab9-4284-9594-abd000fbb7ef
+
+info:
+  name: >
+    WP Mail Logging <= 1.11.2 - Missing Authorization to Notice Dismissal
+  author: topscoder
+  severity: low
+  description: >
+    The WP Mail Logging plugin for WordPress is vulnerable to unauthorized notice dismissal due to a missing capability check on the feedback_notice_dismiss() function in versions up to, and including, 1.11.2. This makes it possible for authenticated attackers with subscriber-level access and above to dismiss plugin notices.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/de00d13b-fab9-4284-9594-abd000fbb7ef?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-mail-logging/"
+    google-query: inurl:"/wp-content/plugins/wp-mail-logging/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-mail-logging/"'
+  tags: cve,wordpress,wp-plugin,wp-mail-logging,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-mail-logging/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-mail-logging"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.12.0')

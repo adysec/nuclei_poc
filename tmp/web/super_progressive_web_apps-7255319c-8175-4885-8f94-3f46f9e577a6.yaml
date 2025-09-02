@@ -1,0 +1,59 @@
+id: super_progressive_web_apps-7255319c-8175-4885-8f94-3f46f9e577a6
+
+info:
+  name: >
+    Super Progressive Web Apps <= 2.2.8 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Super Progressive Web Apps plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the superpwa_send_feedback function in versions up to, and including, 2.2.8. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to submit feedback to the plugin developers.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7255319c-8175-4885-8f94-3f46f9e577a6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/super-progressive-web-apps/"
+    google-query: inurl:"/wp-content/plugins/super-progressive-web-apps/"
+    shodan-query: 'http.html:"wp-content/plugins/super-progressive-web-apps/"'
+  tags: cve,wordpress,wp-plugin,super-progressive-web-apps,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/super-progressive-web-apps/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "super-progressive-web-apps"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.2.8')

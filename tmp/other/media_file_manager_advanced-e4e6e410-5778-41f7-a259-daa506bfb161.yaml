@@ -1,0 +1,59 @@
+id: media_file_manager_advanced-e4e6e410-5778-41f7-a259-daa506bfb161
+
+info:
+  name: >
+    Media File Manager Advanced <= 1.1.5 - Improper Access Control
+  author: topscoder
+  severity: low
+  description: >
+    The Media File Manager Advanced plugin for WordPress is vulnerable to Local File Disclosure, SQL Injection, Cross-Site Scripting, Site Ruining, and Changing of Content in versions up to, and including, 1.1.5. This is due to missing capability checks and insufficient input validation. This makes it possible for authenticated attackers to perform any of the previously listed attacks.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e4e6e410-5778-41f7-a259-daa506bfb161?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/media-file-manager-advanced/"
+    google-query: inurl:"/wp-content/plugins/media-file-manager-advanced/"
+    shodan-query: 'http.html:"wp-content/plugins/media-file-manager-advanced/"'
+  tags: cve,wordpress,wp-plugin,media-file-manager-advanced,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/media-file-manager-advanced/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "media-file-manager-advanced"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.5')

@@ -1,0 +1,59 @@
+id: wp_filebase-eebfa8de-8a20-4fac-b43a-f7ae674d9184
+
+info:
+  name: >
+    WP-Filebase <= 0.2.9.24 - Missing Authorization Checks
+  author: topscoder
+  severity: high
+  description: >
+    The WP-Filebase plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the 'del' & 'cats' actions in versions up to, and including, 0.2.9.24. This makes it possible for attackers to perform unauthorized actions such as deleting files and categories.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/eebfa8de-8a20-4fac-b43a-f7ae674d9184?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-filebase/"
+    google-query: inurl:"/wp-content/plugins/wp-filebase/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-filebase/"'
+  tags: cve,wordpress,wp-plugin,wp-filebase,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-filebase/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-filebase"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.2.9.24')

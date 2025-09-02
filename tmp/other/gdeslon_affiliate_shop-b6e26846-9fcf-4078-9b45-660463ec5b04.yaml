@@ -1,0 +1,59 @@
+id: gdeslon_affiliate_shop-b6e26846-9fcf-4078-9b45-660463ec5b04
+
+info:
+  name: >
+    GdeSlon Affiliate Shop <= 1.5.5 - Open Redirect
+  author: topscoder
+  severity: medium
+  description: >
+    The GdeSlon Affiliate Shop plugin for WordPress is vulnerable to Open Redirect in versions up to, and including, 1.5.5 via the go.php file. This makes it possible for unauthenticated attackers to redirect users with contributer-level permissions and above to a potentially malicious website where they can gather sensitive user information for future attacks.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b6e26846-9fcf-4078-9b45-660463ec5b04?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gdeslon-affiliate-shop/"
+    google-query: inurl:"/wp-content/plugins/gdeslon-affiliate-shop/"
+    shodan-query: 'http.html:"wp-content/plugins/gdeslon-affiliate-shop/"'
+  tags: cve,wordpress,wp-plugin,gdeslon-affiliate-shop,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gdeslon-affiliate-shop/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gdeslon-affiliate-shop"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.5')

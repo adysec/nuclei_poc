@@ -1,0 +1,59 @@
+id: duracelltomi_google_tag_manager-79a41b84-2e19-46eb-9f6b-5155da0b15cc
+
+info:
+  name: >
+    Google Tag Manager for WordPress <= 1.15 - Cross-Site Scripting via Cloudflare Country Code
+  author: topscoder
+  severity: high
+  description: >
+    The Google Tag Manager for WordPress plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the $_SERVER['HTTP_CF_IPCOUNTRY'] value in versions up to, and including, 1.15 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/79a41b84-2e19-46eb-9f6b-5155da0b15cc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/duracelltomi-google-tag-manager/"
+    google-query: inurl:"/wp-content/plugins/duracelltomi-google-tag-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/duracelltomi-google-tag-manager/"'
+  tags: cve,wordpress,wp-plugin,duracelltomi-google-tag-manager,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/duracelltomi-google-tag-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "duracelltomi-google-tag-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.15')

@@ -1,0 +1,59 @@
+id: weforms-379a5016-3968-4b28-8d6e-0f517e419016
+
+info:
+  name: >
+    Various Plugins <= Various Version - Use of Polyfill.io
+  author: topscoder
+  severity: medium
+  description: >
+    Multiple plugins for WordPress are vulnerable to malicious redirection in various versions. This is due to the use of Polyfill.io. Polyfill.io is a JavaScript library used to streamline delivery of content across older browsers and was taken over by malicious threat actors that used the service to redirect victims to malicious websites. While many WordPress plugins utilize Polyfill.io, not all of them may have been delivering malicious content. Regardless, it is recommended to update to a version of the plugin where Polyfill is no longer used or manually remove the use of Polyfill.io from the plugin.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/379a5016-3968-4b28-8d6e-0f517e419016?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/weforms/"
+    google-query: inurl:"/wp-content/plugins/weforms/"
+    shodan-query: 'http.html:"wp-content/plugins/weforms/"'
+  tags: cve,wordpress,wp-plugin,weforms,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/weforms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "weforms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.23')

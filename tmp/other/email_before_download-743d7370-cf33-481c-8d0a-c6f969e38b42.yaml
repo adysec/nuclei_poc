@@ -1,0 +1,59 @@
+id: email_before_download-743d7370-cf33-481c-8d0a-c6f969e38b42
+
+info:
+  name: >
+    Email Before Download <= 3.4 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Email Before Download plugin for WordPress is vulnerable to SQL Injection in versions up to, and including, 3.4 due to insufficient escaping on several user-supplied parameters and lack of sufficient preparation on existing SQL queries.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/743d7370-cf33-481c-8d0a-c6f969e38b42?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/email-before-download/"
+    google-query: inurl:"/wp-content/plugins/email-before-download/"
+    shodan-query: 'http.html:"wp-content/plugins/email-before-download/"'
+  tags: cve,wordpress,wp-plugin,email-before-download,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/email-before-download/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "email-before-download"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.4')
