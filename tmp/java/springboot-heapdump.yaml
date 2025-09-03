@@ -1,21 +1,27 @@
 id: springboot-heapdump
 
 info:
-  name: Detect Springboot Heapdump Actuator
-  author: that_juan_ & dwisiswant0 & wdahlenb
+  name: Spring Boot Actuator - Heap Dump Detection
+  author: that_juan_,dwisiswant0,wdahlenb
   severity: critical
-  description: Environment variables and HTTP requests can be found in the HPROF
-  tags: springboot,disclosure
+  description: A Spring Boot Actuator heap dump was detected. A heap dump is a snapshot of JVM memory, which could expose environment variables and HTTP requests.
+  reference:
+    - https://github.com/pyn3rd/Spring-Boot-Vulnerability
+  tags: springboot,exposure
+  metadata:
+    max-request: 2
 
-requests:
+http:
   - method: GET
     path:
       - "{{BaseURL}}/heapdump"
       - "{{BaseURL}}/actuator/heapdump"
 
+    stop-at-first-match: true
     max-size: 2097152 # 2MB - Max Size to read from server response
     matchers-condition: and
     matchers:
+
       - type: binary
         part: body
         binary:
@@ -24,21 +30,13 @@ requests:
           - "1f8b080000000000" # Gunzip magic byte
         condition: or
 
+      - type: word
+        part: header
+        words:
+          - "gzip"
+        case-insensitive: true
+        negative: true
+
       - type: status
         status:
           - 200
-
-      - type: word
-        words:
-          - "application/octet-stream"
-          - "application/vnd.spring-boot.actuator"
-          - "application/vnd.spring-boot.actuator.v1+json"
-        part: header
-        condition: or
-
-      - type: dsl
-        dsl:
-          - "len(body) >= 100000"
-          - "content_length >= 100000"
-        condition: or
-        part: header
