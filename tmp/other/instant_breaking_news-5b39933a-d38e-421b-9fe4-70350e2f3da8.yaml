@@ -1,0 +1,59 @@
+id: instant_breaking_news-5b39933a-d38e-421b-9fe4-70350e2f3da8
+
+info:
+  name: >
+    Instant Breaking News <= 1.0 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5b39933a-d38e-421b-9fe4-70350e2f3da8?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/instant-breaking-news/"
+    google-query: inurl:"/wp-content/plugins/instant-breaking-news/"
+    shodan-query: 'http.html:"wp-content/plugins/instant-breaking-news/"'
+  tags: cve,wordpress,wp-plugin,instant-breaking-news,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/instant-breaking-news/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "instant-breaking-news"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')
