@@ -1,0 +1,40 @@
+id: akuiteo-panel
+
+info:
+  name: Akuiteo Login Panel - Detect
+  author: righettod
+  severity: info
+  description: |
+    Akuiteo products was detected.
+  reference:
+    - https://www.akuiteo.com/en/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Akuiteo"
+  tags: panel,akuiteo,login,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/akuiteo.collabs/login/login.html"
+      - "{{BaseURL}}/akuiteo/login.html/"
+
+    redirects: true
+    max-redirects: 2
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(to_lower(body), "akuiteo collabs</title>", "akuiteo mobile</title>", "akuiteo</title>", "<title>[akuiteo]")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - '(?i)x-akuiteo-masterhash:\s+([0-9a-f]+)'
+# digest: 4a0a004730450220378edbedfa9caef0ba017ec709a8da7a4cb261f256a84b48c137f88b75eeba0a022100ae76578b3335357e81f20546ec8ccbc9caebbd95877b2e4d97dff9b879ef3e88:922c64590222798bb761d5b6d8e72950

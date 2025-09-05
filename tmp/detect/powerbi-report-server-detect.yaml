@@ -1,0 +1,39 @@
+id: powerbi-report-server-detect
+
+info:
+  name: PowerBI Report Server - Detect
+  author: righettod
+  severity: info
+  description: |
+    PowerBI Report Server was detected.
+  reference:
+    - https://www.microsoft.com/en-us/power-platform/products/power-bi/report-server
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: http.html:"report server web portal"
+  tags: panel,powerbi,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/reports/api/v2.0/System"
+      - "{{BaseURL}}/reports/browse"
+
+    stop-at-first-match: true
+    redirects: true
+    max-redirects: 2
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "power bi report server", "powerbireportserver", "<title>report server web portal</title>")'
+        condition: and
+
+    extractors:
+      - type: json
+        part: body
+        name: version
+        json:
+          - '.ProductVersion'
+# digest: 4a0a00473045022100d8d62b1e14683e8a2c894a6e16b47b76dd8e66cc7d448e6e635799545aaa8893022072d7c70781bd74de25abe800cd1580fcab7b912d701ce7e67b0a5d1eae38a29e:922c64590222798bb761d5b6d8e72950
