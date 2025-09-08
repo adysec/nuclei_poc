@@ -1,0 +1,35 @@
+id: detect-clickjacking
+info:
+  name: Detect Clickjacking Vulnerability
+  description: Detects if a URL is vulnerable to clickjacking.
+  severity: high
+  tags:
+    - security
+    - clickjacking
+inputs:
+  target:
+    type: url
+    description: The target URL to scan for clickjacking vulnerability.
+author:
+  name: [Satya Prakash]
+  twitter: [@0xKayala]
+  website: [0xKayala.medium.com]
+  github: [0xKayala]
+
+requests:
+  - method: GET
+    url: '{{input "target"}}'
+    headers:
+      - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36
+      - Referer: '{{input "target"}}'
+      - Origin: '{{input "target"}}'
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "(<iframe.*src=.*/>)i"
+        condition: present
+      - type: regex
+        regex:
+          - "(<meta.*http-equiv=.X-Frame-Options.*/>)i"
+        condition: not present
