@@ -1,0 +1,103 @@
+id: http-suspicious-response-headers
+
+info:
+  author: anonymous
+  name: Detect custom headers in responses
+  severity: info
+  tags: generic,headers,noisy,miscellaneous
+
+flow: |
+  http()
+  javascript()
+
+variables:
+  http_headers:
+    - accept-ch
+    - access-control-allow-origin
+    - accept-patch
+    - accept-ranges
+    - age
+    - allow
+    - alt-svc
+    - cache-control
+    - connection
+    - content-disposition
+    - content-encoding
+    - content-language
+    - content-length
+    - content-location
+    - content-md5
+    - content-range
+    - content-type
+    - date
+    - delta-base
+    - etag
+    - expires
+    - im
+    - last-modified
+    - link
+    - location
+    - p3p
+    - pragma
+    - preference-applied
+    - proxy-authenticate
+    - public-key-pins
+    - retry-after
+    - server
+    - set-cookie
+    - strict-transport-security
+    - trailer
+    - transfer-encoding
+    - tk
+    - upgrade
+    - vary
+    - via
+    - warning
+    - www-authenticate
+    - x-frame-options
+    - content-security-policy
+    - expect-ct
+    - nel
+    - permissions-policy
+    - refresh
+    - report-to
+    - status
+    - timing-allow-origin
+    - x-content-duration
+    - x-content-type-options
+    - x-powered-by
+    - x-redirect-by
+    - x-request-id
+    - x-correlation-id
+    - x-ua-compatible
+    - x-ua-compatible
+    - x-xss-protection
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method != "HEAD"'
+          - 'method != "OPTIONS"'
+        condition: and
+
+    fuzzing:
+      - part: header
+        type: postfix
+        mode: single
+        fuzz:
+          - ""
+
+# Extract the header name as lower case (split on ":", lowercase, trim)
+# Then filter if it is inside "http_headers"
+javascript:
+  - code: |
+      template.http_all_headers
+          .split(/\r\n/)
+          .filter(line => line.includes(':') && !template.http_headers.includes(line.split(':')[0].toLowerCase().trim()))
+          .join('\n')
+
+    extractors:
+      - type: regex
+        regex:
+          - '.+'

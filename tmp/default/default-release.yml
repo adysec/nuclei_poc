@@ -1,0 +1,176 @@
+# The way this works is the following:
+#
+# The create-release job runs purely to initialize the GitHub release itself
+# and to output upload_url for the following job.
+#
+# The build-release job runs only once create-release is finished. It gets the
+# release upload URL from create-release job outputs, then builds the release
+# executables for each supported platform and attaches them as release assets
+# to the previously created release.
+#
+# The key here is that we create the release only once.
+#
+# Reference:
+# https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
+
+name: default-release
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  BIN_NAME: observer_ward
+jobs:
+  build-release:
+    name: build-release
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [ linux, linux-gnu, macos, macos_m1,win-msvc, win7-msvc, linux-arm-v7, linux-aarch64 ]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            rust: stable
+            target: x86_64-unknown-linux-musl
+          - build: linux-gnu
+            os: ubuntu-latest
+            rust: stable
+            target: x86_64-pc-windows-gnu
+          - build: macos
+            os: macos-latest
+            rust: stable
+            target: x86_64-apple-darwin
+          - build: macos_m1
+            os: macos-latest
+            rust: stable
+            target: aarch64-apple-darwin
+          - build: win-msvc
+            os: windows-latest
+            rust: stable
+            target: i686-pc-windows-msvc
+          - build: win7-msvc
+            os: windows-latest
+            rust: nightly
+            target: x86_64-pc-windows-msvc
+          - build: linux-arm-v7
+            os: ubuntu-latest
+            rust: stable
+            target: armv7-unknown-linux-gnueabihf
+          - build: linux-aarch64
+            os: ubuntu-latest
+            rust: stable
+            target: aarch64-unknown-linux-gnu
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+      - name: Install packages (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib xz-utils liblz4-tool libc6-dev libssl-dev musl-tools pkg-config patchelf
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+          sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" observer_ward/Cargo.toml
+          sed -i -e "s/\"observer_ward version\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
+      - name: Cache Choco
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}\choco-cache
+          key: ${{ runner.os }}-temp-cache
+      - name: Install packages (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          choco config set cacheLocation "${{ github.workspace }}\choco-cache"
+          export CARGO_PKG_VERSION=`date +'%-Y.%-m.%-d'`
+          sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" observer_ward/Cargo.toml
+          sed -i -e "s/\"observer_ward version\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
+          echo "CARGO_PKG_VERSION=`date +'%Y.%m.%d'`" >>$GITHUB_ENV
+          echo "RUSTFLAGS=-C target-feature=+crt-static" >>$GITHUB_ENV
+      - name: Install packages (Macos)
+        if: matrix.os == 'macos-latest'
+        run: |
+          sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" observer_ward/Cargo.toml
+          sed -i -e "s/\"observer_ward version\"/\"observer_ward v`date +'%-Y.%-m.%-d'`\"/" observer_ward/src/cli.rs
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+          target: ${{ matrix.target }}
+      - name: Build stable release binary
+        if: matrix.rust == 'stable'
+        run: |
+          cargo build --target ${{ matrix.target }} --verbose --release --bin observer_ward
+          cargo build --target ${{ matrix.target }} --verbose --release --features=mcp --bin observer_ward_mcp
+      - name: Build nightly release binary
+        if: matrix.rust == 'nightly'
+        run: |
+          rustup component add rust-src --toolchain nightly-${{ matrix.target }}
+          cargo +nightly build --target ${{ matrix.target }} --verbose --release --bin observer_ward
+          cargo +nightly build --target ${{ matrix.target }} --verbose --release --features=mcp --bin observer_ward_mcp
+      - name: Build archive
+        shell: bash
+        run: |
+          staging="${{ env.BIN_NAME }}_${{ needs.create-release.outputs.release_version }}_${{ matrix.target }}"
+          mkdir -p "$staging"
+          cp {README.md,LICENSE} "$staging/"
+          if [ "${{ matrix.os }}" = "windows-latest" ] || [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            bin_file="target/${{ matrix.target }}/release/${{ env.BIN_NAME }}.exe"
+            mcp_bin_file="target/${{ matrix.target }}/release/${{ env.BIN_NAME }}_mcp.exe"
+            new_bin_file="target/${{ matrix.target }}/release/${{ matrix.target }}.exe"
+            new_mcp_bin_file="target/${{ matrix.target }}/release/${{ matrix.target }}_mcp.exe"
+            mv "$bin_file" "$new_bin_file"
+            mv "$mcp_bin_file" "$new_mcp_bin_file"
+            cp "$new_bin_file" "$staging/"
+            cp "$new_mcp_bin_file" "$staging/"
+            cd "$staging"
+            7z a "../$staging.zip" .
+            echo "ASSET=$staging.zip" >> $GITHUB_ENV
+            echo "BIN_FILE=$new_bin_file" >> $GITHUB_ENV
+            echo "MCP_BIN_FILE=$new_mcp_bin_file" >> $GITHUB_ENV
+          else
+            bin_file="target/${{ matrix.target }}/release/${{ env.BIN_NAME }}"
+            mcp_bin_file="target/${{ matrix.target }}/release/${{ env.BIN_NAME }}_mcp"
+            new_bin_file="target/${{ matrix.target }}/release/${{ matrix.target }}"
+            new_mcp_bin_file="target/${{ matrix.target }}/release/${{ matrix.target }}_mcp"
+            mv "$bin_file" "$new_bin_file"
+            mv "$mcp_bin_file" "$new_mcp_bin_file"
+            cp "$new_bin_file" "$staging/"
+            cp "$new_mcp_bin_file" "$staging/"
+            echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
+            echo "BIN_FILE=$new_bin_file" >> $GITHUB_ENV
+            echo "MCP_BIN_FILE=$new_mcp_bin_file" >> $GITHUB_ENV
+            tar czf "$staging.tar.gz" -C "$staging" ${{ matrix.target }} ${{ matrix.target }}_mcp README.md LICENSE
+          fi
+      - name: Upload release archive
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: ${{ env.ASSET }}
+          tag_name: defaultv4
+      - name: Upload binary to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: defaultv4
+          files: |
+            ${{ env.BIN_FILE }}
+            ${{ env.MCP_BIN_FILE }}
+      - name: Install Cargo deb (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo install cargo-deb
+          cargo deb --target ${{ matrix.target }} --output target/${{ matrix.target }}/debian/observer-ward_${{ matrix.target }}.deb
+      - name: Upload deb to release
+        if: matrix.os == 'ubuntu-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: defaultv4
+          files: target/${{ matrix.target }}/debian/observer-ward_${{ matrix.target }}.deb
