@@ -1,0 +1,36 @@
+id: unigui-server-monitor-exposure
+
+info:
+  name: UniGUI Server Monitor Panel - Exposure
+  author: serrapa
+  severity: low
+  description: |
+    Detects exposed UniGUI Server Monitor Panels which could reveal sensitive server statistics, users sessions, licensing information and others data.
+  reference:
+    - https://www.unigui.com/doc/online_help/using-server-monitor-(server-c.htm
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"uniGUI"
+    fofa-query: title="uniGUI"
+  tags: exposure,unigui,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/server"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "uniGUI Standalone Server", "uniGUI License Information", "Server Statistics")'
+          - 'status_code == 200'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "layout:\"fit\",title:\"uniGUI Standalone Server\"")'
+          - 'contains(body, "layout:\"absolute\",title:\"Server Statistics\"")'
+        condition: or
+# digest: 4b0a00483046022100ba1ff969d2f73146875a055bb0a5af03b55c4b0712e233e692223d1c43402375022100efb7e5ccdae752b4057331aea9313d3a16f04ef0cc8a2814b72437a4590280f0:922c64590222798bb761d5b6d8e72950

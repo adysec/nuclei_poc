@@ -1,0 +1,33 @@
+id: cors-01
+type: fuzz
+info:
+  name: CORS Misconfiguration
+  risk: medium
+
+payloads:
+  - http://example.com
+  - example.com
+  - non
+
+requests:
+  - generators:
+    - header("{{.payload}}[[.original]]", "Origin")
+    - header("{{.payload}}[[.original]]", "Referer")
+    - header("{{.payload}}{{.Domain}}", "Origin")
+    - header("{{.payload}}{{.Domain}}", "Referer")
+    - header("{{.payload}}%0a%0d{{.Domain}}", "Referer")
+    - header("{{.payload}}%0a%0d{{.Domain}}", "Origin")
+    detections:
+    - search("response", "Access-Control-Allow-Origin: {{.payload}}") && search("response", "Access-Control-Allow-Credentials: true")
+    - search("response", "Access-Control-Allow-Origin: *") && search("response", "Access-Control-Allow-Credentials: true")
+  - generators:
+    - header("{{.payload}}{{.Domain}}", "Origin")
+    - header("{{.payload}}{{.Domain}}", "Referer")
+    - header("[[.original]]{{.payload}}", "Origin")
+    - header("[[.original]]{{.payload}}", "Referer")
+    - header("[[.original]]%0a%0d{{.payload}}", "Origin")
+    - header("[[.original]]%0a%0d{{.payload}}", "Referer")
+    detections:
+    - search("response", "Access-Control-Allow-Origin: [[.original]]{{.payload}}") && search("response", "Access-Control-Allow-Credentials: true")
+    - search("response", "Access-Control-Allow-Origin: .*{{.payload}}") && search("response", "Access-Control-Allow-Credentials: true")
+    - search("response", "Access-Control-Allow-Origin: *") && search("response", "Access-Control-Allow-Credentials: true")
