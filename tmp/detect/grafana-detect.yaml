@@ -1,15 +1,42 @@
-id: grafana-panel
+id: grafana-detect
 
 info:
-  name: Grafana Panel
-  author: organiccrap
+  name: Grafana Login Panel - Detect
+  author: organiccrap,AdamCrosser,bhutch
   severity: info
-  verified: true
+  description: Grafana login panel was detected.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0.0
+    cwe-id: CWE-200
+  metadata:
+    max-request: 1
+    shodan-query: title:"Grafana"
+    vendor: grafana
+    product: grafana
+    category: devops
+  tags: panel,grafana,detect
 
-rules:
-  r0:
-    request:
-      method: GET
-      path: /login
-    expression: response.status == 200 && response.body.bcontains(b'<title>Grafana</title>')
-expression: r0()
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/login"
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<title>Grafana</title>"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '\"version\"\:\"([0-9.]+)\"}'
+          - '\"subTitle\":\"Grafana v([0-9.]+)'
+
+      - type: kval
+        kval:
+          - version

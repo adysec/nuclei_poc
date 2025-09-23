@@ -2,21 +2,18 @@ id: sqli-error-based
 
 info:
   name: Error based SQL Injection
-  author: geeknik,pdteam
+  author: pdteam
   severity: critical
   description: |
     Direct SQL Command Injection is a technique where an attacker creates or alters existing SQL commands to expose hidden data,
     or to override valuable ones, or even to execute dangerous system level commands on the database host.
     This is accomplished by the application taking user input and combining it with static parameters to build an SQL query .
-  metadata:
-    max-request: 3
   tags: sqli,error,dast
 
-http:
-  - pre-condition:
-      - type: dsl
-        dsl:
-          - 'method != "OPTIONS"'
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
 
     payloads:
       injection:
@@ -25,9 +22,8 @@ http:
         - ";"
 
     fuzzing:
-      - part: request
+      - part: query
         type: postfix
-        mode: single
         fuzz:
           - "{{injection}}"
 
@@ -144,7 +140,7 @@ http:
           - "SQLite\\.Exception"
           - "(Microsoft|System)\\.Data\\.SQLite\\.SQLiteException"
           - "Warning.*?\\W(sqlite_|SQLite3::)"
-          - "SQLITE_ERROR"
+          - "\\[SQLITE_ERROR\\]"
           - "SQLite error \\d+:"
           - "sqlite3.OperationalError:"
           - "SQLite3::SQLException"
@@ -363,7 +359,7 @@ http:
           - "SQLite\\.Exception"
           - "(Microsoft|System)\\.Data\\.SQLite\\.SQLiteException"
           - "Warning.*?\\W(sqlite_|SQLite3::)"
-          - "SQLITE_ERROR"
+          - "\\[SQLITE_ERROR\\]"
           - "SQLite error \\d+:"
           - "sqlite3.OperationalError:"
           - "SQLite3::SQLException"
@@ -494,5 +490,3 @@ http:
           - "SQ200: No table "
           - "Virtuoso S0002 Error"
           - "\\[(Virtuoso Driver|Virtuoso iODBC Driver)\\]\\[Virtuoso Server\\]"
-
-# digest: 4b0a00483046022100966a70c7d7be953b8599b861fc338b7cd07ccdf1cbb93d789e504acd7e17088f022100c5479e75293b0b3f63f68b1f52124a544e68ac11490c58b0b8978a07cd882339:922c64590222798bb761d5b6d8e72950

