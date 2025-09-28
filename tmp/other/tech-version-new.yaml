@@ -1,0 +1,57 @@
+id: tech-version-new
+
+info:
+  name: Tech version detect (helper)
+  author: anonymous
+  severity: info
+  tags: generic,tech,noisy
+
+flow: |
+  http()
+  javascript()
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method != "HEAD"'
+          - 'method != "OPTIONS"'
+        condition: and
+
+    fuzzing:
+      - part: header
+        type: postfix
+        mode: single
+        fuzz:
+          - ""
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        internal: true
+        regex:
+          - "/[0-9.]+"
+
+    extractors:
+      - type: regex
+        part: header
+        name: unknown
+        internal: true
+        group: 1
+        regex:
+          - "([^/\n ]+/[0-9.]+)"
+
+javascript:
+  - code: |
+      template.unknown.filter(
+        v => 
+          !["Python", "HTTP", "Werkzeug", "Apache", "nginx", "PHP"].includes(
+            v.trim().split('/')[0]
+          )
+      ).map(v => v.trim()).join("\n")
+
+    extractors:
+      - type: regex
+        regex:
+          - ".+"
