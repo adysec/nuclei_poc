@@ -1,0 +1,36 @@
+id: fuzz-command-injection
+
+info:
+  name: Basic Command Injection Detection
+  author: your_name
+  severity: critical
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{path_fuzz}}"
+    payloads:
+      cmd_injection:
+        - "&& whoami"
+        - "| whoami"
+        - "; whoami"
+        - "`whoami`"
+    stop-at-first-match: true
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{cmd_injection}}"
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "root"
+          - "admin"
+          - "user"
+      - type: word
+        part: header
+        words:
+          - "text/html"
