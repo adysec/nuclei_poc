@@ -1,0 +1,107 @@
+name: 🔄 Sync & Alert
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.yaml'
+      - '**/*.yml'
+  schedule:
+    - cron: '*/5 * * * *'    # every 5 minutes
+  workflow_dispatch:        # manual trigger
+
+permissions:
+  contents: write           # grant GITHUB_TOKEN push rights
+
+jobs:
+  sync-and-alert:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Checkout your fork (full history + credentials)
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      # 2) Configure Git so merge commits have valid author
+      - name: Configure Git user
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      # 3) Add upstream remote & fetch its main branch
+      - name: Add & fetch upstream
+        run: |
+          git remote add upstream https://github.com/projectdiscovery/nuclei-templates.git || true
+          git fetch upstream main
+
+      # 4) Detect new or modified templates upstream (before merge)
+      - name: Detect upstream template changes
+        id: detect
+        run: |
+          git diff --name-status origin/main..upstream/main \
+            | awk '($1=="A" || $1=="M") && $2 ~ /\.yaml$/ {print $1 ":" $2}' \
+            > changes.txt || true
+          echo "count=$(wc -l < changes.txt)" >> $GITHUB_OUTPUT
+
+      - name: Merge & push upstream changes (ignore .github)
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch upstream main
+
+          # Cho phép merge có conflict mà không dừng job
+          set +e
+          git merge --no-commit --no-ff upstream/main
+          set -e
+
+          # ✅ Giải quyết mọi conflict dưới .github bằng cách giữ "ours"
+          # (dùng checkout để chọn ours, sau đó add -A để cả thêm/sửa/xóa đều được stage)
+          git checkout --ours -- .github || true
+          git add -A .github
+
+          # ❌ Nếu còn conflict ở ngoài .github, abort để xử lý thủ công
+          if ! git diff --name-only --diff-filter=U --quiet -- . ':!.github/**'; then
+            echo "❌ Còn conflicts ngoài .github. Hủy merge."
+            git merge --abort
+            exit 1
+          fi
+
+          # (Tùy chọn) Đảm bảo không vô tình lấy thay đổi .github từ upstream
+          git restore --source=HEAD --staged --worktree -- .github/
+
+          # Chỉ commit khi thực sự có thay đổi
+          if git diff --quiet --staged; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Merge upstream without .github changes"
+          git push origin HEAD:main
+
+      # 6) Set up Python & install notifier dependencies
+      - name: Set up Python & deps
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Python packages
+        run: pip install pyyaml requests
+
+      # 7) Notify Discord for each added or modified template
+      - name: Notify Discord
+        if: steps.detect.outputs.count != '0'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_WEBHOOK_FLYSEC: ${{ secrets.DISCORD_WEBHOOK_FLYSEC }}
+          SHODAN_KEY: ${{ secrets.SHODAN_KEY }}
+        run: |
+          while read -r change; do
+            status=${change%%:*}
+            tpl=${change#*:}
+            # skip if file missing for any reason
+            [ -f "$tpl" ] || { echo "Skipping missing $tpl"; continue; }
+            python .github/scripts/notify.py "$status" "$tpl"
+          done < changes.txt

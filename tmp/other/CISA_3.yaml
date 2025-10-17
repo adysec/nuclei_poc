@@ -1,0 +1,106 @@
+name: CISA KEV
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6,15 * * 1,2,3,4,5'
+
+jobs:
+  CISA-KEV:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: CISA KEV
+      run: |
+        mv cisa-kev.csv cisa-kev-old.csv
+        curl --silent --output cisa-kev.csv https://www.cisa.gov/sites/default/files/csv/known_exploited_vulnerabilities.csv
+        echo "cisaOldVAR=$(cisa-kev-old.csv | wc -l)" >> $GITHUB_ENV
+        echo "cisaNewVAR=$(cisa-kev.csv | wc -l)" >> $GITHUB_ENV
+        echo "differenceVAR=$(( $cisaOldVAR - $cisaNewVAR ))" >> $GITHUB_ENV
+        rm cisa-kev-old.csv
+
+    - name: Fetch CVEs from Nuclei
+      run: |
+        git clone https://github.com/projectdiscovery/nuclei-templates.git
+        find . -type f -name '*CVE-*' -exec basename {} \; > NucleiList.txt
+        sed -i 's/.yaml//g' NucleiList.txt
+        sort -u NucleiList.txt -o NucleiList.txt
+
+
+    - name: Check for Nuclei and CISA KEV matches
+      run: |
+           grep -wof NucleiList.txt cisa-kev.csv | sort | uniq > CISA-Scannable-List.txt
+  
+
+    - name: Declare VARs
+      run: |
+           echo "totalVAR=$(($(wc -l < cisa-kev.csv) - 1))" >> $GITHUB_ENV
+           echo "nucleiVAR=$(wc -l < CISA-Scannable-List.txt)" >> $GITHUB_ENV
+           
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas matplotlib seaborn numpy
+    
+    - name: Generate comprehensive statistics
+      run: |
+        python scripts/generate_stats.py > /tmp/new_stats.md
+    
+    - name: Update README with new statistics
+      run: |
+        # Extract everything before the stats section
+        sed -n '1,/## 📊 Database Statistics/p' README.md | head -n -1 > /tmp/readme_before.md
+        
+        # Extract everything after the stats section (from "---" after stats to end)
+        sed -n '/^\*Statistics last updated:/,$ p' README.md | tail -n +2 > /tmp/readme_after.md
+        
+        # Combine: before + new stats + after
+        cat /tmp/readme_before.md > README.md
+        cat /tmp/new_stats.md >> README.md
+        echo "" >> README.md
+        echo "---" >> README.md
+        cat /tmp/readme_after.md >> README.md
+
+    - name: VAR Output Validation
+      run: |
+         echo "Total Vulnerabilities: ${{ env.totalVAR }}"
+         echo "New vulnerabilities added: ${{ env.differenceVAR }}"
+         echo "CISA Scannable list: ${{ env.nucleiVAR }}"
+
+    - name: Slack Notification
+      if: env.differenceVAR > 0
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+          payload: |
+           {
+            "text": "📈 *CISA's KEV has been updated!*\n\n New vulnerabilities added: `${{ env.differenceVAR }}`\nTotal Vulnerabilities: `${{ env.totalVAR }}`\nCISA Scannable list: `${{ env.nucleiVAR }}`",
+            "blocks": [
+             {
+               "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                 "text": "📈 *CISA's KEV has been updated!*\n\n New vulnerabilities added: `${{ env.differenceVAR }}`\nTotal Vulnerabilities: `${{ env.totalVAR }}`\nCISA Scannable list: `${{ env.nucleiVAR }}`"
+                }
+             }
+            ]
+            }
+
+    - name: Commit changes
+      run: |
+          git config --local user.email "hakrish@pm.me"
+          git config --local user.name "rxerium"
+          git add .
+          git commit -m "CISA KEV Updates" -a || true
+          git push
