@@ -1,0 +1,33 @@
+id: shutdown-without-logon-allowed
+
+info:
+  name: System Allows Shutdown Without Logging On
+  author: princechaddha
+  severity: medium
+  description: Checks if the system allows shutdown without logging on, which could lead to denial-of-service attacks.
+  impact: |
+    Allowing shutdown without logging on can result in denial-of-service or unauthorized shutdown of the system.
+  remediation: |
+    Restrict system shutdown to logged-in users to prevent unauthorized access.
+  tags: windows,shutdown,logon,code,windows-audit
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'ShutdownWithoutLogon'
+
+    matchers:
+      - type: word
+        words:
+          - "shutdownwithoutlogon : 1"
+# digest: 490a00463044022063c2992c27e0da77173746d7f7db42c238b99e007f5bbf223159c3f8af39f7c702205f31100451ed2e934cddf788a46a09d8a0575c0bcba58ca2a496d88ffad9f6f6:922c64590222798bb761d5b6d8e72950
