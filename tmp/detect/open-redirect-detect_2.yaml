@@ -1,0 +1,197 @@
+id: open-redirect-detect
+
+info:
+  name: Open Redirect Detection
+  author: anonymous
+  severity: info
+  tags: generic,check
+
+variables:
+  # Warning: due to how nuclei works, we can't pass this variable to the next template
+  #  (to the "keys" parameters), so it was copy-pasted...
+  redirect_tags:
+    - AuthState
+    - URL
+    - _url
+    - callback
+    - checkout
+    - checkout_url
+    - content
+    - continue
+    - continueTo
+    - counturl
+    - data
+    - dest
+    - dest_url
+    - destination
+    - dir
+    - document
+    - domain
+    - done
+    - download
+    - feed
+    - file
+    - file_name
+    - file_url
+    - folder
+    - folder_url
+    - forward
+    - from_url
+    - go
+    - goto
+    - host
+    - html
+    - http
+    - https
+    - image
+    - image_src
+    - image_url
+    - imageurl
+    - img
+    - img_url
+    - include
+    - langTo
+    - load_file
+    - load_url
+    - login_to
+    - login_url
+    - logout
+    - media
+    - navigation
+    - next
+    - next_page
+    - open
+    - out
+    - page
+    - page_url
+    - pageurl
+    - path
+    - picture
+    - port
+    - proxy
+    - r
+    - r2
+    - redir
+    - redirect
+    - redirectUri
+    - redirectUrl
+    - redirect_to
+    - redirect_uri
+    - redirect_url
+    - reference
+    - referrer
+    - req
+    - request
+    - ret
+    - retUrl
+    - return
+    - returnTo
+    - return_path
+    - return_to
+    - return_url
+    - rt
+    - rurl
+    - show
+    - site
+    - source
+    - src
+    - target
+    - to
+    - u
+    - uri
+    - url
+    - val
+    - validate
+    - view
+    - window
+    - back
+    - cgi
+    - follow
+    - home
+    - jump
+    - link
+    - location
+    - menu
+    - move
+    - nav
+    - orig_url
+    - out_url
+    - query
+    - auth
+    - callback_url
+    - confirm_url
+    - destination_url
+    - domain_url
+    - entry
+    - exit
+    - forward_url
+    - go_to
+    - goto_url
+    - home_url
+    - image_link
+    - load
+    - logout_url
+    - nav_to
+    - origin
+    - page_link
+    - redirect_link
+    - ref
+    - referrer_url
+    - return_link
+    - return_to_url
+    - source_url
+    - target_url
+    - to_url
+    - validate_url
+    - DirectTo
+    - relay
+    - service
+
+flow: |
+  http()
+  javascript()
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method != "HEAD"'
+          - 'method != "OPTIONS"'
+        condition: and
+
+    fuzzing:
+      - part: header
+        type: postfix
+        mode: single
+        fuzz:
+          - ""
+
+    matchers:
+      - type: status
+        internal: true
+        status:
+          - 200
+          - 301
+          - 302
+          - 307
+          - 308
+
+javascript:
+  - code: |
+      // http_2_request
+      const uri = template.http_request.split(/\r\n/).filter(v => v.includes("HTTP/"))?.[0]?.split(' ')?.[1]
+      if (uri) {
+        // "v" should match "&v=...&" or "?v=...&..."
+        // (we did not parse the request, so this is still not reliable)
+        template.redirect_tags.filter(
+          v => uri.includes("?" + v + "=") || uri.includes("&" + v + "=")
+        ).join('\n')
+      } else {
+        ""
+      }
+
+    extractors:
+      - type: regex
+        name: parameters
+        regex:
+          - '.+'
