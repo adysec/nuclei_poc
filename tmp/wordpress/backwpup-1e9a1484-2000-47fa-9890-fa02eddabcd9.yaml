@@ -1,0 +1,51 @@
+id: backwpup-1e9a1484-2000-47fa-9890-fa02eddabcd9
+
+info:
+  name: >
+    BackWPup <= 5.5.0 - Missing Authorization to Sensitive Information Exposure
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1e9a1484-2000-47fa-9890-fa02eddabcd9?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/backwpup/"
+    google-query: inurl:"/wp-content/plugins/backwpup/"
+    shodan-query: 'http.html:"wp-content/plugins/backwpup/"'
+  tags: cve,wordpress,wp-plugin,backwpup,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/backwpup/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "backwpup"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.5.0')
