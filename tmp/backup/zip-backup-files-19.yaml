@@ -1,0 +1,43 @@
+id: zip-backup-files 19
+info:
+  name: Compressed Web File
+  author: Toufik Airane,dwisiswant0
+  severity: medium
+  tags: exposure,backup
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /{{Subdomains}}.sql.xz HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    max-size: 500 # Size in bytes - Max Size to read from server response
+    matchers-condition: and
+    matchers:
+      - type: binary
+        binary:
+          - "377ABCAF271C" # 7z
+          - "314159265359" # bz2
+          - "53514c69746520666f726d6174203300" # SQLite format 3.
+          - "1f8b" # gz tar.gz
+          - "526172211A0700" # rar RAR archive version 1.50
+          - "526172211A070100" # rar RAR archive version 5.0
+          - "FD377A585A0000" # xz tar.xz
+          - "1F9D" # z tar.z
+          - "1FA0" # z tar.z
+          - "4C5A4950" # lz
+          - "504B0304" # zip
+        condition: or
+        part: body
+      - type: regex
+        regex:
+          - "application/[-\\w.]+"
+        part: header
+      - type: status
+        status:
+          - 200
