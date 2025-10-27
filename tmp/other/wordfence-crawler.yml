@@ -1,0 +1,94 @@
+name: 🕷 Wordfence crawler
+
+on:
+  schedule:
+    - cron: '25 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Process vulnerabilities from Wordfence API (production)
+        run: |
+          python src/main.py --api_endpoint https://www.wordfence.com/api/intelligence/v2/vulnerabilities/production --tag production --clean
+
+      - name: Process vulnerabilities from Wordfence API (scanner)
+        run: |
+          python src/main.py --api_endpoint https://www.wordfence.com/api/intelligence/v2/vulnerabilities/scanner --tag candidate
+
+      - name: Restore unchanged files to prevent false modifications
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          echo "=== Checking for files with identical content to HEAD ==="
+          
+          # Loop door alle gewijzigde YAML/YML bestanden
+          git diff --name-only --diff-filter=M | while IFS= read -r file; do
+            [[ "$file" == *.yaml || "$file" == *.yml ]] || continue
+            
+            # Vergelijk de byte-voor-byte inhoud met HEAD
+            if git show "HEAD:$file" | cmp -s - "$file"; then
+              echo "Restoring unchanged file: $file"
+              # Herstel het bestand naar de versie in HEAD (identieke inhoud)
+              git checkout HEAD -- "$file"
+            else
+              echo "File has real changes: $file"
+            fi
+          done
+
+      - name: Commit only real content changes (per-file)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config core.filemode false
+
+          echo "Commit deleted YAML files (one commit each)..."
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            [[ "$file" == *.yaml || "$file" == *.yml ]] || continue
+            git rm -q -- "$file" || true
+            git commit -m "Delete template: $(basename "$file") 🤖"
+          done < <(git ls-files --deleted || true)
+
+          echo "Commit new YAML files..."
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            [[ "$file" == *.yaml || "$file" == *.yml ]] || continue
+            git add -- "$file"
+            git commit -m "Add template: $(basename "$file") 🤖"
+          done < <(git ls-files --others --exclude-standard || true)
+
+          echo "Commit modified YAML files (only real changes remain)..."
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            [[ "$file" == *.yaml || "$file" == *.yml ]] || continue
+            [ -f "$file" ] || continue
+            git add -- "$file"
+            git commit -m "Update template: $(basename "$file") 🤖"
+          done < <(git diff --cached --name-only --diff-filter=M || true)
+
+      - name: Push all commits
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.SECRET_TOKEN }}
