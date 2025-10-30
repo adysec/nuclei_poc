@@ -1,0 +1,51 @@
+id: posts_by_tag-92a81d4a-58ed-4812-a1f8-db86e410393c
+
+info:
+  name: >
+    Posts By Tag <= 3.2.1 - Authenticated (Contributor+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/92a81d4a-58ed-4812-a1f8-db86e410393c?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/posts-by-tag/"
+    google-query: inurl:"/wp-content/plugins/posts-by-tag/"
+    shodan-query: 'http.html:"wp-content/plugins/posts-by-tag/"'
+  tags: cve,wordpress,wp-plugin,posts-by-tag,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/posts-by-tag/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "posts-by-tag"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.1')

@@ -1,0 +1,51 @@
+id: homeroofer-c4ab83d0-0e01-4b12-bc1f-9d693c13ce57
+
+info:
+  name: >
+    HomeRoofer <= 2.11.0 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c4ab83d0-0e01-4b12-bc1f-9d693c13ce57?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/homeroofer/"
+    google-query: inurl:"/wp-content/themes/homeroofer/"
+    shodan-query: 'http.html:"wp-content/themes/homeroofer/"'
+  tags: cve,wordpress,wp-theme,homeroofer,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/homeroofer/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "homeroofer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.11.0')
