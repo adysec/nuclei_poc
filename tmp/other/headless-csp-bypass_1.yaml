@@ -1,0 +1,638 @@
+id: headless-csp-bypass
+
+info:
+  name: Content Security Policy Bypass Detection
+  author: geeknik
+  severity: high
+  description: |
+    Advanced Content Security Policy (CSP) bypass detection using Headless Protocol
+    for comprehensive client-side policy analysis. This template performs CSP parsing,
+    directive analysis, bypass technique testing including JSONP abuse, unsafe-inline
+    exploitation, base-uri manipulation, and script gadget identification while
+    maintaining defensive research principles for identifying CSP weaknesses and
+    implementation flaws.
+  reference:
+    - https://content-security-policy.com/
+    - https://portswigger.net/research/bypassing-csp-with-policy-injection
+    - https://book.hacktricks.xyz/pentesting-web/content-security-policy-csp-bypass
+  tags: csp,bypass,content-security-policy,headless,client-side,defensive
+
+headless:
+  - steps:
+      # Navigate to target page
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      # Wait for page to fully load
+      - action: waitload
+
+      # Initialize CSP analysis framework
+      - action: script
+        name: initialize_csp_analysis
+        args:
+          code: |
+            window.cspBypassResults = {
+              csp_policies: [],
+              bypass_vulnerabilities: [],
+              test_results: [],
+              analysis: {},
+              risk_assessment: {}
+            };
+
+            // Extract CSP from meta tags and HTTP headers
+            function extractCSPPolicies() {
+              const policies = [];
+
+              // Check meta tags
+              const metaTags = document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]');
+              metaTags.forEach(meta => {
+                policies.push({
+                  source: 'meta_tag',
+                  policy: meta.getAttribute('content'),
+                  raw: meta.outerHTML
+                });
+              });
+
+              // Check if CSP headers are present (will be analyzed later)
+              policies.httpHeaderPresent = document.querySelector('meta[name="csp-header-present"]') !== null;
+
+              return policies;
+            }
+
+            window.cspBypassResults.csp_policies = extractCSPPolicies();
+
+            // Parse CSP directives
+            function parseCSP(policy) {
+              const directives = {};
+              if (!policy) return directives;
+
+              policy.split(';').forEach(directive => {
+                const parts = directive.trim().split(/\s+/);
+                if (parts.length > 0) {
+                  const directiveName = parts[0];
+                  const sources = parts.slice(1);
+                  directives[directiveName] = sources;
+                }
+              });
+
+              return directives;
+            }
+
+            // Analyze each CSP policy
+            window.cspBypassResults.analysis = {
+              policies_found: window.cspBypassResults.csp_policies.length,
+              parsed_directives: {},
+              security_issues: [],
+              bypass_opportunities: []
+            };
+
+            window.cspBypassResults.csp_policies.forEach((cspPolicy, index) => {
+              const parsed = parseCSP(cspPolicy.policy);
+              window.cspBypassResults.analysis.parsed_directives[`policy_${index}`] = parsed;
+
+              // Analyze for common security issues
+              if (parsed['script-src']) {
+                if (parsed['script-src'].includes("'unsafe-inline'")) {
+                  window.cspBypassResults.analysis.security_issues.push({
+                    type: 'unsafe_inline_script',
+                    severity: 'high',
+                    policy_index: index,
+                    description: 'script-src allows unsafe-inline'
+                  });
+                }
+
+                if (parsed['script-src'].includes("'unsafe-eval'")) {
+                  window.cspBypassResults.analysis.security_issues.push({
+                    type: 'unsafe_eval_script',
+                    severity: 'high',
+                    policy_index: index,
+                    description: 'script-src allows unsafe-eval'
+                  });
+                }
+
+                if (parsed['script-src'].includes('*')) {
+                  window.cspBypassResults.analysis.security_issues.push({
+                    type: 'wildcard_script_src',
+                    severity: 'medium',
+                    policy_index: index,
+                    description: 'script-src allows wildcard (*)'
+                  });
+                }
+
+                // Check for data: scheme
+                if (parsed['script-src'].includes('data:')) {
+                  window.cspBypassResults.analysis.security_issues.push({
+                    type: 'data_scheme_script',
+                    severity: 'high',
+                    policy_index: index,
+                    description: 'script-src allows data: scheme'
+                  });
+                }
+              }
+
+              // Check base-uri directive
+              if (!parsed['base-uri']) {
+                window.cspBypassResults.analysis.security_issues.push({
+                  type: 'missing_base_uri',
+                  severity: 'medium',
+                  policy_index: index,
+                  description: 'base-uri directive not specified'
+                });
+              }
+
+              // Check object-src directive
+              if (!parsed['object-src']) {
+                window.cspBypassResults.analysis.security_issues.push({
+                  type: 'missing_object_src',
+                  severity: 'medium',
+                  policy_index: index,
+                  description: 'object-src directive not specified'
+                });
+              }
+            });
+
+            return window.cspBypassResults;
+
+      # Test unsafe-inline bypass techniques
+      - action: script
+        name: test_unsafe_inline_bypass
+        args:
+          code: |
+            window.cspBypassResults.test_results.push('unsafe_inline_bypass');
+
+            // Test if unsafe-inline is present and exploitable
+            const hasUnsafeInline = window.cspBypassResults.analysis.security_issues.some(
+              issue => issue.type === 'unsafe_inline_script'
+            );
+
+            if (hasUnsafeInline) {
+              try {
+                // Test inline script execution
+                window.cspBypassTest1 = false;
+                const testScript = document.createElement('script');
+                testScript.innerHTML = 'window.cspBypassTest1 = true;';
+                document.head.appendChild(testScript);
+
+                setTimeout(() => {
+                  if (window.cspBypassTest1 === true) {
+                    window.cspBypassResults.bypass_vulnerabilities.push({
+                      type: 'unsafe_inline_exploitation',
+                      method: 'inline_script_injection',
+                      severity: 'high',
+                      confirmed: true,
+                      payload: '<script>/* CSP bypass detection test */</script>'
+                    });
+                  }
+                  document.head.removeChild(testScript);
+                }, 100);
+
+                // Test inline event handler execution
+                window.cspBypassTest2 = false;
+                const testDiv = document.createElement('div');
+                testDiv.innerHTML = '<img src="x" onerror="window.cspBypassTest2=true">';
+                document.body.appendChild(testDiv);
+
+                setTimeout(() => {
+                  if (window.cspBypassTest2 === true) {
+                    window.cspBypassResults.bypass_vulnerabilities.push({
+                      type: 'unsafe_inline_event_handler',
+                      method: 'inline_event_execution',
+                      severity: 'high',
+                      confirmed: true,
+                      payload: '<img src="x" onerror="/* CSP bypass test */">'
+                    });
+                  }
+                  document.body.removeChild(testDiv);
+                }, 100);
+
+              } catch (e) {
+                window.cspBypassResults.test_results.push('unsafe_inline_test_error: ' + e.message);
+              }
+            }
+
+            return window.cspBypassResults;
+
+      # Test JSONP-based CSP bypass
+      - action: script
+        name: test_jsonp_bypass
+        args:
+          code: |
+            window.cspBypassResults.test_results.push('jsonp_bypass');
+
+            // Test for JSONP endpoints that could bypass CSP
+            const commonJSONPEndpoints = [
+              '/api/jsonp',
+              '/jsonp',
+              '/api/callback',
+              '/callback',
+              '/api/search?callback=',
+              '/search?callback='
+            ];
+
+            // Analyze script-src for domains that might allow JSONP
+            let allowsJSONP = false;
+            const scriptSrcDomains = [];
+
+            window.cspBypassResults.csp_policies.forEach(policy => {
+              const parsed = window.cspBypassResults.analysis.parsed_directives[`policy_${window.cspBypassResults.csp_policies.indexOf(policy)}`];
+              if (parsed['script-src']) {
+                parsed['script-src'].forEach(source => {
+                  if (source.includes('googleapis.com') ||
+                      source.includes('ajax.') ||
+                      source.includes('api.') ||
+                      source.includes('*')) {
+                    scriptSrcDomains.push(source);
+                    allowsJSONP = true;
+                  }
+                });
+              }
+            });
+
+            if (allowsJSONP) {
+              window.cspBypassResults.bypass_vulnerabilities.push({
+                type: 'potential_jsonp_bypass',
+                method: 'external_jsonp_sources',
+                severity: 'medium',
+                confirmed: false,
+                description: 'CSP allows external domains that may provide JSONP endpoints',
+                domains: scriptSrcDomains,
+                payload_example: '<script src="https://allowed-domain.com/jsonp?callback=testFunction"></script>'
+              });
+            }
+
+            // Test for local JSONP endpoints
+            window.cspJsonpTest = false;
+            commonJSONPEndpoints.forEach(endpoint => {
+              try {
+                const testScript = document.createElement('script');
+                testScript.src = window.location.origin + endpoint + 'window.cspJsonpTest=true';
+                testScript.onerror = () => document.head.removeChild(testScript);
+                testScript.onload = () => {
+                  if (window.cspJsonpTest === true) {
+                    window.cspBypassResults.bypass_vulnerabilities.push({
+                      type: 'local_jsonp_bypass',
+                      method: 'local_jsonp_endpoint',
+                      severity: 'high',
+                      confirmed: true,
+                      endpoint: endpoint,
+                      payload: `<script src="${window.location.origin}${endpoint}testCallback"></script>`
+                    });
+                  }
+                  document.head.removeChild(testScript);
+                };
+                document.head.appendChild(testScript);
+              } catch (e) {
+                // Continue testing other endpoints
+              }
+            });
+
+            return window.cspBypassResults;
+
+      # Test base-uri bypass techniques
+      - action: script
+        name: test_base_uri_bypass
+        args:
+          code: |
+            window.cspBypassResults.test_results.push('base_uri_bypass');
+
+            // Check if base-uri is missing or misconfigured
+            const hasBaseUri = window.cspBypassResults.analysis.security_issues.some(
+              issue => issue.type === 'missing_base_uri'
+            );
+
+            if (hasBaseUri) {
+              try {
+                // Test base tag injection capability
+                window.cspBaseTest = false;
+                const originalBaseHref = document.baseURI;
+
+                // Create a test base element
+                const testBase = document.createElement('base');
+                testBase.href = 'javascript:window.cspBaseTest=true;//';
+
+                // Try to inject the base tag
+                const firstScript = document.querySelector('script');
+                if (firstScript) {
+                  document.head.insertBefore(testBase, firstScript);
+
+                  setTimeout(() => {
+                    if (window.cspBaseTest === true || document.baseURI !== originalBaseHref) {
+                      window.cspBypassResults.bypass_vulnerabilities.push({
+                        type: 'base_uri_bypass',
+                        method: 'base_tag_injection',
+                        severity: 'high',
+                        confirmed: true,
+                        description: 'Missing base-uri directive allows base tag manipulation',
+                        payload: '<base href="javascript:void(0);//CSP-bypass-test">'
+                      });
+                    }
+
+                    // Clean up
+                    try {
+                      document.head.removeChild(testBase);
+                    } catch (e) {
+                      // Ignore cleanup errors
+                    }
+                  }, 100);
+                }
+              } catch (e) {
+                window.cspBypassResults.test_results.push('base_uri_test_error: ' + e.message);
+              }
+            }
+
+            return window.cspBypassResults;
+
+      # Test for script gadgets and library-based bypasses
+      - action: script
+        name: test_script_gadgets
+        args:
+          code: |
+            window.cspBypassResults.test_results.push('script_gadgets');
+
+            // Identify loaded JavaScript libraries that might contain gadgets
+            const libraryGadgets = {
+              jquery: {
+                present: typeof $ !== 'undefined',
+                version: typeof $ !== 'undefined' ? $.fn.jquery : null,
+                gadgets: [
+                  '$("script").append()',
+                  '$.globalEval()',
+                  '$.parseHTML()'
+                ]
+              },
+              angular: {
+                present: typeof angular !== 'undefined',
+                version: typeof angular !== 'undefined' ? angular.version : null,
+                gadgets: [
+                  'angular.element().append()',
+                  '$compile()',
+                  '$parse()'
+                ]
+              },
+              lodash: {
+                present: typeof _ !== 'undefined',
+                version: typeof _ !== 'undefined' ? _.VERSION : null,
+                gadgets: [
+                  '_.template()',
+                  '_.templateSettings'
+                ]
+              }
+            };
+
+            // Test jQuery gadgets if present
+            if (libraryGadgets.jquery.present) {
+              try {
+                window.cspGadgetTest1 = false;
+
+                // Test jQuery.globalEval (if CSP allows it)
+                if (typeof $.globalEval === 'function') {
+                  try {
+                    $.globalEval('window.cspGadgetTest1 = true;');
+                    if (window.cspGadgetTest1 === true) {
+                      window.cspBypassResults.bypass_vulnerabilities.push({
+                        type: 'jquery_global_eval_bypass',
+                        method: 'library_gadget',
+                        library: 'jQuery',
+                        severity: 'high',
+                        confirmed: true,
+                        gadget: '$.globalEval()',
+                        payload: '$.globalEval("/* CSP bypass test */")'
+                      });
+                    }
+                  } catch (e) {
+                    // CSP might be blocking this
+                  }
+                }
+
+                // Test jQuery HTML parsing
+                window.cspGadgetTest2 = false;
+                try {
+                  const testHtml = '<img src=x onerror="window.cspGadgetTest2=true">';
+                  const parsed = $(testHtml);
+                  $('body').append(parsed);
+
+                  setTimeout(() => {
+                    if (window.cspGadgetTest2 === true) {
+                      window.cspBypassResults.bypass_vulnerabilities.push({
+                        type: 'jquery_html_parsing_bypass',
+                        method: 'library_gadget',
+                        library: 'jQuery',
+                        severity: 'medium',
+                        confirmed: true,
+                        gadget: '$(html).appendTo()',
+                        payload: '$("<img src=x onerror=void(0)>").appendTo("body")'
+                      });
+                    }
+                    parsed.remove();
+                  }, 100);
+                } catch (e) {
+                  // Continue testing
+                }
+              } catch (e) {
+                window.cspBypassResults.test_results.push('jquery_gadget_error: ' + e.message);
+              }
+            }
+
+            // Test Lodash template gadgets if present
+            if (libraryGadgets.lodash.present && typeof _.template === 'function') {
+              try {
+                window.cspGadgetTest3 = false;
+                const templateStr = '<%= window.cspGadgetTest3 = true %>';
+                const compiled = _.template(templateStr);
+                compiled();
+
+                if (window.cspGadgetTest3 === true) {
+                  window.cspBypassResults.bypass_vulnerabilities.push({
+                    type: 'lodash_template_bypass',
+                    method: 'library_gadget',
+                    library: 'Lodash',
+                    severity: 'high',
+                    confirmed: true,
+                    gadget: '_.template()',
+                    payload: '_.template("<%= /* CSP test */ %>")()'
+                  });
+                }
+              } catch (e) {
+                window.cspBypassResults.test_results.push('lodash_gadget_error: ' + e.message);
+              }
+            }
+
+            window.cspBypassResults.library_analysis = libraryGadgets;
+            return window.cspBypassResults;
+
+      # Test for data: URI and blob: bypasses
+      - action: script
+        name: test_data_blob_bypass
+        args:
+          code: |
+            window.cspBypassResults.test_results.push('data_blob_bypass');
+
+            // Test data: URI script execution
+            const allowsDataScheme = window.cspBypassResults.analysis.security_issues.some(
+              issue => issue.type === 'data_scheme_script'
+            );
+
+            if (allowsDataScheme) {
+              try {
+                window.cspDataTest = false;
+                const dataScript = document.createElement('script');
+                dataScript.src = 'data:text/javascript,window.cspDataTest=true;';
+                dataScript.onload = () => {
+                  if (window.cspDataTest === true) {
+                    window.cspBypassResults.bypass_vulnerabilities.push({
+                      type: 'data_uri_script_bypass',
+                      method: 'data_scheme_execution',
+                      severity: 'high',
+                      confirmed: true,
+                      payload: '<script src="data:text/javascript,/* CSP bypass test */"></script>'
+                    });
+                  }
+                  document.head.removeChild(dataScript);
+                };
+                dataScript.onerror = () => document.head.removeChild(dataScript);
+                document.head.appendChild(dataScript);
+              } catch (e) {
+                window.cspBypassResults.test_results.push('data_uri_test_error: ' + e.message);
+              }
+            }
+
+            // Test blob: URI bypass
+            try {
+              window.cspBlobTest = false;
+              const blobContent = 'window.cspBlobTest = true;';
+              const blob = new Blob([blobContent], { type: 'text/javascript' });
+              const blobUrl = URL.createObjectURL(blob);
+
+              const blobScript = document.createElement('script');
+              blobScript.src = blobUrl;
+              blobScript.onload = () => {
+                if (window.cspBlobTest === true) {
+                  window.cspBypassResults.bypass_vulnerabilities.push({
+                    type: 'blob_uri_script_bypass',
+                    method: 'blob_scheme_execution',
+                    severity: 'high',
+                    confirmed: true,
+                    payload: 'blob: URL with JavaScript content'
+                  });
+                }
+                document.head.removeChild(blobScript);
+                URL.revokeObjectURL(blobUrl);
+              };
+              blobScript.onerror = () => {
+                document.head.removeChild(blobScript);
+                URL.revokeObjectURL(blobUrl);
+              };
+              document.head.appendChild(blobScript);
+            } catch (e) {
+              window.cspBypassResults.test_results.push('blob_uri_test_error: ' + e.message);
+            }
+
+            return window.cspBypassResults;
+
+      # Final CSP bypass assessment
+      - action: script
+        name: final_csp_assessment
+        args:
+          code: |
+            // Calculate comprehensive CSP bypass risk score
+            let riskScore = 0;
+            const confirmedBypass = window.cspBypassResults.bypass_vulnerabilities.filter(v => v.confirmed);
+
+            confirmedBypass.forEach(vuln => {
+              switch (vuln.severity) {
+                case 'critical': riskScore += 40; break;
+                case 'high': riskScore += 30; break;
+                case 'medium': riskScore += 20; break;
+                case 'low': riskScore += 10; break;
+              }
+            });
+
+            // Additional risk from security issues
+            window.cspBypassResults.analysis.security_issues.forEach(issue => {
+              switch (issue.severity) {
+                case 'high': riskScore += 15; break;
+                case 'medium': riskScore += 10; break;
+                case 'low': riskScore += 5; break;
+              }
+            });
+
+            window.cspBypassResults.risk_assessment = {
+              total_bypass_vulnerabilities: confirmedBypass.length,
+              total_security_issues: window.cspBypassResults.analysis.security_issues.length,
+              risk_score: Math.min(riskScore, 100),
+              risk_level: riskScore > 70 ? 'Critical' :
+                         riskScore > 50 ? 'High' :
+                         riskScore > 30 ? 'Medium' : 'Low',
+              csp_effectiveness: riskScore < 30 ? 'Good' :
+                                riskScore < 60 ? 'Moderate' : 'Poor',
+              recommendations: []
+            };
+
+            // Generate specific recommendations
+            if (window.cspBypassResults.analysis.security_issues.some(i => i.type === 'unsafe_inline_script')) {
+              window.cspBypassResults.risk_assessment.recommendations.push(
+                'Remove unsafe-inline from script-src and use nonces or hashes instead'
+              );
+            }
+
+            if (window.cspBypassResults.analysis.security_issues.some(i => i.type === 'unsafe_eval_script')) {
+              window.cspBypassResults.risk_assessment.recommendations.push(
+                'Remove unsafe-eval from script-src and refactor code to avoid eval()'
+              );
+            }
+
+            if (window.cspBypassResults.analysis.security_issues.some(i => i.type === 'missing_base_uri')) {
+              window.cspBypassResults.risk_assessment.recommendations.push(
+                'Add base-uri directive to prevent base tag injection attacks'
+              );
+            }
+
+            if (window.cspBypassResults.analysis.security_issues.some(i => i.type === 'data_scheme_script')) {
+              window.cspBypassResults.risk_assessment.recommendations.push(
+                'Remove data: scheme from script-src to prevent data URI bypasses'
+              );
+            }
+
+            if (confirmedBypass.some(v => v.type.includes('gadget'))) {
+              window.cspBypassResults.risk_assessment.recommendations.push(
+                'Review JavaScript library usage for CSP bypass gadgets',
+                'Consider using Trusted Types to prevent DOM XSS'
+              );
+            }
+
+            window.cspBypassResults.summary = {
+              scan_completed: true,
+              timestamp: new Date().toISOString(),
+              csp_bypass_vulnerabilities_found: confirmedBypass.length > 0,
+              csp_policies_analyzed: window.cspBypassResults.csp_policies.length,
+              test_methods_executed: window.cspBypassResults.test_results.length
+            };
+
+            return window.cspBypassResults;
+
+    extractors:
+      - type: regex
+        name: csp_bypass_summary
+        part: body
+        regex:
+          - '"scan_completed":\s*true'
+
+      - type: regex
+        name: confirmed_csp_bypasses
+        part: body
+        regex:
+          - '"confirmed":\s*true'
+
+    matchers:
+      - type: regex
+        name: csp_bypass_detected
+        regex:
+          - '"csp_bypass_vulnerabilities_found":\s*true'
+
+      - type: regex
+        name: critical_csp_bypass
+        regex:
+          - '"risk_level":\s*"Critical"'
+
+# Headless template for comprehensive CSP bypass detection
