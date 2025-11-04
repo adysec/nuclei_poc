@@ -1,0 +1,51 @@
+id: visit_counter-d9e0f3a5-35fb-4c7e-892f-8a41498e1d3c
+
+info:
+  name: >
+    Visit Counter 1.0 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d9e0f3a5-35fb-4c7e-892f-8a41498e1d3c?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/visit-counter/"
+    google-query: inurl:"/wp-content/plugins/visit-counter/"
+    shodan-query: 'http.html:"wp-content/plugins/visit-counter/"'
+  tags: cve,wordpress,wp-plugin,visit-counter,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/visit-counter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "visit-counter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '1.0')
