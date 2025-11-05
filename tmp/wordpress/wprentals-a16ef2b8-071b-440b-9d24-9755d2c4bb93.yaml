@@ -1,0 +1,51 @@
+id: wprentals-a16ef2b8-071b-440b-9d24-9755d2c4bb93
+
+info:
+  name: >
+    Rentals <= 3.13.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a16ef2b8-071b-440b-9d24-9755d2c4bb93?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/wprentals/"
+    google-query: inurl:"/wp-content/themes/wprentals/"
+    shodan-query: 'http.html:"wp-content/themes/wprentals/"'
+  tags: cve,wordpress,wp-theme,wprentals,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/wprentals/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wprentals"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.13.1')
