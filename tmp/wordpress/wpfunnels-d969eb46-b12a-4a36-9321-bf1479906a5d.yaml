@@ -1,0 +1,51 @@
+id: wpfunnels-d969eb46-b12a-4a36-9321-bf1479906a5d
+
+info:
+  name: >
+    WPFunnels <= 3.6.2 - Authenticated (Administrator+) Arbitrary File Deletion via Path Traversal
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d969eb46-b12a-4a36-9321-bf1479906a5d?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpfunnels/"
+    google-query: inurl:"/wp-content/plugins/wpfunnels/"
+    shodan-query: 'http.html:"wp-content/plugins/wpfunnels/"'
+  tags: cve,wordpress,wp-plugin,wpfunnels,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpfunnels/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpfunnels"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.6.2')
