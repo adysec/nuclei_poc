@@ -1,0 +1,57 @@
+id: ASVS-4-0-3-V5-3-3-2
+
+info:
+  name: ASVS 5.3.3.2 (Reflected XSS) Check
+  author: AmirHossein Raeisi
+  severity: medium
+  classification:
+    cwe-id: CWE-79
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/01-Testing_for_Reflected_Cross_Site_Scripting
+    - https://snbig.github.io/Vulnerable-Pages/ASVS_5_3_3/
+    - https://github.com/projectdiscovery/nuclei-templates/blob/main/dast/vulnerabilities/xss/reflected-xss.yaml
+  tags: asvs,5.3.3
+  description: |
+    Verify that context-aware, preferably automated - or at worst, manual - output escaping protects against reflected, stored, and DOM based XSS. ([C4](https://owasp.org/www-project-proactive-controls/#div-numbering))
+
+variables:
+  first: "{{rand_int(10000, 99999)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      reflection:
+        - "'\"><{{first}}>"
+        - "'><{{first}}>"
+        - "\"><{{first}}>"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+      - part: path
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+# digest: 4a0a0047304502206281af73bc04909d242b46e09f81b425b103b91c26f26b38ad852428b16edfc7022100a82032a6b6432d5c19aa9f92a8ad4c82fd96d6d706a45362cddbd76c2344f6cf:236a7c23afe836fbe231d6e037cff444
