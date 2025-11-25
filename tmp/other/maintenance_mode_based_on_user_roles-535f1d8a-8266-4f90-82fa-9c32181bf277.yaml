@@ -1,0 +1,51 @@
+id: maintenance_mode_based_on_user_roles-535f1d8a-8266-4f90-82fa-9c32181bf277
+
+info:
+  name: >
+    Conditional Maintenance Mode for WordPress <= 1.0.0 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/535f1d8a-8266-4f90-82fa-9c32181bf277?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/maintenance-mode-based-on-user-roles/"
+    google-query: inurl:"/wp-content/plugins/maintenance-mode-based-on-user-roles/"
+    shodan-query: 'http.html:"wp-content/plugins/maintenance-mode-based-on-user-roles/"'
+  tags: cve,wordpress,wp-plugin,maintenance-mode-based-on-user-roles,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/maintenance-mode-based-on-user-roles/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "maintenance-mode-based-on-user-roles"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.0')
