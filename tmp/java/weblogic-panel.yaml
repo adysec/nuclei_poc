@@ -1,0 +1,30 @@
+id: weblogic-panel
+
+info:
+  name: Weblogic Login Panel
+  author: bing0o,meme-lord
+  severity: info
+  verified: true
+  description: |-
+    shodan: product:"Oracle Weblogic"
+  tags: weblogic,panel
+  created: 2023/11/13
+
+set:
+  randstr: randomLowercase(10)
+rules:
+  r0:
+    request:
+      method: GET
+      path: /console/login/LoginForm.jsp
+    expression: |
+      response.status == 200 && ("WebLogic Server Version: (.*?)<".bmatches(response.body) || "WebLogic Server 版本: (.*?)<".bmatches(response.body))
+  r1:
+    request:
+      method: GET
+      path: /{{randstr}}
+    expression: |
+      response.status == 404 &&
+      response.body.bcontains(b'Error 404--Not Found') &&
+      response.body.bcontains(b'From RFC 2068')
+expression: r0() || r1()
