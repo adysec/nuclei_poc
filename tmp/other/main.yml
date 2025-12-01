@@ -1,0 +1,38 @@
+name: Daily Update Nuclei POCs
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0,12 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        
+    - name: 1 Clone Repos
+      run: python 1-clone_repos.py
+
+    - name: 2 Delete Duplicated
+      run: python 2-delete_duplicated.py
+        
+    - name: 3 Move File
+      run: python 3-move_file.py
+      
+    - name: Commit and Push changes
+      run: |
+        echo $(date +'%Y%m%d%H') > date.txt
+        git config --local user.email "admin@adysec.com"
+        git config --local user.name "adysec"
+        git add .
+        git commit -am "$(date +'%Y%m%d')"
+        git push -v --progress
