@@ -1,0 +1,243 @@
+name: 🎉 Release Binary
+
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run snapshot build without publishing"
+        type: boolean
+        default: true
+        required: false
+      ref:
+        description: "Git ref to test (branch or commit SHA)"
+        type: string
+        default: ""
+        required: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GOPROXY: https://proxy.golang.org,direct
+      GOSUMDB: sum.golang.org
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.ref }}
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.24.1
+          cache: true
+
+      - name: Go modules download
+        run: |
+          set -euo pipefail
+          go mod download
+
+      - name: Build and copy afrogweb assets
+        run: |
+          set -euo pipefail
+
+          # Clone afrogweb repository (假设是你的 repo；如果私有，需要添加 token)
+          git clone https://x-access-token:${{ secrets.AFROGWEB_TOKEN }}@github.com/zan8in/afrogweb.git _afrogweb_tmp
+
+          # 进入 afrogweb 目录，构建
+          cd _afrogweb_tmp
+          npm install
+          npm run build
+          cd ..
+
+          # 清理现有 webpath（如果存在），然后复制新构建的
+          rm -rf pkg/web/webpath
+          mkdir -p pkg/web/webpath
+          cp -r _afrogweb_tmp/build/* pkg/web/webpath/  # 调整为你的输出目录，如 build/
+
+          # 清理临时目录
+          rm -rf _afrogweb_tmp
+
+          # 验证复制成功
+          if [ ! -d "pkg/web/webpath/_app/immutable/entry" ] || [ $(ls pkg/web/webpath/_app/immutable/entry/*.js 2>/dev/null | wc -l) -eq 0 ]; then
+            echo "afrogweb build or copy failed: no JS files in entry/" >&2
+            exit 1
+          fi
+          echo "afrogweb assets copied successfully"
+
+      - name: Verify embedded web assets
+        run: |
+          set -euo pipefail
+          ls -la pkg/web/webpath || (echo "missing webpath directory" && exit 1)
+          test -f pkg/web/webpath/index.html || (echo "missing index.html" && exit 1)
+          test -d pkg/web/webpath/_app/immutable/entry || (echo "missing entry directory" && exit 1)
+          ENTRY_COUNT=$(find pkg/web/webpath/_app/immutable/entry -maxdepth 1 -type f -name '*.js' | wc -l || echo 0)
+          [ "$ENTRY_COUNT" -gt 0 ] || (echo "missing entry js" && exit 1)
+          CHUNKS=$(ls pkg/web/webpath/_app/immutable/chunks/*.js | wc -l)
+          [ "$CHUNKS" -gt 0 ] || (echo "missing chunks js" && exit 1)
+
+      - name: Detect unmatched web assets (embed coverage guard)
+        run: |
+          set -euo pipefail
+          TOP_EXTS='html|ico|png|svg|webmanifest|json|txt'
+          ALLOWED_TOP_RE="^pkg/web/webpath/[^/]+\.(${TOP_EXTS})$"
+          ALLOWED_DIRS_RE='^pkg/web/webpath/(fonts/.+|_app/.+|docs/.+|pocs/.+|reports/.+)$'
+          UNMATCHED=$(find pkg/web/webpath -type f | grep -v -E "$ALLOWED_TOP_RE" | grep -v -E "$ALLOWED_DIRS_RE" | grep -v -E "/\.DS_Store$" || true)
+          if [ -n "$UNMATCHED" ]; then
+            echo "[embed coverage] Detected files not covered by go:embed patterns:" >&2
+            echo "$UNMATCHED" >&2
+            echo "Please update pkg/web/embed.go to include these paths." >&2
+            exit 1
+          fi
+
+      - name: Smoke build (validate go:embed)
+        env:
+          CGO_ENABLED: 0
+        run: |
+          go build -trimpath -ldflags "-s -w" -o ./_afrog_smoke ./cmd/afrog
+          file ./_afrog_smoke || true
+
+      # - name: Validate embedded FS contents
+      #   env:
+      #     CGO_ENABLED: 0
+      #   run: |
+      #     set -euo pipefail
+
+      #     # 创建临时 Go 脚本检查 embed.FS
+      #     cat <<EOF > embed_check.go
+      #     package main
+
+      #     import (
+      #       "embed"
+      #       "fmt"
+      #       "io/fs"
+      #       "os"
+      #       "path/filepath"
+      #       "strings"
+      #     )
+
+      #     //go:embed webpath/*.*
+      #     //go:embed webpath/fonts/*/*.*
+      #     //go:embed webpath/_app/*.*
+      #     //go:embed webpath/_app/immutable/*/*.*
+      #     var webpathFS embed.FS
+
+      #     func main() {
+      #       var hasEntryJS bool
+      #       err := fs.WalkDir(webpathFS, ".", func(path string, d fs.DirEntry, err error) error {
+      #         if err != nil {
+      #           return err
+      #         }
+      #         if !d.IsDir() && strings.HasPrefix(path, "webpath/_app/immutable/entry/") && strings.HasSuffix(path, ".js") {
+      #           hasEntryJS = true
+      #           fmt.Printf("Found entry JS: %s\n", path)
+      #         }
+      #         return nil
+      #       })
+      #       if err != nil {
+      #         fmt.Printf("Error walking FS: %v\n", err)
+      #         os.Exit(1)
+      #       }
+      #       if !hasEntryJS {
+      #         fmt.Println("No JS files found in _app/immutable/entry/")
+      #         os.Exit(1)
+      #       }
+      #       fmt.Println("Embedded FS validation passed")
+      #     }
+      #     EOF
+
+      #     # 编译并运行检查
+      #     go build -o embed_check embed_check.go
+      #     ./embed_check > embed_check.log 2>&1
+      #     cat embed_check.log
+      #     if grep -q "validation passed" embed_check.log; then
+      #       echo "Embedded FS OK"
+      #     else
+      #       echo "Embedded FS validation failed" >&2
+      #       exit 1
+      #     fi
+
+      - name: Web smoke test (-web mode assets)
+        env:
+          CGO_ENABLED: 0
+        run: |
+          set -euo pipefail
+          ./_afrog_smoke -web > web_smoke.log 2>&1 & echo $! > _afrog_pid
+          trap 'kill "$(cat _afrog_pid)" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if ! kill -0 "$(cat _afrog_pid)" 2>/dev/null; then
+              echo "web process exited early" >&2
+              tail -n 200 web_smoke.log >&2 || true
+              exit 1
+            fi
+            if curl -fsS http://127.0.0.1:16868/api/health | grep -q '"status":"ok"'; then
+              break
+            fi
+            sleep 1
+          done
+          # 若健康检查仍未通过，输出日志并失败
+          if ! curl -fsS http://127.0.0.1:16868/api/health | grep -q '"status":"ok"'; then
+            echo "health probe failed" >&2
+            tail -n 200 web_smoke.log >&2 || true
+            exit 1
+          fi
+          curl -fsS -I http://127.0.0.1:16868/ | grep -E "HTTP/.* 200" >/dev/null
+          curl -fsS -I http://127.0.0.1:16868/ | grep -i "Content-Type: text/html" >/dev/null
+          APPJS=$(ls pkg/web/webpath/_app/immutable/entry/*app*.js 2>/dev/null | head -n1 || true)
+          if [ -z "$APPJS" ]; then APPJS=$(ls pkg/web/webpath/_app/immutable/entry/*.js | head -n1 || true); fi
+          APPURL=$(echo "$APPJS" | sed 's#pkg/web/webpath##')
+          if [ -n "$APPURL" ]; then
+            curl -fsS -I "http://127.0.0.1:16868$APPURL" | grep -E "HTTP/.* 200" >/dev/null
+            curl -fsS -I "http://127.0.0.1:16868$APPURL" | grep -i "Content-Type: application/javascript\|Content-Type: text/javascript" >/dev/null
+          fi
+          STARTJS=$(ls pkg/web/webpath/_app/immutable/entry/*start*.js 2>/dev/null | head -n1 || true)
+          if [ -z "$STARTJS" ]; then STARTJS=$(ls pkg/web/webpath/_app/immutable/entry/*.js | head -n1 || true); fi
+          STARTURL=$(echo "$STARTJS" | sed 's#pkg/web/webpath##')
+          curl -fsS -I "http://127.0.0.1:16868$STARTURL" | grep -E "HTTP/.* 200" >/dev/null
+          curl -fsS -I "http://127.0.0.1:16868$STARTURL" | grep -i "Content-Type: application/javascript\|Content-Type: text/javascript" >/dev/null
+          ASSETCSS=$(ls pkg/web/webpath/_app/immutable/assets/*.css | head -n1 || true)
+          if [ -n "$ASSETCSS" ]; then
+            CSSURL=$(echo "$ASSETCSS" | sed 's#pkg/web/webpath##')
+            curl -fsS -I "http://127.0.0.1:16868$CSSURL" | grep -E "HTTP/.* 200" >/dev/null
+            curl -fsS -I "http://127.0.0.1:16868$CSSURL" | grep -i "Content-Type: text/css" >/dev/null
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: afrog-smoke-debug
+          path: |
+            _afrog_smoke
+            _afrog_pid
+            web_smoke.log
+
+      - name: Goreleaser snapshot (no publish)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true'
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          args: "release --clean --snapshot --skip=publish"
+          version: latest
+          workdir: .
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Upload snapshot artifacts
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: afrog-dist-snapshot
+          path: |
+            dist/**
+
+      - name: Goreleaser publish
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true')
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          args: "release --clean"
+          version: latest
+          workdir: .
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
