@@ -1,0 +1,445 @@
+id: headless-advanced-dom-xss
+
+info:
+  name: Advanced DOM XSS Detection
+  author: geeknik
+  severity: high
+  description: |
+    Comprehensive DOM-based XSS detection using Headless Protocol for client-side
+    vulnerability analysis. This template performs advanced DOM manipulation testing,
+    source and sink analysis, and JavaScript execution context evaluation to identify
+    DOM XSS vulnerabilities including reflected DOM XSS, stored DOM XSS, and complex
+    client-side injection patterns while maintaining defensive research principles.
+  reference:
+    - https://owasp.org/www-community/attacks/DOM_Based_XSS
+    - https://portswigger.net/web-security/cross-site-scripting/dom-based
+    - https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html
+  tags: dom-xss,headless,client-side,javascript,xss,defensive
+
+headless:
+  - steps:
+      # Navigate to target page
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      # Wait for page to fully load
+      - action: waitload
+
+      # Extract initial DOM state and JavaScript context
+      - action: script
+        name: initial_dom_analysis
+        args:
+          code: |
+            window.domXSSResults = {
+              sources: [],
+              sinks: [],
+              vulnerabilities: [],
+              payloads_tested: [],
+              dom_structure: document.documentElement.outerHTML.length,
+              javascript_context: {
+                global_vars: Object.keys(window).filter(key => typeof window[key] !== 'function').slice(0, 50),
+                frameworks: {
+                  jquery: typeof $ !== 'undefined',
+                  angular: typeof angular !== 'undefined',
+                  react: typeof React !== 'undefined',
+                  vue: typeof Vue !== 'undefined'
+                }
+              }
+            };
+
+            // Identify potential DOM XSS sources
+            const sources = [
+              'location.href', 'location.search', 'location.hash', 'location.pathname',
+              'document.referrer', 'document.URL', 'document.documentURI',
+              'window.name', 'document.cookie'
+            ];
+
+            // Identify potential DOM XSS sinks
+            const sinks = [
+              'innerHTML', 'outerHTML', 'insertAdjacentHTML',
+              'document.write', 'document.writeln',
+              'eval', 'setTimeout', 'setInterval',
+              'Function', 'execScript',
+              'location.href', 'location.replace', 'location.assign'
+            ];
+
+            window.domXSSResults.potential_sources = sources;
+            window.domXSSResults.potential_sinks = sinks;
+
+            // Scan for existing DOM manipulation patterns
+            const scripts = Array.from(document.scripts);
+            scripts.forEach((script, index) => {
+              if (script.src) {
+                window.domXSSResults.sources.push({
+                  type: 'external_script',
+                  source: script.src,
+                  index: index
+                });
+              } else if (script.textContent) {
+                // Check for dangerous patterns in inline scripts
+                const dangerousPatterns = [
+                  /innerHTML\s*=\s*.*location/gi,
+                  /document\.write\s*\(.*location/gi,
+                  /eval\s*\(.*location/gi,
+                  /setTimeout\s*\(.*location/gi,
+                  /\.html\s*\(.*location/gi
+                ];
+
+                dangerousPatterns.forEach(pattern => {
+                  if (pattern.test(script.textContent)) {
+                    window.domXSSResults.vulnerabilities.push({
+                      type: 'potential_dom_xss_pattern',
+                      pattern: pattern.toString(),
+                      script_index: index,
+                      severity: 'medium'
+                    });
+                  }
+                });
+              }
+            });
+
+            return window.domXSSResults;
+
+      # Test URL fragment-based DOM XSS
+      - action: navigate
+        args:
+          url: "{{BaseURL}}#<img src=x onerror=window.domXSSTest1=true>"
+
+      - action: waitload
+
+      - action: script
+        name: fragment_xss_test
+        args:
+          code: |
+            try {
+              window.domXSSResults.payloads_tested.push('fragment_img_onerror');
+
+              if (window.domXSSTest1 === true) {
+                window.domXSSResults.vulnerabilities.push({
+                  type: 'dom_xss_fragment',
+                  payload: '#<img src=x onerror=window.domXSSTest1=true>',
+                  severity: 'high',
+                  confirmed: true
+                });
+              }
+
+              // Check if fragment is reflected in DOM
+              const fragmentReflected = document.documentElement.outerHTML.includes('<img src=x onerror=');
+              if (fragmentReflected) {
+                window.domXSSResults.vulnerabilities.push({
+                  type: 'dom_xss_fragment_reflected',
+                  payload: '#<img src=x onerror=window.domXSSTest1=true>',
+                  severity: 'high',
+                  confirmed: fragmentReflected
+                });
+              }
+            } catch (e) {
+              window.domXSSResults.test_results.push('fragment_test_error: ' + e.message);
+            }
+
+            return window.domXSSResults;
+
+      # Test search parameter-based DOM XSS
+      - action: navigate
+        args:
+          url: "{{BaseURL}}?search=<script>window.domXSSTest2=true</script>"
+
+      - action: waitload
+
+      - action: script
+        name: search_param_xss_test
+        args:
+          code: |
+            try {
+              window.domXSSResults.payloads_tested.push('search_param_script');
+
+              if (window.domXSSTest2 === true) {
+                window.domXSSResults.vulnerabilities.push({
+                  type: 'dom_xss_search_param',
+                  payload: '?search=<script>window.domXSSTest2=true</script>',
+                  severity: 'high',
+                  confirmed: true
+                });
+              }
+
+              // Check if search parameter is reflected in DOM
+              const searchReflected = document.documentElement.outerHTML.includes('window.domXSSTest2');
+              if (searchReflected) {
+                window.domXSSResults.vulnerabilities.push({
+                  type: 'dom_xss_search_reflected',
+                  payload: '?search=<script>window.domXSSTest2=true</script>',
+                  severity: 'high',
+                  confirmed: searchReflected
+                });
+              }
+            } catch (e) {
+              window.domXSSResults.test_results.push('search_param_test_error: ' + e.message);
+            }
+
+            return window.domXSSResults;
+
+      # Test multiple parameter-based DOM XSS
+      - action: navigate
+        args:
+          url: "{{BaseURL}}?name=<svg onload=window.domXSSTest3=true>&id=test"
+
+      - action: waitload
+
+      - action: script
+        name: multi_param_xss_test
+        args:
+          code: |
+            try {
+              window.domXSSResults.payloads_tested.push('multi_param_svg_onload');
+
+              if (window.domXSSTest3 === true) {
+                window.domXSSResults.vulnerabilities.push({
+                  type: 'dom_xss_multi_param',
+                  payload: '?name=<svg onload=window.domXSSTest3=true>&id=test',
+                  severity: 'high',
+                  confirmed: true
+                });
+              }
+            } catch (e) {
+              window.domXSSResults.test_results.push('multi_param_test_error: ' + e.message);
+            }
+
+            return window.domXSSResults;
+
+      # Test advanced DOM manipulation patterns
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: script
+        name: advanced_dom_manipulation_test
+        args:
+          code: |
+            // Test for vulnerable DOM manipulation functions
+            const testPayloads = [
+              {
+                name: 'innerHTML_location_href',
+                test: () => {
+                  try {
+                    const testDiv = document.createElement('div');
+                    testDiv.innerHTML = '<img src=x onerror=window.domXSSTest4=true>';
+                    document.body.appendChild(testDiv);
+
+                    // Wait for potential execution
+                    setTimeout(() => {
+                      try {
+                        document.body.removeChild(testDiv);
+                      } catch (cleanupError) {
+                        // Ignore cleanup errors
+                      }
+                    }, 10);
+
+                    return window.domXSSTest4 === true;
+                  } catch (e) {
+                    return false;
+                  }
+                }
+              },
+              {
+                name: 'insertAdjacentHTML_test',
+                test: () => {
+                  try {
+                    const testDiv = document.createElement('div');
+                    document.body.appendChild(testDiv);
+                    testDiv.insertAdjacentHTML('afterbegin', '<img src=x onerror=window.domXSSTest5=true>');
+
+                    // Wait and cleanup
+                    setTimeout(() => {
+                      try {
+                        document.body.removeChild(testDiv);
+                      } catch (cleanupError) {
+                        // Ignore cleanup errors
+                      }
+                    }, 10);
+
+                    return window.domXSSTest5 === true;
+                  } catch (e) {
+                    return false;
+                  }
+                }
+              },
+              {
+                name: 'document_write_test',
+                test: () => {
+                  try {
+                    // Create a new document context to safely test document.write
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    iframeDoc.write('<script>parent.window.domXSSTest6=true</script>');
+
+                    // Cleanup after test
+                    setTimeout(() => {
+                      try {
+                        document.body.removeChild(iframe);
+                      } catch (cleanupError) {
+                        // Ignore cleanup errors
+                      }
+                    }, 10);
+
+                    return window.domXSSTest6 === true;
+                  } catch (e) {
+                    return false;
+                  }
+                }
+              }
+            ];
+
+            testPayloads.forEach(payload => {
+              try {
+                const result = payload.test();
+                window.domXSSResults.payloads_tested.push(payload.name);
+                if (result) {
+                  window.domXSSResults.vulnerabilities.push({
+                    type: 'dom_manipulation_vulnerability',
+                    method: payload.name,
+                    severity: 'high',
+                    confirmed: true
+                  });
+                }
+              } catch (error) {
+                window.domXSSResults.payloads_tested.push(payload.name + '_error');
+              }
+            });
+
+            return window.domXSSResults;
+
+      # Test for stored DOM XSS via localStorage/sessionStorage
+      - action: script
+        name: storage_based_xss_test
+        args:
+          code: |
+            // Test localStorage-based DOM XSS
+            try {
+              localStorage.setItem('xss_test', '<img src=x onerror=window.domXSSTest7=true>');
+              const storedValue = localStorage.getItem('xss_test');
+
+              // Simulate common pattern of reading from localStorage and inserting into DOM
+              const testDiv = document.createElement('div');
+              testDiv.innerHTML = storedValue;
+              document.body.appendChild(testDiv);
+
+              window.domXSSResults.payloads_tested.push('localStorage_xss');
+              if (window.domXSSTest7 === true) {
+                window.domXSSResults.vulnerabilities.push({
+                  type: 'stored_dom_xss_localStorage',
+                  payload: '<img src=x onerror=window.domXSSTest7=true>',
+                  severity: 'high',
+                  confirmed: true
+                });
+              }
+
+              // Clean up
+              localStorage.removeItem('xss_test');
+              document.body.removeChild(testDiv);
+            } catch (e) {
+              window.domXSSResults.payloads_tested.push('localStorage_xss_error');
+            }
+
+            // Test sessionStorage-based DOM XSS
+            try {
+              sessionStorage.setItem('xss_test', '<svg onload=window.domXSSTest8=true>');
+              const sessionValue = sessionStorage.getItem('xss_test');
+
+              const testDiv2 = document.createElement('div');
+              testDiv2.innerHTML = sessionValue;
+              document.body.appendChild(testDiv2);
+
+              window.domXSSResults.payloads_tested.push('sessionStorage_xss');
+              if (window.domXSSTest8 === true) {
+                window.domXSSResults.vulnerabilities.push({
+                  type: 'stored_dom_xss_sessionStorage',
+                  payload: '<svg onload=window.domXSSTest8=true>',
+                  severity: 'high',
+                  confirmed: true
+                });
+              }
+
+              // Clean up
+              sessionStorage.removeItem('xss_test');
+              document.body.removeChild(testDiv2);
+            } catch (e) {
+              window.domXSSResults.payloads_tested.push('sessionStorage_xss_error');
+            }
+
+            return window.domXSSResults;
+
+      # Final assessment and risk scoring
+      - action: script
+        name: final_dom_xss_assessment
+        args:
+          code: |
+            // Calculate risk score based on findings
+            let riskScore = 0;
+            const confirmedVulns = window.domXSSResults.vulnerabilities.filter(v => v.confirmed);
+
+            confirmedVulns.forEach(vuln => {
+              switch (vuln.severity) {
+                case 'critical': riskScore += 40; break;
+                case 'high': riskScore += 30; break;
+                case 'medium': riskScore += 20; break;
+                case 'low': riskScore += 10; break;
+              }
+            });
+
+            window.domXSSResults.risk_assessment = {
+              total_vulnerabilities: confirmedVulns.length,
+              risk_score: Math.min(riskScore, 100),
+              risk_level: riskScore > 70 ? 'Critical' :
+                         riskScore > 50 ? 'High' :
+                         riskScore > 30 ? 'Medium' : 'Low',
+              payloads_tested: window.domXSSResults.payloads_tested.length,
+              recommendations: []
+            };
+
+            if (confirmedVulns.length > 0) {
+              window.domXSSResults.risk_assessment.recommendations.push(
+                'Implement proper input validation and output encoding',
+                'Use Content Security Policy (CSP) to prevent inline script execution',
+                'Sanitize all user-controlled data before DOM insertion',
+                'Avoid dangerous DOM manipulation methods like innerHTML with user data'
+              );
+            }
+
+            // Generate comprehensive report
+            window.domXSSResults.summary = {
+              scan_completed: true,
+              timestamp: new Date().toISOString(),
+              target_analyzed: true,
+              client_side_vulnerabilities: confirmedVulns.length > 0
+            };
+
+            return window.domXSSResults;
+
+    extractors:
+      - type: regex
+        name: dom_xss_summary
+        part: body
+        regex:
+          - '"scan_completed":\s*true'
+
+      - type: regex
+        name: confirmed_vulnerabilities
+        part: body
+        regex:
+          - '"confirmed":\s*true'
+
+    matchers:
+      - type: regex
+        name: dom_xss_detected
+        regex:
+          - '"client_side_vulnerabilities":\s*true'
+
+      - type: regex
+        name: high_risk_dom_xss
+        regex:
+          - '"risk_level":\s*"(Critical|High)"'
+
+# Headless template for comprehensive DOM XSS detection
