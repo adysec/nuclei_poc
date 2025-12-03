@@ -1,0 +1,50 @@
+id: mysql-detect
+
+info:
+  name: MySQL Dectect
+  author: zan8in
+  severity: info
+  verified: true
+  description: MySQL instance was detected
+  tags: network,db,mysql
+
+set:
+  host: request.url.domain
+  hostname: request.url.host
+rules:
+  r0:
+    request:
+      type: tcp
+      host: "{{hostname}}"
+      data: "\n"
+    expression: |
+      response.raw.ibcontains(b"mysql") || 
+      response.raw.ibcontains(b"mariadb") ||
+      "[0-9]\\.[0-9]{1,2}\\.[0-9]{1,2}".bmatches(response.raw)
+    extractors:
+      - type: regex
+        extractor:
+          ext1: '"(?P<mysql>[0-9]\\.[0-9]{1,2}\\.[0-9]{1,2})".bsubmatch(response.raw)'
+          mysql: ext1["mysql"]
+    
+  r1:
+    request:
+      type: tcp
+      host: "{{host}}:3306"
+      data: "\n"
+    expression: |
+      response.raw.ibcontains(b"mysql") || 
+      response.raw.ibcontains(b"mariadb") ||
+      "[0-9]\\.[0-9]{1,2}\\.[0-9]{1,3}".bmatches(response.raw)
+    extractors:
+      - type: regex
+        extractor:
+          ext1: '"(?P<mysql>[0-9]\\.[0-9]{1,2}\\.[0-9]{1,2})".bsubmatch(response.raw)'
+          mysql: ext1["mysql"]
+
+extractors:
+  - type: word
+    extractor:
+      user: 'root'
+      pass: "123456"
+expression: r0() || r1() 
