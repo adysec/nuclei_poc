@@ -9,26 +9,26 @@ use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tracing::{error, info, warn};
 
-/// Clone or update repos in parallel with a concurrency limit.
+/// 并发克隆或更新仓库，并限制并发数。
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 struct Args {
-    /// Repository csv file
+    /// 仓库列表的CSV文件
     #[clap(default_value = "repo.csv")]
     repo_file: String,
 
-    /// clones base directory
+    /// 克隆目标根目录
     #[clap(short, long, default_value = "clone-templates")]
     clone_dir: String,
 
-    /// maximum concurrent git operations (0 = auto detect)
+    /// 最大并发的git操作（0表示自动检测）
     #[clap(short, long, default_value_t = 0)]
     jobs: usize,
 }
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let jobs_final = if args.jobs == 0 { let n = num_cpus::get(); if n==0 {1} else {n} } else { args.jobs };
-    // Build a tokio runtime with worker_threads=jobs_final
+    // 构建Tokio运行时，工作线程数=jobs_final
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(jobs_final).enable_all().build()?;
     return rt.block_on(async_main(args, jobs_final));
 }
@@ -41,7 +41,7 @@ async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
 
     fs::create_dir_all(&clone_dir)?;
 
-    // read and dedupe
+    // 读取并去重
     let file = fs::File::open(&repo_file).map_err(|e| anyhow::anyhow!("open {}: {}", repo_file, e))?;
     let reader = io::BufReader::new(file);
     let mut urls: HashSet<String> = HashSet::new();
@@ -60,35 +60,35 @@ async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
         let clone_dir = clone_dir.clone();
         let url_clone = url.clone();
         let h = tokio::spawn(async move {
-            let _permit = permit; // release when dropped
+            let _permit = permit; // 作用域结束自动释放
             if let Some((owner, repo_name)) = parse_owner_repo(&url_clone) {
                 let target_dir = format!("{}/{}/{}", clone_dir, owner, repo_name).to_lowercase();
                 let target_path = Path::new(&target_dir);
                 if target_path.is_dir() {
-                    info!(repo = %repo_name, path = %target_dir, "pulling");
+                    info!(repo = %repo_name, path = %target_dir, "拉取更新");
                     let mut cmd = Command::new("git");
                     cmd.arg("-C").arg(&target_dir).arg("pull");
                     cmd.stdout(Stdio::null());
                     cmd.stderr(Stdio::piped());
                     match cmd.status().await {
-                        Ok(status) if status.success() => info!(repo = %repo_name, "pulled"),
-                        Ok(status) => warn!(repo = %repo_name, code = ?status.code(), "git pull failed"),
-                        Err(e) => error!(repo = %repo_name, error = %e, "git pull error"),
+                        Ok(status) if status.success() => info!(repo = %repo_name, "拉取完成"),
+                        Ok(status) => warn!(repo = %repo_name, code = ?status.code(), "git pull 失败"),
+                        Err(e) => error!(repo = %repo_name, error = %e, "git pull 错误"),
                     }
                 } else {
-                    info!(repo = %repo_name, path = %target_dir, "cloning");
+                    info!(repo = %repo_name, path = %target_dir, "开始克隆");
                     if let Some(parent) = target_path.parent() { fs::create_dir_all(parent).ok(); }
                     let mut cmd = Command::new("git");
                     cmd.arg("clone").arg(&url_clone).arg(&target_dir);
                     cmd.stdout(Stdio::null());
                     cmd.stderr(Stdio::piped());
                     match cmd.status().await {
-                        Ok(status) if status.success() => info!(repo = %repo_name, "cloned"),
-                        Ok(status) => warn!(repo = %repo_name, code = ?status.code(), "git clone failed"),
-                        Err(e) => error!(repo = %repo_name, error = %e, "git clone error"),
+                        Ok(status) if status.success() => info!(repo = %repo_name, "克隆完成"),
+                        Ok(status) => warn!(repo = %repo_name, code = ?status.code(), "git clone 失败"),
+                        Err(e) => error!(repo = %repo_name, error = %e, "git clone 错误"),
                     }
                 }
-            } else { warn!(url = %url_clone, "invalid url") }
+            } else { warn!(url = %url_clone, "URL 无效") }
         });
         handles.push(h);
     }
@@ -96,16 +96,16 @@ async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
     for h in handles {
         match h.await {
             Ok(_) => {},
-            Err(e) => error!(error = %e, "task join error"),
+            Err(e) => error!(error = %e, "任务合并错误"),
         }
     }
 
-    info!("All clone tasks completed");
+    info!("所有克隆任务已完成");
     Ok(())
 }
 
 fn parse_owner_repo(url: &str) -> Option<(String, String)> {
-    // Expected forms: https://github.com/owner/repo or git@github.com:owner/repo.git
+    // 期望形式示例: https://github.com/owner/repo 或 git@github.com:owner/repo.git
     if let Some(idx) = url.rfind('/') {
         let repo_name = url[idx+1..].trim_end_matches('.').trim_end_matches(".git");
         // get owner before last '/'

@@ -1,6 +1,6 @@
-// anyhow::Context not needed here
+// 此处不需要 anyhow::Context
 use sha2::{Digest, Sha256};
-// use dashmap for lock-free concurrent map
+// 使用 dashmap 进行无锁并发映射
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -15,7 +15,7 @@ use futures::stream::{FuturesUnordered, StreamExt};
 use tracing::{error, warn, info};
 use dashmap::DashMap;
 
-// default dirs
+// 默认目录
 const DEFAULT_POC_DIR: &str = "poc_all";
 const DEFAULT_TMP_DIR: &str = "tmp";
 
@@ -56,11 +56,11 @@ fn move_file_blocking(src: &Path, dest: &Path) -> anyhow::Result<()> {
         }
     }
     fs::rename(src, final_dest)?;
-    println!("poc校验成功，已移动文件: {:?} -> {:?}", src, dest);
+    println!("POC 校验成功，已移动文件: {:?} -> {:?}", src, dest);
     Ok(())
 }
 
-// note: we switched to async nuclei invocation in the main processing loop.
+// 注：主流程改为异步调用 nuclei
 fn get_file_hash(path: &Path) -> anyhow::Result<String> {
     let mut file = fs::File::open(path)?;
     let mut hasher = Sha256::new();

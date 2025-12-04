@@ -35,7 +35,7 @@ async fn get_latest_release() -> anyhow::Result<Release> {
     }
 }
 
-// Extract only nuclei binary from zip file into extract_dir and return extracted path
+// 仅从ZIP中提取 nuclei 二进制到指定目录并返回路径
 fn extract_nuclei_from_zip(zip_path: &str, extract_dir: &str) -> anyhow::Result<Option<PathBuf>> {
     let file = File::open(zip_path)?;
     let mut archive = ZipArchive::new(file)?;
@@ -46,9 +46,9 @@ fn extract_nuclei_from_zip(zip_path: &str, extract_dir: &str) -> anyhow::Result<
         if let Some(enclosed) = entry.enclosed_name() {
             if let Some(fname) = enclosed.file_name().and_then(|s| s.to_str()) {
                 let fname_lc = fname.to_lowercase();
-                // Match files whose name starts with nuclei and are not docs (md) files
+                // 匹配以 nuclei 开头且不是文档文件的条目
                 if fname_lc.starts_with("nuclei") && !fname_lc.ends_with(".md") && !fname_lc.ends_with(".txt") && !fname_lc.ends_with(".yml") && !fname_lc.ends_with(".yaml") {
-                    // Extract only binary file (flatten path — put directly in extract_dir)
+                    // 仅提取二进制文件（扁平化路径，直接放入目标目录）
                     let outpath = Path::new(extract_dir).join(fname);
                     if let Some(pdir) = outpath.parent() { fs::create_dir_all(pdir)?; }
                     let mut outfile = File::create(&outpath)?;
@@ -72,7 +72,7 @@ async fn download_file(url: &str, dest: &str, retries: usize) -> anyhow::Result<
             Ok(r) => {
                 if !r.status().is_success() {
                     if attempt > retries { return Err(anyhow::anyhow!("Failed to download file: {}", url)); }
-                    warn!("http error {}, retrying (attempt {}/{})", r.status(), attempt, retries);
+                    warn!("HTTP 错误 {}，重试（第 {}/{} 次）", r.status(), attempt, retries);
                     sleep(Duration::from_secs(1 << attempt)).await;
                     continue;
                 }
@@ -82,7 +82,7 @@ async fn download_file(url: &str, dest: &str, retries: usize) -> anyhow::Result<
             }
             Err(e) => {
                 if attempt > retries { return Err(anyhow::anyhow!("Download failed: {}", e)); }
-                warn!("download error: {} -> retrying (attempt {}/{})", e, attempt, retries);
+                warn!("下载错误: {} -> 重试（第 {}/{} 次）", e, attempt, retries);
                 sleep(Duration::from_secs(1 << attempt)).await;
                 continue;
             }
@@ -96,7 +96,7 @@ struct Args {
     dest_file: String,
     #[clap(short, long, default_value_t = 3)]
     retries: usize,
-    /// set to "extract" to extract the downloaded zip
+    /// 设为 "extract" 以解压下载的ZIP
     #[clap(short, long, default_value = "extract")]
     do_extract: String,
     #[clap(long, default_value = ".")]
@@ -127,14 +127,14 @@ async fn async_main(args: Args) -> anyhow::Result<()> {
         }
     }
     let download_url = download_url.ok_or_else(|| anyhow::anyhow!("Linux amd64 ZIP asset not found"))?;
-    println!("Downloading from {}", download_url);
+    println!("开始下载: {}", download_url);
     if Path::new(dest_file).exists() {
-        println!("Destination file {} already exists, skipping download.", dest_file);
+        println!("目标文件 {} 已存在，跳过下载。", dest_file);
     } else {
         download_file(&download_url, dest_file, retries).await?;
     }
     if do_extract == "extract" {
-        println!("Extracting {}", dest_file);
+        println!("正在解压 {}", dest_file);
         let dest_file_owned = dest_file.to_string();
         let extract_dir_owned = extract_dir.to_string();
         let res = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
@@ -147,17 +147,17 @@ async fn async_main(args: Args) -> anyhow::Result<()> {
                     if dest.exists() { fs::remove_file(dest).ok(); }
                     fs::rename(&nuclei_path, dest)?;
                 }
-                println!("Nuclei binary extracted and installed to ./nuclei");
+                println!("已提取并安装 nuclei 到 ./nuclei");
             } else {
-                println!("Warning: nuclei binary not found inside the extracted zip; you may need to locate it manually");
+                println!("警告：未在ZIP中找到 nuclei 二进制，可能需要手动定位");
             }
             fs::remove_file(&dest_file_owned).ok();
-            println!("Removed {}", dest_file_owned);
+            println!("已删除 {}", dest_file_owned);
             Ok(())
         }).await?;
         res?;
     }
-    println!("Downloaded Nuclei ZIP file");
+    println!("已下载 Nuclei ZIP 文件");
     Ok(())
 }
 
@@ -165,7 +165,7 @@ async fn async_main(args: Args) -> anyhow::Result<()> {
 mod tests {
     use super::*;
     use tempfile::tempdir;
-    // use fully qualified FileOptions in this test to avoid type inference issues
+    // 使用完整限定的 FileOptions，避免类型推断问题
     use std::io::Write;
 
     #[test]

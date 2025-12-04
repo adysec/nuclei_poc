@@ -8,36 +8,36 @@ use walkdir::WalkDir;
 use serde_yaml::Value;
 use clap::Parser;
 use rayon::prelude::*;
-use serde::Serialize;
+// removed report serialization
 
 #[derive(Parser, Debug)]
-#[command(name = "8_dedup_high_quality", about = "Select high-quality POCs and rebuild directory structure")]
+#[command(name = "8_dedup_high_quality", about = "筛选高质量POC并重建目录结构")]
 struct Args {
-    /// Minimum score to include a POC
+    /// 选择POC的最低得分
     #[arg(short, long, default_value_t = 5)]
     min_score: i32,
 
-    /// Perform a dry run (no file copy), just print stats
+    /// 仅演练：不拷贝文件，只输出统计
     #[arg(long, default_value_t = false)]
     dry_run: bool,
 
-    /// Require these top-level fields to exist (comma-separated)
+    /// 必须存在的顶级字段（逗号分隔）
     #[arg(long, value_delimiter = ',', default_value = "id,info,requests")]
     require_fields: Vec<String>,
 
-    /// Allowed severities (comma-separated), empty means any
+    /// 允许的严重性（逗号分隔），为空则不限制
     #[arg(long, value_delimiter = ',', default_value = "critical,high,medium")]
     allow_severities: Vec<String>,
 
-    /// Minimum number of requests
+    /// 最少请求数量
     #[arg(long, default_value_t = 1)]
     min_requests: usize,
 
-    /// Require presence of matchers in at least one request
+    /// 是否要求至少一个请求包含匹配器
     #[arg(long, default_value_t = false)]
     require_matchers: bool,
 
-    /// Source whitelist substring match (e.g., repo path/tag)
+    /// 源路径白名单子串匹配（如仓库路径或标签）
     #[arg(long, value_delimiter = ',', default_value = "")]
     source_whitelist: Vec<String>,
 }
@@ -45,7 +45,7 @@ struct Args {
 fn score_yaml(yaml: &Value) -> i32 {
     let mut score = 0;
 
-    // Basic presence of key metadata
+    // 基本元数据
     if yaml.get("id").is_some() { score += 2; }
     if yaml.get("info").is_some() { score += 2; }
 
@@ -65,7 +65,7 @@ fn score_yaml(yaml: &Value) -> i32 {
         if info.get("references").is_some() { score += 1; }
     }
 
-    // Requests richness
+    // 请求丰富度
     if let Some(requests) = yaml.get("requests") {
         if let Some(arr) = requests.as_sequence() {
             let count = arr.len();
@@ -73,7 +73,7 @@ fn score_yaml(yaml: &Value) -> i32 {
             if count >= 2 { score += 1; }
             if count >= 4 { score += 1; }
 
-            // Matchers/extractors presence
+            // 是否包含匹配器/提取器
             for req in arr {
                 if req.get("matchers").is_some() { score += 2; }
                 if req.get("extractors").is_some() { score += 1; }
@@ -83,7 +83,7 @@ fn score_yaml(yaml: &Value) -> i32 {
         }
     }
 
-    // Additional signals commonly used
+    // 其他常见信号
     if yaml.get("variables").is_some() { score += 1; }
     if yaml.get("http").is_some() { score += 1; }
     if yaml.get("tcp").is_some() { score += 1; }
@@ -93,26 +93,18 @@ fn score_yaml(yaml: &Value) -> i32 {
     score
 }
 
-#[derive(Serialize)]
-struct ReportItem {
-    path: String,
-    score: i32,
-    selected: bool,
-    reasons: Vec<String>,
-}
-
 fn main() -> Result<()> {
     let args = Args::parse();
     let src_root = Path::new("poc_all");
     let dst_root = Path::new("poc_high_quality");
 
-    // Cleanup destination each run
+    // 每次运行清理目标目录
     if dst_root.exists() {
         fs::remove_dir_all(dst_root).context("Failed to remove poc_high_quality directory")?;
     }
     fs::create_dir_all(dst_root).context("Failed to create poc_high_quality directory")?;
 
-    // Collect all files under poc_all
+    // 收集所有源文件
     let files: Vec<PathBuf> = WalkDir::new(src_root)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -120,13 +112,12 @@ fn main() -> Result<()> {
         .filter(|p| p.is_file())
         .collect();
 
-    // Deduplicate by content hash and copy while preserving directory structure
+    // 通过内容哈希去重，并保持目录结构拷贝
     let mut seen: HashSet<String> = HashSet::new();
     let mut considered = 0usize;
     let mut selected = 0usize;
-    let mut report: Vec<ReportItem> = Vec::new();
 
-    // Parallel evaluation of files
+    // 并行评估文件
     let evaluated: Vec<(PathBuf, i32, Vec<String>, Vec<u8>, String)> = files
         .par_iter()
         .map(|file| {
@@ -196,16 +187,14 @@ fn main() -> Result<()> {
         })
         .collect();
 
-    // Deterministic copy and build report
+    // 复制到 poc_high_quality
     for (file, score, reasons, buf, hash) in evaluated {
         considered += 1;
-        let mut selected_flag = false;
         let missing_required = reasons.iter().any(|r| r.starts_with("missing field"));
         if score >= args.min_score && !missing_required {
             if !seen.contains(&hash) {
                 seen.insert(hash);
                 selected += 1;
-                selected_flag = true;
                 if !args.dry_run {
                     let rel = file.strip_prefix(src_root).unwrap();
                     let dst_path = dst_root.join(rel);
@@ -217,30 +206,10 @@ fn main() -> Result<()> {
                 }
             }
         }
-        report.push(ReportItem {
-            path: file.display().to_string(),
-            score,
-            selected: selected_flag,
-            reasons,
-        });
     }
 
-    // Write report JSON
-    let report_path = Path::new("poc_high_quality_report.json");
-    let summary = serde_json::json!({
-        "evaluated": considered,
-        "selected": selected,
-        "unique": seen.len(),
-        "min_score": args.min_score,
-    });
-    let output = serde_json::json!({
-        "summary": summary,
-        "items": report,
-    });
-    fs::write(report_path, serde_json::to_vec_pretty(&output)?).context("write report failed")?;
-
     println!(
-        "Evaluated {} files, selected {}, unique copied {} (min_score={})",
+        "已评估 {} 个文件，选中 {} 个，唯一拷贝 {} 个（min_score={}）",
         considered,
         selected,
         seen.len(),

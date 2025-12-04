@@ -121,6 +121,7 @@ fn categorize_file(file_name: &str, cmap: &HashMap<&str, Vec<&str>>) -> Vec<Stri
     categories
 }
 
+// 计算文件 MD5 哈希
 fn md5_hash_file(path: &Path) -> anyhow::Result<String> {
     let mut file = fs::File::open(path)?;
     let mut buf = Vec::new();
@@ -128,6 +129,7 @@ fn md5_hash_file(path: &Path) -> anyhow::Result<String> {
     Ok(format!("{:x}", md5::compute(&buf)))
 }
 
+// 获取已存在 POC 的哈希集合，用于去重
 fn get_poc_file_hashes(poc_dir_path: &str) -> anyhow::Result<HashSet<String>> {
     let mut set = HashSet::new();
     for entry in WalkDir::new(poc_dir_path).into_iter().filter_map(|e| e.ok()) {
@@ -142,6 +144,7 @@ fn get_poc_file_hashes(poc_dir_path: &str) -> anyhow::Result<HashSet<String>> {
     Ok(set)
 }
 
+// 将唯一文件按类别拷贝到输出目录
 fn copy_file_if_unique(
     file_path: &Path,
     base_dir: &str,
