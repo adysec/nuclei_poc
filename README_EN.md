@@ -61,7 +61,6 @@ Set up a GitHub Action workflow to run the pipeline daily. The workflow requires
 ### Top-level files and directories
 
 - `Cargo.toml` — Rust project configuration and dependencies
-- `run_all.sh` — Build and run each pipeline binary in sequence (see run instructions below)
 - `repo.csv` — List of GitHub repositories to monitor/collect (input)
 - `poc_all/` — Full PoC outputs (archive of raw / historical results)
 - `poc_high_quality/` — Gray-release output after new deduplication / high-quality filtering
