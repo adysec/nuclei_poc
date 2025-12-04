@@ -1,0 +1,45 @@
+id: reflection
+info:
+    name: search for reflection in header and body
+    author: roninja
+    severity: low
+    description: Potential Cross-Site Scripting (XSS), Cross-Site Request Forgery (CSRF) attacks, Cache Poisoning and Open URL Redirection.
+    reference:
+      - https://medium.com/@angryovalegg/analyzing-the-reflection-nuclei-template-436a2068fbaf
+    tags: reflection,header,cookies
+    metadata:
+      max-request: 2
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Referer: https://zerbaliy3v.io
+        Origin: https://zerbaliy3v.io
+        Location: https://zerbaliy3v.io
+        X-Forwarded-Host: zerbaliy3v.io
+        X-Forwarded-For: zerbaliy3v.io
+        X-Host: zerbaliy3v.io
+        X-Original-Host: zerbaliy3v.io
+        X-Original-URL: zerbaliy3v.io
+        Cookie: bug=zerbaliy3v
+        Gudetama: zerbaliy3v
+      - |
+        GET / HTTP/1.1
+        Host: zerbaliy3v.cf
+
+    redirects: true
+    stop-at-first-match: false
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - '(?m)^(?:(?:Set-Cookie\s*?:(?:\s*?|.*?;\s*?))(bug=zerbaliy3v)(?:\s*?)(?:$|;))'
+          - '(?mi)^(.*:\s*.*zerbaliy3v.*)'
+        part: header
+
+      - type: regex
+        regex:
+          - '(?m)^(?:(?:Set-Cookie\s*?:(?:\s*?|.*?;\s*?))(bug=zerbaliy3v)(?:\s*?)(?:$|;))'
+          - '(?mi)^(.*:\s*.*zerbaliy3v.*)'
+        part: body

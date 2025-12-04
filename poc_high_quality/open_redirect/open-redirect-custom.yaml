@@ -1,0 +1,34 @@
+id: open-redirect-custom
+
+info:
+  name: Open URL redirect detection
+  author: melbadry9
+  severity: low
+  description: A user-controlled input redirects users to an external website.
+  tags: redirect,generic
+
+requests:
+  - method: GET
+
+    path:
+      - '{{BaseURL}}/http/example.com'
+      - '{{BaseURL}}/wso?redirect=http://example.com'
+      - '{{BaseURL}}/SSO?url=http://example.com'
+      - '{{BaseURL}}/\{{Hostname}}:80%40example.com'
+      - '{{BaseURL}}/admin/success.do?url=//example.com'
+      - '{{BaseURL}}/not_me_its_you/?redirect_url=http://example.com'
+    
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?://|//|php://)?(?:[a-zA-Z0-9\-_\.@]*)example\.com.*$'
+        part: header
+
+      - type: status
+        status:
+          - 302
+          - 301
+          - 307
+          - 308
+        condition: or

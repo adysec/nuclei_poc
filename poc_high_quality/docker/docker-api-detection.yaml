@@ -1,0 +1,36 @@
+id: docker-api-detection
+
+info:
+  name: docker-api-detection
+  author: Arqsz
+  severity: medium
+  description: Detect Docker Engine API
+  reference:
+    - https://docs.docker.com/engine/api/
+  tags: docker,remote,noninvasive
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/info"
+      - "{{Scheme}}://{{Host}}:2375/info"
+      - "{{Scheme}}://{{Host}}:2376/info"
+
+    redirects: true
+    max-redirects: 3
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "OperatingSystem"
+      - type: status
+        status:
+          - 200
+          
+    extractors:
+      - type: json
+        part: body
+        json:
+          - ".OperatingSystem"
+          - ".KernelVersion"

