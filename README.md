@@ -62,7 +62,6 @@ cargo run --bin 1_clone_repos
 ### 根目录（常见文件/目录）
 
 - `Cargo.toml` — Rust 项目依赖与配置
-- `run_all.sh` — 构建并顺序执行全部流水线二进制（见下方运行说明）
 - `repo.csv` — 监控/采集的 GitHub 仓库列表（输入来源）
 - `poc_all/` — 全量 PoC 输出目录（保留历史/完整产物）
 - `poc_high_quality/` — 灰度策略输出：经过新去重/高质量筛选后的 PoC
