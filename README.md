@@ -8,13 +8,9 @@ Nuclei POC，每日更新
 
 [中文](https://github.com/adysec/nuclei_poc/blob/main/README.md) | [English](https://github.com/adysec/nuclei_poc/blob/main/README_EN.md)
 
-这个项目是一个 Python 脚本，用于批量克隆 GitHub 项目，获取 Nuclei POC，并将 POC 按类别分类存放到文件夹中。同时，使用 GitHub Action 每日自动运行脚本。
+该项目已完成由 Python 向 Rust 的迁移与重写，在处理大规模仓库与 PoC 验证任务时速度显著提升（在Github Action上，从旧版约 6 小时缩短至约 6 分钟）。
 
-已更新优化poc**格式验证**相关代码，**当本项目中 `tmp/` 目录不存在时，所有poc格式校验完成**。
-
-校验**格式**并去重后，现有 19w+ 可用 PoC 脚本。
-
-`注：其中同一cve漏洞的 PoC 脚本有各类格式（语言、引用文献等），因此存在重复的现象，目前技术无法做到去重，有好的解决方案欢迎提交issue。`
+迁移完成后，项目已优化 PoC 的格式验证与去重逻辑。为避免在逻辑演进过程中发生 PoC 丢失，并便于对比与回溯，目前采用灰度策略同时保留两套输出目录。
 
 ## 如何使用
 
@@ -36,7 +32,24 @@ cd nuclei_poc
 
 ### 配置
 
-在 `repo.csv` 文件中配置监控 GitHub 项目信息。
+在 `repo.csv` 文件中配置监控 GitHub 项目信息。迁移至 Rust 后，核心流水线以独立的 Rust 可执行文件分段实现，所有源文件位于 `src/bin/`。
+
+### 构建与运行（Rust）
+
+推荐在目标环境中构建 release 二进制以获得最佳性能：
+
+```bash
+# 构建 release 可执行文件
+cargo build --release
+
+# 运行示例（运行单个流水线任务）
+./target/release/1_clone_repos
+
+# 或使用 cargo 在开发模式下运行（便于调试）
+cargo run --bin 1_clone_repos
+```
+
+生产环境建议使用 `--release` 构建并在 CI 或容器中以并发/资源限制方式运行，以达到 `≈6 分钟` 的处理时长（具体取决于并发配置与机器性能）。
 
 ### GitHub Action
 
@@ -44,21 +57,52 @@ cd nuclei_poc
 
 > 需要配置`Workflow permissions`为`Read and write`权限
 
-## 文件结构
+## 项目结构（整体梳理）
 
-- `1-clone_repos.py`: 批量克隆监控的 GitHub 项目。
-- `2-delete_duplicated.py`: 删除重复Poc脚本。
-- `3-move_file.py`: Poc脚本归档至tmp目录。
-- `4-download_nuclei.py`: 下载nuclei以便验证Poc有效性。
-- `5-check_poc.sh`: 校验Poc有效性并移动至`poc`目录下。
-- `6-get_count.py`: 获取已归档Poc数量。
-- `7-get_pocname.py`: 读取并将Poc列表写入`poc.txt`。
-- `check_poc.sh`: 验证Poc有效性并打包为`poc.zip`文件。
-- `repo.csv`: Nuclei Poc仓库列表。
-- `poc.txt`: 已存档Poc列表。
-- `poc/`: 存放分类后的 Nuclei Poc 文件夹。
-- ~~`clone-templates/`: 克隆 GitHub 项目的临时文件夹。~~
-- ~~`tmp/`: Nuclei Poc脚本去重并分类后的临时文件夹。~~
+### 根目录（常见文件/目录）
+
+- `Cargo.toml` — Rust 项目依赖与配置
+- `run_all.sh` — 构建并顺序执行全部流水线二进制（见下方运行说明）
+- `repo.csv` — 监控/采集的 GitHub 仓库列表（输入来源）
+- `poc_all/` — 全量 PoC 输出目录（保留历史/完整产物）
+- `poc_high_quality/` — 灰度策略输出：经过新去重/高质量筛选后的 PoC
+- `poc/` — 按类别组织的 PoC 目录（用于 nuclei 等工具直接引用）
+- `poc.txt` — 当前已归档 PoC 的列表（文本清单）
+- `src/bin/` — 核心 Rust 源文件（每个文件对应一个可执行的流水线阶段）
+- `target/` — cargo 构建输出（包含 release 可执行文件）
+
+### 流水线
+
+仓库中每个 `src/bin/<n>_<name>.rs` 都实现了流水线的一段逻辑：
+
+1. 1_clone_repos — 批量克隆或更新 `repo.csv` 中列出的 GitHub 项目。
+2. 2_delete_duplicated — 执行第一轮去重，删除明显重复的 PoC 文件。
+3. 3_move_file — 将整理好的 PoC 文件归档到中间目录并按类别组织。
+4. 4_download_nuclei — 下载/准备 Nuclei 引擎（若需要）以便后续验证。
+5. 5_check_poc — 校验 PoC 是否有效并将有效项移动到输出目录（`poc/` 或其他指定目录）。
+6. 6_get_count — 统计当前已归档 PoC 的数量并输出统计信息。
+7. 7_get_pocname — 生成/更新 `poc.txt` 清单文件，便于快速引用与检索。
+8. 8_dedup_high_quality — 新的去重与高质量筛选器（灰度逻辑），用于产出 `poc_high_quality/`。
+
+### 输出策略与安全回滚
+
+为了在升级去重/筛选逻辑时避免误删或丢失 PoC，当前采用灰度策略并同时输出两套结果：
+
+- `poc_all/`：保持完整产物与历史记录，便于回溯与比对。
+- `poc_high_quality/`：仅包含新逻辑筛选出的高质量 PoC，以便进行更严格的下游验证与发布。
+
+在调试或单独运行某个阶段时，可直接使用 `cargo run --release --bin <bin_name>` 或运行 `target/release/<bin_name>`：
+
+```bash
+# 构建 release
+cargo build --release
+
+# 运行单个阶段（例如第 1 步）
+./target/release/1_clone_repos
+
+# 或使用 cargo 运行（开发/调试）
+cargo run --bin 1_clone_repos -- <args...>
+```
 
 ## 致谢
 
@@ -71,3 +115,4 @@ cd nuclei_poc
 ### 人员
 
 感谢 [TajangSec](https://github.com/TajangSec) 对部分代码的优化和改进建议。
+感谢 [重剑无锋](https://github.com/TideSec) 对去重规则的优化和改进建议。
