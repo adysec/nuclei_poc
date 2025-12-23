@@ -131,6 +131,10 @@ async fn async_main(args: Args) -> anyhow::Result<()> {
     if Path::new(dest_file).exists() {
         println!("目标文件 {} 已存在，跳过下载。", dest_file);
     } else {
+        if let Err(e) = download_file(&download_url, dest_file, retries).await {
+            warn!("下载失败，跳过后续操作: {}", e);
+            return Ok(());
+    }
         download_file(&download_url, dest_file, retries).await?;
     }
     if do_extract == "extract" {
