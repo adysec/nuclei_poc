@@ -23,15 +23,44 @@ struct Release {
     assets: Vec<Asset>,
 }
 
-async fn get_latest_release() -> anyhow::Result<Release> {
+async fn get_latest_release(retries: usize) -> anyhow::Result<Release> {
     let url = "https://api.github.com/repos/projectdiscovery/nuclei/releases/latest";
     let client = Client::builder().user_agent("nuclei_poc/1.0").build()?;
-    let resp = client.get(url).send().await?;
-    if resp.status().is_success() {
-        let release = resp.json::<Release>().await?;
-        Ok(release)
-    } else {
-        Err(anyhow::anyhow!("Failed to fetch latest release: {}", resp.status()))
+    let mut attempt: usize = 0;
+    loop {
+        attempt += 1;
+        let resp = client.get(url).send().await;
+        match resp {
+            Ok(r) => {
+                if !r.status().is_success() {
+                    if attempt > retries {
+                        return Err(anyhow::anyhow!("Failed to fetch latest release after {} attempts: {}", retries, r.status()));
+                    }
+                    warn!("获取最新版本失败，HTTP 状态 {}，重试（第 {}/{} 次）", r.status(), attempt, retries);
+                    sleep(Duration::from_secs(1 << attempt)).await;
+                    continue;
+                }
+                match r.json::<Release>().await {
+                    Ok(release) => return Ok(release),
+                    Err(e) => {
+                        if attempt > retries {
+                            return Err(anyhow::anyhow!("Failed to parse release JSON: {}", e));
+                        }
+                        warn!("解析版本信息失败: {} -> 重试（第 {}/{} 次）", e, attempt, retries);
+                        sleep(Duration::from_secs(1 << attempt)).await;
+                        continue;
+                    }
+                }
+            }
+            Err(e) => {
+                if attempt > retries {
+                    return Err(anyhow::anyhow!("Failed to fetch latest release after {} attempts: {}", retries, e));
+                }
+                warn!("请求失败: {} -> 重试（第 {}/{} 次）", e, attempt, retries);
+                sleep(Duration::from_secs(1 << attempt)).await;
+                continue;
+            }
+        }
     }
 }
 
@@ -117,7 +146,17 @@ async fn async_main(args: Args) -> anyhow::Result<()> {
     let retries = args.retries;
     let do_extract = args.do_extract.as_str();
     let extract_dir = args.extract_dir.as_str();
-    let release = get_latest_release().await?;
+    
+    // 尝试获取最新版本信息，失败则跳过
+    let release = match get_latest_release(retries).await {
+        Ok(r) => r,
+        Err(e) => {
+            warn!("无法获取 Nuclei 最新版本信息: {}，跳过下载", e);
+            println!("警告：无法获取 Nuclei 最新版本信息，跳过下载步骤");
+            return Ok(());
+        }
+    };
+    
     let mut download_url: Option<String> = None;
     for asset in release.assets.iter() {
         let name = asset.name.to_lowercase();
@@ -126,13 +165,33 @@ async fn async_main(args: Args) -> anyhow::Result<()> {
             break;
         }
     }
-    let download_url = download_url.ok_or_else(|| anyhow::anyhow!("Linux amd64 ZIP asset not found"))?;
+    
+    let download_url = match download_url {
+        Some(url) => url,
+        None => {
+            warn!("未找到 Linux amd64 ZIP 资源，跳过下载");
+            println!("警告：未找到 Linux amd64 ZIP 资源，跳过下载步骤");
+            return Ok(());
+        }
+    };
+    
     println!("开始下载: {}", download_url);
     if Path::new(dest_file).exists() {
         println!("目标文件 {} 已存在，跳过下载。", dest_file);
     } else {
-        download_file(&download_url, dest_file, retries).await?;
+        // 尝试下载，失败则跳过
+        match download_file(&download_url, dest_file, retries).await {
+            Ok(_) => {
+                println!("下载成功");
+            }
+            Err(e) => {
+                warn!("下载失败: {}，跳过后续步骤", e);
+                println!("警告：下载失败，跳过后续步骤");
+                return Ok(());
+            }
+        }
     }
+    
     if do_extract == "extract" {
         println!("正在解压 {}", dest_file);
         let dest_file_owned = dest_file.to_string();
