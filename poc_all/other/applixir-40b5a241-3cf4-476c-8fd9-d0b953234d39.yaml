@@ -1,0 +1,51 @@
+id: applixir-40b5a241-3cf4-476c-8fd9-d0b953234d39
+
+info:
+  name: >
+    Reward Video Ad for WordPress <= 1.6 - Authenticated (Administrator+) Stored Cross-Site Scripting via Admin Settings
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/40b5a241-3cf4-476c-8fd9-d0b953234d39?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/applixir/"
+    google-query: inurl:"/wp-content/plugins/applixir/"
+    shodan-query: 'http.html:"wp-content/plugins/applixir/"'
+  tags: cve,wordpress,wp-plugin,applixir,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/applixir/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "applixir"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6')
