@@ -1,0 +1,57 @@
+id: silverstripe-detect
+
+info:
+  name: SilverStripe Detection
+  author: Chirag Mistry
+  severity: info
+  description: |
+    An instance running SilverStripe is detected by looking for specific HTTP headers, HTML tags, and known endpoints.
+  metadata:
+    max-request: 9
+    shodan-query: http.component:"SilverStripe"
+  tags: silverstripe,detect,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/index.php"
+      - "{{BaseURL}}/assets/"
+      - "{{BaseURL}}/cms/"
+      - "{{BaseURL}}/admin/"
+      - "{{BaseURL}}/themes/"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "Powered by SilverStripe"
+          - "X-Powered-By-SilverStripe"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+          - 403
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'SilverStripe ([0-9.]+)'
+          - 'Powered by SilverStripe ([0-9.]+)'
+
+      - type: regex
+        part: body
+        name: silverstripe_id
+        regex:
+          - 'silverstripe-site-id=([a-z0-9]+)'
+          - 'silverstripe\.org/([^/]+)'
+# digest: 4a0a00473045022100a30b609491ef4306ac3bcbea1c402840f4f02795b801e61a3901e07cf41da7050220403d612a63a1f2bf7b5a702e3c61729f94518d52930e8d29d846adf10ab10d92:922c64590222798bb761d5b6d8e72950
