@@ -1,0 +1,61 @@
+id: wix-detect
+
+info:
+  name: Wix Detection
+  author: Chirag Mistry
+  severity: info
+  description: |
+    An instance running Wix is detected by looking for specific HTTP headers, HTML tags, and known endpoints.
+  metadata:
+    verified: true
+    max-request: 8
+  tags: wix,detect,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/_static/"
+      - "{{BaseURL}}/wix-api"
+      - "{{BaseURL}}/user/login"
+      - "{{BaseURL}}/wix.js"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "Powered by Wix"
+          - "X-Wix-Request-Id"
+          - "Wix Static Site"
+          - "wixsite.com"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+          - 403
+          - 404
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'Wix.com ([0-9.]+)'
+          - 'Wix version ([0-9.]+)'
+          - 'Wix Static Site Version ([0-9.]+)'
+
+      - type: regex
+        part: body
+        name: wix_id
+        regex:
+          - 'wix-id=([a-z0-9]+)'
+          - 'siteid="([a-zA-Z0-9]+)"'
+# digest: 4a0a004730450220072911c8b775ff00f860af0699b7264415a37b73a227148608819c7ab820ab5e022100af0d460effd3de373e3e329f59e70c09f6d3cdaaa0941f0cc3e7b0f2d6e039af:922c64590222798bb761d5b6d8e72950
