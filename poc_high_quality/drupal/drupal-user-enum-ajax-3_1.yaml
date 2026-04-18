@@ -1,0 +1,43 @@
+id: drupal-user-enum-ajax 3
+
+info:
+  name: Drupal User Enumration [Ajax]
+  author: 0w4ys
+  severity: info
+  tags: drupal
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /?q=admin/views/ajax/autocomplete/user/a HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '":"a.'
+          - '":"A.'
+        part: body
+
+      - type: word
+        words:
+          - "application/json"
+        part: header
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '"[\w \-\_\@\.]+\"'

