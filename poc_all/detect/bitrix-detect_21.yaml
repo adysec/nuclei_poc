@@ -1,0 +1,57 @@
+id: bitrix-detect
+
+info:
+  name: Bitrix Detection
+  author: Chirag Mistry
+  severity: info
+  description: |
+    An instance running Bitrix is detected by looking for specific HTTP headers, HTML tags, and known endpoints.
+  metadata:
+    verified: true
+    max-request: 8
+  tags: bitrix,detect,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/bitrix/js/main/core/core_min.js"
+      - "{{BaseURL}}/bitrix/admin/"
+      - "{{BaseURL}}/bitrix/templates/"
+      - "{{BaseURL}}/bitrix/panel/"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "Powered by Bitrix"
+          - "bitrix.com"
+          - "bitrixjs"
+          - "X-Powered-By-Bitrix"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'Bitrix ([0-9.]+)'
+          - 'Powered by Bitrix ([0-9.]+)'
+
+      - type: regex
+        part: body
+        name: bitrix_id
+        regex:
+          - 'bitrix-site-id=([a-z0-9]+)'
+          - 'bitrix\.com/([^/]+)'
+# digest: 490a0046304402203436da3700f6de850960711b7805ddf96f5496258501fd1918405ed009b2c89f02200373f8a618ac7ea4cdaba839fd91d5de2075d9c0abd290d1e5ff4011805e8e20:922c64590222798bb761d5b6d8e72950
