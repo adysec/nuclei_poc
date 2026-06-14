@@ -1,0 +1,56 @@
+# gap: rabbitmq-management-unauth
+id: rabbitmq-management-unauth
+
+info:
+  name: RabbitMQ Management API Accessible Without Auth
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a RabbitMQ Management HTTP API (default port 15672) that returns
+    the cluster overview without an Authorization header. The /api/overview
+    endpoint discloses the RabbitMQ version, cluster name, Erlang version,
+    and runtime statistics, indicating either no auth or guest/guest access
+    that should never be reachable from untrusted networks.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/15672-pentesting-rabbitmq-management.html
+    - https://www.rabbitmq.com/management.html
+  tags: custom,exposures,rabbitmq,amqp,api
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/overview"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - "\"rabbitmq_version\""
+          - "\"cluster_name\""
+        condition: and
+    extractors:
+      - type: regex
+        part: body
+        name: rabbitmq_version
+        group: 1
+        regex:
+          - '"rabbitmq_version"\s*:\s*"([^"]+)"'
+      - type: regex
+        part: body
+        name: cluster_name
+        group: 1
+        regex:
+          - '"cluster_name"\s*:\s*"([^"]+)"'
+      - type: regex
+        part: body
+        name: erlang_version
+        group: 1
+        regex:
+          - '"erlang_version"\s*:\s*"([^"]+)"'

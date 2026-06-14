@@ -1,0 +1,67 @@
+# gap: oauth-redirect-uri-wildcard
+id: oauth-redirect-uri-wildcard
+
+info:
+  name: OAuth Authorization Endpoint Accepts Attacker-Controlled redirect_uri (Exact-Match Violation)
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects OAuth / OIDC authorization endpoints that issue a 302 Location
+    redirect to an attacker-controlled host supplied in the redirect_uri
+    parameter. RFC 9700 (OAuth 2.0 Security Best Current Practice, BCP
+    240, Jan 2025) §2.1 mandates exact-string matching of redirect_uri
+    against the registered set, with localhost-port variation the only
+    permitted exception. The probe submits an authorization request with
+    a Nuclei interactsh callback URL and a sentinel client_id; if the
+    server 302s to the interactsh host without first rejecting on
+    invalid_redirect_uri / invalid_client, the AS is performing
+    wildcard / prefix / substring matching rather than exact-string
+    matching.
+
+    This is an account takeover primitive — attacker-supplied identity
+    redirects steal authorization codes from authenticated victims and
+    bypass authentication of the relying party.
+  reference:
+    - https://www.ietf.org/archive/id/draft-ietf-oauth-security-topics-16.html
+    - https://datatracker.ietf.org/doc/html/rfc9700
+  tags: custom,vulnerabilities,oauth,oidc,redirect,takeover,owasp,cwe-601
+
+http:
+  - method: GET
+    redirects: false
+    max-redirects: 0
+    path:
+      - "{{BaseURL}}/oauth/authorize?response_type=code&client_id=nuclei-{{rand_text_alpha(6)}}&redirect_uri=https%3A%2F%2F{{interactsh-url}}%2Fcb&state=nuclei&scope=openid"
+      - "{{BaseURL}}/oauth2/authorize?response_type=code&client_id=nuclei-{{rand_text_alpha(6)}}&redirect_uri=https%3A%2F%2F{{interactsh-url}}%2Fcb&state=nuclei&scope=openid"
+      - "{{BaseURL}}/o/oauth2/v2/auth?response_type=code&client_id=nuclei-{{rand_text_alpha(6)}}&redirect_uri=https%3A%2F%2F{{interactsh-url}}%2Fcb&state=nuclei&scope=openid"
+      - "{{BaseURL}}/connect/authorize?response_type=code&client_id=nuclei-{{rand_text_alpha(6)}}&redirect_uri=https%3A%2F%2F{{interactsh-url}}%2Fcb&state=nuclei&scope=openid"
+      - "{{BaseURL}}/auth/realms/master/protocol/openid-connect/auth?response_type=code&client_id=nuclei-{{rand_text_alpha(6)}}&redirect_uri=https%3A%2F%2F{{interactsh-url}}%2Fcb&state=nuclei&scope=openid"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 302
+          - 303
+          - 307
+      - type: regex
+        part: header
+        regex:
+          - '(?i)Location:[^\r\n]*{{interactsh-url}}'
+      # Guard: do NOT fire on compliant servers that 302 to a documented error page
+      - type: word
+        part: header
+        negative: true
+        words:
+          - "error=invalid_redirect_uri"
+          - "error=invalid_client"
+        case-insensitive: true
+
+    extractors:
+      - type: regex
+        part: header
+        name: leaked-redirect
+        regex:
+          - '(?i)Location:\s*([^\r\n]+)'
+        group: 1

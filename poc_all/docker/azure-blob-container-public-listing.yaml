@@ -1,0 +1,49 @@
+# gap: azure-blob-container-public-listing
+id: azure-blob-container-public-listing
+
+info:
+  name: Azure Blob Container Public Listing Accessible
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects Azure Blob Storage containers that allow unauthenticated enumeration
+    of blob entries. A GET request with restype=container&comp=list returns HTTP 200
+    with an XML body containing EnumerationResults, exposing blob names publicly.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/azure-security/az-unauthenticated-enum-and-initial-entry/az-storage-unauth.md
+    - https://learn.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-overview
+  tags: custom,cloud,azure,blob,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}?restype=container&comp=list"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<EnumerationResults"
+
+    extractors:
+      - type: regex
+        part: body
+        name: container-url
+        regex:
+          - '<EnumerationResults\s+(?:ServiceEndpoint="[^"]+"\s+ContainerName="[^"]+"|ContainerName="[^"]+")'
+        group: 0
+      - type: regex
+        part: body
+        name: blob-names
+        regex:
+          - '<Name>([^<]+)</Name>'
+        group: 1
+      - type: regex
+        part: body
+        name: blob-content-types
+        regex:
+          - '<Content-Type>([^<]+)</Content-Type>'
+        group: 1

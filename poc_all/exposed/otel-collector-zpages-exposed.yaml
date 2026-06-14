@@ -1,0 +1,72 @@
+# gap: otel-collector-zpages-exposed
+id: otel-collector-zpages-exposed
+
+info:
+  name: OpenTelemetry Collector zPages Extension Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an OpenTelemetry Collector with the zpagesextension reachable
+    over the network. The extension defaults to :55679 and exposes
+    /debug/servicez, /debug/pipelinez, /debug/extensionz, /debug/featurez,
+    /debug/tracez, /debug/expvarz with no documented authentication
+    mechanism. Operators frequently set `endpoint: ':55679'` which binds
+    0.0.0.0 (all interfaces) rather than localhost.
+
+    /pipelinez and /extensionz leak the collector's configured pipeline
+    topology (receiver / processor / exporter chain — disclosing
+    downstream observability backends and credentials referenced from
+    exporters), and /tracez leaks the most-recent in-flight trace
+    payloads, which routinely carry HTTP authorization tokens, session
+    cookies, and PII in tags / log records. The probe AND-chains two
+    canonical zpages paths to demote single-path FPs from other HTML
+    debug endpoints.
+  reference:
+    - https://github.com/open-telemetry/opentelemetry-collector/blob/main/extension/zpagesextension/README.md
+    - https://opentelemetry.io/docs/collector/configuration/
+  tags: custom,exposures,opentelemetry,otel,observability,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/debug/servicez"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "text/html"
+      - type: word
+        part: body
+        words:
+          - "Pipelines"
+          - "Extensions"
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/debug/pipelinez"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "text/html"
+      - type: word
+        part: body
+        words:
+          - "Pipeline"
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - "Server"

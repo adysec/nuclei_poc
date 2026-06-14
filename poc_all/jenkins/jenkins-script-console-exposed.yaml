@@ -1,0 +1,49 @@
+# gap: jenkins-script-console-exposed
+id: jenkins-script-console-exposed
+
+info:
+  name: Jenkins Groovy Script Console Reachable Without Authentication
+  author: TyrusRC
+  severity: critical
+  description: |
+    Probes Jenkins Script Console paths (/script, /manage/script, and
+    common reverse-proxy mounts under /jenkins) and matches the Groovy
+    submission form. The Script Console executes arbitrary Groovy in the
+    Jenkins controller JVM with full master privileges, so any
+    unauthenticated reachability is immediate, unauth code execution on
+    the build infrastructure (credentials, secrets, build agents, source
+    code). This is family detection for the Jenkins-script-console
+    exposure class; replays on future Jenkins instances regardless of
+    version or CVE.
+  reference:
+    - https://www.jenkins.io/doc/book/managing/script-console/
+    - https://www.jenkins.io/security/
+    - https://wiki.jenkins.io/JENKINS/display/JENKINS/Jenkins+Script+Console
+  tags: custom,exposures,jenkins,unauth,rce,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/script"
+      - "{{BaseURL}}/manage/script"
+      - "{{BaseURL}}/jenkins/script"
+      - "{{BaseURL}}/jenkins/manage/script"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "<title>script console") || (contains(tolower(body), "groovy") && contains(tolower(body), "<form") && contains(tolower(body), "action=\"script\"")) || contains(body, "_.script") || contains(tolower(body), "name=\"script\"")'
+    extractors:
+      - type: kval
+        kval:
+          - x_jenkins
+          - x_hudson
+          - x_hudson_theme
+      - type: regex
+        part: body
+        regex:
+          - '<title>[^<]*Script Console[^<]*</title>'

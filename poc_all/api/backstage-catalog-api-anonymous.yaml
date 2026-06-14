@@ -1,0 +1,84 @@
+# gap: backstage-catalog-api-anonymous
+id: backstage-catalog-api-anonymous
+
+info:
+  name: Backstage Software Catalog API Anonymous Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Backstage developer-portal deployment where
+    /api/catalog/entities is reachable without an Authorization
+    header, returning the software catalog as a JSON entity array.
+    Class signal: response is a JSON array whose entries carry the
+    canonical Backstage entity shape
+    (`{"apiVersion":"backstage.io/v1*","kind":…,"metadata":…,"spec":…}`)
+    with `kind` taking values `Component` / `API` / `System` /
+    `Resource` / `Location` / `User` / `Group`.
+
+    Anonymous catalog access leaks the organisation's complete
+    service inventory: every Component entry discloses the source
+    repository URL (annotations `backstage.io/source-location`,
+    `github.com/project-slug`), CI/CD pipeline locations
+    (annotations `circleci.com/project-slug`,
+    `jenkins.io/job-full-name`), TechDocs pointers, on-call
+    references, and owner Group identities. Combined with
+    /api/catalog/users and /api/catalog/groups the response
+    discloses the full org chart, frequently including email
+    addresses and SSO identifiers — Class detection — keys on
+    Backstage canonical entity shape, not vendor banner.
+  reference:
+    - https://backstage.io/docs/features/software-catalog/
+    - https://backstage.io/docs/features/software-catalog/well-known-annotations
+  tags: custom,exposures,backstage,developerportal,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/catalog/entities?limit=1"
+      - "{{BaseURL}}/api/catalog/entities"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"apiVersion"\s*:\s*"backstage\.io/v[0-9a-z]+'
+      - type: word
+        part: body
+        words:
+          - '"kind":"Component"'
+          - '"kind":"API"'
+          - '"kind":"System"'
+          - '"kind":"Resource"'
+          - '"kind":"Location"'
+          - '"kind":"User"'
+          - '"kind":"Group"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: source-locations
+        regex:
+          - '"backstage\.io/source-location"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: github-project-slugs
+        regex:
+          - '"github\.com/project-slug"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: entity-owners
+        regex:
+          - '"owner"\s*:\s*"([^"]+)"'
+        group: 1

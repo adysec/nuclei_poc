@@ -1,0 +1,81 @@
+# gap: mcp-streamable-http-anonymous-tools-list
+id: mcp-streamable-http-anonymous-tools-list
+
+info:
+  name: MCP Server (Streamable-HTTP) Exposes tools/list Without Authentication
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Model Context Protocol (MCP) server reachable over the
+    post-2025 streamable-http transport that responds to an anonymous
+    `tools/list` JSON-RPC call. The probe sends
+    `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}` to
+    /mcp (and falls back to /api/mcp) with `Accept: application/json,
+    text/event-stream`. A vulnerable server returns the tool inventory
+    inline — including each tool's `inputSchema` — without challenging
+    for auth.
+
+    Anonymous tool enumeration is the precondition for in-the-wild
+    abuse documented by Akamai, Bitsight, and Trend Micro across
+    2025–2026: ~12.5K internet-reachable MCP servers, ~40% with no
+    auth on the tools surface. Several disclosed cases (Apache Doris
+    MCP CVE-2025-66335, Apache Pinot MCP, Alibaba RDS MCP) expose
+    SQL/shell-shaped tools whose `inputSchema.properties` reveal
+    that a free-form query/command parameter is accepted, giving the
+    operator a direct path from enumeration to RCE / arbitrary SQL.
+    Class detection — keys on the inputSchema marker that uniquely
+    identifies MCP tools, not on a vendor banner.
+  reference:
+    - https://www.akamai.com/blog/security-research/one-fluke-3-pattern-mcp-back-end-vulnerabilities
+    - https://www.bitsight.com/blog/exposed-mcp-servers-reveal-new-ai-vulnerabilities
+    - https://www.trendmicro.com/vinfo/us/security/news/vulnerabilities-and-exploits/update-on-exposed-mcp-servers-the-threat-widens-to-the-cloud
+    - https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
+  tags: custom,exposures,mcp,ai,llm,json-rpc,disclosure,cwe-306
+
+http:
+  - raw:
+      - |
+        POST /mcp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json, text/event-stream
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+      - |
+        POST /api/mcp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json, text/event-stream
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        # JSON-RPC envelope plus MCP-specific inputSchema field that
+        # does not appear in vanilla JSON-RPC, OpenAPI, or AsyncAPI.
+        words:
+          - '"jsonrpc":"2.0"'
+          - '"result"'
+          - '"tools"'
+          - '"inputSchema"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: mcp-tool-names
+        regex:
+          - '"name"\s*:\s*"([a-zA-Z0-9_\-]+)"\s*,\s*"description"'
+        group: 1
+      - type: regex
+        part: body
+        name: mcp-server-name
+        regex:
+          - '"serverInfo"\s*:\s*\{\s*"name"\s*:\s*"([^"]+)"'
+        group: 1

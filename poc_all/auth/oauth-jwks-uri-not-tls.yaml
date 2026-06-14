@@ -1,0 +1,66 @@
+# gap: oauth-jwks-uri-not-tls
+id: oauth-jwks-uri-not-tls
+
+info:
+  name: OAuth/OIDC Discovery Document Advertises jwks_uri Over Cleartext HTTP
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects OAuth / OIDC authorization servers whose discovery document
+    advertises a `jwks_uri` over `http://` rather than `https://`.
+    OpenID Connect Discovery 1.0 §4.2 and OAuth 2.0 Authorization Server
+    Metadata (RFC 8414) §3.3 both require communication with the issuer
+    metadata and JWKS endpoints to use TLS. A cleartext jwks_uri lets a
+    network-positioned attacker swap the public-key set in transit, at
+    which point the relying party validates JWTs against attacker-
+    controlled keys and accepts arbitrary forged tokens — a load-bearing
+    primitive for full token forgery and authentication bypass.
+
+    Class detection — capability-advertisement check on a standardized
+    discovery field; the matcher only fires on a literal `"jwks_uri":
+    "http://"` substring (not `https://`), making it FP-resistant
+    across vendors and versions.
+  reference:
+    - https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
+    - https://datatracker.ietf.org/doc/html/rfc8414
+  tags: custom,misconfig,oauth,oidc,tls,owasp,cwe-319
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/openid-configuration"
+      - "{{BaseURL}}/.well-known/oauth-authorization-server"
+      - "{{BaseURL}}/oauth2/.well-known/openid-configuration"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"issuer"'
+      - type: regex
+        part: body
+        regex:
+          - '"jwks_uri"\s*:\s*"http://'
+
+    extractors:
+      - type: regex
+        part: body
+        name: cleartext-jwks-uri
+        regex:
+          - '"jwks_uri"\s*:\s*"(http://[^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: issuer
+        regex:
+          - '"issuer"\s*:\s*"([^"]+)"'
+        group: 1

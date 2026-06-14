@@ -1,0 +1,73 @@
+# gap: crossplane-api-anonymous-providers
+id: crossplane-api-anonymous-providers
+
+info:
+  name: Crossplane Anonymous Provider / Composition / XRD CRD Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Kubernetes API server proxying Crossplane CRD endpoints
+    (`pkg.crossplane.io/v1 Providers`, `apiextensions.crossplane.io/v1
+    Compositions`, `apiextensions.crossplane.io/v1
+    CompositeResourceDefinitions`) reachable without an Authorization
+    Bearer token. Class signal: response carries `"kind":"ProviderList"`
+    / `"kind":"CompositionList"` / `"kind":"CompositeResourceDefinitionList"`
+    with `apiVersion: *.crossplane.io/v1`.
+
+    Anonymous Crossplane CRD access leaks the multi-cloud IaC
+    surface: the list of cloud Providers installed (AWS, GCP,
+    Azure, Helm, Kubernetes — recon for which cloud control planes
+    the cluster controls), Composition templates that disclose
+    full cloud-resource shapes (S3 buckets, RDS clusters, IAM
+    roles being managed by the cluster), and XRD claim definitions
+    that disclose internal-tenancy mapping (which abstractions are
+    exposed to which teams). Combined with anonymous K8s API access,
+    the attacker can submit Composite Resource claims to provision
+    arbitrary cloud resources under the cluster's IaC-grade service-
+    account identity — auth bypass of the cluster's cloud-provisioning
+    control plane. Class detection — keys on Crossplane CRD shape,
+    not vendor banner.
+  reference:
+    - https://docs.crossplane.io/latest/concepts/providers/
+    - https://docs.crossplane.io/latest/concepts/compositions/
+  tags: custom,exposures,crossplane,iac,kubernetes,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/apis/pkg.crossplane.io/v1/providers"
+      - "{{BaseURL}}/apis/apiextensions.crossplane.io/v1/compositions"
+      - "{{BaseURL}}/apis/apiextensions.crossplane.io/v1/compositeresourcedefinitions"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"kind"\s*:\s*"(Provider|Composition|CompositeResourceDefinition)List"'
+      - type: regex
+        part: body
+        regex:
+          - '"apiVersion"\s*:\s*"(pkg|apiextensions)\.crossplane\.io/v1'
+
+    extractors:
+      - type: regex
+        part: body
+        name: provider-packages
+        regex:
+          - '"package"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: composition-names
+        regex:
+          - '"name"\s*:\s*"([a-zA-Z0-9.-]+\.(aws|gcp|azure|helm|kubernetes)\.crossplane\.io)"'
+        group: 1

@@ -1,0 +1,79 @@
+# gap: prometheus-targets-api-exposed
+id: prometheus-targets-api-exposed
+
+info:
+  name: Prometheus /api/v1/targets Endpoint Exposed (Internal Network Disclosure)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed Prometheus server-side scrape-targets API at
+    /api/v1/targets. The endpoint returns the canonical Prometheus
+    targets envelope `{"status":"success","data":{"activeTargets":
+    [{"discoveredLabels":…,"labels":…,"scrapeUrl":…,"scrapePool":…}],
+    "droppedTargets":[…]}}`, disclosing every internal hostname,
+    listener port, job name, instance label, and scrape route the
+    Prometheus instance discovered — i.e. the deployment's internal
+    network map.
+
+    Distinct from upstream `prometheus-metrics` (which detects the
+    exposition-format /metrics endpoint and is information-class):
+    /api/v1/targets is materially worse because it discloses the
+    cluster's service-discovery state — internal DNS names, private
+    IPs and ports, ServiceMonitor / PodMonitor routes, and the
+    targets that the Prometheus instance was configured to scrape.
+    That topology is normally only visible from inside the cluster
+    network. Class detection — keys on the Prometheus API response
+    shape, not vendor banner.
+  reference:
+    - https://prometheus.io/docs/prometheus/latest/querying/api/#targets
+    - https://owasp.org/www-project-top-ten/2021/A05_2021-Security_Misconfiguration/
+  tags: custom,exposures,prometheus,monitoring,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/targets"
+      - "{{BaseURL}}/prometheus/api/v1/targets"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: dsl
+        dsl:
+          - 'contains(body, "\"discoveredLabels\"")'
+          - 'contains(body, "\"scrapeUrl\"") || contains(body, "\"scrapePool\"")'
+          - 'contains(body, "\"status\"") && contains(body, "\"data\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: scrape-urls
+        regex:
+          - '"scrapeUrl"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: scrape-pools
+        regex:
+          - '"scrapePool"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: target-jobs
+        regex:
+          - '"job"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: target-instances
+        regex:
+          - '"instance"\s*:\s*"([^"]+)"'
+        group: 1

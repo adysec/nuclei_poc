@@ -1,0 +1,67 @@
+# gap: oauth-pkce-plain-method-advertised
+id: oauth-pkce-plain-method-advertised
+
+info:
+  name: OAuth Authorization Server Advertises PKCE plain Method (OAuth 2.1 Violation)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects OAuth / OIDC authorization servers whose discovery document
+    advertises `code_challenge_method: plain` in
+    `code_challenge_methods_supported`. RFC 9700 (BCP 240, Jan 2025) and
+    the OAuth 2.1 draft normatively require PKCE with S256 — the `plain`
+    method is forbidden for new deployments because it provides no
+    protection against authorization-code interception by a malicious
+    client on the same device or a network-positioned attacker. An AS
+    that advertises `plain` either accepts a downgraded flow or
+    misrepresents its capabilities; in either case it is a spec-violation
+    capability marker that catches future CVEs in the PKCE-downgrade
+    family without keying on a vendor banner.
+  reference:
+    - https://datatracker.ietf.org/doc/html/rfc9700
+    - https://www.ietf.org/archive/id/draft-ietf-oauth-security-topics-16.html
+    - https://datatracker.ietf.org/doc/html/rfc7636
+  tags: custom,misconfig,oauth,oidc,pkce,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/openid-configuration"
+      - "{{BaseURL}}/.well-known/oauth-authorization-server"
+      - "{{BaseURL}}/oauth2/.well-known/openid-configuration"
+      - "{{BaseURL}}/auth/realms/master/.well-known/openid-configuration"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"issuer"'
+          - '"authorization_endpoint"'
+        condition: and
+      - type: regex
+        part: body
+        regex:
+          - '"code_challenge_methods_supported"\s*:\s*\[[^\]]*"plain"'
+
+    extractors:
+      - type: regex
+        part: body
+        name: issuer
+        regex:
+          - '"issuer"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: methods-supported
+        regex:
+          - '"code_challenge_methods_supported"\s*:\s*\[([^\]]+)\]'
+        group: 1

@@ -1,0 +1,41 @@
+# gap: gcp-cloud-functions-unauthenticated-invocation
+id: gcp-cloud-functions-unauthenticated-invocation
+
+info:
+  name: GCP Cloud Functions Allow Unauthenticated Invocation
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects a GCP Cloud Function (1st gen, *.cloudfunctions.net) reachable
+    without authentication. A GET request without an Authorization header
+    returns HTTP 200 from the Google Frontend rather than the standard 403
+    "Your client does not have permission to get URL" page, indicating an
+    allUsers IAM binding is in place. Confirm by checking the function's
+    IAM policy; some functions may still enforce app-layer auth.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/gcp-security/gcp-unauthenticated-enum-and-access/gcp-cloud-functions-unauthenticated-enum.md
+    - https://cloud.google.com/functions/docs/securing/managing-access-iam
+  tags: custom,cloud,gcp,cloudfunctions,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(host, ".cloudfunctions.net")'
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "Google Frontend"
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "Your client does not have permission to get URL"

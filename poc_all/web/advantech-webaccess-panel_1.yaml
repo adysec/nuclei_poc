@@ -1,0 +1,41 @@
+http:
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - "(?:Software Build|\u7248\u672C\u865F)\\s*:\\s*([0-9]+\\.[0-9]+[^\\s<\"]*)"
+    type: regex
+  host-redirects: true
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains_all(body, "broadWeb", "WebAccess")
+    - contains_any(body, "Advantech", "bw_templete1.dwt", "WebAccessClientSetup")
+    type: dsl
+  max-redirects: 2
+  method: GET
+  path:
+  - '{{BaseURL}}/broadWeb/bwRoot.asp'
+id: advantech-webaccess-panel
+info:
+  author: 0x_Akoko
+  description: 'Detected Advantech WebAccess/SCADA login panel, a web-browser-based
+    HMI/SCADA software used in critical manufacturing, energy, and water systems.
+
+    '
+  metadata:
+    fofa-query: title="Advantech WebAccess" || body="broadWeb"
+    max-request: 1
+    product: webaccess_scada
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)Advantech WebAccess"})
+      and service["favicon.ico.image.mmh3"] == "2047556588"
+    shodan-query: http.title:"Advantech WebAccess"
+    vendor: advantech
+    verified: true
+  name: Advantech WebAccess/SCADA - Panel
+  reference:
+  - https://www.advantech.com/en-us/products/webaccess-scada/sub_a7b4308c-a3d0-446c-8f03-0d098d4b2c31
+  - https://www.cisa.gov/news-events/ics-advisories/icsa-23-150-01
+  severity: info
+  tags: advantech,discovery,hmi,ics,panel,scada,webaccess

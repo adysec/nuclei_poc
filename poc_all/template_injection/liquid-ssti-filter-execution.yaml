@@ -1,0 +1,63 @@
+# gap: liquid-ssti-filter-execution
+id: liquid-ssti-filter-execution
+
+info:
+  name: Liquid Server-Side Template Injection via times Filter
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects server-side Liquid template injection (Shopify
+    storefronts, Jekyll-derived static-site SSR, Discourse and
+    Forem theme renderers) by injecting a payload that exercises
+    Liquid's `times` integer-multiplication filter. The probe
+    `{{ 49 | times: 49 }}` evaluates to the literal `2401` only
+    in Liquid; Jinja / Twig / Handlebars / EJS reflect the
+    payload verbatim, error, or emit `49` because they do not
+    implement the `times:` filter syntax.
+
+    Liquid SSTI on Shopify-style storefronts has historically
+    been chained to PII disclosure via `{{ customer.email }}`,
+    cart manipulation via `{% assign %}`, and full theme JS
+    exfiltration. The literal `2401` adjacent to the canary
+    marker proves filter execution and provides high-confidence
+    evidence of an exploitable Liquid renderer.
+
+    Class detection — keys on the `times:` filter, which is
+    Liquid-specific in its named-filter pipeline syntax.
+  reference:
+    - https://shopify.github.io/liquid/filters/times/
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Ruby.md
+  tags: custom,vulnerabilities,ssti,liquid,shopify,jekyll,ruby,owasp,cwe-94
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?q=NUCLEILQ-{{%2049%20|%20times:%2049%20}}"
+      - "{{BaseURL}}/?name=NUCLEILQ-{{%2049%20|%20times:%2049%20}}"
+      - "{{BaseURL}}/?search=NUCLEILQ-{{%2049%20|%20times:%2049%20}}"
+      - "{{BaseURL}}/?product=NUCLEILQ-{{%2049%20|%20times:%2049%20}}"
+      - "{{BaseURL}}/?id=NUCLEILQ-{{%2049%20|%20times:%2049%20}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        # Filter executed: canary literal joins computed product.
+        words:
+          - "NUCLEILQ-2401"
+      - type: word
+        part: body
+        # FP guard: raw payload syntax must NOT survive.
+        negative: true
+        words:
+          - "| times:"
+          - "NUCLEILQ-{{"
+
+    extractors:
+      - type: regex
+        part: body
+        name: ssti-evidence
+        regex:
+          - '(NUCLEILQ-2401[^<\r\n]{0,30})'
+        group: 1

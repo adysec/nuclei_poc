@@ -1,0 +1,74 @@
+# gap: sveltekit-data-json-anonymous-fetch
+id: sveltekit-data-json-anonymous-fetch
+
+info:
+  name: SvelteKit __data.json Server-Loader Payload Exposed
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects a SvelteKit SSR deployment serving its `__data.json`
+    proxy endpoint anonymously. The endpoint returns the raw
+    payload of every server `load` function for a given route —
+    NOT just what the page renders — so any field that the
+    server loader returns (typically for derivation in the
+    template) is reachable to a direct fetch of `__data.json`.
+    Operators who over-return from server loaders (full user
+    objects with email/role/internal IDs, full database rows
+    via Prisma's `findFirst()`) leak those fields to anonymous
+    clients regardless of which fields the rendered page uses.
+
+    Class signal: response is JSON with the `serialize_data`
+    envelope — `"type":"data"` plus a `"nodes":[…]` array
+    (SvelteKit's wire format). This is product-unique to
+    SvelteKit and discriminates from generic `__data.json`
+    endpoints in other stacks.
+  reference:
+    - https://github.com/sveltejs/kit/issues/7967
+    - https://github.com/sveltejs/kit/discussions/8847
+    - https://kit.svelte.dev/docs/load
+  tags: custom,exposures,sveltekit,svelte,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/__data.json"
+      - "{{BaseURL}}/api/__data.json"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # SvelteKit serialize_data envelope.
+        words:
+          - '"type":"data"'
+          - '"nodes"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: loader-uses
+        regex:
+          - '"uses"\s*:\s*\{[^}]{0,500}\}'
+        group: 0
+      - type: regex
+        part: body
+        name: leaked-emails
+        regex:
+          - '"email"[\s,]*"([^"]+@[^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: leaked-internal-ids
+        regex:
+          - '"(userId|user_id|id)"[\s,]*("[a-f0-9-]{20,}"|[0-9]+)'
+        group: 2

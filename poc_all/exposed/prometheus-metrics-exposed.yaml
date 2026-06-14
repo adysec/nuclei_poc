@@ -1,0 +1,84 @@
+# gap: prometheus-metrics-exposed
+id: prometheus-metrics-exposed
+
+info:
+  name: Prometheus Metrics / Targets Endpoint Exposed
+  author: TyrusRC
+  severity: medium
+  description: |
+    Two-part probe for the Prometheus exposure family. Block 1 fetches
+    common metrics paths (/metrics, /prometheus/metrics,
+    /api/v1/metrics) and matches the exposition format (# HELP + # TYPE
+    + a canonical series like process_cpu_seconds_total, go_goroutines,
+    process_resident_memory_bytes, or up{). Block 2 fetches
+    /api/v1/targets — the Prometheus server's own scrape-targets API —
+    and matches discoveredLabels + scrapeUrl, which leaks internal
+    hostnames, ports, job names and route inventory. Metrics exposure
+    is information disclosure (internal infra topology, route names,
+    error counters); targets exposure is internal-network disclosure.
+    This is family detection that replays on future Prometheus
+    deployments regardless of CVE.
+  reference:
+    - https://prometheus.io/docs/instrumenting/exposition_formats/
+    - https://prometheus.io/docs/prometheus/latest/querying/api/#targets
+    - https://owasp.org/www-project-top-ten/2021/A05_2021-Security_Misconfiguration/
+  tags: custom,exposures,prometheus,metrics,monitoring,info-disclosure
+  metadata:
+    note: |
+      A hit on the /api/v1/targets block (matcher-name: targets-api) is
+      operationally higher severity than a /metrics block hit
+      (matcher-name: metrics-endpoint) because targets exposure leaks
+      internal hostnames, ports, and job inventory. Triage accordingly.
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/metrics"
+      - "{{BaseURL}}/prometheus/metrics"
+      - "{{BaseURL}}/api/v1/metrics"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        name: metrics-endpoint
+        dsl:
+          - 'contains(body, "# HELP ")'
+          - 'contains(body, "# TYPE ")'
+          - 'contains(body, "process_cpu_seconds_total") || contains(body, "go_goroutines") || contains(body, "process_resident_memory_bytes") || contains(body, "up{") || contains(body, "process_start_time_seconds")'
+        condition: and
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'up\{[^}]*instance="[^"]+"[^}]*\}'
+          - '[a-zA-Z_][a-zA-Z0-9_]*_build_info\{[^}]*version="[^"]+"[^}]*\}'
+          - '\{[^}]*job="[^"]+"[^}]*\}'
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/targets"
+      - "{{BaseURL}}/prometheus/api/v1/targets"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        name: targets-api
+        dsl:
+          - 'contains(body, "\"discoveredLabels\"")'
+          - 'contains(body, "\"scrapeUrl\"") || contains(body, "\"scrapePool\"")'
+          - 'contains(body, "\"status\"") && contains(body, "\"data\"")'
+        condition: and
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '"scrapeUrl"\s*:\s*"[^"]+"'
+          - '"scrapePool"\s*:\s*"[^"]+"'
+          - '"job"\s*:\s*"[^"]+"'
+          - '"instance"\s*:\s*"[^"]+"'

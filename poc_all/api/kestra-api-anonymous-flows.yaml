@@ -1,0 +1,72 @@
+# gap: kestra-api-anonymous-flows
+id: kestra-api-anonymous-flows
+
+info:
+  name: Kestra Workflow Orchestrator API Anonymous Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Kestra workflow-orchestrator instance where the search /
+    flows API (/api/v1/flows/search, /api/v1/flows) is reachable
+    without authentication, returning the flow catalog. Class signal:
+    response carries the canonical Kestra search envelope
+    `{"results":[…],"total":N}` whose entries include the Kestra flow
+    shape (`id`, `namespace`, `revision`, `tasks`, `triggers`).
+
+    Anonymous Kestra flow disclosure leaks the entire data-pipeline
+    surface: namespaces reveal team boundaries, task entries (Bash,
+    Python, SQL, Docker, Jdbc, Kafka, S3) disclose the connected
+    storage backends and credential aliases, and trigger entries
+    (Webhook, Schedule, Pubsub, SQS) reveal in-bound integration
+    points. Tasks frequently embed environment-variable references
+    (`{{ secret('AWS_KEY') }}`) that disclose secret identifiers, and
+    Bash / Python tasks routinely contain inline command lines that
+    constitute source-code disclosure of the org's ETL logic. Class
+    detection — keys on Kestra search-response shape, not vendor
+    banner.
+  reference:
+    - https://kestra.io/docs/api-reference/oss
+    - https://kestra.io/docs/concepts/flow
+  tags: custom,exposures,kestra,workflow,orchestration,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/flows/search?size=1"
+      - "{{BaseURL}}/api/v1/flows"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"results"\s*:\s*\[|"total"\s*:\s*[0-9]+'
+      - type: word
+        part: body
+        words:
+          - '"namespace"'
+          - '"revision"'
+          - '"tasks"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: flow-namespaces
+        regex:
+          - '"namespace"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: flow-ids
+        regex:
+          - '"id"\s*:\s*"([^"]+)"'
+        group: 1

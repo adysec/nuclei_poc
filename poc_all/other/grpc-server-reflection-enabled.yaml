@@ -1,0 +1,87 @@
+# gap: grpc-server-reflection-enabled
+id: grpc-server-reflection-enabled
+
+info:
+  name: gRPC Server Reflection Enabled (anonymous schema enumeration)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects HTTP-reachable gRPC services exposing
+    `grpc.reflection.v1alpha.ServerReflection` (or the v1 variant)
+    anonymously. Server reflection lets any client enumerate the
+    full RPC surface — method names, request/response message
+    definitions, custom proto types. In a security context this
+    is an enumeration primitive that turns an opaque internal API
+    into a fully-documented one.
+
+    The probe sends a single gRPC-Web POST carrying a serialized
+    `ListService` frame. A reflection-enabled server returns the
+    canonical service-descriptor envelope with `grpc.reflection`
+    or `grpc.health.v1` listed as services.
+
+    Wire-format: gRPC-Web framing means responses are
+    `application/grpc-web` (or `application/grpc-web+proto`) with
+    a `grpc-status: 0` trailer header. The body contains the
+    service descriptor names as length-prefixed protobuf strings,
+    so `grpc.reflection` / `grpc.health.v1` / `grpc.channelz`
+    appear as ASCII substrings.
+
+    Production gRPC deployments are advised to disable reflection
+    in non-dev environments (envoy `grpc.config.health_check_v1`
+    style, grpcurl docs explicitly warn) — but the default in
+    grpc-go, grpc-java, and Python grpcio is "off" yet a single
+    `reflection.Register(s)` call by a developer enables it
+    globally, which routinely ships to prod.
+  reference:
+    - https://github.com/grpc/grpc/blob/master/doc/server-reflection.md
+    - https://grpc.io/blog/grpc-web-ga/
+    - https://www.stackhawk.com/blog/grpc-security-how-stackhawk-scans-grpc-services/
+  tags: custom,exposures,grpc,reflection,enumeration,anonymous,cwe-200
+
+http:
+  - raw:
+      - |
+        POST /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/grpc-web+proto
+        X-Grpc-Web: 1
+        Accept: application/grpc-web+proto
+
+        {{hex_decode("00000000022001")}}
+
+      - |
+        POST /grpc.reflection.v1.ServerReflection/ServerReflectionInfo HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/grpc-web+proto
+        X-Grpc-Web: 1
+        Accept: application/grpc-web+proto
+
+        {{hex_decode("00000000022001")}}
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?i)content-type:\s*application/grpc-web'
+      - type: regex
+        part: header
+        regex:
+          - '(?i)grpc-status:\s*0'
+      - type: word
+        part: body
+        words:
+          - 'grpc.reflection'
+          - 'grpc.health.v1'
+          - 'grpc.channelz'
+          - 'ServerReflection'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: exposed-grpc-services
+        regex:
+          - '([a-zA-Z][\w.]{2,80}\.[A-Z][a-zA-Z0-9]+)'
+        group: 1

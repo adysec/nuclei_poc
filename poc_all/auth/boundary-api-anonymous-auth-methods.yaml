@@ -1,0 +1,70 @@
+# gap: boundary-api-anonymous-auth-methods
+id: boundary-api-anonymous-auth-methods
+
+info:
+  name: HashiCorp Boundary /v1/auth-methods API Anonymous Access
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a HashiCorp Boundary controller where /v1/auth-methods is
+    reachable without a Bearer token, returning the configured auth
+    methods (password, oidc, ldap) as a JSON `items` array. Class
+    signal: response is `{"items":[…]}` containing entries with
+    `"type":"password"|"oidc"|"ldap"` and Boundary-specific
+    `authmethods/` resource IDs.
+
+    Anonymous auth-methods API access leaks Boundary's identity
+    provider configuration — OIDC issuer URLs and client IDs (recon
+    for the OIDC tenancy), LDAP server hostnames and bind DNs,
+    password method primary auth attributes, and per-method scope
+    descriptions. Combined with /v1/scopes and /v1/host-catalogs the
+    response discloses target-hostname inventories. Complements
+    upstream `hashicorp-boundary-detect` (HTML body fingerprint) with
+    a REST-API-level disclosure signal. Class detection — matches
+    Boundary's documented items envelope and authmethods/ ID prefix,
+    not vendor banner.
+  reference:
+    - https://developer.hashicorp.com/boundary/api-docs/auth-methods-service
+    - https://developer.hashicorp.com/boundary/docs/concepts/security
+  tags: custom,exposures,boundary,hashicorp,iam,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/auth-methods"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"items"\s*:\s*(\[|null)'
+      - type: word
+        part: body
+        words:
+          - 'authmethods/'
+          - '"type":"password"'
+          - '"type":"oidc"'
+          - '"type":"ldap"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: auth-method-ids
+        regex:
+          - '"id"\s*:\s*"(am[a-z]?_[A-Za-z0-9]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: oidc-issuer
+        regex:
+          - '"issuer"\s*:\s*"([^"]+)"'
+        group: 1

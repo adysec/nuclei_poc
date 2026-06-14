@@ -1,0 +1,46 @@
+# gap: chronograf-panel-exposed
+id: chronograf-panel-exposed
+
+info:
+  name: Chronograf InfluxDB UI Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed Chronograf web UI (default port 8888), the visualization
+    and administration frontend for the InfluxDB stack. Chronograf ships without
+    authentication by default and exposes dashboards, query editors, and Kapacitor
+    configuration that can be abused to read or modify time-series data.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/8086-pentesting-influxdb.html
+    - https://docs.influxdata.com/chronograf/
+  tags: custom,exposures,chronograf,influxdb,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<title>Chronograf"
+          - "/chronograf/v1/"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: chronograf-version
+        regex:
+          - 'chronograf[/v\s]+([0-9]+\.[0-9]+(\.[0-9]+)?)'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "X-Chronograf-Version"
+          - "X-Influxdb-Version"
+          - "Server"

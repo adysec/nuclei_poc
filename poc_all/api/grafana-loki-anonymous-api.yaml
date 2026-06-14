@@ -1,0 +1,58 @@
+# gap: grafana-loki-anonymous-api
+id: grafana-loki-anonymous-api
+
+info:
+  name: Grafana Loki Query API Anonymous Access
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an anonymously accessible Grafana Loki query API by probing
+    /loki/api/v1/labels and matching the canonical Loki JSON envelope
+    `{"status":"success","data":[…]}`. Self-hosted Loki bound to
+    0.0.0.0 without an auth proxy returns the label set, log streams,
+    and tenant data to any caller. Exposed label values frequently leak
+    Kubernetes namespace names, pod names, application identifiers,
+    service-account names, and ingress hosts; combined with
+    /loki/api/v1/query_range an attacker reads arbitrary log streams
+    containing in-memory secrets, session tokens, and PII forwarded by
+    promtail / Alloy / OTel collector. Class detection — matches Loki's
+    documented response envelope, not a version string.
+  reference:
+    - https://grafana.com/docs/loki/latest/reference/api/
+    - https://grafana.com/docs/loki/latest/operations/authentication/
+  tags: custom,exposures,grafana,loki,observability,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/loki/api/v1/labels"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"status"\s*:\s*"success"'
+      - type: regex
+        part: body
+        regex:
+          - '"data"\s*:\s*\['
+
+    extractors:
+      - type: regex
+        part: body
+        name: leaked-labels
+        regex:
+          - '"data"\s*:\s*\[([^\]]+)\]'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

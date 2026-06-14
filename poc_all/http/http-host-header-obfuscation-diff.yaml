@@ -1,0 +1,68 @@
+# gap: http-host-header-obfuscation-diff
+id: http-host-header-obfuscation-diff
+
+info:
+  name: HTTP/1.1 Host-Header Obfuscation Parser Differential (V-H / H-V)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects parser differentials in how the front-end and back-end
+    normalize Host-header obfuscations such as 'Host : value' (space
+    before colon) or 'Xost:' (typo header). A clean Host request is
+    compared against two obfuscated variants on the same keep-alive
+    connection. A status code differential between the clean control and
+    either obfuscated request indicates the front-end and back-end parse
+    host headers inconsistently — a parser primitive that chains to
+    host-header injection, cache poisoning, internal-vhost routing
+    access, and request-smuggling-class V-H / H-V exploitation (Kettle,
+    HTTP/1.1 must die, 2025).
+  reference:
+    - https://portswigger.net/research/http1-must-die
+    - https://portswigger.net/web-security/host-header
+  tags: custom,vulnerabilities,host-header,parser-diff,desync,http,cwe-444
+
+http:
+  - raw:
+      # Control: clean Host header
+      - |+
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Connection: keep-alive
+
+
+      # V-H: Xost typo header carrying attacker value (some BEs normalize Xost->Host)
+      - |+
+        GET / HTTP/1.1
+        Xost: nuclei-vh-{{rand_text_alpha(6)}}.invalid
+        Host: {{Hostname}}
+        Connection: keep-alive
+
+
+      # H-V: space before colon (RFC says reject; some parsers accept and prefer this Host)
+      - |+
+        GET / HTTP/1.1
+        Host : nuclei-hv-{{rand_text_alpha(6)}}.invalid
+        Host: {{Hostname}}
+        Connection: close
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          # Control must succeed (2xx/3xx) for comparison to be meaningful
+          - "status_code_1 >= 200 && status_code_1 < 400"
+          # At least one obfuscated variant routes to a host-recognition
+          # status (400 misdirected / 421 misdirected request / 503 vhost
+          # not found) AND differs from control — that's the parser
+          # differential signature, not arbitrary status jitter.
+          - "(status_code_2 != status_code_1 && (status_code_2 == 400 || status_code_2 == 421 || status_code_2 == 503)) || (status_code_3 != status_code_1 && (status_code_3 == 400 || status_code_3 == 421 || status_code_3 == 503))"
+          # Guard: variant responses actually received (not connection reset)
+          - "status_code_2 > 0 && status_code_3 > 0"
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - "Server"

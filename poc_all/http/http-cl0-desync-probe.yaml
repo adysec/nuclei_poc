@@ -1,0 +1,60 @@
+# gap: http-cl0-desync-probe
+id: http-cl0-desync-probe
+
+info:
+  name: HTTP/1.1 CL.0 Request Smuggling
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects CL.0 HTTP/1.1 request smuggling — a parser-differential class
+    where the front-end honors Content-Length but the back-end ignores it
+    on certain endpoints (static assets, redirects, overlong URLs, semi-
+    malformed paths). The probe POSTs to /robots.txt with a body
+    containing a complete smuggled HTTP/1.1 GET prefix targeting a
+    per-request Nuclei canary path. A second GET to the same static
+    asset is sent on the same keep-alive connection. If the back-end
+    treated the POST body as a fresh request, the smuggled GET's 404
+    response is dequeued in place of the static asset's expected 200 — a
+    stable status differential that confirms desync.
+
+    CL.0 chains to host-header redirection, cache poisoning, and
+    authentication bypass of front-end-enforced controls on the same
+    socket — auth bypass of any reverse-proxy-enforced control plane.
+  reference:
+    - https://portswigger.net/web-security/request-smuggling/browser/cl-0
+    - https://portswigger.net/research/browser-powered-desync-attacks
+    - https://portswigger.net/research/http1-must-die
+  tags: custom,vulnerabilities,smuggling,desync,cl0,http,parser-diff,cwe-444
+
+http:
+  - raw:
+      - |+
+        POST /robots.txt HTTP/1.1
+        Host: {{Hostname}}
+        Connection: keep-alive
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 46
+
+        GET /nuclei-cl0-{{rand_text_alpha(8)}} HTTP/1.1
+        Host: x
+
+
+      - |+
+        GET /robots.txt HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_2 == 404"
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - "Server"

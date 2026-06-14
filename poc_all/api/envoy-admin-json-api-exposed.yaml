@@ -1,0 +1,69 @@
+# gap: envoy-admin-json-api-exposed
+id: envoy-admin-json-api-exposed
+
+info:
+  name: Envoy Admin JSON API Exposed (config_dump / clusters / server_info)
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects an exposed Envoy proxy admin JSON API by probing /config_dump
+    and matching the canonical Protobuf-typed JSON envelope
+    `"@type":"type.googleapis.com/envoy.admin.v3.*ConfigDump"`. Envoy's
+    admin interface has no built-in authentication — its security model
+    is network isolation only. When the JSON API is reachable from an
+    untrusted network (gateway misconfig, sidecar bind to 0.0.0.0,
+    proxied admin port), it leaks secrets and credentials in routed
+    clusters / SDS bootstrap / runtime overrides, exposes TLS certificate
+    chains and private-key references via /certs, and offers destructive
+    operations via /quitquitquit, /runtime_modify, /healthcheck/fail
+    that bypass authentication of the cluster's data plane.
+
+    Complementary to upstream `envoy-admin-exposure` which detects the
+    HTML landing-page title — the JSON endpoints remain reachable on
+    listeners where the HTML page isn't, and carry the actual
+    sensitive payload.
+  reference:
+    - https://www.envoyproxy.io/docs/envoy/latest/operations/admin.html
+    - https://www.envoyproxy.io/docs/envoy/latest/api-v3/admin/v3/config_dump.proto
+  tags: custom,exposures,envoy,proxy,admin,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/config_dump"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"@type"\s*:\s*"type\.googleapis\.com/envoy\.admin\.v3\.'
+      - type: word
+        part: body
+        words:
+          - '"configs"'
+
+    extractors:
+      - type: regex
+        part: body
+        name: envoy-version
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: bootstrap-node
+        regex:
+          - '"id"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

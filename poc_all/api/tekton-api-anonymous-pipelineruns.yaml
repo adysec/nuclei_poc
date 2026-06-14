@@ -1,0 +1,66 @@
+# gap: tekton-api-anonymous-pipelineruns
+id: tekton-api-anonymous-pipelineruns
+
+info:
+  name: Tekton Dashboard API Anonymous PipelineRun Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Tekton Dashboard proxying the Kubernetes API where the
+    Tekton CRD endpoint /apis/tekton.dev/v1/namespaces/{ns}/pipelineruns
+    is reachable without an Authorization Bearer token, returning the
+    PipelineRunList. Class signal: response is JSON with
+    `"kind":"PipelineRunList"` and `apiVersion: tekton.dev/v1[beta1]`.
+
+    Anonymous PipelineRun access leaks CI/CD execution history with
+    parameters and workspaces — git repository URLs cloned during
+    builds, container image references built by the pipeline, secret
+    references mounted as workspaces (which disclose Secret resource
+    names and namespaces), and pipeline-step exec command lines that
+    routinely embed in-memory credentials or push-token references.
+    Class detection — keys on the K8s CRD response envelope, not
+    Tekton version banner.
+  reference:
+    - https://tekton.dev/docs/dashboard/install/
+    - https://tekton.dev/docs/pipelines/pipelineruns/
+  tags: custom,exposures,tekton,kubernetes,cicd,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/apis/tekton.dev/v1/namespaces/default/pipelineruns"
+      - "{{BaseURL}}/apis/tekton.dev/v1beta1/namespaces/default/pipelineruns"
+      - "{{BaseURL}}/apis/tekton.dev/v1/pipelineruns"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"kind":"PipelineRunList"'
+      - type: regex
+        part: body
+        regex:
+          - '"apiVersion"\s*:\s*"tekton\.dev/v1'
+
+    extractors:
+      - type: regex
+        part: body
+        name: pipeline-run-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"[^}]*?"namespace"'
+        group: 1
+      - type: regex
+        part: body
+        name: git-repo-urls
+        regex:
+          - '"value"\s*:\s*"(https?://[^"]+\.git[^"]*|git@[^"]+)"'
+        group: 1

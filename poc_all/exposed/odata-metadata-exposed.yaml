@@ -1,0 +1,37 @@
+# gap: odata-metadata-exposed
+id: odata-metadata-exposed
+
+info:
+  name: OData Metadata Endpoint Exposed
+  author: TyrusRC
+  severity: low
+  description: |
+    Detects an OData service metadata document ($metadata) reachable without
+    authentication. The EDMX document enumerates every entity set, complex
+    type, and navigation property exposed by the service, providing a
+    complete internal data model that aids targeted query and injection
+    attacks against the underlying OData backend.
+  reference:
+    - https://hacktricks.wiki/en/pentesting-web/
+    - https://www.odata.org/documentation/odata-version-2-0/overview/
+  tags: custom,misconfig,odata,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/odata/$metadata"
+      - "{{BaseURL}}/api/odata/$metadata"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<EntityContainer"
+      - type: word
+        part: body
+        words:
+          - "edmx:Edmx"

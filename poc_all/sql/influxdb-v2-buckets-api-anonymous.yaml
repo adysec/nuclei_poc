@@ -1,0 +1,71 @@
+# gap: influxdb-v2-buckets-api-anonymous
+id: influxdb-v2-buckets-api-anonymous
+
+info:
+  name: InfluxDB v2 Buckets API Anonymous Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an InfluxDB v2 deployment where /api/v2/buckets is reachable
+    without an Authorization Token header, returning the bucket catalog
+    as JSON. Class signal: response is
+    `{"links":{"self":"/api/v2/buckets"},"buckets":[{"id":"…","orgID":
+    "…","type":"user|system","name":"…","retentionRules":[…],
+    "schemaType":"…","createdAt":"…","updatedAt":"…"}]}`.
+
+    Anonymous v2 buckets disclosure leaks the time-series workload
+    inventory: bucket names disclose product / service / customer
+    boundaries, `orgID` reveals multi-tenant organisation IDs, and
+    `retentionRules` reveals the storage budget. Combined with
+    anonymous /api/v2/query the response chains directly into
+    Flux query execution over every bucket — InfluxDB workloads
+    routinely contain in-memory tokens (every request-rate metric
+    that includes Authorization headers in labels), application
+    secrets logged to telemetry, and PII transit through telemetry
+    pipelines. Class detection — keys on InfluxDB v2 buckets
+    envelope, not vendor banner. Complements upstream `influxdb-
+    panel` (HTML fingerprint).
+  reference:
+    - https://docs.influxdata.com/influxdb/v2/api/#tag/Buckets
+    - https://docs.influxdata.com/influxdb/v2/admin/tokens/
+  tags: custom,exposures,influxdb,timeseries,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v2/buckets"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"buckets"\s*:\s*\['
+      - type: word
+        part: body
+        words:
+          - '"orgID"'
+          - '"retentionRules"'
+          - '"schemaType"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: bucket-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: org-ids
+        regex:
+          - '"orgID"\s*:\s*"([0-9a-f]+)"'
+        group: 1

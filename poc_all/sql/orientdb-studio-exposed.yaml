@@ -1,0 +1,47 @@
+# gap: orientdb-studio-exposed
+id: orientdb-studio-exposed
+
+info:
+  name: OrientDB Studio Web UI Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects the OrientDB Studio web administration UI, typically reachable
+    on port 2480 without authentication. Studio exposes database enumeration,
+    schema browsing, and an interactive query/JavaScript console that can be
+    abused for arbitrary command execution against the database server.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/
+    - https://orientdb.org/docs/3.2.x/studio/
+  tags: custom,exposures,orientdb,panel,database
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/studio/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "OrientDB Studio"
+          - "ng-app=\"Studio\""
+          - "studio.css"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: orientdb-version
+        regex:
+          - '(?i)OrientDB[\s/v-]+([0-9]+\.[0-9]+(\.[0-9]+)?)'
+          - 'studio[\s/v-]+([0-9]+\.[0-9]+(\.[0-9]+)?)'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"
+          - "X-OrientDB-Version"

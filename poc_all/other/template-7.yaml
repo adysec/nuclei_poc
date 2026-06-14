@@ -1,0 +1,68 @@
+
+# Template 7: File Upload/Download Detection
+id: aadhar-pan-scanner-files
+
+info:
+  name: Indian Identity Cards in File Endpoints
+  author: gigachad80
+  severity: high
+  description: Detects Aadhar and PAN cards in file upload/download endpoints
+  classification:
+    cve-id: N/A
+    cwe-id: CWE-200
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: N/A
+  tags: exposure,aadhar,pan,pii,india,sensitive-data,files
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/uploads"
+      - "{{BaseURL}}/files"
+      - "{{BaseURL}}/documents"
+      - "{{BaseURL}}/media"
+      - "{{BaseURL}}/static/uploads"
+      - "{{BaseURL}}/assets/uploads"
+      - "{{BaseURL}}/public/uploads"
+      - "{{BaseURL}}/storage"
+      - "{{BaseURL}}/download"
+      - "{{BaseURL}}/attachment"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        name: file-identity-data
+        regex:
+          - "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}"
+          - "[2-9]{1}[0-9]{11}"
+          - "[A-Z]{5}[0-9]{4}[A-Z]{1}"
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "aadhar"
+          - "aadhaar"
+          - "pan"
+          - "identity"
+          - "document"
+          - "kyc"
+        part: body
+        condition: or
+        case-insensitive: true
+
+    extractors:
+      - type: regex
+        name: file-exposed-data
+        regex:
+          - "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}"
+          - "[2-9]{1}[0-9]{11}"
+          - "[A-Z]{5}[0-9]{4}[A-Z]{1}"
+        part: body

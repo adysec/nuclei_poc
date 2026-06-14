@@ -1,0 +1,59 @@
+# gap: spring-actuator-env-exposed
+id: spring-actuator-env-exposed
+
+info:
+  name: Spring Boot Actuator /env Endpoint Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed Spring Boot Actuator /env endpoint that dumps every
+    configured PropertySource — systemEnvironment, systemProperties,
+    application.yml/properties, Spring Cloud Config, and command-line args.
+    In production this routinely leaks database URLs and credentials, JWT
+    signing secrets, cloud IAM keys, SMTP passwords, and internal service
+    tokens. Beyond information disclosure, a writable /env (POST) is the
+    classic primer for SpEL injection (CVE-2022-22963 style) and has been
+    used to pivot to RCE via eureka.client.serviceUrl, spring.cloud.bootstrap
+    and logging.pattern.console mutations. Family detection — replays on
+    future Spring Boot misconfigurations rather than a single CVE.
+  reference:
+    - https://docs.spring.io/spring-boot/docs/current/actuator-api/htmlsingle/#env
+    - https://nvd.nist.gov/vuln/detail/CVE-2022-22963
+    - https://www.veracode.com/blog/research/exploiting-spring-boot-actuators
+  tags: custom,exposures,spring,spring-boot,actuator,env,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/actuator/env"
+      - "{{BaseURL}}/env"
+      - "{{BaseURL}}/api/actuator/env"
+      - "{{BaseURL}}/management/env"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/vnd.spring-boot.actuator"
+          - "application/json"
+        condition: or
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "\"propertysources\"")'
+          - 'contains(tolower(body), "\"activeprofiles\"") || contains(tolower(body), "\"name\":\"systemenvironment\"") || contains(tolower(body), "systemproperties")'
+        condition: and
+    extractors:
+      - type: regex
+        part: body
+        name: property_sources
+        group: 1
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+      - type: kval
+        kval:
+          - server

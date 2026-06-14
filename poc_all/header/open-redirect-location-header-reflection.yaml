@@ -1,0 +1,52 @@
+# gap: open-redirect-location-header-reflection
+id: open-redirect-location-header-reflection
+
+info:
+  name: Open Redirect via Unvalidated URL Parameter in Location Header
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects open redirect vulnerabilities where common redirect parameters
+    (?redirect=, ?next=, ?url=, ?dest=, ?return=, ?go=, ?redir=, ?target=) are
+    not validated and the injected external URL appears verbatim in the
+    Location response header, allowing phishing and token theft attacks.
+  reference:
+    - https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/Open%20Redirect/README.md
+    - https://cwe.mitre.org/data/definitions/601.html
+  tags: custom,vulnerabilities,redirect,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?redirect=https://attacker.example.com"
+      - "{{BaseURL}}/?next=https://attacker.example.com"
+      - "{{BaseURL}}/?url=https://attacker.example.com"
+      - "{{BaseURL}}/?dest=https://attacker.example.com"
+      - "{{BaseURL}}/?return=https://attacker.example.com"
+      - "{{BaseURL}}/?go=https://attacker.example.com"
+      - "{{BaseURL}}/?redir=https://attacker.example.com"
+      - "{{BaseURL}}/?target=https://attacker.example.com"
+      - "{{BaseURL}}/login?next=https://attacker.example.com"
+      - "{{BaseURL}}/login?redirect=https://attacker.example.com"
+      - "{{BaseURL}}/login?return=https://attacker.example.com"
+      - "{{BaseURL}}/logout?redirect=https://attacker.example.com"
+      - "{{BaseURL}}/logout?next=https://attacker.example.com"
+      - "{{BaseURL}}/signin?next=https://attacker.example.com"
+      - "{{BaseURL}}/auth/callback?redirect=https://attacker.example.com"
+      - "{{BaseURL}}/r?url=https://attacker.example.com"
+      - "{{BaseURL}}/redirect?url=https://attacker.example.com"
+      - "{{BaseURL}}/out?url=https://attacker.example.com"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 301
+          - 302
+          - 307
+          - 308
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "location: https://attacker.example.com"

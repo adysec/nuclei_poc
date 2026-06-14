@@ -1,0 +1,69 @@
+# gap: ssti-arithmetic-active-probe
+id: ssti-arithmetic-active-probe
+
+info:
+  name: Server-Side Template Injection — Active Arithmetic Evaluation Probe
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects server-side template injection by sending a unique random
+    canary followed by a template-evaluated arithmetic expression
+    (`{{7*7}}` / `${7*7}` / `<%=7*7%>` / `*{7*7}`) through common
+    reflective query parameters. The class signal is the canary
+    string immediately followed by `49` in the response body — a
+    pattern that occurs only when the template engine evaluates the
+    arithmetic and embeds the result inline with the literal canary.
+
+    This is the active counterpart to `ssti-error-page-engine-
+    disclosure`. The arithmetic-eval signal proves the parameter
+    reaches a template renderer with attacker-controlled syntax —
+    code execution follows from gadget mapping for Jinja2 / Twig /
+    Pebble / Velocity / Handlebars / Smarty / ERB / Freemarker. The
+    canary defeats accidental `49` matches in unrelated body text.
+    Class detection — keys on the universal template-evaluation
+    invariant (literal preceding canary + numeric result), not
+    engine-specific error markers.
+  reference:
+    - https://portswigger.net/research/server-side-template-injection
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/18-Testing_for_Server-side_Template_Injection
+    - https://cwe.mitre.org/data/definitions/1336.html
+  tags: custom,vulnerabilities,ssti,injection,rce,owasp,cwe-1336
+
+variables:
+  marker: "nuclei{{rand_text_alpha(6)}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?q={{marker}}%7B%7B7%2A7%7D%7D"
+      - "{{BaseURL}}/?search={{marker}}%7B%7B7%2A7%7D%7D"
+      - "{{BaseURL}}/?name={{marker}}%7B%7B7%2A7%7D%7D"
+      - "{{BaseURL}}/?id={{marker}}%24%7B7%2A7%7D"
+      - "{{BaseURL}}/?query={{marker}}%3C%25%3D7%2A7%25%3E"
+      - "{{BaseURL}}/?term={{marker}}%2A%7B7%2A7%7D"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '{{marker}}49(?:[^0-9]|$)'
+      # Guard: do NOT fire if the body merely reflects the raw payload
+      # (i.e. the template engine did NOT evaluate, just echoed back).
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "{{marker}}{{7*7}}"
+          - "{{marker}}${7*7}"
+          - "{{marker}}<%=7*7%>"
+          - "{{marker}}*{7*7}"
+
+    extractors:
+      - type: regex
+        part: body
+        name: ssti-confirmed
+        regex:
+          - '({{marker}}49)'
+        group: 1

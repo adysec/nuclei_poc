@@ -1,0 +1,65 @@
+id: slash-url-redirection-enhanced
+
+info:
+  name: Encoded Slash URL Redirection
+  author: iman,codex
+  severity: medium
+  description: |
+    Detects open redirect behavior caused by encoded slash or backslash parsing
+    issues. Uses attacker-controlled unique hosts and only reports on explicit
+    3xx responses with matching Location headers.
+  metadata:
+    max-request: 4
+    verified: true
+  tags: url-redirection,generic,bypass,open-redirect
+
+variables:
+  redirect_host: "{{to_lower(rand_base(8))}}.example"
+
+http:
+  - raw:
+      - |
+        GET /%2f%2f{{redirect_host}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+      - |
+        GET /%2f%2fhttps://{{redirect_host}}/%2f HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+      - |
+        GET /%5c%5c{{redirect_host}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+      - |
+        GET /%2f/%2f{{redirect_host}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    stop-at-first-match: true
+    redirects: false
+    cookie-reuse: false
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 301
+          - 302
+          - 303
+          - 307
+          - 308
+
+      - type: dsl
+        condition: or
+        dsl:
+          - "contains(to_lower(all_headers), concat('location: http://', to_lower(redirect_host)))"
+          - "contains(to_lower(all_headers), concat('location: https://', to_lower(redirect_host)))"
+          - "contains(to_lower(all_headers), concat('location: //', to_lower(redirect_host)))"
+          - "contains(to_lower(all_headers), concat('location: ', to_lower(redirect_host)))"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - "redirect_host"

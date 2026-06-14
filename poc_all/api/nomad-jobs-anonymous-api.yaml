@@ -1,0 +1,71 @@
+# gap: nomad-jobs-anonymous-api
+id: nomad-jobs-anonymous-api
+
+info:
+  name: HashiCorp Nomad /v1/jobs API Anonymous Access — Job Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a HashiCorp Nomad deployment where /v1/jobs is reachable
+    without an X-Nomad-Token, returning the job catalog as a JSON
+    array. Class signal: top-level JSON array of objects with stable
+    Nomad job-summary fields (`ID`, `ParentID`, `Type`, `JobModifyIndex`,
+    `Datacenters`, `Status`).
+
+    Anonymous jobs-API access leaks the Nomad workload inventory:
+    job IDs (which name internal services), datacenters, task drivers
+    in use (docker / exec / raw_exec — raw_exec on an open agent is
+    arbitrary command primitive), and JobSummary status counts.
+    Combined with /v1/job/{ID} the response discloses task-group
+    templates that frequently embed environment variables containing
+    in-memory secrets, service-account tokens, and DB credentials.
+    Complements upstream `exposed-nomad` (HTML UI fingerprint) by
+    targeting the REST API directly. Class detection — matches Nomad
+    job-summary shape, not vendor banner.
+  reference:
+    - https://developer.hashicorp.com/nomad/api-docs/jobs
+    - https://developer.hashicorp.com/nomad/docs/concepts/security
+  tags: custom,exposures,nomad,hashicorp,orchestration,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/jobs"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      # Nomad jobs API returns a JSON array (not object); empty arrays
+      # still trigger but are filtered by requiring at least one job-
+      # summary field below.
+      - type: regex
+        part: body
+        regex:
+          - '^\s*\['
+      - type: word
+        part: body
+        words:
+          - '"JobModifyIndex"'
+          - '"ParentID"'
+          - '"Datacenters"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: job-ids
+        regex:
+          - '"ID"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: nomad-version
+        regex:
+          - '(?i)X-Nomad-[A-Za-z-]+\s*:\s*([^\r\n]+)'
+        group: 1

@@ -1,0 +1,79 @@
+# gap: http-request-smuggling-cl-te-heuristic
+id: http-request-smuggling-cl-te-heuristic
+
+info:
+  name: HTTP Request Smuggling Heuristic — Conflicting CL/TE Parser Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Sends a single HTTP/1.1 POST carrying conflicting Content-Length and
+    Transfer-Encoding: chunked headers. A correctly normalising frontend
+    should silently drop one header and forward a clean request; a frontend
+    that surfaces the conflict in its 400 error body (referring to
+    chunked-encoding parser state, length mismatch, or Transfer-Encoding
+    directly) is one whose parser sees both directives, which is the
+    pre-condition for CL.TE / TE.CL desync attacks somewhere upstream.
+    This is a heuristic indicator only. True smuggling requires a timing
+    oracle and differential responses across the frontend/backend pair;
+    confirm with smuggler.py or the Burp HTTP Request Smuggler extension
+    before reporting. Family detection for the long-running HTTP/1.1
+    request-smuggling bug class — replays on future variants rather than a
+    single CVE.
+  reference:
+    - https://portswigger.net/web-security/request-smuggling
+    - https://cwe.mitre.org/data/definitions/444.html
+    - https://github.com/defparam/smuggler
+  tags: custom,vulnerabilities,smuggling,http,desync,heuristic
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 4
+        Transfer-Encoding: chunked
+        Content-Type: application/x-www-form-urlencoded
+
+        1
+        A
+        0
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 400
+          - 413
+          - 501
+      - type: word
+        part: body
+        case-insensitive: true
+        condition: or
+        words:
+          - "chunked encoding"
+          - "chunked transfer"
+          - "request smuggling"
+          - "invalid chunk"
+          - "malformed chunked"
+          - "chunk size"
+          - "unexpected end of stream"
+          - "transfer-encoding and content-length"
+      - type: word
+        part: body
+        case-insensitive: true
+        negative: true
+        condition: or
+        words:
+          - "<!doctype html"
+          - "<html"
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '(?i)(chunked[^<\n]{0,80}|transfer-encoding[^<\n]{0,80}|content-length[^<\n]{0,80})'
+      - type: kval
+        part: header
+        kval:
+          - "Server"

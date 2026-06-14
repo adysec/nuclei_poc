@@ -1,0 +1,89 @@
+# gap: ollama-anonymous-inference-canary
+id: ollama-anonymous-inference-canary
+
+info:
+  name: Ollama Anonymous Inference - Canary Echo (active-exploit primitive)
+  author: TyrusRC
+  severity: high
+  description: |
+    Confirms that an exposed Ollama server (default port 11434)
+    not only lists its installed models anonymously but actually
+    runs inference for unauthenticated requesters — turning the
+    detection from "model catalog disclosed" into proof of
+    "attacker can spin GPU/CPU cycles on your bill and exfiltrate
+    sensitive data through the prompt-completion pipeline."
+
+    Differentiates from upstream's `ollama-improper-authorization`
+    (which only probes `/api/tags` for catalog presence). This is
+    the active-exploit primitive following batch-35 style:
+
+    Step 1: GET `/api/tags` enumerate one usable model name.
+    Step 2: POST `/api/generate` with an instruct-and-echo canary
+            payload. The canary `NUCOLL{rand}` is unguessable —
+            a routine echo / template engine cannot produce it.
+            Matcher requires the canary appears in the
+            `"response":` JSON field.
+
+    Two simultaneous facts confirmed: (1) endpoint accepts unauth
+    inference, (2) the chosen model returns instruction-following
+    output. Both together = exploitable Ollama deployment.
+  reference:
+    - https://github.com/ollama/ollama/blob/main/docs/api.md
+    - https://blogs.cisco.com/security/detecting-exposed-llm-servers-shodan-case-study-on-ollama
+    - https://www.runzero.com/blog/ollama/
+  tags: custom,vulnerabilities,ollama,llm,ai,unauth,inference,cwe-862
+
+variables:
+  canary: "NUCOLL{{rand_text_alpha(10)}}"
+
+http:
+  - raw:
+      # Step 1: list available models (extract first model name)
+      - |
+        GET /api/tags HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+      # Step 2: invoke inference with instruct-and-echo canary
+      - |
+        POST /api/generate HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"model":"{{model_name}}","prompt":"Reply with exactly this token and nothing else: {{canary}}","stream":false,"options":{"num_predict":32}}
+
+    req-condition: true
+    extractors:
+      - type: regex
+        part: body_1
+        name: model_name
+        internal: true
+        regex:
+          - '"name"\s*:\s*"([^"]{1,100})"'
+        group: 1
+      - type: regex
+        part: body_2
+        name: leaked-canary
+        regex:
+          - '"response"\s*:\s*"([^"]{0,200}NUCOLL[A-Za-z]{10}[^"]{0,200})"'
+        group: 1
+      - type: regex
+        part: body_1
+        name: exposed-models
+        regex:
+          - '"name"\s*:\s*"([^"]{1,100})"'
+        group: 1
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, "\"models\":[")'
+          - 'contains(body_1, "\"modified_at\"")'
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(body_2, canary)'
+          - 'contains(body_2, "\"response\"")'

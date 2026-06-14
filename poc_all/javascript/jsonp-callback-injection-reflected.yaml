@@ -1,0 +1,72 @@
+# gap: jsonp-callback-injection-reflected
+id: jsonp-callback-injection-reflected
+
+info:
+  name: JSONP Endpoint Reflects Callback Identifier (XSS-class)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects a JSONP endpoint that reflects the `callback=`
+    (or aliases `cb`, `jsonp`, `jsoncallback`) query parameter
+    verbatim into a JavaScript-Content-Type response without
+    identifier validation. Two impacts:
+
+    - Reflected XSS — when the page is included as `<script src=...>`
+      from an attacker-controlled origin (XSSI). The reflected
+      identifier becomes attacker-controlled JS executed in the
+      including page's origin.
+    - Cross-site sensitive-data exfiltration — even with a
+      well-formed callback, sensitive JSON wrapped in a callable
+      function leaks via cross-origin script inclusion.
+
+    Wire-format (single-response, deterministic):
+    (a) `Content-Type` matches `(application|text)/(java|ecma)script`,
+    (b) response body begins with the canonical JSONP shape
+        `/**/CALLBACK(` or `CALLBACK(` where CALLBACK is the
+        canary we sent.
+
+    The probe sets `callback=NUCLEIJSONP{rand}` and matches the
+    canary appearing as the function name at the start of the
+    JS body. Differential from upstream CVE-specific templates:
+    class detector keying on response shape, not vendor.
+  reference:
+    - https://securitycafe.ro/2017/01/18/practical-jsonp-injection/
+    - https://portswigger.net/research/finding-that-one-weird-endpoint-with-bambdas
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/11-Client_Side_Testing/13-Testing_for_Cross_Site_Script_Inclusion
+  tags: custom,vulnerabilities,jsonp,xss,xssi,reflection,owasp,cwe-79
+
+variables:
+  cb: "NUCLEIJSONP{{rand_text_alpha(8)}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?callback={{cb}}"
+      - "{{BaseURL}}/?cb={{cb}}"
+      - "{{BaseURL}}/?jsonp={{cb}}"
+      - "{{BaseURL}}/?jsoncallback={{cb}}"
+      - "{{BaseURL}}/api/?callback={{cb}}"
+      - "{{BaseURL}}/api/v1/?callback={{cb}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+      - type: regex
+        part: header
+        regex:
+          - '(?i)content-type:\s*(?:application|text)/(?:x-)?(?:java|ecma)script'
+      - type: regex
+        part: body
+        regex:
+          - '(?s)\A\s*(?:/\*\*/\s*)?NUCLEIJSONP[A-Za-z]{8}\s*\('
+
+    extractors:
+      - type: regex
+        part: body
+        name: jsonp-prefix
+        regex:
+          - '(\A\s*(?:/\*\*/\s*)?NUCLEIJSONP[A-Za-z]{8}\s*\([^)]{0,80})'
+        group: 1

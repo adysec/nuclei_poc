@@ -1,0 +1,49 @@
+# gap: spring-actuator-heapdump-exposed
+id: spring-actuator-heapdump-exposed
+
+info:
+  name: Spring Boot Actuator /heapdump Endpoint Exposed
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects an exposed Spring Boot Actuator /heapdump endpoint that serves
+    a full JVM HPROF heap snapshot to anonymous requests. A heap dump
+    contains every in-memory object at the time of capture, which in
+    practice means HttpSession cookies, OAuth/JWT bearer tokens, datasource
+    passwords (HikariCP, Tomcat JDBC), Spring Security in-memory user
+    stores, AWS/GCP credential providers, KMS keys, and request bodies of
+    in-flight transactions. Heap dumps are routinely chained with /env or
+    /mappings to escalate from disclosure to full account takeover. Family
+    detection — replays on every future Spring Boot deployment that ships
+    this endpoint unauthenticated, not a single CVE.
+  reference:
+    - https://docs.spring.io/spring-boot/docs/current/actuator-api/htmlsingle/#heapdump
+    - https://hackerone.com/reports/1690661
+  tags: custom,exposures,spring,spring-boot,actuator,heapdump,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/actuator/heapdump"
+      - "{{BaseURL}}/heapdump"
+      - "{{BaseURL}}/api/actuator/heapdump"
+      - "{{BaseURL}}/management/heapdump"
+    stop-at-first-match: true
+    max-size: 4096
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'regex("(?i)content-disposition:\\s*attachment[^\\r\\n]*heapdump", header)'
+          - 'contains(body, "JAVA PROFILE")'
+          - 'contains(body, "HPROF")'
+          - 'contains(tolower(header), "application/octet-stream") && contains(tolower(header), "heapdump")'
+        condition: or
+    extractors:
+      - type: kval
+        kval:
+          - content_length
+          - content_disposition

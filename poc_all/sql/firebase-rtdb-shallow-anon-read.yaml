@@ -1,0 +1,61 @@
+# gap: firebase-rtdb-shallow-anon-read
+id: firebase-rtdb-shallow-anon-read
+
+info:
+  name: Firebase Realtime Database Anonymous Shallow Read
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Firebase Realtime Database whose root node permits
+    anonymous reads. The probe uses the documented
+    `?shallow=true` parameter, which returns the top-level keys
+    of the database without traversing values — a cheap and
+    reliable enumeration primitive. Tens of thousands of
+    Firebase RTDBs remain misconfigured per recent openfirebase
+    scans because the default development rules
+    (`".read": true`, `".write": true`) are routinely left
+    enabled when projects ship to production.
+
+    Class signal: a 200 JSON object response that is NOT the
+    `Permission denied` error envelope. This template fires on
+    both `firebaseio.com` and the newer `firebasedatabase.app`
+    hosting domains, distinguishing it from the older upstream
+    `firebase-database` template that only fingerprints
+    presence on `firebaseio.com`.
+  reference:
+    - https://firebase.google.com/docs/database/rest/retrieve-data
+    - https://firebase.google.com/docs/database/security
+  tags: custom,exposures,firebase,gcp,baas,disclosure,cwe-306
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.json?shallow=true"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          # Match firebaseio.com or firebasedatabase.app deployments only.
+          - 'contains(host, ".firebaseio.com") || contains(host, ".firebasedatabase.app")'
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "Permission denied"
+          - '"error"'
+      - type: regex
+        part: body
+        # Non-empty JSON object as the response body.
+        regex:
+          - '^\s*\{\s*"[a-zA-Z0-9_\-]+"\s*:'
+
+    extractors:
+      - type: regex
+        part: body
+        name: top-level-keys
+        regex:
+          - '"([a-zA-Z0-9_\-]+)"\s*:\s*(true|null|[0-9]|"[^"]*")'
+        group: 1

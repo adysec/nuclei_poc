@@ -1,0 +1,52 @@
+# gap: ssti-error-page-engine-disclosure
+id: ssti-error-page-engine-disclosure
+
+info:
+  name: SSTI Error Page Discloses Template Engine via Division-By-Zero Probe
+  author: TyrusRC
+  severity: medium
+  description: |
+    Injects template-syntax division-by-zero expressions ({{1/0}} for
+    Jinja2/Twig and ${1/0} for Freemarker/Java/Thymeleaf) into the URL path
+    and matches engine-specific runtime error fingerprints in the response
+    body. Confirms server-side template injection and fingerprints the
+    underlying template engine. Requires the application to render the URL
+    path or a reflected segment through a server-side template; many targets
+    will return a generic 404 with no template processing and not fire.
+  reference:
+    - https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/Server%20Side%20Template%20Injection/README.md
+    - https://portswigger.net/research/server-side-template-injection
+  tags: custom,vulnerabilities,ssti,injection,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/%7B%7B1/0%7D%7D"
+      - "{{BaseURL}}/$%7B1/0%7D"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 500
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "text/html"
+      - type: word
+        part: body
+        case-insensitive: true
+        words:
+          - "Division"
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "ZeroDivisionError"
+          - "java.lang.ArithmeticException"
+          - "FreeMarker template error"
+          - "org.thymeleaf.exceptions.TemplateProcessingException"
+          - "Twig_Error_Runtime"
+          - "ActionView::Template::Error"

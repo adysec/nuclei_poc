@@ -1,0 +1,76 @@
+# gap: trino-cluster-api-anonymous
+id: trino-cluster-api-anonymous
+
+info:
+  name: Trino (Presto) Coordinator REST API Anonymous Cluster Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Trino / PrestoSQL coordinator where the REST API
+    (/v1/cluster, /v1/info, /v1/node, /v1/query) is reachable without
+    an Authorization header, returning cluster state. Class signal:
+    response carries Trino's canonical JSON shape — `/v1/cluster`
+    returns `{"activeWorkers":N,"runningQueries":N,"blockedQueries":N,
+    "queuedQueries":N,"activeCoordinators":N}`; `/v1/info` returns
+    `{"nodeVersion":{"version":"…"},"environment":"…","coordinator":true,
+    "starting":false}`.
+
+    Anonymous coordinator-API access leaks the cluster topology and
+    workload patterns, and chains to anonymous query submission via
+    POST /v1/statement — the same default deployment accepts SQL
+    statements without authentication, granting arbitrary query
+    execution against every configured catalog (Hive, Iceberg,
+    PostgreSQL, MySQL, S3, Delta Lake, Snowflake) in scope of the
+    coordinator's service identity. The query surface is the entire
+    data warehouse the cluster federates, which routinely includes
+    PII, financial records, and source-of-truth identity tables.
+    Class detection — keys on Trino REST response shape, not
+    vendor banner. Complements upstream `cluster-trino-panel`
+    (HTML fingerprint).
+  reference:
+    - https://trino.io/docs/current/develop/client-protocol.html
+    - https://trino.io/docs/current/admin/web-interface.html
+  tags: custom,exposures,trino,presto,sql,query-engine,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/info"
+      - "{{BaseURL}}/v1/cluster"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"(nodeVersion|activeWorkers|runningQueries|coordinator|environment)"\s*:'
+      - type: word
+        part: body
+        words:
+          - '"version"'
+          - '"environment"'
+          - '"activeWorkers"'
+          - '"runningQueries"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: trino-version
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: trino-environment
+        regex:
+          - '"environment"\s*:\s*"([^"]+)"'
+        group: 1
