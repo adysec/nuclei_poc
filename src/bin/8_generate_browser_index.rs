@@ -264,7 +264,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    // ── Phase 2: Guard against empty data — don't overwrite previous good data ──
+    // ── Phase 2: Warn about empty tiers, but don't block other tiers ──
     let grand_total: usize = all_data.values()
         .flat_map(|cats| cats.values())
         .map(|v| v.len())
@@ -280,35 +280,61 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    // ── Phase 3: Clean old JSON and write new chunk files ──
-    // Delete previously generated JSON index files, keep static frontend assets
-    if out_dir.exists() {
-        for entry in fs::read_dir(&out_dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.extension().map_or(false, |ext| ext == "json") {
-                if let Err(e) = fs::remove_file(&path) {
-                    eprintln!("  warn: cannot remove {}: {e}", path.display());
+    // ── Phase 3: Per-tier selective cleanup & chunk writing ──
+    // Read existing _categories.json to preserve entries for tiers with no new data.
+    let cat_path = out_dir.join("_categories.json");
+    let mut all_cats: BTreeMap<String, BTreeMap<String, usize>> = if cat_path.exists() {
+        let content = fs::read_to_string(&cat_path).unwrap_or_default();
+        serde_json::from_str(&content).unwrap_or_default()
+    } else {
+        BTreeMap::new()
+    };
+
+    // Emit warnings for tiers that were skipped
+    let mut skipped_tiers: Vec<String> = Vec::new();
+
+    for (tier_name, cats) in &all_data {
+        let tier_total: usize = cats.values().map(|v| v.len()).sum();
+        if tier_total == 0 {
+            // Preserve existing data for this tier — nothing to update
+            skipped_tiers.push(tier_name.clone());
+            continue;
+        }
+
+        // Remove old JSON files for this tier only
+        if out_dir.exists() {
+            let prefix = format!("{}_", tier_name);
+            for entry in fs::read_dir(&out_dir)? {
+                let entry = entry?;
+                let path = entry.path();
+                let fname = path.file_name().unwrap_or_default().to_string_lossy();
+                if fname.starts_with(&prefix) && path.extension().map_or(false, |ext| ext == "json") {
+                    if let Err(e) = fs::remove_file(&path) {
+                        eprintln!("  warn: cannot remove {}: {e}", path.display());
+                    }
                 }
             }
         }
-    }
 
-    // Write chunks and build summary
-    let mut all_cats: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
-
-    for (tier_name, cats) in &all_data {
+        // Write new chunks for this tier
         let mut summary = BTreeMap::new();
         for (cat, files) in cats {
-            let (count, chunks) = write_chunks(&out_dir, &tier_name, cat, files)?;
+            let (count, chunks) = write_chunks(&out_dir, tier_name, cat, files)?;
             summary.insert(cat.clone(), count);
             println!("  {}/{}: {} → {} chunk(s)", tier_name, cat, count, chunks);
         }
         all_cats.insert(tier_name.clone(), summary);
     }
 
+    if !skipped_tiers.is_empty() {
+        eprintln!(
+            "  ⚠ Skipped {} empty tier(s): {} — existing data preserved",
+            skipped_tiers.len(),
+            skipped_tiers.join(", ")
+        );
+    }
+
     // ── Write _categories.json ──
-    let cat_path = out_dir.join("_categories.json");
     write_json(&cat_path, &all_cats)?;
 
     let file_count = fs::read_dir(&out_dir)?.count();
