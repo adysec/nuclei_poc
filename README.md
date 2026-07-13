@@ -14,50 +14,38 @@ Nuclei POC，每日更新
 
 ## 如何使用
 
-克隆项目并进入目录
-
-```bash
-git clone https://github.com/adysec/nuclei_poc
-cd nuclei_poc
-```
-
 使用 nuclei 调用 poc 扫描站点
 
 ```bash
-./nuclei -t poc/ -u http://example.com
+# 只下载高质量的poc
+git clone --filter=tree:0 --sparse https://github.com/adysec/nuclei_poc
+cd nuclei_poc
+git sparse-checkout set poc_gold_13
+
 # 只扫描部分poc
-./nuclei -t poc/web/ -u http://example.com
-./nuclei -t poc/wordpress/ -u http://example.com
+./nuclei -t poc_gold_13/ -u http://example.com
+./nuclei -t poc_gold_13/web/ -u http://example.com
 ```
 
 ### 配置
 
 在 `repo.csv` 文件中配置监控 GitHub 项目信息。迁移至 Rust 后，核心流水线以独立的 Rust 可执行文件分段实现，所有源文件位于 `src/bin/`。
 
-### 构建与运行（Rust）
-
-推荐在目标环境中构建 release 二进制以获得最佳性能：
-
-```bash
-# 构建 release 可执行文件
-cargo build --release
-
-# 运行示例（运行单个流水线任务）
-./target/release/1_clone_repos
-
-# 或使用 cargo 在开发模式下运行（便于调试）
-cargo run --bin 1_clone_repos
-```
-
-生产环境建议使用 `--release` 构建并在 CI 或容器中以并发/资源限制方式运行，以达到 `≈6 分钟` 的处理时长（具体取决于并发配置与机器性能）。
-
-### GitHub Action
-
-在 GitHub 仓库中设置 Action，以便每日自动运行脚本。
-
-> 需要配置`Workflow permissions`为`Read and write`权限
-
 ## 项目结构（整体梳理）
+
+### 流水线
+
+仓库中每个 `src/bin/<n>_<name>.rs` 都实现了流水线的一段逻辑：
+
+1. 1_clone_repos — 批量克隆或更新 `repo.csv` 中列出的 GitHub 项目。
+2. 2_delete_duplicated — 执行第一轮去重，删除明显重复的 PoC 文件。
+3. 3_move_file — 预过滤非 nuclei 文件（→ `poc_non_nuclei/`）后将 PoC 按类别归档到 `tmp/` 和 `poc_all/`。
+4. 4_download_nuclei — 下载/准备 Nuclei 引擎（若需要）以便后续验证。
+5. 5_check_poc — 先 `auto_fix_poc()` 修复常见格式问题，再运行 nuclei 校验；通过→`poc/`，未通过→`poc_needs_review/`（不删除）。
+6. 6_get_pocname — 生成结构化索引：`poc_index.json`（含分类/质量分/CVE等元数据）、`poc_summary.json`（统计摘要）及 `poc.txt`（纯文本清单）。
+7. 7_dedup_advanced — 多因素评分去重+格式修复。（读取 poc/ → 输出 poc_dedup/）
+8. 8_dedup_high_quality — 多级评分梯度精选，产生 poc_gold_11 ~ poc_gold_15 目录。
+9. 9_generate_browser_index — 生成 GitHub Pages 前端所需的 JSON 索引文件到 poc_browser/。
 
 ### 根目录（常见文件/目录）
 
@@ -73,20 +61,6 @@ cargo run --bin 1_clone_repos
 - `src/core/` — 共享公共库（哈希hash、YAML解析/验证/修复yaml、分类映射category、命名规范naming、特征提取features、JSON索引index）
 - `src/bin/` — 核心 Rust 源文件（每个文件对应一个可执行的流水线阶段）
 - `target/` — cargo 构建输出（包含 release 可执行文件）
-
-### 流水线
-
-仓库中每个 `src/bin/<n>_<name>.rs` 都实现了流水线的一段逻辑：
-
-1. 1_clone_repos — 批量克隆或更新 `repo.csv` 中列出的 GitHub 项目。
-2. 2_delete_duplicated — 执行第一轮去重，删除明显重复的 PoC 文件。
-3. 3_move_file — 预过滤非 nuclei 文件（→ `poc_non_nuclei/`）后将 PoC 按类别归档到 `tmp/` 和 `poc_all/`。
-4. 4_download_nuclei — 下载/准备 Nuclei 引擎（若需要）以便后续验证。
-5. 5_check_poc — 先 `auto_fix_poc()` 修复常见格式问题，再运行 nuclei 校验；通过→`poc/`，未通过→`poc_needs_review/`（不删除）。
-6. 6_get_pocname — 生成结构化索引：`poc_index.json`（含分类/质量分/CVE等元数据）、`poc_summary.json`（统计摘要）及 `poc.txt`（纯文本清单）。
-7. 7_dedup_advanced — 多因素评分去重+格式修复。（读取 poc/ → 输出 poc_dedup/）
-8. 8_dedup_high_quality — 多级评分梯度精选，产生 poc_gold_11 ~ poc_gold_15 目录。
-9. 9_generate_browser_index — 生成 GitHub Pages 前端所需的 JSON 索引文件到 poc_browser/。
 
 ### 输出策略与安全回滚
 
@@ -114,19 +88,6 @@ cargo run --bin 1_clone_repos
 - 格式规范 (0-6): http(非requests)=3, 无severity大小写问题=1, 无废弃network=2
 - 文件大小合理性 (0-5): 500B-10KB=5, 200-20KB=3, <200=1
 - 多协议加分 (0-3): 2+协议=3
-
-在调试或单独运行某个阶段时，可直接使用 `cargo run --release --bin <bin_name>` 或运行 `target/release/<bin_name>`：
-
-```bash
-# 构建 release
-cargo build --release
-
-# 运行单个阶段（例如第 1 步）
-./target/release/1_clone_repos
-
-# 或使用 cargo 运行（开发/调试）
-cargo run --bin 1_clone_repos -- <args...>
-```
 
 ## 致谢
 
