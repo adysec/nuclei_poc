@@ -16,18 +16,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Cache Rust dependencies & clone-templates
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-          clone-templates
-        key: ${{ runner.os }}-cargo-nuclei-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('repo.csv') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-nuclei-
-
     - name: 0 Build Release
       run: cargo build --release
 
@@ -39,24 +27,21 @@ jobs:
         
     - name: 3 Move File
       run: cargo run --bin 3_move_file --release
+
+    - name: 4 Check POC 
+      run: cargo run --bin 4_check_poc --release
       
-    - name: 4 Download Nuclei
-      run: cargo run --bin 4_download_nuclei --release
+    - name: 5 Generate POC Index (poc_index.json + poc.txt)
+      run: cargo run --bin 5_get_pocname --release
 
-    - name: 5 Check POC 
-      run: cargo run --bin 5_check_poc --release
-      
-    - name: 6 Generate POC Index (poc_index.json + poc.txt)
-      run: cargo run --bin 6_get_pocname --release
+    - name: 6 Advanced Dedup (poc/ → poc_dedup/)
+      run: cargo run --bin 6_dedup_advanced --release -- --src-dir poc --dst-dir poc_dedup --threshold 70
 
-    - name: 7 Advanced Dedup (poc/ → poc_dedup/)
-      run: cargo run --bin 7_dedup_advanced --release -- --src-dir poc --dst-dir poc_dedup --threshold 70
+    - name: 7 High Quality Tier (poc_dedup/ → poc_gold_*)
+      run: cargo run --bin 7_dedup_high_quality --release
 
-    - name: 8 High Quality Tier (poc_dedup/ → poc_gold_*)
-      run: cargo run --bin 8_dedup_high_quality --release
-
-    - name: 9 Create github pages index
-      run: cargo run --bin 9_generate_browser_index --release
+    - name: 8 Create github pages index
+      run: cargo run --bin 8_generate_browser_index --release
       
     - name: Commit and Push changes
       run: |
