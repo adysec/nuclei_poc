@@ -1,0 +1,59 @@
+id: instagram_slider_widget-e2e2f446-5391-4189-8c9c-3be2459808d0
+
+info:
+  name: >
+    Social Slider Feed <= 2.0.4 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Social Slider Feed plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 2.0.4. This is due to missing capability checks and nonce validation on the 'showPageContent' function. This makes it possible for unauthenticated attackers to trigger feed deletion.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e2e2f446-5391-4189-8c9c-3be2459808d0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/instagram-slider-widget/"
+    google-query: inurl:"/wp-content/plugins/instagram-slider-widget/"
+    shodan-query: 'http.html:"wp-content/plugins/instagram-slider-widget/"'
+  tags: cve,wordpress,wp-plugin,instagram-slider-widget,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/instagram-slider-widget/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "instagram-slider-widget"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.4')

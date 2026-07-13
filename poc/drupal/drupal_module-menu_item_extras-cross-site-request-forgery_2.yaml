@@ -1,0 +1,59 @@
+
+id: drupal_module-menu_item_extras-cross-site-request-forgery
+info:
+  name: drupal_module-menu_item_extras-cross-site-request-forgery
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to handle fields for Custom Menu Links. The module doesnt sufficiently check requests to one of the module controllers if the user has permission administer menu. This vulnerability is mitigated by the fact that an attacker must have a role with the permission to create content."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-050
+  metadata:
+    security-risk: "Moderately critical 10∕25 AC:Basic/A:User/CI:None/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "cross-site-request-forgery"
+    fofa-query: "/sites/all/modules/menu_item_extras/"
+    google-query: "inurl:'/sites/all/modules/menu_item_extras/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/menu_item_extras/menu_item_extras.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'menu_item_extras'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-2.4')
+         - compare_versions(version, '8.x-2.3')
+         - compare_versions(version, '8.x-2.2')
+         - compare_versions(version, '8.x-2.1')
+         - compare_versions(version, '8.x-2.0')
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

@@ -1,0 +1,59 @@
+id: imperial_fairytale-9b41efbd-bd47-415f-8de7-f30b3a7cf326
+
+info:
+  name: >
+    Imperial Fairytale Theme (All Versions) - Multiple Vulnerabilities
+  author: topscoder
+  severity: critical
+  description: >
+    The Imperial Fairytale Theme for WordPress is vulnerable to Cross-Site Scripting, Content Spoofing, and Path Traversal in all versions. This is due to inclusion of a vulnerable version of jPlayer. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser, create fake content, and read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9b41efbd-bd47-415f-8de7-f30b3a7cf326?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:N
+    cvss-score: 10
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/imperial-fairytale/"
+    google-query: inurl:"/wp-content/themes/imperial-fairytale/"
+    shodan-query: 'http.html:"wp-content/themes/imperial-fairytale/"'
+  tags: cve,wordpress,wp-theme,imperial-fairytale,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/imperial-fairytale/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "imperial-fairytale"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

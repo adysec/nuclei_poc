@@ -1,0 +1,59 @@
+id: front_end_only_users-5ccfafaf-902f-4142-90b3-9f70800eb377
+
+info:
+  name: >
+    Front End Users <= 3.2.24 - Missing Authorization to Unauthenticated Registered User Deletion
+  author: topscoder
+  severity: high
+  description: >
+    The Front End Users plugin for WordPress is vulnerable to unauthorized modification and loss of data due to a missing capability check on several functions such as Mass_Delete_EWD_FEUP_Users, Delete_All_EWD_FEUP_Users, and Mass_Delete_EWD_FEUP_Fields in versions up to, and including, 3.2.24. This makes it possible for unauthenticated users to perform restricted actions such as deleting users that have registered through the plugin configuration.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5ccfafaf-902f-4142-90b3-9f70800eb377?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/front-end-only-users/"
+    google-query: inurl:"/wp-content/plugins/front-end-only-users/"
+    shodan-query: 'http.html:"wp-content/plugins/front-end-only-users/"'
+  tags: cve,wordpress,wp-plugin,front-end-only-users,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/front-end-only-users/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "front-end-only-users"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.24')

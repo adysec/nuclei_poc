@@ -1,0 +1,53 @@
+
+id: drupal_module-miniorange_oauth_client-multiple-vulnerabilities
+info:
+  name: drupal_module-miniorange_oauth_client-multiple-vulnerabilities
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to allow login into the Drupal websites through an external provider over the OAuth 2.0 protocol. The module sets a Drupal variable used for redirection based on unsanitised user input, leading to an Open Redirect vulnerability. It also fails to sanitise user input which is displayed as part of an error message by a test authentication endpoint which is accessible by anonymous users, leading to an XSS vulnerability."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-016
+  metadata:
+    security-risk: "Critical 17∕25 AC:Basic/A:None/CI:Some/II:Some/E:Proof/TD:All"
+    vulnerability: "multiple-vulnerabilities"
+    fofa-query: "/sites/all/modules/miniorange_oauth_client/"
+    google-query: "inurl:'/sites/all/modules/miniorange_oauth_client/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/miniorange_oauth_client/miniorange_oauth_client.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'miniorange_oauth_client'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

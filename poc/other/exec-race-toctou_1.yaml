@@ -1,0 +1,32 @@
+id: openclaw-exec-race-toctou
+
+info:
+  name: OpenClaw Exec Approvals TOCTOU Race (VULN-34)
+  author: LobsterGuard
+  severity: high
+  description: |
+    Exec approvals use file-based hash check (baseHash) where the
+    read-check-write cycle is not atomic. Concurrent requests exploit
+    the TOCTOU window to bypass baseHash verification.
+    Source: node-host/invoke.ts:442-466
+  tags: openclaw,race,toctou,rce,v4
+
+http:
+  - raw:
+      - |
+        GET /__openclaw/api/exec/approvals HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{token}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "hash"
+          - "approval"
+          - "command"
+        condition: or
+        part: body

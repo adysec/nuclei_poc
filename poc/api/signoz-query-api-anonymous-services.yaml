@@ -1,0 +1,71 @@
+# gap: signoz-query-api-anonymous-services
+id: signoz-query-api-anonymous-services
+
+info:
+  name: SigNoz Query API Anonymous Service Disclosure
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects a SigNoz observability backend where the query API
+    (/api/v1/services, /api/v1/serviceMapDependencies,
+    /api/v1/topLevelOperations) is reachable without an
+    Authorization token, returning the instrumented-service catalog
+    as JSON. Class signal: response is a JSON array of service
+    objects carrying canonical SigNoz fields (`serviceName`, `p99`,
+    `p95`, `p50`, `errorRate`, `callRate`, `numCalls`,
+    `numErrors`).
+
+    Anonymous SigNoz service disclosure leaks the application
+    topology and per-service performance metrics — service names
+    routinely reveal product / customer / feature boundaries,
+    error rates expose live-incident windows, and the
+    service-map dependency graph discloses internal microservice
+    call graphs that constitute architecture-disclosure of the
+    org's runtime topology. Combined with /api/v1/traces the
+    response chains into trace-level disclosure of HTTP request
+    URLs, header maps (frequently including in-memory bearer
+    tokens), and SQL / cache query payloads. Class detection —
+    keys on SigNoz query envelope, not vendor banner.
+  reference:
+    - https://signoz.io/docs/apis/
+    - https://github.com/SigNoz/signoz
+  tags: custom,exposures,signoz,observability,apm,disclosure,cwe-200
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/v1/services"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"start":"1700000000000000000","end":"1700000060000000000","tags":[]}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"serviceName"\s*:'
+      - type: word
+        part: body
+        words:
+          - '"p99"'
+          - '"errorRate"'
+          - '"callRate"'
+          - '"numCalls"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: service-names
+        regex:
+          - '"serviceName"\s*:\s*"([^"]+)"'
+        group: 1

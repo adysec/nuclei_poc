@@ -1,0 +1,49 @@
+id: wordpress-wpcf7-redirect
+
+info:
+  name: Redirection for Contact Form 7 Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/wpcf7-redirect/
+  metadata:
+    plugin_namespace: wpcf7-redirect
+    wpscan: https://wpscan.com/plugin/wpcf7-redirect
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpcf7-redirect/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/wpcf7-redirect.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502203b769b49dc29a88b7fed89e685f0aed1c194e73c67ba8afb493ab029939c47cc022100c9a0d7ff4d88ceaefaeef00aa902cb79fd03152151aa5209c876c54daedbeed2:922c64590222798bb761d5b6d8e72950

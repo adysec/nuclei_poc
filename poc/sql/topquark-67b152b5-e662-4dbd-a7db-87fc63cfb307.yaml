@@ -1,0 +1,59 @@
+id: topquark-67b152b5-e662-4dbd-a7db-87fc63cfb307
+
+info:
+  name: >
+    Top Quark Architecture Plugin < 2.1.1 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    TheTop Quark Architecture plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the fancyupload/showcase/batch/script.php file in versions up to, and including, 2.1.0. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/67b152b5-e662-4dbd-a7db-87fc63cfb307?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/topquark/"
+    google-query: inurl:"/wp-content/plugins/topquark/"
+    shodan-query: 'http.html:"wp-content/plugins/topquark/"'
+  tags: cve,wordpress,wp-plugin,topquark,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/topquark/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "topquark"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.1.1')

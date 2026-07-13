@@ -1,0 +1,73 @@
+# gap: apache-druid-coordinator-api-anonymous
+id: apache-druid-coordinator-api-anonymous
+
+info:
+  name: Apache Druid Coordinator REST API Anonymous Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an Apache Druid coordinator where the management REST API
+    (/druid/coordinator/v1/cluster, /druid/coordinator/v1/datasources,
+    /druid/coordinator/v1/leader, /druid/coordinator/v1/loadstatus) is
+    reachable without an Authorization header. Class signal: response
+    is a JSON array or object whose entries carry Druid-specific
+    fields — `/datasources` returns a string array of datasource
+    names; `/cluster` returns service-type-keyed objects with
+    `host`, `currType`, `serverType` per node; `/leader` returns
+    the coordinator leader URL.
+
+    Anonymous coordinator-API access leaks the data-warehouse
+    topology (every datasource name reveals product / customer /
+    feature segmentation), broker / historical / middleManager
+    host inventories, and the segment-load status that frequently
+    reveals retention windows and storage backends. Combined with
+    /druid/v2/sql (anonymous SQL query API) the cluster is reachable
+    for arbitrary SELECT against every datasource — disclosing the
+    underlying metric / event records, which in production Druid
+    clusters routinely include PII, transaction logs, and security
+    telemetry. Class detection — keys on Druid coordinator JSON
+    shape, not vendor banner. Complements upstream
+    `apache-druid-unauth` (HTML console fingerprint).
+  reference:
+    - https://druid.apache.org/docs/latest/operations/api-reference/
+    - https://druid.apache.org/docs/latest/operations/security-overview/
+  tags: custom,exposures,druid,apache,query-engine,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/druid/coordinator/v1/cluster"
+      - "{{BaseURL}}/druid/coordinator/v1/datasources"
+      - "{{BaseURL}}/druid/coordinator/v1/leader"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        # /cluster returns object with Druid-specific service-type keys;
+        # /datasources returns a JSON array of strings (may be empty []);
+        # /leader returns a plain URL ending in :8081 (default coordinator port).
+        regex:
+          - '"(coordinator|broker|historical|middleManager|overlord)"\s*:\s*\['
+          - '"currType"\s*:\s*"(coordinator|broker|historical|middleManager|overlord)"'
+          - '^\s*\[\s*("[a-zA-Z0-9_\-./]+"(\s*,\s*"[a-zA-Z0-9_\-./]+")*\s*)?\]\s*$'
+          - '^\s*https?://[^\s:]+:8081/?\s*$'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: druid-hosts
+        regex:
+          - '"host"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: datasource-names
+        regex:
+          - '"(currType|serverType)"\s*:\s*"([^"]+)"'
+        group: 2

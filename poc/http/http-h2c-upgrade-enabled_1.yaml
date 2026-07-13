@@ -1,0 +1,54 @@
+# gap: http-h2c-upgrade-enabled
+id: http-h2c-upgrade-enabled
+
+info:
+  name: HTTP/1.1 to HTTP/2 Cleartext (h2c) Upgrade Accepted
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects servers that accept HTTP/1.1 to HTTP/2 cleartext (h2c)
+    protocol upgrade by responding with 101 Switching Protocols. The
+    probe sends Connection: Upgrade, HTTP2-Settings with Upgrade: h2c
+    and the minimal HTTP2-Settings frame. Most production deployments
+    do not intend h2c upgrade on TLS-terminated edges; when it is
+    accepted, attackers can establish a long-lived h2c tunnel through
+    the front-end and bypass front-end request-level controls
+    (Assetnote 2020, h2c smuggling). This is a parser-primitive flag
+    that enables request-smuggling-class attacks.
+  reference:
+    - https://blog.assetnote.io/2021/03/18/h2c-smuggling/
+    - https://datatracker.ietf.org/doc/html/rfc7540#section-3.2
+  tags: custom,misconfig,h2c,http2,smuggling,upgrade,parser-diff
+
+http:
+  - raw:
+      - |+
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Connection: Upgrade, HTTP2-Settings
+        Upgrade: h2c
+        HTTP2-Settings: AAMAAABkAARAAAAAAAIAAAAA
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 101
+      - type: regex
+        part: header
+        regex:
+          - '(?i)upgrade:\s*h2c'
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - "Server"
+      - type: regex
+        part: header
+        name: upgrade-header
+        regex:
+          - '(?i)upgrade:\s*([^\r\n]+)'
+        group: 1

@@ -1,0 +1,59 @@
+id: gravityforms-c89d56e2-68aa-4caf-bc1b-9aa32ec11ba3
+
+info:
+  name: >
+    Gravity Forms <= 2.0.6.5 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    WordPress Plugin Gravity Forms is prone to a cross-site scripting vulnerability because it fails to properly sanitize user-supplied input. An attacker may leverage this issue to execute arbitrary script code in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks. WordPress Plugin Gravity Forms version 2.0.6.5 is vulnerable; prior versions may also be affected.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c89d56e2-68aa-4caf-bc1b-9aa32ec11ba3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gravityforms/"
+    google-query: inurl:"/wp-content/plugins/gravityforms/"
+    shodan-query: 'http.html:"wp-content/plugins/gravityforms/"'
+  tags: cve,wordpress,wp-plugin,gravityforms,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gravityforms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gravityforms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.6.5')

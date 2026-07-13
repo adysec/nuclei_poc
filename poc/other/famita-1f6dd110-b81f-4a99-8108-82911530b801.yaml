@@ -1,0 +1,51 @@
+id: famita-1f6dd110-b81f-4a99-8108-82911530b801
+
+info:
+  name: >
+    Famita <= 1.54 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1f6dd110-b81f-4a99-8108-82911530b801?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/famita/"
+    google-query: inurl:"/wp-content/themes/famita/"
+    shodan-query: 'http.html:"wp-content/themes/famita/"'
+  tags: cve,wordpress,wp-theme,famita,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/famita/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "famita"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.54')

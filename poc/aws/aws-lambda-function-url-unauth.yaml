@@ -1,0 +1,47 @@
+# gap: aws-lambda-function-url-unauth
+id: aws-lambda-function-url-unauth
+
+info:
+  name: AWS Lambda Function URL Exposed Without Authentication
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects a reachable AWS Lambda Function URL (*.lambda-url.<region>.on.aws)
+    that returns HTTP 200 to an unsigned GET request, indicating either
+    AuthType NONE is configured or the function itself serves a public
+    response. Lambda URL auth-failure returns 403, so a 200 with the
+    canonical x-amzn-RequestId header is a strong reachable-without-SigV4
+    signal that warrants confirming the function's IAM policy.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/aws-security/aws-unauthenticated-enum-access/aws-lambda-unauthenticated-access/README.md
+    - https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html
+  tags: custom,cloud,aws,lambda,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(host, ".lambda-url.")'
+          - 'contains(host, ".on.aws")'
+        condition: and
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "x-amzn-requestid"
+    extractors:
+      - type: kval
+        kval:
+          - x_amzn_requestid
+          - x_amzn_trace_id
+      - type: dsl
+        name: lambda_url_host
+        dsl:
+          - host

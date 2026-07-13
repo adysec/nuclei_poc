@@ -1,0 +1,59 @@
+id: sprout_invoices-5cdbd5fd-bb12-4202-b6c7-f314ad8987f5
+
+info:
+  name: >
+    Client Invoicing by Sprout Invoices – Easy Estimates and Invoices for WordPress <= 9.3 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Client Invoicing by Sprout Invoices – Easy Estimates and Invoices for WordPress plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 9.3. This is due to various missing capability & nonce checks on functions called via 'init' hooks. This makes it possible for unauthenticated trigger several functions which make it possible to upload arbitrary CSV files and access unreleased JSON API which can lead to createing/viewing the following: clients, payments, estimates, and invoices.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5cdbd5fd-bb12-4202-b6c7-f314ad8987f5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sprout-invoices/"
+    google-query: inurl:"/wp-content/plugins/sprout-invoices/"
+    shodan-query: 'http.html:"wp-content/plugins/sprout-invoices/"'
+  tags: cve,wordpress,wp-plugin,sprout-invoices,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sprout-invoices/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sprout-invoices"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 9.3')

@@ -1,0 +1,60 @@
+id: simple_ads_manager-964601d5-8460-41c5-9791-ff9e3af964e3
+
+info:
+  name: >
+    Simple Ads Manager  < 2.9.4.116 - Denial of Service
+  author: topscoder
+  severity: high
+  description: >
+    The Simple Ads Manager Plugin for WordPress is vulnerable to Denial of Service in versions before 2.9.4.116. This is due to an input validation flaw that allows an attacker to perform simple file
+    system operations which can result in a denial of service. This makes it possible for unauthenticated attackers to affected website to consume memory and CPU resources, thus denying service to legitimate users.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/964601d5-8460-41c5-9791-ff9e3af964e3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-ads-manager/"
+    google-query: inurl:"/wp-content/plugins/simple-ads-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-ads-manager/"'
+  tags: cve,wordpress,wp-plugin,simple-ads-manager,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-ads-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-ads-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.9.4.116')

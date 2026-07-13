@@ -1,0 +1,59 @@
+id: hbook-84c4e3cc-1f7c-4ed9-9072-32f3e84419c9
+
+info:
+  name: >
+    Booking Calendar – Event Calendar <= 1.0.2 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Booking Calendar plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on several functions (including omnivo_calendar_ajax_events_settings_save and omnivo_calendar_ajax_omnivo_calendar_delete_shortcode) in versions up to, and including, 1.0.2. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to invoke those functions leading to setting changes and shortcode deletion among other issues.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/84c4e3cc-1f7c-4ed9-9072-32f3e84419c9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/hbook/"
+    google-query: inurl:"/wp-content/plugins/hbook/"
+    shodan-query: 'http.html:"wp-content/plugins/hbook/"'
+  tags: cve,wordpress,wp-plugin,hbook,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hbook/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "hbook"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.2')

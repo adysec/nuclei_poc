@@ -1,0 +1,59 @@
+id: specialist-ea2d4716-2ae1-45ca-a4b2-4edb4a89d7b4
+
+info:
+  name: >
+    Specialist (Unspecified Version) - Cross-Site Request Forgery to Arbitrary File Upload
+  author: topscoder
+  severity: medium
+  description: >
+    The Specialist theme for WordPress is vulnerable to Cross-Site Request Forgery. This is due to missing or incorrect nonce validation on the upload-file.php file. This makes it possible for unauthenticated attackers to upload arbitrary files which may execute malicious code via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ea2d4716-2ae1-45ca-a4b2-4edb4a89d7b4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/specialist/"
+    google-query: inurl:"/wp-content/themes/specialist/"
+    shodan-query: 'http.html:"wp-content/themes/specialist/"'
+  tags: cve,wordpress,wp-theme,specialist,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/specialist/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "specialist"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

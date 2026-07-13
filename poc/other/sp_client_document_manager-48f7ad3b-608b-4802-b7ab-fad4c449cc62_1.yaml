@@ -1,0 +1,59 @@
+id: sp_client_document_manager-48f7ad3b-608b-4802-b7ab-fad4c449cc62
+
+info:
+  name: >
+    SP Projects & Document Manager <= 2.6.0.0 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The SP Projects & Document Manager plugin for WordPress is vulnerable to arbitrary file uploads in versions up to, and including, 2.6.0.0 due to insufficient file type validation on the cdm_upload_file() function. This makes it possible for attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/48f7ad3b-608b-4802-b7ab-fad4c449cc62?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sp-client-document-manager/"
+    google-query: inurl:"/wp-content/plugins/sp-client-document-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/sp-client-document-manager/"'
+  tags: cve,wordpress,wp-plugin,sp-client-document-manager,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sp-client-document-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sp-client-document-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.6.1.3')

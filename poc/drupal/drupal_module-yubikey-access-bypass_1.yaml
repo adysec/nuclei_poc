@@ -1,0 +1,53 @@
+
+id: drupal_module-yubikey-access-bypass
+info:
+  name: drupal_module-yubikey-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to use a Yubikey device to protect your Drupal user account. YubiKey is a secure method for logging into many websites using a cryptographically secure USB token. The module doesnt sufficiently implement login flood control when the module is configured for YubiKey OTP only. This allows an attacker to attempt many YubiKey OTP codes. However, a brute force attack on this code is not practical in most situations given the length and randomness of the OTP codes."
+  reference:
+    - https://www.drupal.org/sa-contrib-2020-023
+  metadata:
+    security-risk: "Less critical 9∕25 AC:Complex/A:None/CI:None/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/yubikey/"
+    google-query: "inurl:'/sites/all/modules/yubikey/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/yubikey/yubikey.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'yubikey'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.2')
+         - compare_versions(version, '7.x-2.1')
+         - compare_versions(version, '7.x-2.0')

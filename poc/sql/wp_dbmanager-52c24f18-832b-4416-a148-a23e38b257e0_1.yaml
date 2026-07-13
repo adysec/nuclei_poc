@@ -1,0 +1,59 @@
+id: wp_dbmanager-52c24f18-832b-4416-a148-a23e38b257e0
+
+info:
+  name: >
+    WP-DBManager <= 2.79.1 - Directory Traversal Allowing Arbitrary File Deletion
+  author: topscoder
+  severity: low
+  description: >
+    The WP-DBManager plugin for WordPress is vulnerable to Directory Traversal allowing arbitrary file deletion in versions up to, and including, 2.79.1. This allows authenticated high-privilege attackers to delete arbitrary files, which can be used to reset a site and gain administrative access.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/52c24f18-832b-4416-a148-a23e38b257e0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:N/I:H/A:H
+    cvss-score: 8.7
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-dbmanager/"
+    google-query: inurl:"/wp-content/plugins/wp-dbmanager/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-dbmanager/"'
+  tags: cve,wordpress,wp-plugin,wp-dbmanager,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-dbmanager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-dbmanager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.79.2')

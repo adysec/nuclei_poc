@@ -1,0 +1,47 @@
+id: hpe-bladesystem-onboard-administrator
+
+info:
+  name: HPE BladeSystem Onboard Administrator
+  author: milo2012
+  severity: info
+  description: Fingerprint HPE BladeSystem Onboard Administrator
+  tags: tech,hpe
+
+requests:
+  - raw:
+      - |
+        POST /hpoa HTTP/1.1
+        Host: {{Hostname}}
+
+        <?xml version="1.0" encoding="UTF-8"?>
+        <SOAP-ENV:Envelope
+                xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+                xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+                xmlns:hpoa="hpoa.xsd">
+                <SOAP-ENV:Body>
+                      <hpoa:getSoapInterfaceInfo/>
+                </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - 'hpoa:soapInterfaceInfo'
+          - 'hpoa:manufacturer'
+
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "<hpoa:version>(.*?)</hpoa"

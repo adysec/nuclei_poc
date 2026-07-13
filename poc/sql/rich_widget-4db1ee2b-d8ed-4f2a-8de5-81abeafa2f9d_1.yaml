@@ -1,0 +1,59 @@
+id: rich_widget-4db1ee2b-d8ed-4f2a-8de5-81abeafa2f9d
+
+info:
+  name: >
+    Rich Widget <= 0.2.4 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Rich Widget plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the ~/fckeditor/editor/filemanager/connectors/test.html file in versions up to, and including, 0.2.4. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4db1ee2b-d8ed-4f2a-8de5-81abeafa2f9d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/rich-widget/"
+    google-query: inurl:"/wp-content/plugins/rich-widget/"
+    shodan-query: 'http.html:"wp-content/plugins/rich-widget/"'
+  tags: cve,wordpress,wp-plugin,rich-widget,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/rich-widget/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "rich-widget"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.2.4')

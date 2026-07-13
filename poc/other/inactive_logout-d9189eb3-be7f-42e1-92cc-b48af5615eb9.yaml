@@ -1,0 +1,59 @@
+id: inactive_logout-d9189eb3-be7f-42e1-92cc-b48af5615eb9
+
+info:
+  name: >
+    Inactive Logout <= 3.2.2 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Inactive Logout plugin for WordPress is vulnerable to Cross-Site Request Forgery due to a missing nonce check on the ina_reset_adv_settings() function in versions up to, and including, 3.2.2. This makes it possible for unauthenticated attackers to reset the plugin's settings via a forged request, granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d9189eb3-be7f-42e1-92cc-b48af5615eb9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/inactive-logout/"
+    google-query: inurl:"/wp-content/plugins/inactive-logout/"
+    shodan-query: 'http.html:"wp-content/plugins/inactive-logout/"'
+  tags: cve,wordpress,wp-plugin,inactive-logout,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/inactive-logout/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "inactive-logout"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.2.3')

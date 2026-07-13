@@ -1,0 +1,59 @@
+id: photo_gallery-5cc590fe-94c8-47cc-bd5b-eef70da138b1
+
+info:
+  name: >
+    Photo Gallery by 10Web – Mobile-Friendly Image Gallery <= 1.8.7 - Open Redirect
+  author: topscoder
+  severity: medium
+  description: >
+    The Photo Gallery by 10Web plugin for WordPress is vulnerable to open redirect in versions up to 1.8.7. This is due to insufficient validation of the curr_url ($current_url) request parameter when a user accesses a link with an invalid share link. This would make it possible for an attacker to redirect a victim to a potentially malicious site, granted they could trick the victim into performing an action such as clicking on a link. The patches in 1.8.1, 1.8.3, 1.8.7 are incomplete and can be bypassed.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5cc590fe-94c8-47cc-bd5b-eef70da138b1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/photo-gallery/"
+    google-query: inurl:"/wp-content/plugins/photo-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/photo-gallery/"'
+  tags: cve,wordpress,wp-plugin,photo-gallery,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/photo-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "photo-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.7')

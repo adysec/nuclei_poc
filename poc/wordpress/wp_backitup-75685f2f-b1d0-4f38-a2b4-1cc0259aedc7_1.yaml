@@ -1,0 +1,59 @@
+id: wp_backitup-75685f2f-b1d0-4f38-a2b4-1cc0259aedc7
+
+info:
+  name: >
+    Backup and Restore WordPress – Backup Plugin <= 1.9 - Authorization Bypass
+  author: topscoder
+  severity: low
+  description: >
+    The Backup and Restore WordPress – Backup Plugin plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on several functions in versions up to, and including, 1.9. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to trigger manual backups. The attackers can download these backups via the vulnerability described in CVE-2014-9012.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/75685f2f-b1d0-4f38-a2b4-1cc0259aedc7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-backitup/"
+    google-query: inurl:"/wp-content/plugins/wp-backitup/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-backitup/"'
+  tags: cve,wordpress,wp-plugin,wp-backitup,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-backitup/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-backitup"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9')

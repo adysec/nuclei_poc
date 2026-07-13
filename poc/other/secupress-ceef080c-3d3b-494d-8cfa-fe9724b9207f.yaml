@@ -1,0 +1,59 @@
+id: secupress-ceef080c-3d3b-494d-8cfa-fe9724b9207f
+
+info:
+  name: >
+    SecuPress Free and SecuPress Pro <= 1.4.12 - Unauthenticated Arbitrary IP Ban
+  author: topscoder
+  severity: high
+  description: >
+    The SecuPress Free and SecuPress Pro plugins for WordPress is vulnerable to unauthenticated arbitrary IP bans in versions up to, and including, 1.4.12. This makes it possible for unauthenticated remote attackers to ban any IP address from accessing the site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ceef080c-3d3b-494d-8cfa-fe9724b9207f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/secupress/"
+    google-query: inurl:"/wp-content/plugins/secupress/"
+    shodan-query: 'http.html:"wp-content/plugins/secupress/"'
+  tags: cve,wordpress,wp-plugin,secupress,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/secupress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "secupress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0')

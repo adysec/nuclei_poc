@@ -1,0 +1,47 @@
+id: ASVS-4-0-3-V3-4-2
+
+info:
+  name: ASVS 3.4.2 Check
+  author: AmirHossein Raeisi
+  severity: info
+  classification:
+    cwe-id: CWE-1004
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes
+    - https://vulnerable-pages.onrender.com/set-cookie
+    - https://github.com/projectdiscovery/nuclei-templates/blob/main/http/misconfiguration/cookies-without-httponly.yaml
+  tags: asvs,3.4.2
+  description: |
+    Verify that cookie-based session tokens have the 'HttpOnly' attribute set.
+
+flow: |
+    http()
+    javascript()
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    host-redirects: true
+    max-redirects: 2
+
+javascript:
+  - code: |
+      content = template.http_all_headers
+      const setCookieLines = content
+        .split(/\r\n/)
+        .filter(line => line.trim().toLowerCase().startsWith('set-cookie:'));
+
+      const nonHttpOnlyCookies = setCookieLines.filter(line => !line.toLowerCase().includes('httponly'));
+
+      const cookieNames = nonHttpOnlyCookies.map(line => {
+        const match = line.match(/set-cookie:\s*([^=]+)=/i);
+        return match ? match[1] : null;
+      }).filter(Boolean).filter(cookieName => cookieName.toLowerCase().includes('session'));  // Check for 'session' in the cookie name;
+      cookieNames
+
+    extractors:
+      - type: regex
+        regex:
+          - '[a-zA-Z0-9_-]+'
+# digest: 4a0a00473045022100c2b42cddd46efda37dc9650ed2f881c6b089ca31b65bcc78d53a21ba41c0a5bc022059b47407bcc48d3ff9e40c71aadb6af658570d839d5cf88388e740cc3fd5bd7b:236a7c23afe836fbe231d6e037cff444

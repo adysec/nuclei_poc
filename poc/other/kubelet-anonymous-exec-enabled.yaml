@@ -1,0 +1,70 @@
+# gap: kubelet-anonymous-exec-enabled
+id: kubelet-anonymous-exec-enabled
+
+info:
+  name: Kubernetes Kubelet Anonymous API Accessible
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects Kubernetes kubelets configured with --anonymous-auth=true and
+    permissive --authorization-mode where the exec-tier API surface is
+    reachable without authentication. The probe targets two
+    exec-capability-distinct endpoints — `/runningpods/` (the kubelet's
+    live PodList) and `/configz` (the running KubeletConfiguration) —
+    that together prove anonymous access to the kubelet's privileged
+    interface, from which `/run/<ns>/<pod>/<container>`,
+    `/exec/<ns>/<pod>/<container>`, and `/attach/<ns>/<pod>/<container>`
+    accept arbitrary commands to execute inside running containers on
+    the node. This is an unauth RCE primitive that bypasses
+    authentication of the cluster's data plane.
+
+    Distinct from upstream `kubelet-pods` (which is a `/pods`
+    info-level fingerprint): this probe deliberately skips `/pods` and
+    matches only the exec-tier endpoints, so a finding here is the
+    materially worse "anonymous-auth + permissive RBAC → arbitrary
+    command execution" condition rather than the read-only listing.
+
+    Target the kubelet HTTPS port directly, e.g.
+    `nuclei -u https://node.example.com:10250 -t templates/cloud/kubelet-anonymous-exec-enabled.yaml`.
+    Kubelets typically present a self-signed cert; pair with `-insecure`.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/kubernetes-security/pentesting-kubernetes-services/kubelet-authentication-and-authorization.md
+    - https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/
+  tags: custom,cloud,kubernetes,kubelet,k8s
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/runningpods/"
+      - "{{BaseURL}}/configz"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(body, "\"kind\":\"PodList\"") && contains(body, "\"items\"")'
+          - 'contains(body, "\"kind\":\"KubeletConfiguration\"") || contains(body, "\"kubeletconfig\"")'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: pod-names
+        regex:
+          - '"name"\s*:\s*"([a-z0-9-]+)"\s*,\s*"namespace"\s*:\s*"([a-z0-9-]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: namespaces
+        regex:
+          - '"namespace"\s*:\s*"([a-z0-9-]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: kubelet-version
+        regex:
+          - '"kubeletVersion"\s*:\s*"([^"]+)"'
+        group: 1

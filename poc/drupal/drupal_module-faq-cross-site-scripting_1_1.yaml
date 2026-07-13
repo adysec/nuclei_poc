@@ -1,0 +1,53 @@
+
+id: drupal_module-faq-cross-site-scripting
+info:
+  name: drupal_module-faq-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "The Frequently Asked Questions (faq) module allows users, with appropriate permissions, to create question and answer pairs which they want displayed on the faq page. The faq page is automatically generated from the FAQ nodes configured. Basic Views layouts are also provided and can be customised via the Views UI (rather than via the module settings page). The module doesnt sufficiently sanitize editor input leading to a Cross Site Scripting (XSS) vulnerability. This vulnerability is mitigated by the fact that an attacker must have a role with the create faq content permission."
+  reference:
+    - https://www.drupal.org/sa-contrib-2021-012
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Basic/A:User/CI:None/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/faq/"
+    google-query: "inurl:'/sites/all/modules/faq/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/faq/faq.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'faq'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

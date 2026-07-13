@@ -1,0 +1,59 @@
+id: online_accessibility-c6b395b1-c6fb-4ab9-b446-cba9e32ca65d
+
+info:
+  name: >
+    Accessibility Suite by Online ADA < 2.0.11 - SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Accessibility Suite by Online ADA plugin for WordPress is vulnerable to generic SQL Injection via several parameters in versions up to, and including, 2.0.10 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c6b395b1-c6fb-4ab9-b446-cba9e32ca65d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/online-accessibility/"
+    google-query: inurl:"/wp-content/plugins/online-accessibility/"
+    shodan-query: 'http.html:"wp-content/plugins/online-accessibility/"'
+  tags: cve,wordpress,wp-plugin,online-accessibility,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/online-accessibility/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "online-accessibility"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.11')

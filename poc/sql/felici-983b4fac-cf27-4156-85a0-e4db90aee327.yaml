@@ -1,0 +1,59 @@
+id: felici-983b4fac-cf27-4156-85a0-e4db90aee327
+
+info:
+  name: >
+    Felici Premium Magazine Theme <= 1.7 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Felici Premium Magazine Theme for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘buttonText’ parameter in versions up to, and including, 1.7 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/983b4fac-cf27-4156-85a0-e4db90aee327?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/felici/"
+    google-query: inurl:"/wp-content/themes/felici/"
+    shodan-query: 'http.html:"wp-content/themes/felici/"'
+  tags: cve,wordpress,wp-theme,felici,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/felici/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "felici"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7')

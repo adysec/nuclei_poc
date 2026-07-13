@@ -1,0 +1,59 @@
+id: wa_sticky_button-c80e6f0b-ccca-4755-b64e-cfcebc5cc1fe
+
+info:
+  name: >
+    WP Sticky Button <= 1.3 - Unauthenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The WP Sticky Button plugin for WordPress is vulnerable to stored cross-site scripting in versions up to, and including, 1.3, due to insufficient sanitization and escaping on several parameters. This allows unauthenticated attackers to add a stored Cross-Site Scripting payload to the settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c80e6f0b-ccca-4755-b64e-cfcebc5cc1fe?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wa-sticky-button/"
+    google-query: inurl:"/wp-content/plugins/wa-sticky-button/"
+    shodan-query: 'http.html:"wp-content/plugins/wa-sticky-button/"'
+  tags: cve,wordpress,wp-plugin,wa-sticky-button,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wa-sticky-button/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wa-sticky-button"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3')

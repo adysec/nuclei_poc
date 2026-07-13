@@ -1,0 +1,59 @@
+id: real3d_flipbook-75f964a8-a5eb-4990-a6d4-e911a20d0035
+
+info:
+  name: >
+    Real3D Flipbook <= 2.8 - Reflected Cross-Site Scripting via bookId parameter
+  author: topscoder
+  severity: medium
+  description: >
+    The Real3D Flipbook plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘bookId’ parameter in versions up to, and including, 2.8 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/75f964a8-a5eb-4990-a6d4-e911a20d0035?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/real3d-flipbook/"
+    google-query: inurl:"/wp-content/plugins/real3d-flipbook/"
+    shodan-query: 'http.html:"wp-content/plugins/real3d-flipbook/"'
+  tags: cve,wordpress,wp-plugin,real3d-flipbook,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/real3d-flipbook/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "real3d-flipbook"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.9')

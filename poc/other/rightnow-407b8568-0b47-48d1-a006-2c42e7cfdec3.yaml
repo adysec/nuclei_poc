@@ -1,0 +1,59 @@
+id: rightnow-407b8568-0b47-48d1-a006-2c42e7cfdec3
+
+info:
+  name: >
+    Right Now (Unknown Versions) - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Right Now theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'upload_settings_image.php' file. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/407b8568-0b47-48d1-a006-2c42e7cfdec3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/rightnow/"
+    google-query: inurl:"/wp-content/themes/rightnow/"
+    shodan-query: 'http.html:"wp-content/themes/rightnow/"'
+  tags: cve,wordpress,wp-theme,rightnow,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/rightnow/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "rightnow"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

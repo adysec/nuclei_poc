@@ -1,0 +1,60 @@
+id: unyson-a32edbc3894aaa4632a77afe134db586
+
+info:
+  name: "Unyson <= 2.7.18 -  Sensitive Information Exposure"
+  author: topscoder
+  severity: medium
+  description: "The Unyson plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 2.7.18 via improperly implemented font file unpacking/downloading. This can allow unauthenticated attackers to extract sensitive data that can be utilized to perform subsequent attacks."
+  reference:
+    - https://github.com/ThemeFuse/Unyson/commit/1720ff84c3e4df882b06da9d949af5089a0bb666
+    - https://github.com/ThemeFuse/Unyson/
+    - https://github.com/ThemeFuse/Unyson/blob/d27edf418fa47fd36d020ed695f983c187e6eb19/framework/bin/load-latest-fonts.php#L165
+    - https://wpscan.com/vulnerability/9128
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-unyson-information-disclosure-2-7-18/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/unyson/"
+    google-query: inurl:"/wp-content/plugins/unyson/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,unyson,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/unyson/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "unyson"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.7.18')

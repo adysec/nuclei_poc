@@ -1,0 +1,59 @@
+id: seo_image-d5d3e333-4dcd-414b-85a6-8d9fbef357bd
+
+info:
+  name: >
+    SEO Friendly Images <= 3.0.4 - Cross-Site Request Forgery to Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The SEO Friendly Images plugin for WordPress is vulnerable to Cross-Site Request Forgery to Cross-Site Scripting in versions up to, and including, 3.0.4 due to insufficient input sanitization and output escaping on the default_alt and default_title parameters along with a missing nonce check on the handle_settings() function. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d5d3e333-4dcd-414b-85a6-8d9fbef357bd?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/seo-image/"
+    google-query: inurl:"/wp-content/plugins/seo-image/"
+    shodan-query: 'http.html:"wp-content/plugins/seo-image/"'
+  tags: cve,wordpress,wp-plugin,seo-image,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/seo-image/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "seo-image"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.4')

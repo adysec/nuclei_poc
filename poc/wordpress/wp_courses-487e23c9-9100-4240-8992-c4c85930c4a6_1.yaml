@@ -1,0 +1,59 @@
+id: wp_courses-487e23c9-9100-4240-8992-c4c85930c4a6
+
+info:
+  name: >
+    WP Courses LMS <= 3.2.3 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Courses LMS – Online Courses Builder, eLearning Courses, Courses Solution, Education Courses plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 3.2.3. This is due to missing nonce validation on several functions hooked via AJAX in the ~/ajax/ajax-lesson-order.php file. This makes it possible for unauthenticated attackers to to perform several actions such as adding, deleting and renaming lesson modules via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/487e23c9-9100-4240-8992-c4c85930c4a6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-courses/"
+    google-query: inurl:"/wp-content/plugins/wp-courses/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-courses/"'
+  tags: cve,wordpress,wp-plugin,wp-courses,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-courses/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-courses"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.3')

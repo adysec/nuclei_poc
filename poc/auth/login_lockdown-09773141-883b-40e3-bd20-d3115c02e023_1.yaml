@@ -1,0 +1,59 @@
+id: login_lockdown-09773141-883b-40e3-bd20-d3115c02e023
+
+info:
+  name: >
+    Login Lockdown <= 2.06 - Authenticated (Administrator+) SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Login Lockdown – Protect Login Form plugin for WordPress is vulnerable to SQL Injection via the ‘sort order and limit’ parameter in all versions up to 2.06 (inclusive) due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers, with administrator access or higher to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/09773141-883b-40e3-bd20-d3115c02e023?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/login-lockdown/"
+    google-query: inurl:"/wp-content/plugins/login-lockdown/"
+    shodan-query: 'http.html:"wp-content/plugins/login-lockdown/"'
+  tags: cve,wordpress,wp-plugin,login-lockdown,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/login-lockdown/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "login-lockdown"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.06')

@@ -1,0 +1,59 @@
+id: woo_discount_rules-ac3a7732-c076-4418-b44a-748cc5668107
+
+info:
+  name: >
+    Discount Rules for WooCommerce <= 2.2.0 - Missing Authorization
+  author: topscoder
+  severity: medium
+  description: >
+    The Discount Rules for WooCommerce plugin for WordPress is vulnerable to missing authorization via several AJAX actions in versions up to, and including, 2.2.0 due to missing capability checks on various functions. This makes it possible for subscriber-level attackers to execute various actions and perform a wide variety of actions such as modifying discount rules.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ac3a7732-c076-4418-b44a-748cc5668107?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woo-discount-rules/"
+    google-query: inurl:"/wp-content/plugins/woo-discount-rules/"
+    shodan-query: 'http.html:"wp-content/plugins/woo-discount-rules/"'
+  tags: cve,wordpress,wp-plugin,woo-discount-rules,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-discount-rules/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woo-discount-rules"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.2.0')

@@ -1,0 +1,59 @@
+id: redirect_redirection-b2ec7d77-fe50-4bb2-a57b-6ee4246805f9
+
+info:
+  name: >
+    Redirect Redirection <= 1.1.3 - Missing Authorization in 'loadSettings' function
+  author: topscoder
+  severity: low
+  description: >
+    The Redirect Redirection plugin for WordPress is vulnerable to unauthorized access of data due to a missing capability check on the loadSettings function in versions up to, and including, 1.1.3. This makes it possible for authenticated attackers with subscriber-level access, and above, to load the plugin's settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b2ec7d77-fe50-4bb2-a57b-6ee4246805f9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/redirect-redirection/"
+    google-query: inurl:"/wp-content/plugins/redirect-redirection/"
+    shodan-query: 'http.html:"wp-content/plugins/redirect-redirection/"'
+  tags: cve,wordpress,wp-plugin,redirect-redirection,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/redirect-redirection/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "redirect-redirection"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.3')

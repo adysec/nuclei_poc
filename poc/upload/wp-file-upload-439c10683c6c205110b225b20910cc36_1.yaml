@@ -1,0 +1,59 @@
+id: wp-file-upload-439c10683c6c205110b225b20910cc36
+
+info:
+  name: >
+    WordPress File Upload <= 4.24.11 - Unauthenticated Path Traversal to Arbitrary File Read and Deletion in wfu_file_downloader.php
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/554a314c-9e8e-4691-9792-d086790ef40f?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-file-upload/"
+    google-query: inurl:"/wp-content/plugins/wp-file-upload/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-file-upload,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-file-upload/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-file-upload"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.24.11')

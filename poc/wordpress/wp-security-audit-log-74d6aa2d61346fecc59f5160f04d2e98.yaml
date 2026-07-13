@@ -1,0 +1,59 @@
+id: wp-security-audit-log-74d6aa2d61346fecc59f5160f04d2e98
+
+info:
+  name: >
+    WP Activity Log <= 5.2.1 - Unauthenticated Stored Cross-Site Scripting via User_id Parameter
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/44f3b2e4-c537-4369-b2d6-39fbc6cb8e08?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-security-audit-log/"
+    google-query: inurl:"/wp-content/plugins/wp-security-audit-log/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-security-audit-log,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-security-audit-log/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-security-audit-log"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.2.1')

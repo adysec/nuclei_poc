@@ -1,0 +1,59 @@
+id: tweet_old_post-bb1742fd-7f0c-4a14-aa9c-f2863fcccd17
+
+info:
+  name: >
+    Revive Old Posts – Social Media Auto Post and Scheduling Plugin < 8.0.0 - Authorization Bypass
+  author: topscoder
+  severity: high
+  description: >
+    The Revive Old Posts – Social Media Auto Post and Scheduling Plugin for WordPress is vulnerable to Authorization Bypass due to a missing capability check on the update_response AJAX action in versions before 8.0.0. This makes it possible for unauthenticated attackers to create a new account with administrative-level privileges. This issue was not fully patched until the core.php file was removed in version 8.0.0 since the capability check implemented (is_admin) was not sufficient.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bb1742fd-7f0c-4a14-aa9c-f2863fcccd17?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:H
+    cvss-score: 8.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/tweet-old-post/"
+    google-query: inurl:"/wp-content/plugins/tweet-old-post/"
+    shodan-query: 'http.html:"wp-content/plugins/tweet-old-post/"'
+  tags: cve,wordpress,wp-plugin,tweet-old-post,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/tweet-old-post/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "tweet-old-post"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 8.0.0')

@@ -1,0 +1,57 @@
+id: mailchimp-for-wp-8b9fa2296336d99f163b8b5f54c9f0e4
+
+info:
+  name: "MC4WP: Mailchimp for WordPress < 4.8.7 - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The MC4WP: Mailchimp for WordPress for WordPress is vulnerable to Stored Cross-Site Scripting via the textarea form field in versions up to, and including, 4.8.6 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - https://ithemes.com/blog/wordpress-vulnerability-report-march-9-2022/
+    - https://wpscan.com/vulnerability/13d92715-b195-4b75-9a39-6935fcafb832
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/mailchimp-for-wp/"
+    google-query: inurl:"/wp-content/plugins/mailchimp-for-wp/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,mailchimp-for-wp,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mailchimp-for-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mailchimp-for-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.8.7')

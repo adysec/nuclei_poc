@@ -1,0 +1,59 @@
+id: custom_post_types-eb94520e-a99d-4e34-b174-e01898de0978
+
+info:
+  name: >
+    Custom post types <= 4.0.12 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Custom post types, Custom Fields & more plugin for WordPress is vulnerable to Stored Cross-Site Scripting via admin settings in all versions up to 5.0.0 (exclusive) due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/eb94520e-a99d-4e34-b174-e01898de0978?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 4.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/custom-post-types/"
+    google-query: inurl:"/wp-content/plugins/custom-post-types/"
+    shodan-query: 'http.html:"wp-content/plugins/custom-post-types/"'
+  tags: cve,wordpress,wp-plugin,custom-post-types,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/custom-post-types/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "custom-post-types"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.0.0')

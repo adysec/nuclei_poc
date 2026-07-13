@@ -1,0 +1,59 @@
+id: gallery_video-ba8625eb-b710-4dd5-b08f-d212e2fd9013
+
+info:
+  name: >
+    Gallery - Video Gallery and YouTube Gallery <= 1.7.01 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Gallery - Video Gallery and YouTube Gallery  plugin for WordPress is vulnerable to Stored Cross-Site Scripting via unspecified parameters in versions up to, and including, 1.7.01 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ba8625eb-b710-4dd5-b08f-d212e2fd9013?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gallery-video/"
+    google-query: inurl:"/wp-content/plugins/gallery-video/"
+    shodan-query: 'http.html:"wp-content/plugins/gallery-video/"'
+  tags: cve,wordpress,wp-plugin,gallery-video,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gallery-video/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gallery-video"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.7.01')

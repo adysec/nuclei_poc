@@ -1,0 +1,59 @@
+id: formget_contact_form-cede59f9-611f-4da4-8140-181bd0a469d5
+
+info:
+  name: >
+    Contact Form by FormGet < 5.3.1 - Authenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Contact Form by FormGet plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘value’ parameter in versions before 5.3.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cede59f9-611f-4da4-8140-181bd0a469d5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 7.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/formget-contact-form/"
+    google-query: inurl:"/wp-content/plugins/formget-contact-form/"
+    shodan-query: 'http.html:"wp-content/plugins/formget-contact-form/"'
+  tags: cve,wordpress,wp-plugin,formget-contact-form,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/formget-contact-form/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "formget-contact-form"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.3.1')

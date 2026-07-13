@@ -1,0 +1,59 @@
+id: wc_donation_platform-3c8602ed-6c0d-4357-93e6-bab1ab38ffb2
+
+info:
+  name: >
+    Donation Platform for WooCommerce: Fundraising & Donation Management <= 1.2.9 - Cross-Site Request Forgery to Survey Submission
+  author: topscoder
+  severity: medium
+  description: >
+    The Donation Platform for WooCommerce: Fundraising & Donation Management plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.2.9. This is due to missing nonce validation on the send_survey_data function. This makes it possible for unauthenticated attackers to send survey data to the developers specified location, via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3c8602ed-6c0d-4357-93e6-bab1ab38ffb2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wc-donation-platform/"
+    google-query: inurl:"/wp-content/plugins/wc-donation-platform/"
+    shodan-query: 'http.html:"wp-content/plugins/wc-donation-platform/"'
+  tags: cve,wordpress,wp-plugin,wc-donation-platform,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wc-donation-platform/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wc-donation-platform"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.10')

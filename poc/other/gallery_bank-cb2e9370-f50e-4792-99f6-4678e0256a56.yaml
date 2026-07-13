@@ -1,0 +1,59 @@
+id: gallery_bank-cb2e9370-f50e-4792-99f6-4678e0256a56
+
+info:
+  name: >
+    Gallery Bank – WordPress Photo Gallery Plugin < 3.0.61 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Gallery Bank – WordPress Photo Gallery Plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the upload.php in versions before 3.0.61. This makes it possible for attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cb2e9370-f50e-4792-99f6-4678e0256a56?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gallery-bank/"
+    google-query: inurl:"/wp-content/plugins/gallery-bank/"
+    shodan-query: 'http.html:"wp-content/plugins/gallery-bank/"'
+  tags: cve,wordpress,wp-plugin,gallery-bank,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gallery-bank/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gallery-bank"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.0.61')

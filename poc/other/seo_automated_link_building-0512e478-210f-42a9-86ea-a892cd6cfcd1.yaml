@@ -1,0 +1,59 @@
+id: seo_automated_link_building-0512e478-210f-42a9-86ea-a892cd6cfcd1
+
+info:
+  name: >
+    Internal Links Manager <= 2.1.0 - Multiple Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Internal Links Manager plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'Internal Title (title)' and 'Link Title (titleattr)' fields in versions up to, and including, 2.1.0 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0512e478-210f-42a9-86ea-a892cd6cfcd1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/seo-automated-link-building/"
+    google-query: inurl:"/wp-content/plugins/seo-automated-link-building/"
+    shodan-query: 'http.html:"wp-content/plugins/seo-automated-link-building/"'
+  tags: cve,wordpress,wp-plugin,seo-automated-link-building,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/seo-automated-link-building/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "seo-automated-link-building"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.0')

@@ -1,0 +1,72 @@
+# gap: redpanda-admin-api-anonymous-brokers
+id: redpanda-admin-api-anonymous-brokers
+
+info:
+  name: Redpanda Admin API Anonymous Broker / Cluster Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Redpanda Kafka-compatible broker where the admin REST API
+    (/v1/brokers, /v1/cluster_config, /v1/cluster_health_overview,
+    /v1/features) is reachable without an Authorization header. Class
+    signal: response carries Redpanda's canonical JSON shape — `/v1/
+    brokers` returns an array of broker objects with `node_id`,
+    `internal_rpc_address`, `kafka_advertised_listeners`,
+    `membership_status`; `/v1/cluster_health_overview` returns
+    `{"is_healthy":bool,"unhealthy_reasons":[…],"all_nodes":[…]}`.
+
+    Anonymous Redpanda admin access leaks the messaging topology and
+    advertised listener addresses (which disclose the internal Kafka
+    endpoints clients connect to), the cluster's feature-toggle map
+    (which reveals tiered-storage / managed-connector / shadow-indexing
+    configuration), and chains directly to administrative writes —
+    /v1/cluster_config accepts PATCH that lets an attacker disable
+    authentication, lower replication factor, or enable plaintext
+    listeners. Pairs with the Kafka-protocol surface on the same
+    broker for in-memory secret leak via topic subscription. Class
+    detection — keys on Redpanda admin response shape, not vendor
+    banner.
+  reference:
+    - https://docs.redpanda.com/api/admin-api/
+    - https://docs.redpanda.com/current/manage/security/
+  tags: custom,exposures,redpanda,kafka,messaging,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/brokers"
+      - "{{BaseURL}}/v1/cluster_health_overview"
+      - "{{BaseURL}}/v1/features"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"node_id"'
+          - '"is_healthy"'
+          - '"membership_status"'
+          - '"kafka_advertised_listeners"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: broker-node-ids
+        regex:
+          - '"node_id"\s*:\s*([0-9]+)'
+        group: 1
+      - type: regex
+        part: body
+        name: advertised-listeners
+        regex:
+          - '"kafka_advertised_listeners"\s*:\s*\[([^\]]+)\]'
+        group: 1

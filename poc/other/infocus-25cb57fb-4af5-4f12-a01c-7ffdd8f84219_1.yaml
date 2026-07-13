@@ -1,0 +1,59 @@
+id: infocus-25cb57fb-4af5-4f12-a01c-7ffdd8f84219
+
+info:
+  name: >
+    InFocus <= 3.3 - Arbitrary File Download
+  author: topscoder
+  severity: high
+  description: >
+    The inFocus Theme for WordPress is vulnerable to Arbitrary File Download in versions up to, and including, 3.3. This is due to the '_mysite_download_skin' parameter in the 'dl-skin.php' file. This makes it possible for unauthenticated attackers to download any file within the server of the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/25cb57fb-4af5-4f12-a01c-7ffdd8f84219?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/infocus/"
+    google-query: inurl:"/wp-content/themes/infocus/"
+    shodan-query: 'http.html:"wp-content/themes/infocus/"'
+  tags: cve,wordpress,wp-theme,infocus,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/infocus/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "infocus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.3')

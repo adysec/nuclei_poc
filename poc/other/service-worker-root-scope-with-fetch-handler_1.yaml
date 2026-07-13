@@ -1,0 +1,62 @@
+# gap: service-worker-root-scope-with-fetch-handler
+id: service-worker-root-scope-with-fetch-handler
+
+info:
+  name: Service Worker at Root Scope with fetch Event Handler
+  author: TyrusRC
+  severity: low
+  description: |
+    Detects a Service Worker script reachable at the application root
+    (/sw.js, /service-worker.js, /serviceworker.js) that registers a
+    `fetch` event listener. By the Service Worker spec, the default
+    registration scope equals the directory of the worker script —
+    serving the script from the document root grants scope `/`,
+    intercepting every same-origin fetch the user agent makes
+    thereafter. Combined with any subdomain-takeover or XSS primitive
+    on a sibling origin, the attacker can register a fetch-intercepting
+    worker that persists across page reloads, exfiltrating request /
+    response data including in-memory session tokens and CSRF tokens.
+
+    This is a primitive flag — the worker itself is usually intended
+    behavior. The signal is that the deployment is at root scope AND
+    handles fetch, which is the precondition for the persistence
+    primitive in modern client-side attack chains. Class detection —
+    keys on standardized Service Worker registration API, not vendor.
+  reference:
+    - https://w3c.github.io/ServiceWorker/
+    - https://portswigger.net/research/practical-web-cache-poisoning
+    - https://github.blog/security/sandstorm-research-service-worker-hijacking
+  tags: custom,misconfig,service-worker,browser,xss,cwe-1021
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/sw.js"
+      - "{{BaseURL}}/service-worker.js"
+      - "{{BaseURL}}/serviceworker.js"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: header
+        regex:
+          - '(?i)Content-Type:[^\r\n]*(javascript|ecmascript)'
+      - type: regex
+        part: body
+        regex:
+          - 'addEventListener\s*\(\s*[''"]fetch[''"]'
+          - 'self\.onfetch\s*='
+          - 'event\.respondWith'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: header
+        name: service-worker-allowed
+        regex:
+          - '(?i)Service-Worker-Allowed:\s*([^\r\n]+)'
+        group: 1

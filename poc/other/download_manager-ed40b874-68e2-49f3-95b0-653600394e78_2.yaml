@@ -1,0 +1,59 @@
+id: download_manager-ed40b874-68e2-49f3-95b0-653600394e78
+
+info:
+  name: >
+    WordPress Download Manager < 3.1.19 - Arbitrary File Upload
+  author: topscoder
+  severity: low
+  description: >
+    The WordPress Download Manager plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the wpdm_admin_upload_file function in versions before 3.1.19. Dangerous extensions such as .php4 are not restricted. This makes it possible for authenticated attackers with Author-level privileges and above to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ed40b874-68e2-49f3-95b0-653600394e78?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/download-manager/"
+    google-query: inurl:"/wp-content/plugins/download-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/download-manager/"'
+  tags: cve,wordpress,wp-plugin,download-manager,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.1.19')

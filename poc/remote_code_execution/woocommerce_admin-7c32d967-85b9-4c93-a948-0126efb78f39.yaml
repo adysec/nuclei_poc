@@ -1,0 +1,59 @@
+id: woocommerce_admin-7c32d967-85b9-4c93-a948-0126efb78f39
+
+info:
+  name: >
+    WooCommerce < 5.7.0 & WooCommerce Admin < 2.6.4 - Information Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The WooCommerce and WooCommerce Admin plugins for WordPress are vulnerable to Sensitive Data Exposure in versions up to 5.7.0 for WooCommerce and 2.6.4 for WooCommerce Admin due to insufficient protection of analytic report storage in the directory they are stored. This makes it possible for attackers to extract sensitive data related to report analytics on certain host configurations.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7c32d967-85b9-4c93-a948-0126efb78f39?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-admin/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-admin/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-admin/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-admin,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-admin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-admin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 2.6', '< 2.6.4')

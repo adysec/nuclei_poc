@@ -1,0 +1,59 @@
+id: simple_slideshow_manager-6205b0fe-6c68-4550-b9aa-87c3fbc88ddf
+
+info:
+  name: >
+    Simple Slideshow Manager <= 2.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Simple Slideshow Manager for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.1. This is due to missing nonce validation on several functions. This makes it possible for unauthenticated attackers to perform several administrative actions like modifying settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6205b0fe-6c68-4550-b9aa-87c3fbc88ddf?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-slideshow-manager/"
+    google-query: inurl:"/wp-content/plugins/simple-slideshow-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-slideshow-manager/"'
+  tags: cve,wordpress,wp-plugin,simple-slideshow-manager,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-slideshow-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-slideshow-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1')

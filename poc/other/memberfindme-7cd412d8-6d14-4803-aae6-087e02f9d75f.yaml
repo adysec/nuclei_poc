@@ -1,0 +1,51 @@
+id: memberfindme-7cd412d8-6d14-4803-aae6-087e02f9d75f
+
+info:
+  name: >
+    MembershipWorks <= 6.14 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7cd412d8-6d14-4803-aae6-087e02f9d75f?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/memberfindme/"
+    google-query: inurl:"/wp-content/plugins/memberfindme/"
+    shodan-query: 'http.html:"wp-content/plugins/memberfindme/"'
+  tags: cve,wordpress,wp-plugin,memberfindme,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/memberfindme/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "memberfindme"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.14')

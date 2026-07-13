@@ -1,0 +1,51 @@
+
+id: drupal_module-easy_breadcrumb-cross-site-scripting
+info:
+  name: drupal_module-easy_breadcrumb-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to use the current URL (path alias) and the current pages title to automatically extract the breadcrumbs segments and its respective links then show them as breadcrumbs on your website. The module doesnt sufficiently sanitize editor input in certain circumstances leading to a Cross Site Scripting (XSS) vulnerability. This vulnerability requires the user have administer Easy Breadcrumb settings permission."
+  reference:
+    - https://www.drupal.org/sa-contrib-2020-027
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/easy_breadcrumb/"
+    google-query: "inurl:'/sites/all/modules/easy_breadcrumb/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/easy_breadcrumb/easy_breadcrumb.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'easy_breadcrumb'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 1.13.0')

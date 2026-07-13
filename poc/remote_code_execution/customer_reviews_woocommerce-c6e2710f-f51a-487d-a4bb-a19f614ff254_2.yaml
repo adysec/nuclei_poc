@@ -1,0 +1,59 @@
+id: customer_reviews_woocommerce-c6e2710f-f51a-487d-a4bb-a19f614ff254
+
+info:
+  name: >
+    Customer Reviews for WooCommerce <= 5.38.1 - Missing Authorization via manual review reminders
+  author: topscoder
+  severity: low
+  description: >
+    The Customer Reviews for WooCommerce plugin for WordPress is vulnerable to unauthorized modification of data due to a missing capability check on the manual_review_reminder, manual_wa_review_reminder, and manual_review_reminder_conf functions in all versions up to 5.38.2 (exclusive). This makes it possible for authenticated attackers, with subscriber access and above, to configure and send manual review reminders.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c6e2710f-f51a-487d-a4bb-a19f614ff254?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/customer-reviews-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/customer-reviews-woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/customer-reviews-woocommerce/"'
+  tags: cve,wordpress,wp-plugin,customer-reviews-woocommerce,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/customer-reviews-woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "customer-reviews-woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.38.2')

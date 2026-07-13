@@ -1,0 +1,59 @@
+id: forminator-d0cb4434-94c5-42a9-bd86-869058dcbf67
+
+info:
+  name: >
+    Forminator <= 1.22.1 - Missing Authorization on 'hubspot_support_request' AJAX function
+  author: topscoder
+  severity: low
+  description: >
+    The Forminator plugin for WordPress is vulnerable to missing authorization due to a missing capability check on the 'hubspot_support_request' AJAX function in versions up to, and including, 1.22.1. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to submit support requests via the Hubspot API.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d0cb4434-94c5-42a9-bd86-869058dcbf67?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/forminator/"
+    google-query: inurl:"/wp-content/plugins/forminator/"
+    shodan-query: 'http.html:"wp-content/plugins/forminator/"'
+  tags: cve,wordpress,wp-plugin,forminator,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/forminator/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "forminator"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.22.1')

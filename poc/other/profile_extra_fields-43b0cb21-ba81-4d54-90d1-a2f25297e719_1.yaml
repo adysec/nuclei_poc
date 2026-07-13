@@ -1,0 +1,59 @@
+id: profile_extra_fields-43b0cb21-ba81-4d54-90d1-a2f25297e719
+
+info:
+  name: >
+    Profile Extra Fields by BestWebSoft < 1.0.6 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Profile Extra Fields by BestWebSoft plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘category’ parameter in versions before 1.0.6 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/43b0cb21-ba81-4d54-90d1-a2f25297e719?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/profile-extra-fields/"
+    google-query: inurl:"/wp-content/plugins/profile-extra-fields/"
+    shodan-query: 'http.html:"wp-content/plugins/profile-extra-fields/"'
+  tags: cve,wordpress,wp-plugin,profile-extra-fields,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/profile-extra-fields/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "profile-extra-fields"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.6')

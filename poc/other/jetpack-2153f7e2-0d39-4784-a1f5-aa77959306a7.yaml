@@ -1,0 +1,59 @@
+id: jetpack-2153f7e2-0d39-4784-a1f5-aa77959306a7
+
+info:
+  name: >
+    Jetpack <= 4.0.2 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2153f7e2-0d39-4784-a1f5-aa77959306a7?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/jetpack/"
+    google-query: inurl:"/wp-content/plugins/jetpack/"
+    shodan-query: 'http.html:"wp-content/plugins/jetpack/"'
+  tags: cve,wordpress,wp-plugin,jetpack,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jetpack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jetpack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.0.3')

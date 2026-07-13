@@ -1,0 +1,59 @@
+id: crayon_syntax_highlighter-eff47e59-9a2c-424f-b138-47fcf554c06b
+
+info:
+  name: >
+    Crayon Syntax Highlighter Plugin <= 1.13 - Remote File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The Crayon Syntax Highlighter plugin for WordPress is vulnerable to Remote File Inclusion in versions up to, and including, 1.13 via the crayon_is_php_file function. This allows unauthenticated attackers to include remote files on the server, resulting in code execution.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/eff47e59-9a2c-424f-b138-47fcf554c06b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/crayon-syntax-highlighter/"
+    google-query: inurl:"/wp-content/plugins/crayon-syntax-highlighter/"
+    shodan-query: 'http.html:"wp-content/plugins/crayon-syntax-highlighter/"'
+  tags: cve,wordpress,wp-plugin,crayon-syntax-highlighter,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/crayon-syntax-highlighter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "crayon-syntax-highlighter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.13')

@@ -1,0 +1,51 @@
+id: wp_flipper-e4d591a6-4bbe-435b-aef6-ed176c42dca2
+
+info:
+  name: >
+    WordPress Content Flipper <= 0.1 - Authenticated (Contributor+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e4d591a6-4bbe-435b-aef6-ed176c42dca2?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-flipper/"
+    google-query: inurl:"/wp-content/plugins/wp-flipper/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-flipper/"'
+  tags: cve,wordpress,wp-plugin,wp-flipper,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-flipper/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-flipper"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.1')

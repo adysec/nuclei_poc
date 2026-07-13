@@ -1,0 +1,59 @@
+id: wp_limit_failed_login_attempts-7d525c50-5911-4be6-a860-b48db619adba
+
+info:
+  name: >
+    Limit Login Attempts (Spam Protection) <= 2.9 - Cross-Site Request Forgery to Arbitrary Plugin Installation/Activation
+  author: topscoder
+  severity: medium
+  description: >
+    The Limit Login Attempts (Spam Protection) plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.9. This is due to missing or incorrect nonce validation on the 'cp_plugins_do_button_job_later_callback' AJAX action. This makes it possible for unauthenticated attackers to install and activate other plugins via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7d525c50-5911-4be6-a860-b48db619adba?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-limit-failed-login-attempts/"
+    google-query: inurl:"/wp-content/plugins/wp-limit-failed-login-attempts/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-limit-failed-login-attempts/"'
+  tags: cve,wordpress,wp-plugin,wp-limit-failed-login-attempts,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-limit-failed-login-attempts/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-limit-failed-login-attempts"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.9')

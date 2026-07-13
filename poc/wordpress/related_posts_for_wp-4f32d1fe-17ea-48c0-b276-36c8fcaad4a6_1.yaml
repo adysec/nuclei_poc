@@ -1,0 +1,59 @@
+id: related_posts_for_wp-4f32d1fe-17ea-48c0-b276-36c8fcaad4a6
+
+info:
+  name: >
+    Related Posts for WordPress < 1.8.2 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Related Posts for WordPress plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, not including, 1.8.2 due to insufficient input sanitization and output escaping. The same vulnerability exists in Related Posts Premium up to, not including, 1.3.4. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4f32d1fe-17ea-48c0-b276-36c8fcaad4a6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/related-posts-for-wp/"
+    google-query: inurl:"/wp-content/plugins/related-posts-for-wp/"
+    shodan-query: 'http.html:"wp-content/plugins/related-posts-for-wp/"'
+  tags: cve,wordpress,wp-plugin,related-posts-for-wp,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/related-posts-for-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "related-posts-for-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.8.2')

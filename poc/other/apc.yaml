@@ -1,0 +1,48 @@
+id: apc-pdu-default-login
+
+info:
+  name: APC Rack PDU Default Login
+  author: tdiderich
+  severity: high
+  description: |
+    APC Rack PDU with default administrator credentials discovered.
+  reference:
+    # User manual with default credentials
+    - https://iportal2.schneider-electric.com/Contents/docs/UPS-PMAR-9LLJMN_R0_EN.PDF
+  metadata:
+    runzero-match: asset["hw"] matches `Schneider\s+Electric` || asset["os"] matches `Schneider\s+Electric\s+AOS` || any(each(service["html.titles"]), {# matches `APC \| Log On`})
+  tags: default-login,apc,pdu,runzero
+
+http:
+  - raw:
+      - |
+        POST /Forms/login1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login_username={{username}}&login_password={{password}}&submit=Log+On
+
+    attack: pitchfork
+    payloads:
+      username:
+        - apc
+      password:
+        - apc
+    host-redirects: true
+    cookie-reuse: true
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      # Successful login could be 200, 302, or 303
+      - type: status
+        status:
+          - 200
+          - 302
+          - 303
+      # Should redirect to /home based on the reference documentation
+      - type: regex
+        part: header
+        regex:
+          - "Location: .*?/home"
+

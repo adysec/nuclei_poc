@@ -1,0 +1,57 @@
+
+id: drupal_module-taxonomy_access_fix-access-bypass
+info:
+  name: drupal_module-taxonomy_access_fix-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module extends access handling of Drupal Cores Taxonomy module. The module doesnt sufficiently check,  if a given entity should be access controlled, defaulting to allowing access even to unpublished Taxonomy Terms. if certain administrative routes should be access controlled, defaulting to allowing access even to users without permission to access these administrative routes.  The vulnerability is mitigated by the facts, that   the user interface to change the status of Taxonomy Terms has been released in Drupal Core 8.8 and a custom or contributed module is required in earlier versions of Drupal Core to mark Taxonomy Terms as unpublished. all entity operations (except the view operation) available on affected administrative routes still require appropriate permissions. an attacker must have a role with permission to either access content or view a Taxonomy Term in a vocabulary."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-093
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:None/A:User/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/taxonomy_access_fix/"
+    google-query: "inurl:'/sites/all/modules/taxonomy_access_fix/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/taxonomy_access_fix/taxonomy_access_fix.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'taxonomy_access_fix'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-2.6')
+         - compare_versions(version, '8.x-2.5')
+         - compare_versions(version, '8.x-2.4')
+         - compare_versions(version, '8.x-2.3')
+         - compare_versions(version, '8.x-2.2')
+         - compare_versions(version, '8.x-2.1')
+         - compare_versions(version, '8.x-2.0')

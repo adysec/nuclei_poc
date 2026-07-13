@@ -1,0 +1,42 @@
+id: CORS-valid-end-name
+info:
+  author: jtcsec
+  name: CORS Misconfiguration allowing for any origin that ends in target.com (i.e.
+    nottarget.com)
+  severity: medium
+  tags: cors
+requests:
+- extractors:
+  - name: firstchunk
+    part: header
+    regex:
+    - Access\-Control\-Allow\-Origin\:[\s]+([^\s]+)
+    type: regex
+  matchers:
+  - condition: and
+    part: header
+    type: word
+    words:
+    - 'Access-Control-Allow-Origin:'
+    - 'Access-Control-Allow-Credentials: true'
+  - negative: true
+    part: header
+    regex:
+    - Access\-Control\-Allow\-Origin\:[\s]+{{BaseURL}}}
+    type: regex
+  matchers-condition: and
+  raw:
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like
+    Gecko) Chrome/55.0
+
+    Accept-Language: en-US,en;q=0.9
+
+    Connection: close
+
+    Origin: https://not{{Hostname}}
+
+    '

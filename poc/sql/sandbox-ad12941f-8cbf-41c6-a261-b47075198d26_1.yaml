@@ -1,0 +1,59 @@
+id: sandbox-ad12941f-8cbf-41c6-a261-b47075198d26
+
+info:
+  name: >
+    Sandbox <= 1.6.1 - Full Path Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The Sandbox theme for WordPress is vulnerable to Full Path Disclosure in versions up to, and including 1.6.1 via the check-exists.php file. This makes it possible for unauthenticated attackers to reveal the full path of arbitrary files on the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ad12941f-8cbf-41c6-a261-b47075198d26?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/sandbox/"
+    google-query: inurl:"/wp-content/themes/sandbox/"
+    shodan-query: 'http.html:"wp-content/themes/sandbox/"'
+  tags: cve,wordpress,wp-theme,sandbox,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/sandbox/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sandbox"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.1')

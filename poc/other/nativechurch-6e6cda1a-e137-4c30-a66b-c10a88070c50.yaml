@@ -1,0 +1,59 @@
+id: nativechurch-6e6cda1a-e137-4c30-a66b-c10a88070c50
+
+info:
+  name: >
+    NativeChurch <= 1.6.1 - Arbitrary File Download
+  author: topscoder
+  severity: high
+  description: >
+    The NativeChurch theme for WordPress is vulnerable to Arbitrary File Download in versions up to, and including, 1.6.1 via the 'file' parameter in the 'download.php' file. This makes it possible for unauthenticated attackers to download any file from the vulnerable service's server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6e6cda1a-e137-4c30-a66b-c10a88070c50?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/NativeChurch/"
+    google-query: inurl:"/wp-content/themes/NativeChurch/"
+    shodan-query: 'http.html:"wp-content/themes/NativeChurch/"'
+  tags: cve,wordpress,wp-theme,NativeChurch,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/NativeChurch/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "NativeChurch"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.1')

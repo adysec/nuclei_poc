@@ -1,0 +1,59 @@
+id: jf3_maintenance_mode-cf8919d4-6ca7-44ed-ae2a-14b0c96a568f
+
+info:
+  name: >
+    Maintenance Redirect <= 2.0.1 - IP Spoofing to Maintenance Mode Bypass
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cf8919d4-6ca7-44ed-ae2a-14b0c96a568f?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/jf3-maintenance-mode/"
+    google-query: inurl:"/wp-content/plugins/jf3-maintenance-mode/"
+    shodan-query: 'http.html:"wp-content/plugins/jf3-maintenance-mode/"'
+  tags: cve,wordpress,wp-plugin,jf3-maintenance-mode,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jf3-maintenance-mode/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jf3-maintenance-mode"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.1')

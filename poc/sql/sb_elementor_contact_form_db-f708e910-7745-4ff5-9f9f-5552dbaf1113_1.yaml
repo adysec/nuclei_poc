@@ -1,0 +1,59 @@
+id: sb_elementor_contact_form_db-f708e910-7745-4ff5-9f9f-5552dbaf1113
+
+info:
+  name: >
+    Elementor Contact Form DB <= 1.5 - Sensitive Information Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The Elementor Contact Form DB plugin for WordPress is vulnerable to sensitive information disclosure due to a lack of capability checks on the sb_elem_cfd_download_csv() in versions up to, and including 1.5 which makes it possible for unauthenticated attackers to download an export file of the plugins saved contact entries.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f708e910-7745-4ff5-9f9f-5552dbaf1113?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sb-elementor-contact-form-db/"
+    google-query: inurl:"/wp-content/plugins/sb-elementor-contact-form-db/"
+    shodan-query: 'http.html:"wp-content/plugins/sb-elementor-contact-form-db/"'
+  tags: cve,wordpress,wp-plugin,sb-elementor-contact-form-db,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sb-elementor-contact-form-db/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sb-elementor-contact-form-db"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5')

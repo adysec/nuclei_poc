@@ -1,0 +1,59 @@
+id: woo_alidropship-75f0bc5a-f588-4aeb-9e55-72e180d39ddf
+
+info:
+  name: >
+    ALD Dropping and Fulfillment for AliExpress and WooCommerce <= 1.0.21 - Missing Authorization to Order Information Disclosure
+  author: topscoder
+  severity: high
+  description: >
+    The ALD Dropping and Fulfillment for AliExpress and WooCommerce plugin for WordPress is vulnerable to unauthorized access and modification of data in versions up to, and including, 1.0.21. This is due to missing capability checks on several functions such as the 'update_ali_order_id', 'ob_get_clean', and 'get_ali_order_detail' functions to name a few. This makes it possible for unauthenticated attackers to retrieve order information or possibly make (minor) changes to an order.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/75f0bc5a-f588-4aeb-9e55-72e180d39ddf?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woo-alidropship/"
+    google-query: inurl:"/wp-content/plugins/woo-alidropship/"
+    shodan-query: 'http.html:"wp-content/plugins/woo-alidropship/"'
+  tags: cve,wordpress,wp-plugin,woo-alidropship,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-alidropship/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woo-alidropship"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.21')

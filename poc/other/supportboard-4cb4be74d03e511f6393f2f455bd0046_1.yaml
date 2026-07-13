@@ -1,0 +1,59 @@
+id: supportboard-4cb4be74d03e511f6393f2f455bd0046
+
+info:
+  name: "Support Board <= 1.2.8 - Authenticated Stored Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Support Board plugin for WordPress is vulnerable to Stored Cross-Site Scripting in versions up to, and including, 1.2.8 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - https://codecanyon.net/item/support-board-chat-and-help-desk/20752085
+    - https://patchstack.com/database/vulnerability/supportboard/wordpress-support-board-premium-plugin-1-2-8-stored-cross-site-scripting-xss-vulnerability
+    - https://www.cybersecurity-help.cz/vdb/SB2019061109
+    - https://wpscan.com/vulnerability/9351
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/supportboard/"
+    google-query: inurl:"/wp-content/plugins/supportboard/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,supportboard,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/supportboard/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "supportboard"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.9')

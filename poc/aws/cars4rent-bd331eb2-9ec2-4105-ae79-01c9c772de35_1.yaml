@@ -1,0 +1,59 @@
+id: cars4rent-bd331eb2-9ec2-4105-ae79-01c9c772de35
+
+info:
+  name: >
+    Cars4Rent <= 1.4.2 - Unauthenticated PHP Object Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Cars4Rent | Auto Rental & Taxi WordPress Theme + RTL theme for WordPress is vulnerable to PHP Object Injection in all versions up to, and including, 1.4.2 via deserialization of untrusted input. This makes it possible for unauthenticated attackers to inject a PHP Object. No known POP chain is present in the vulnerable software, which means this vulnerability has no impact unless another plugin or theme containing a POP chain is installed on the site. If a POP chain is present via an additional plugin or theme installed on the target system, it may allow the attacker to perform actions like delete arbitrary files, retrieve sensitive data, or execute code depending on the POP chain present.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bd331eb2-9ec2-4105-ae79-01c9c772de35?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/cars4rent/"
+    google-query: inurl:"/wp-content/themes/cars4rent/"
+    shodan-query: 'http.html:"wp-content/themes/cars4rent/"'
+  tags: cve,wordpress,wp-theme,cars4rent,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/cars4rent/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "cars4rent"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.2')

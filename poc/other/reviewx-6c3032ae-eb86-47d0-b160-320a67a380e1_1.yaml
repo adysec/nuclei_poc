@@ -1,0 +1,59 @@
+id: reviewx-6c3032ae-eb86-47d0-b160-320a67a380e1
+
+info:
+  name: >
+    WooCommerce Reviews Plugin with Multi-criteria Rating by ReviewX < 1.2.9 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The WooCommerce Reviews Plugin with Multi-criteria Rating by ReviewX plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions before 1.2.9. This is due to missing nonce validation in the ~/app/Controllers/Storefront/ReviewxPublic.php file. This makes it possible for unauthenticated attackers to perform unauthorized AJAX actions via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6c3032ae-eb86-47d0-b160-320a67a380e1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/reviewx/"
+    google-query: inurl:"/wp-content/plugins/reviewx/"
+    shodan-query: 'http.html:"wp-content/plugins/reviewx/"'
+  tags: cve,wordpress,wp-plugin,reviewx,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/reviewx/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "reviewx"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.9')

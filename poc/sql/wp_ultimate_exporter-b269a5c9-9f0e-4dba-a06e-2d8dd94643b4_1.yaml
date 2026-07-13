@@ -1,0 +1,59 @@
+id: wp_ultimate_exporter-b269a5c9-9f0e-4dba-a06e-2d8dd94643b4
+
+info:
+  name: >
+    WP Ultimate Exporter < 1.1 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Ultimate Exporter plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘export_name’ and 'export_post_type_name' parameters in versions before 1.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b269a5c9-9f0e-4dba-a06e-2d8dd94643b4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-ultimate-exporter/"
+    google-query: inurl:"/wp-content/plugins/wp-ultimate-exporter/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-ultimate-exporter/"'
+  tags: cve,wordpress,wp-plugin,wp-ultimate-exporter,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-ultimate-exporter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-ultimate-exporter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.1')

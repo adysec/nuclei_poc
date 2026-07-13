@@ -1,0 +1,59 @@
+id: mabel_shoppable_images_lite-413b2b38-44f2-4756-b66d-b6544c7ecaa2
+
+info:
+  name: >
+    Shoppable Images Lite <= 1.2.3 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Shoppable Images Liteplugin for WordPress is vulnerable to unauthorized disclosure and modification of data in versions up to, and including, 1.2.3. This is due to missing or incorrect nonce validation on several functions used to manipulate images. This makes it possible for unauthenticated attackers to perform image manipulation tasks such as deletion, which can also be leveraged to delete arbitrary posts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/413b2b38-44f2-4756-b66d-b6544c7ecaa2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mabel-shoppable-images-lite/"
+    google-query: inurl:"/wp-content/plugins/mabel-shoppable-images-lite/"
+    shodan-query: 'http.html:"wp-content/plugins/mabel-shoppable-images-lite/"'
+  tags: cve,wordpress,wp-plugin,mabel-shoppable-images-lite,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mabel-shoppable-images-lite/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mabel-shoppable-images-lite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.3')

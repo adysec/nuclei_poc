@@ -1,0 +1,59 @@
+id: fluid_responsive_slideshow-cc910c27-d83c-4f3d-b491-f3e169d8f25f
+
+info:
+  name: >
+    Fluid Responsive Slideshow < 2.2.7 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Fluid Responsive Slideshow plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.2.6. This is due to missing or incorrect nonce validation on the frst_save() function. This makes it possible for unauthenticated attackers to edit content on all pages and posts via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cc910c27-d83c-4f3d-b491-f3e169d8f25f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fluid-responsive-slideshow/"
+    google-query: inurl:"/wp-content/plugins/fluid-responsive-slideshow/"
+    shodan-query: 'http.html:"wp-content/plugins/fluid-responsive-slideshow/"'
+  tags: cve,wordpress,wp-plugin,fluid-responsive-slideshow,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fluid-responsive-slideshow/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fluid-responsive-slideshow"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.2.7')

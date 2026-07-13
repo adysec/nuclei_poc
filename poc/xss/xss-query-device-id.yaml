@@ -1,0 +1,26 @@
+id: xss-query-device-id
+
+info:
+  name: XSS in Query Parameter "device_id"
+  author: thanhnx1
+  severity: medium
+  description: |
+    Detects potential XSS vulnerabilities in the "device_id" query parameter.
+    Sends a malicious payload and checks for its reflection in the response.
+  tags: xss, query-parameter, injection
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}?device_id=wrkektxa%3A%27%22+wrkektxa%3D%3E--%3E%3C%2Fnoscript%3E%3C%2Fstyle%3E%3C%2Fscript%3E%3C%2Fiframe%3E%3C%2Ftitle%3E%3C%2Ftextarea%3E%3Cwrkektxa%3E"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "wrkektxa" # Payload identifier in the response body
+      - type: word
+        part: header
+        words:
+          - "text/html" # Ensure the response is HTML content

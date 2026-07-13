@@ -1,6 +1,6 @@
 //! POC feature extraction & multi-factor similarity scoring.
 //!
-//! Extracted from the step-9 advanced dedup pipeline so every stage can reuse
+//! Extracted from the advanced dedup pipeline so every stage can reuse
 //! the same parsing, scoring, and comparison logic.
 
 use crate::core::{hash, yaml};

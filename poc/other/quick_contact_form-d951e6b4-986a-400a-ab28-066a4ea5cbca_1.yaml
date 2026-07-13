@@ -1,0 +1,59 @@
+id: quick_contact_form-d951e6b4-986a-400a-ab28-066a4ea5cbca
+
+info:
+  name: >
+    Quick Contact Form < 6.1 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Quick Contact Form plugin for WordPress is vulnerable to Cross-Site Scripting via the 'qcfname4' parameter in versions before 6.1 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d951e6b4-986a-400a-ab28-066a4ea5cbca?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/quick-contact-form/"
+    google-query: inurl:"/wp-content/plugins/quick-contact-form/"
+    shodan-query: 'http.html:"wp-content/plugins/quick-contact-form/"'
+  tags: cve,wordpress,wp-plugin,quick-contact-form,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/quick-contact-form/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "quick-contact-form"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 6.1')

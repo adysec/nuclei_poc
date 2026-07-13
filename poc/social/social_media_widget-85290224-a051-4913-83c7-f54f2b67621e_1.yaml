@@ -1,0 +1,59 @@
+id: social_media_widget-85290224-a051-4913-83c7-f54f2b67621e
+
+info:
+  name: >
+    Social Media Widget 4.0 - Spam Link Injection
+  author: topscoder
+  severity: medium
+  description: >
+    The Social Media Widget plugin for WordPress is vulnerable to Spam Link Injection in version 4.0. This is due to a hidden call to an external link which makes it possible for spam to be injected into the affected site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/85290224-a051-4913-83c7-f54f2b67621e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/social-media-widget/"
+    google-query: inurl:"/wp-content/plugins/social-media-widget/"
+    shodan-query: 'http.html:"wp-content/plugins/social-media-widget/"'
+  tags: cve,wordpress,wp-plugin,social-media-widget,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/social-media-widget/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "social-media-widget"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '4.0')

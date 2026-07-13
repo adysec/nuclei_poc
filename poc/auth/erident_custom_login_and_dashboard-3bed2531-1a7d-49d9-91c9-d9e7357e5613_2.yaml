@@ -1,0 +1,59 @@
+id: erident_custom_login_and_dashboard-3bed2531-1a7d-49d9-91c9-d9e7357e5613
+
+info:
+  name: >
+    Erident Custom Login & Dashboard <= 3.4.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Erident Custom Login & Dashboard plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 3.4.1. This is due to missing or incorrect nonce validation in the 'erident-custom-login-and-dashboard/trunk/er-custom-login.php' file. This makes it possible for unauthenticated attackers to modify the plugin's settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3bed2531-1a7d-49d9-91c9-d9e7357e5613?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/erident-custom-login-and-dashboard/"
+    google-query: inurl:"/wp-content/plugins/erident-custom-login-and-dashboard/"
+    shodan-query: 'http.html:"wp-content/plugins/erident-custom-login-and-dashboard/"'
+  tags: cve,wordpress,wp-plugin,erident-custom-login-and-dashboard,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/erident-custom-login-and-dashboard/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "erident-custom-login-and-dashboard"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.4.1')

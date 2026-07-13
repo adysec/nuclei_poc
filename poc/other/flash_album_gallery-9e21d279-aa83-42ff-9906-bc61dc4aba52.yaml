@@ -1,0 +1,59 @@
+id: flash_album_gallery-9e21d279-aa83-42ff-9906-bc61dc4aba52
+
+info:
+  name: >
+    Album and Image Gallery with Lightbox – Flagallery Photo Portfolio <= 2.00 - Arbitrary File Modification
+  author: topscoder
+  severity: low
+  description: >
+    The Album and Image Gallery with Lightbox – Flagallery Photo Portfolio plugin for WordPress is vulnerable to arbitrary file modification in versions up to, and including, 2.00. This is due to unsanitized user input on the 'settingsXML', and 'mainXML' parameters in the admin/skin_options.php file, and the 'skin_name' and 'mainXML' parameters in the lib/constructor.php file. This makes it possible for authenticated attackers, with administrator-level permissions and above, to prepend content to any file on the system, which can lead to remote code execution.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9e21d279-aa83-42ff-9906-bc61dc4aba52?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 4.9
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/flash-album-gallery/"
+    google-query: inurl:"/wp-content/plugins/flash-album-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/flash-album-gallery/"'
+  tags: cve,wordpress,wp-plugin,flash-album-gallery,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/flash-album-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "flash-album-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.00')

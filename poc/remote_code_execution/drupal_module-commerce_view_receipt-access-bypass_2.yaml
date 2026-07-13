@@ -1,0 +1,53 @@
+
+id: drupal_module-commerce_view_receipt-access-bypass
+info:
+  name: drupal_module-commerce_view_receipt-access-bypass
+  author: me
+  severity: medium
+  description: "The Commerce View Receipts module enables you to view commerce order receipts in the browser. The module doesnt sufficiently check access permissions, allowing an unauthorised user to view the private information of other customers."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-021
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:None/A:User/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/commerce_view_receipt/"
+    google-query: "inurl:'/sites/all/modules/commerce_view_receipt/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/commerce_view_receipt/commerce_view_receipt.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'commerce_view_receipt'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 1.0.3')

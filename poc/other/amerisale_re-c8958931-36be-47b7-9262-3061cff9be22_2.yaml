@@ -1,0 +1,59 @@
+id: amerisale_re-c8958931-36be-47b7-9262-3061cff9be22
+
+info:
+  name: >
+    Amerisale-Re (All Versions) - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Amerisale-Re plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'edit' parameter in the 'netriesdetail/upload.php' file due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c8958931-36be-47b7-9262-3061cff9be22?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/amerisale-re/"
+    google-query: inurl:"/wp-content/plugins/amerisale-re/"
+    shodan-query: 'http.html:"wp-content/plugins/amerisale-re/"'
+  tags: cve,wordpress,wp-plugin,amerisale-re,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/amerisale-re/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "amerisale-re"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

@@ -1,0 +1,59 @@
+id: simple_social_buttons-1bda01a0-e995-4642-81e3-4a72e6754af6
+
+info:
+  name: >
+    Simple Social Media Share Buttons 2.0.4 - 2.0.21 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Simple Social Media Share Buttons plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the download(), import(), and download_help() functions in versions 2.0.4 - 2.0.21. This makes it possible for authenticated attackers with minimal permissions, such as a subscriber, to update arbitrary options on the site that can be used to register a new administrative user account.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1bda01a0-e995-4642-81e3-4a72e6754af6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/simple-social-buttons/"
+    google-query: inurl:"/wp-content/plugins/simple-social-buttons/"
+    shodan-query: 'http.html:"wp-content/plugins/simple-social-buttons/"'
+  tags: cve,wordpress,wp-plugin,simple-social-buttons,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-social-buttons/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "simple-social-buttons"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 2.0.4', '<= 2.0.21')

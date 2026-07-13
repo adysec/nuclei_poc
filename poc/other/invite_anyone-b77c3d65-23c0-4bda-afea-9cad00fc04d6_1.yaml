@@ -1,0 +1,59 @@
+id: invite_anyone-b77c3d65-23c0-4bda-afea-9cad00fc04d6
+
+info:
+  name: >
+    Invite Anyone <= 1.3.18 - PHP Object Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Invite Anyone plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 1.3.18 via deserialization of untrusted input from the 'invite-anyone/trunk/by-email/by-email.php' file. This allows unauthenticated attackers to inject a PHP Object.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b77c3d65-23c0-4bda-afea-9cad00fc04d6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/invite-anyone/"
+    google-query: inurl:"/wp-content/plugins/invite-anyone/"
+    shodan-query: 'http.html:"wp-content/plugins/invite-anyone/"'
+  tags: cve,wordpress,wp-plugin,invite-anyone,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/invite-anyone/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "invite-anyone"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.18')

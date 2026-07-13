@@ -1,0 +1,54 @@
+# gap: spring-actuator-mappings-exposed
+id: spring-actuator-mappings-exposed
+
+info:
+  name: Spring Boot Actuator /mappings Endpoint Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed Spring Boot Actuator /mappings endpoint that lists
+    every DispatcherServlet handler mapping with its method, predicate,
+    produces/consumes media types, and target controller class. This is a
+    full route inventory of the application, including internal admin
+    controllers, debug endpoints, and feature-flagged paths the developer
+    never intended to expose. Mappings is the standard reconnaissance step
+    before targeting Spring Data REST, Spring MVC SpEL sinks, and
+    deserialization endpoints surfaced by other actuator findings.
+    Family detection — replays on any Spring Boot build where the
+    endpoint is reachable, not a single CVE.
+  reference:
+    - https://docs.spring.io/spring-boot/docs/current/actuator-api/htmlsingle/#mappings
+  tags: custom,exposures,spring,spring-boot,actuator,mappings,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/actuator/mappings"
+      - "{{BaseURL}}/mappings"
+      - "{{BaseURL}}/api/actuator/mappings"
+      - "{{BaseURL}}/management/mappings"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/vnd.spring-boot.actuator"
+          - "application/json"
+        condition: or
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "\"dispatcherservlets\"") || contains(tolower(body), "\"handlermappings\"")'
+          - 'contains(tolower(body), "\"handler\"") && contains(tolower(body), "\"predicate\"") && contains(tolower(body), "\"produces\"")'
+        condition: or
+    extractors:
+      - type: regex
+        part: body
+        name: handler_paths
+        group: 1
+        regex:
+          - '"predicate"\s*:\s*"([^"]+)"'

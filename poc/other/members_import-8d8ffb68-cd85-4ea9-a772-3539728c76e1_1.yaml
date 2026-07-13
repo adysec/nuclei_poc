@@ -1,0 +1,59 @@
+id: members_import-8d8ffb68-cd85-4ea9-a772-3539728c76e1
+
+info:
+  name: >
+    Members Import <= 1.3 - Cross-Site Request Forgery to User Import and Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Members Import for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.3. This is due to missing or incorrect nonce validation on the memberimport_page function. This makes it possible for unauthenticated attackers to import new users or inject malicious JavaScript, via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8d8ffb68-cd85-4ea9-a772-3539728c76e1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/members-import/"
+    google-query: inurl:"/wp-content/plugins/members-import/"
+    shodan-query: 'http.html:"wp-content/plugins/members-import/"'
+  tags: cve,wordpress,wp-plugin,members-import,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/members-import/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "members-import"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3')

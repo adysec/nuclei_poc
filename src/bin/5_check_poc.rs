@@ -1,37 +1,42 @@
+//! POC 校验 — 三阶段流水线异步加速版
+//!
+//! Phase 0: Auto-fix + SHA256 去重（高 I/O 并发, Semaphore=jobs）
+//! Phase 1: nuclei 批量结构校验（每批 N 个文件共享一次进程启动）
+//! Phase 2: nuclei 单文件运行时校验（高进程并发, Semaphore=jobs*8）
+//!
+//! 相比旧版逐文件启动 nuclei 进程，批量校验可减少 99%+ 的进程创建开销。
+
 use nuclei_poc::core::{hash, yaml};
+use std::collections::HashSet;
 use std::fs;
+use std::os::unix::fs as unix_fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use walkdir::WalkDir;
 use clap::Parser;
-use tokio::fs as tokio_fs;
 use tokio::sync::Semaphore;
-use std::sync::Arc;
-use futures::stream::{FuturesUnordered, StreamExt};
+use futures::stream::StreamExt;
 use tracing::{error, warn, info};
-use dashmap::DashMap;
 
-// 默认目录
+// ── 常量 ─────────────────────────────────────────────────────────
+
 const DEFAULT_POC_DIR: &str = "poc";
 const DEFAULT_TMP_DIR: &str = "tmp";
-
-/// Directory for files that fail nuclei validation — kept for manual review
-/// instead of being deleted.
 const REVIEW_DIR: &str = "poc_needs_review";
+const BATCH_TMP: &str = "tmp_nuclei_batches";
+const DEFAULT_BATCH_SIZE: usize = 500;
+
+// ── 工具函数 ─────────────────────────────────────────────────────
 
 fn ensure_dir(path: &str) -> anyhow::Result<()> {
     fs::create_dir_all(path)?;
     Ok(())
 }
 
-/// Move a file that failed nuclei validation to the review directory instead
-/// of deleting it.  Keeps the original directory structure for traceability.
 fn move_to_review(src: &Path, review_dir: &str) -> anyhow::Result<()> {
-    // Preserve relative path under review_dir so we know where it came from.
-    // Strip the tmp/ prefix if present, otherwise use the full path.
-    let rel = src
-        .strip_prefix("tmp")
-        .unwrap_or(src);
+    let rel = src.strip_prefix("tmp").unwrap_or(src);
     let dest = Path::new(review_dir).join(rel);
     if let Some(parent) = dest.parent() {
         fs::create_dir_all(parent)?;
@@ -40,21 +45,20 @@ fn move_to_review(src: &Path, review_dir: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn move_file_blocking(src: &Path, dest: &Path) -> anyhow::Result<()> {
+fn move_file_dedup(src: &Path, dest: &Path) -> anyhow::Result<()> {
     if let Some(parent) = dest.parent() {
         fs::create_dir_all(parent)?;
     }
     let mut final_dest = dest.to_path_buf();
     if final_dest.exists() {
-        // append counter
-        let mut counter = 1;
-        let file_stem = dest.file_stem().and_then(|s| s.to_str()).unwrap_or("file");
+        let stem = dest.file_stem().and_then(|s| s.to_str()).unwrap_or("file");
         let ext = dest.extension().and_then(|s| s.to_str()).unwrap_or("");
+        let mut counter = 1u32;
         loop {
             let name = if ext.is_empty() {
-                format!("{}_{}", file_stem, counter)
+                format!("{}_{}", stem, counter)
             } else {
-                format!("{}_{}.{}", file_stem, counter, ext)
+                format!("{}_{}.{}", stem, counter, ext)
             };
             final_dest = dest.with_file_name(name);
             if !final_dest.exists() {
@@ -63,12 +67,35 @@ fn move_file_blocking(src: &Path, dest: &Path) -> anyhow::Result<()> {
             counter += 1;
         }
     }
-    fs::rename(src, final_dest)?;
-    println!("POC 校验成功，已移动文件: {:?} -> {:?}", src, dest);
+    fs::rename(src, &final_dest)?;
     Ok(())
 }
 
+/// 从 nuclei 错误输出中提取失败的文件名
+fn parse_failed_filenames(err_output: &str) -> HashSet<String> {
+    let mut failed = HashSet::new();
+    for line in err_output.lines() {
+        let trimmed = line.trim();
+        if trimmed.contains("FTL") || trimmed.contains("ERR") || trimmed.contains("Error") {
+            for quote in ['\'', '"'] {
+                let mut start = 0usize;
+                while let Some(pos) = trimmed[start..].find(quote) {
+                    let abs = start + pos + 1;
+                    if let Some(end) = trimmed[abs..].find(quote) {
+                        let fname = &trimmed[abs..abs + end];
+                        if fname.ends_with(".yaml") || fname.ends_with(".yml") {
+                            failed.insert(fname.to_string());
+                        }
+                    }
+                    start = abs + 1;
+                }
+            }
+        }
+    }
+    failed
+}
 
+// ── CLI ───────────────────────────────────────────────────────────
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -84,35 +111,51 @@ struct Args {
     timeout_secs: u64,
     #[clap(long, default_value_t = 120u64)]
     per_file_timeout_secs: u64,
+    /// 批量校验每批文件数（0=不批量，逐文件校验）
+    #[clap(long, default_value_t = DEFAULT_BATCH_SIZE)]
+    batch_size: usize,
 }
+
+// ── main / runtime ────────────────────────────────────────────────
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let jobs_final = if args.jobs == 0 { let n = num_cpus::get(); if n==0 {1} else {n} } else { args.jobs };
-    let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(jobs_final).enable_all().build()?;
-    return rt.block_on(async_main(args, jobs_final));
+    let jobs = if args.jobs == 0 { num_cpus::get().max(1) } else { args.jobs };
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(jobs)
+        .enable_all()
+        .build()?;
+    rt.block_on(async_main(args, jobs))
 }
 
-async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
+async fn async_main(args: Args, jobs: usize) -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
-    let poc_dir = args.poc_dir.as_str();
-    let tmp_dir = args.tmp_dir.as_str();
-    let nuclei_bin = args.nuclei_bin.as_str();
-    let jobs = jobs_final;
-    let timeout_secs = args.timeout_secs;
-    let per_file_timeout_secs = args.per_file_timeout_secs;
-    let skip_nuclei_check = !Path::new(nuclei_bin).exists();
-    if skip_nuclei_check {
-        warn!("nuclei binary not found at '{}', skipping validation (files will be moved without validation)", nuclei_bin);
+
+    let poc_dir = &args.poc_dir;
+    let tmp_dir = &args.tmp_dir;
+    let nuclei_bin = &args.nuclei_bin;
+    let per_file_timeout = Duration::from_secs(args.per_file_timeout_secs);
+    let total_timeout = Duration::from_secs(args.timeout_secs);
+    let skip_nuclei = !Path::new(nuclei_bin).exists();
+
+    if skip_nuclei {
+        warn!("nuclei binary not found at '{}', skipping validation", nuclei_bin);
     }
-    info!("Starting POC check: jobs={}, timeout_secs={}, per_file_timeout_secs={}", jobs, timeout_secs, per_file_timeout_secs);
+
+    info!(
+        "POC check start: jobs={}, batch_size={}, timeout={}s, per_file={}s",
+        jobs, args.batch_size, args.timeout_secs, args.per_file_timeout_secs
+    );
 
     ensure_dir(poc_dir)?;
+    ensure_dir(REVIEW_DIR)?;
+
     if !Path::new(tmp_dir).exists() {
         println!("tmp/ 目录不存在，退出。");
         return Ok(());
     }
 
+    // 收集 YAML 文件
     let mut yaml_files: Vec<PathBuf> = vec![];
     for entry in WalkDir::new(tmp_dir).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
@@ -122,124 +165,365 @@ async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
             }
         }
     }
-    if yaml_files.is_empty() {
+
+    let total_input = yaml_files.len();
+    if total_input == 0 {
         fs::remove_dir_all(tmp_dir).ok();
-        println!("tmp/ 目录已删除。");
+        println!("tmp/ 目录为空，已删除。");
         return Ok(());
     }
 
+    println!("共发现 {} 个 YAML 文件，开始三阶段校验…\n", total_input);
     let start = Instant::now();
-    let processed_files_hash: Arc<DashMap<String, PathBuf>> = Arc::new(DashMap::new());
-    let sem = Arc::new(Semaphore::new(jobs));
-    let mut tasks = FuturesUnordered::new();
 
-    for file_path in yaml_files {
-        if start.elapsed() >= Duration::from_secs(timeout_secs) {
-            println!("运行时间已超过 {} 秒，强制退出。", timeout_secs);
-            break;
-        }
-        let sem_clone = sem.clone();
-        let per_file_timeout_secs_local = per_file_timeout_secs;
-        let df = file_path.clone();
-        let nuclei_bin = nuclei_bin.to_string();
-        let skip_check_local = skip_nuclei_check;
-        let poc_dir = poc_dir.to_string();
-        let tmp_dir = tmp_dir.to_string();
-        let pach = processed_files_hash.clone();
-        let task = tokio::spawn(async move {
-            // limit parallelism
-            let _permit = sem_clone.acquire_owned().await.unwrap();
-            // compute hash in blocking thread
-            let df_hash = df.clone();
-            let file_hash = tokio::task::spawn_blocking(move || hash::hash_file(&df_hash)).await??;
-            // check duplicates (exact hash match → safe to remove)
-            if pach.contains_key(&file_hash) {
-                let df_rm = df.clone();
-                let _ = tokio::task::spawn_blocking(move || {
-                    if df_rm.exists() { fs::remove_file(&df_rm)?; }
-                    Ok::<_, anyhow::Error>(())
-                }).await?;
-                return Ok::<(), anyhow::Error>(());
+    // ══════════════════════════════════════════════════════════════
+    // Phase 0: Auto-fix + SHA256 去重（高 I/O 并发，无 nuclei）
+    // ══════════════════════════════════════════════════════════════
+    println!("[Phase 0] Auto-fix + SHA256 去重 (并发={})…", jobs);
+    let io_sem = Arc::new(Semaphore::new(jobs));
+
+    let total = total_input;
+    let processed: Arc<tokio::sync::Mutex<HashSet<String>>> =
+        Arc::new(tokio::sync::Mutex::new(HashSet::with_capacity(total)));
+    let dups = AtomicU64::new(0);
+    let fixed = AtomicU64::new(0);
+    let mut survivors = Vec::with_capacity(total);
+
+    let stream = futures::stream::iter(yaml_files.into_iter().enumerate().map(|(i, f)| {
+        let io_sem = io_sem.clone();
+        let processed = processed.clone();
+        let dups = &dups;
+        let fixed = &fixed;
+        async move {
+            let _permit = io_sem.acquire_owned().await.unwrap();
+            if i > 0 && i % 50000 == 0 {
+                println!("  Phase 0 进度: {}/{}", i, total);
             }
 
-            // --- Apply auto-fix BEFORE nuclei validation ---
-            // Fixes severity casing, empty severity, CVE/CNVD ID spacing.
-            // This turns fixable failures into successes instead of
-            // unnecessarily quarantining the file.
-            let df_fix = df.clone();
+            let f_hash = f.clone();
+            let file_hash = tokio::task::spawn_blocking(move || hash::hash_file(&f_hash))
+                .await.unwrap()?;
+
+            let mut map = processed.lock().await;
+            if map.contains(&file_hash) {
+                drop(map);
+                let f_rm = f.clone();
+                let _ = tokio::task::spawn_blocking(move || {
+                    if f_rm.exists() { fs::remove_file(&f_rm)?; }
+                    Ok::<_, anyhow::Error>(())
+                }).await;
+                dups.fetch_add(1, Ordering::Relaxed);
+                return Ok::<_, anyhow::Error>(None);
+            }
+            map.insert(file_hash);
+            drop(map);
+
+            let f_fix = f.clone();
             let fix_stats = tokio::task::spawn_blocking(move || -> anyhow::Result<yaml::FixStats> {
-                let content = fs::read_to_string(&df_fix)?;
+                let content = fs::read_to_string(&f_fix)?;
                 let (fixed_content, stats) = yaml::auto_fix_poc(&content);
                 if stats.total_fixed > 0 {
-                    fs::write(&df_fix, fixed_content.as_bytes())?;
+                    fs::write(&f_fix, fixed_content.as_bytes())?;
                 }
                 Ok(stats)
             }).await??;
             if fix_stats.total_fixed > 0 {
-                info!("auto-fixed {:?}: {:?}", df.file_name(), fix_stats);
+                fixed.fetch_add(1, Ordering::Relaxed);
             }
 
-            // validate yaml (blocking)
-            let df_check = df.clone();
-            let nuclei_bin_check = nuclei_bin.clone();
-            // use async tokio::process::Command to run nuclei and capture output with timeout
-            let check_fut = async move {
-                if skip_check_local { return Ok(true); }
-                let mut cmd = tokio::process::Command::new(&nuclei_bin_check);
-                cmd.arg("-t").arg(&df_check).arg("-silent");
-                // capture output
-                match cmd.output().await {
-                    Ok(output) => {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        Ok(!stdout.contains("FTL") && !stderr.contains("FTL"))
-                    }
-                    Err(e) => Err(anyhow::anyhow!("nuclei command error: {}", e)),
-                }
-            };
-            let per_file_timeout = Duration::from_secs(per_file_timeout_secs_local);
-            let valid = match tokio::time::timeout(per_file_timeout, check_fut).await {
-                Ok(Ok(v)) => v,
-                Ok(Err(e)) => {
-                    warn!("nuclei check error: {}", e);
-                    false
-                }
-                Err(_) => {
-                    warn!("nuclei check timeout for file: {:?}", &df);
-                    false
-                }
-            };
-            if !valid {
-                let df_quarantine = df.clone();
-                let review_dir = REVIEW_DIR.to_string();
-                let _ = tokio::task::spawn_blocking(move || move_to_review(&df_quarantine, &review_dir)).await?;
-                warn!("nuclei validation failed, moved to review: {:?}", df.file_name());
-                return Ok::<(), anyhow::Error>(());
-            }
-            // insert hash and move file to poc
-            pach.insert(file_hash.clone(), df.clone());
-            let rel = df.strip_prefix(&tmp_dir).unwrap_or(&df).to_path_buf();
-            let dest_path = Path::new(&poc_dir).join(rel);
-            let df_mv = df.clone();
-            let _ = tokio::task::spawn_blocking(move || move_file_blocking(&df_mv, &dest_path)).await?;
-            Ok::<(), anyhow::Error>(())
-        });
-        tasks.push(task);
-    }
-    // collect results
-    while let Some(res) = tasks.next().await {
-        match res {
-            Ok(Ok(())) => (),
-            Ok(Err(e)) => error!("task error: {}", e),
-            Err(e) => error!("task join error: {}", e),
+            Ok(Some(f))
+        }
+    })).buffer_unordered(jobs * 2);
+
+    futures::pin_mut!(stream);
+    while let Some(result) = stream.next().await {
+        match result {
+            Ok(Some(f)) => survivors.push(f),
+            Ok(None) => {}
+            Err(e) => error!("Phase 0 error: {}", e),
+        }
+        if start.elapsed() >= total_timeout {
+            println!("全局超时，中止 Phase 0。");
+            break;
         }
     }
-    let mut rd = tokio_fs::read_dir(tmp_dir).await?;
-    if rd.next_entry().await?.is_none() {
-        tokio_fs::remove_dir_all(tmp_dir).await.ok();
-        println!("tmp/ 目录已删除。");
+
+    println!(
+        "  Phase 0 完成: 去重删除 {} 个，自动修复 {} 个，剩余 {} 个",
+        dups.load(Ordering::Relaxed),
+        fixed.load(Ordering::Relaxed),
+        survivors.len()
+    );
+
+    if survivors.is_empty() {
+        println!("所有文件均为重复，结束。");
+        return Ok(());
     }
-    println!("POC 检查完成。");
+
+    // ══════════════════════════════════════════════════════════════
+    // Phase 1: nuclei 批量结构校验
+    // ══════════════════════════════════════════════════════════════
+    let validated: Vec<PathBuf> = if skip_nuclei || args.batch_size == 0 {
+        println!("[Phase 1] nuclei 逐文件结构校验 (并发={})…", jobs);
+        phase1_individual(
+            &survivors, nuclei_bin, jobs,
+            per_file_timeout, total_timeout, &start,
+        ).await?
+    } else {
+        println!("[Phase 1] nuclei 批量结构校验 (每批 {} 个)…", args.batch_size);
+        phase1_batch(
+            &survivors, nuclei_bin, args.batch_size,
+            per_file_timeout, total_timeout, &start,
+        ).await?
+    };
+
+    println!("  Phase 1 完成: {} 个通过结构校验", validated.len());
+    if validated.is_empty() {
+        println!("无文件通过校验，结束。");
+        return Ok(());
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // Phase 2: nuclei 单文件运行时校验（高并发 Semaphore=jobs*8）
+    // ══════════════════════════════════════════════════════════════
+    let nuclei_concurrency = if skip_nuclei { jobs } else { jobs * 8 };
+    println!("[Phase 2] nuclei 单文件运行时校验 (并发={})…", nuclei_concurrency);
+    let nuclei_sem = Arc::new(Semaphore::new(nuclei_concurrency));
+
+    let passed = Arc::new(AtomicU64::new(0));
+    let failed_phase2 = Arc::new(AtomicU64::new(0));
+
+    let stream = futures::stream::iter(validated.into_iter().map(|f| {
+        let nuclei_bin = nuclei_bin.to_string();
+        let nuclei_sem = nuclei_sem.clone();
+        let passed = passed.clone();
+        let failed_phase2 = failed_phase2.clone();
+        let per_file_timeout = per_file_timeout;
+        let poc_dir = poc_dir.clone();
+        let tmp_dir_str = tmp_dir.to_string();
+        let skip_nuclei = skip_nuclei;
+
+        async move {
+            let _permit = nuclei_sem.acquire_owned().await.unwrap();
+
+            let runtime_ok = if skip_nuclei {
+                true
+            } else {
+                let df = f.clone();
+                let nb = nuclei_bin.clone();
+                let rt_fut = async move {
+                    let output = tokio::process::Command::new(&nb)
+                        .arg("-duc").arg("-silent").arg("-t").arg(&df)
+                        .output().await?;
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    Ok::<_, anyhow::Error>(!stdout.contains("FTL") && !stderr.contains("FTL"))
+                };
+                match tokio::time::timeout(per_file_timeout / 2, rt_fut).await {
+                    Ok(Ok(v)) => v,
+                    _ => false,
+                }
+            };
+
+            if runtime_ok {
+                let rel = f.strip_prefix(&tmp_dir_str).unwrap_or(&f).to_path_buf();
+                let dest = Path::new(&poc_dir).join(rel);
+                let f_mv = f.clone();
+                let _ = tokio::task::spawn_blocking(move || move_file_dedup(&f_mv, &dest)).await;
+                passed.fetch_add(1, Ordering::Relaxed);
+            } else {
+                let f_q = f.clone();
+                let review = REVIEW_DIR.to_string();
+                let _ = tokio::task::spawn_blocking(move || move_to_review(&f_q, &review)).await;
+                failed_phase2.fetch_add(1, Ordering::Relaxed);
+            }
+            Ok::<_, anyhow::Error>(())
+        }
+    })).buffer_unordered(nuclei_concurrency * 2);
+
+    futures::pin_mut!(stream);
+    while let Some(result) = stream.next().await {
+        if let Err(e) = result { error!("Phase 2 error: {}", e); }
+        if start.elapsed() >= total_timeout { println!("全局超时，中止 Phase 2。"); break; }
+    }
+
+    let pass = passed.load(Ordering::Relaxed);
+    let fail2 = failed_phase2.load(Ordering::Relaxed);
+    println!("  Phase 2 完成: 通过 {} 个, 运行时失败 {} 个", pass, fail2);
+
+    // 清理空 tmp/
+    if Path::new(tmp_dir).exists() {
+        let mut rd = tokio::fs::read_dir(tmp_dir).await?;
+        if rd.next_entry().await?.is_none() {
+            tokio::fs::remove_dir_all(tmp_dir).await.ok();
+            println!("tmp/ 目录已删除。");
+        }
+    }
+
+    let elapsed = start.elapsed();
+    println!(
+        "\n=== POC 校验完成 ===\n总输入: {}\n通过: {}\n耗时: {:.1}s",
+        total_input, pass, elapsed.as_secs_f64()
+    );
     Ok(())
 }
 
+// ── Phase 1 实现 ─────────────────────────────────────────────────
+
+async fn phase1_batch(
+    files: &[PathBuf],
+    nuclei_bin: &str,
+    batch_size: usize,
+    per_file_timeout: Duration,
+    total_timeout: Duration,
+    start: &Instant,
+) -> anyhow::Result<Vec<PathBuf>> {
+    let batch_dir = Path::new(BATCH_TMP);
+    if batch_dir.exists() { fs::remove_dir_all(batch_dir)?; }
+
+    let mut passed: Vec<PathBuf> = Vec::with_capacity(files.len());
+    let total_batches = files.len().div_ceil(batch_size);
+
+    for (bi, chunk) in files.chunks(batch_size).enumerate() {
+        if start.elapsed() >= total_timeout {
+            println!("全局超时，中止 Phase 1。");
+            break;
+        }
+        if bi % 50 == 0 || bi == total_batches - 1 {
+            println!("  Phase 1 批次: {}/{} ({} 文件/批)", bi + 1, total_batches, chunk.len());
+        }
+
+        let sub = batch_dir.join(format!("b{:06}", bi));
+        fs::create_dir_all(&sub)?;
+
+        for f in chunk {
+            let name = f.file_name().unwrap();
+            let link = sub.join(name);
+            if link.exists() {
+                let stem = f.file_stem().and_then(|s| s.to_str()).unwrap_or("file");
+                let ext = f.extension().and_then(|s| s.to_str()).unwrap_or("");
+                let mut c = 1u32;
+                loop {
+                    let alt = sub.join(if ext.is_empty() {
+                        format!("{}_{}", stem, c)
+                    } else {
+                        format!("{}_{}.{}", stem, c, ext)
+                    });
+                    if !alt.exists() { unix_fs::symlink(f, &alt)?; break; }
+                    c += 1;
+                }
+            } else {
+                unix_fs::symlink(f, &link)?;
+            }
+        }
+
+        let validate_result = tokio::time::timeout(
+            per_file_timeout * chunk.len() as u32 / 10 + Duration::from_secs(5),
+            tokio::process::Command::new(nuclei_bin)
+                .arg("-duc").arg("-validate").arg("-silent")
+                .arg("-t").arg(&sub)
+                .output(),
+        ).await;
+
+        let batch_failed: HashSet<String> = match validate_result {
+            Ok(Ok(output)) => {
+                let combined = format!(
+                    "{}{}",
+                    String::from_utf8_lossy(&output.stdout),
+                    String::from_utf8_lossy(&output.stderr)
+                );
+                if output.status.success() && combined.trim().is_empty() {
+                    HashSet::new()
+                } else {
+                    parse_failed_filenames(&combined)
+                }
+            }
+            _ => {
+                warn!("批次 {} nuclei 超时/错误，整批移至审阅", bi);
+                for f in chunk {
+                    let f_q = f.clone();
+                    let review = REVIEW_DIR.to_string();
+                    let _ = tokio::task::spawn_blocking(move || move_to_review(&f_q, &review)).await;
+                }
+                let _ = fs::remove_dir_all(&sub);
+                continue;
+            }
+        };
+
+        for f in chunk {
+            let fname = f.file_name().unwrap().to_string_lossy().into_owned();
+            if batch_failed.contains(&fname) {
+                let f_q = f.clone();
+                let review = REVIEW_DIR.to_string();
+                let _ = tokio::task::spawn_blocking(move || move_to_review(&f_q, &review)).await;
+            } else {
+                passed.push(f.clone());
+            }
+        }
+        let _ = fs::remove_dir_all(&sub);
+    }
+
+    let _ = fs::remove_dir_all(batch_dir);
+    println!("  Phase 1 统计: 通过 {}", passed.len());
+    Ok(passed)
+}
+
+/// Phase 1 逐文件模式（--batch-size 0 时使用）
+async fn phase1_individual(
+    files: &[PathBuf],
+    nuclei_bin: &str,
+    jobs: usize,
+    per_file_timeout: Duration,
+    total_timeout: Duration,
+    start: &Instant,
+) -> anyhow::Result<Vec<PathBuf>> {
+    let sem = Arc::new(Semaphore::new(jobs));
+    let passed = Arc::new(tokio::sync::Mutex::new(Vec::with_capacity(files.len())));
+
+    let stream = futures::stream::iter(files.iter().enumerate().map(|(i, f)| {
+        let sem = sem.clone();
+        let passed = passed.clone();
+        let nuclei_bin = nuclei_bin.to_string();
+        let f = f.clone();
+        async move {
+            let _permit = sem.acquire_owned().await.unwrap();
+            if i % 10000 == 0 { println!("  Phase 1 进度: {}", i); }
+
+            let df = f.clone();
+            let nb = nuclei_bin.clone();
+            let validate_ok = match tokio::time::timeout(per_file_timeout, async move {
+                let output = tokio::process::Command::new(&nb)
+                    .arg("-duc").arg("-validate").arg("-silent")
+                    .arg("-t").arg(&df)
+                    .output().await?;
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Ok::<_, anyhow::Error>(
+                    output.status.success()
+                        && !stdout.contains("FTL")
+                        && !stderr.contains("FTL"),
+                )
+            }).await {
+                Ok(Ok(v)) => v,
+                _ => false,
+            };
+
+            if validate_ok {
+                passed.lock().await.push(f.clone());
+            } else {
+                let f_q = f.clone();
+                let review = REVIEW_DIR.to_string();
+                let _ = tokio::task::spawn_blocking(move || move_to_review(&f_q, &review)).await;
+            }
+            Ok::<_, anyhow::Error>(())
+        }
+    })).buffer_unordered(jobs * 2);
+
+    futures::pin_mut!(stream);
+    while let Some(result) = stream.next().await {
+        if let Err(e) = result { error!("Phase 1 error: {}", e); }
+        if start.elapsed() >= total_timeout { break; }
+    }
+
+    Ok(passed.lock().await.clone())
+}

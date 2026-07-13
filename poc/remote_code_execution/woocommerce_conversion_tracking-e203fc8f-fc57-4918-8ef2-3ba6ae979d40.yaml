@@ -1,0 +1,59 @@
+id: woocommerce_conversion_tracking-e203fc8f-fc57-4918-8ef2-3ba6ae979d40
+
+info:
+  name: >
+    WooCommerce Conversion Tracking <= 2.0.4 - Cross-Site Request Forgery and Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The WooCommerce Conversion Tracking plugin for WordPress is vulnerable to Cross-Site Request Forgery and Cross-Site Scripting in versions up to, and including, 2.0.4 due to insufficient input sanitization and output escaping along with insufficient nonce validation on the wcct_save_settings() function. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser via a forged request.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e203fc8f-fc57-4918-8ef2-3ba6ae979d40?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-conversion-tracking/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-conversion-tracking/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-conversion-tracking/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-conversion-tracking,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-conversion-tracking/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-conversion-tracking"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.5')

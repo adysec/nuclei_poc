@@ -1,0 +1,59 @@
+id: woocommerce_exporter-a3ecc238-1f84-47fd-96b9-753d4b528c47
+
+info:
+  name: >
+    WooCommerce - Store Exporter <= 2.3.1 - CSV Injection
+  author: topscoder
+  severity: low
+  description: >
+    The WooCommerce - Store Exporter plugin for WordPress is vulnerable to CSV Injection in versions up to, and including, 2.3.1 via the Quick Export' functionality. This allows authenticated attackers to embed untrusted input into exported CSV files, which can result in code execution when these files are downloaded and opened on a local system with a vulnerable configuration.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a3ecc238-1f84-47fd-96b9-753d4b528c47?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-exporter/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-exporter/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-exporter/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-exporter,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-exporter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-exporter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3.1')

@@ -1,0 +1,59 @@
+id: robo_gallery-abdd6aaa-830e-4a79-acfb-93dc4a26f599
+
+info:
+  name: >
+    Photo Gallery, Images, Slider in Rbs Image Gallery <= 2.0.14 - Remote Code Execution
+  author: topscoder
+  severity: critical
+  description: >
+    The Photo Gallery, Images, Slider in Rbs Image Gallery plugin for WordPress is vulnerable to Remote Code Execution in versions up to, and including, 2.0.14 via the vulnerable parameter 'function' that is supplied via the wp_ajax_rbs_gallery AJAX action. This allows unauthenticated attackers to execute code on the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/abdd6aaa-830e-4a79-acfb-93dc4a26f599?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/robo-gallery/"
+    google-query: inurl:"/wp-content/plugins/robo-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/robo-gallery/"'
+  tags: cve,wordpress,wp-plugin,robo-gallery,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/robo-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "robo-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.15')

@@ -1,0 +1,59 @@
+id: dropdown_menu_widget-6c6e9884-0b60-4ea8-b042-55cf0fb6a6d0
+
+info:
+  name: >
+    Dropdown Menu Widget <= 1.9.7 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Dropdown Menu Widget plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'message' and 'error' parameters in versions up to, and including, 1.9.7 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6c6e9884-0b60-4ea8-b042-55cf0fb6a6d0?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dropdown-menu-widget/"
+    google-query: inurl:"/wp-content/plugins/dropdown-menu-widget/"
+    shodan-query: 'http.html:"wp-content/plugins/dropdown-menu-widget/"'
+  tags: cve,wordpress,wp-plugin,dropdown-menu-widget,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dropdown-menu-widget/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dropdown-menu-widget"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.7')

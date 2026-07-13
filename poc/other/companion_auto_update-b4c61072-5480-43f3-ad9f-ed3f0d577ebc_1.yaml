@@ -1,0 +1,59 @@
+id: companion_auto_update-b4c61072-5480-43f3-ad9f-ed3f0d577ebc
+
+info:
+  name: >
+    Companion Auto Update <= 3.9.2 - Authenticated (Administrator+) Stored Cross-Site Scripting via update_delay_days parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b4c61072-5480-43f3-ad9f-ed3f0d577ebc?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/companion-auto-update/"
+    google-query: inurl:"/wp-content/plugins/companion-auto-update/"
+    shodan-query: 'http.html:"wp-content/plugins/companion-auto-update/"'
+  tags: cve,wordpress,wp-plugin,companion-auto-update,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/companion-auto-update/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "companion-auto-update"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.9.2')

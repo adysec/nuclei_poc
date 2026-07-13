@@ -1,0 +1,59 @@
+id: duplicator-3762cd92-604a-4dac-a09e-6b4a08c4d804
+
+info:
+  name: >
+    Duplicator <= 0.5.14 - SQL Injection
+  author: topscoder
+  severity: high
+  description: >
+    The Duplicator plugin for WordPress is vulnerable to SQL Injection in versions up to and including 0.5.14 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3762cd92-604a-4dac-a09e-6b4a08c4d804?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/duplicator/"
+    google-query: inurl:"/wp-content/plugins/duplicator/"
+    shodan-query: 'http.html:"wp-content/plugins/duplicator/"'
+  tags: cve,wordpress,wp-plugin,duplicator,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/duplicator/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "duplicator"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.5.14')

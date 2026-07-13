@@ -1,0 +1,67 @@
+id: Symfony
+
+info:
+  name: Symfony - RCE
+  author: 1dayluo
+  severity: high
+  description: |
+    it will check if path '/_fragment' is exist,if this path exposed , then it can lead to arbitrary code execution(ACE) 
+  reference:
+    - https://medium.com/@m4cddr/how-i-got-rce-in-10-websites-26dd87441f22
+    - https://al1z4deh.medium.com/how-i-hacked-28-sites-at-once-rce-5458211048d5
+  tags: Symfony,rce
+
+
+
+
+
+requests:
+  - raw:
+    - |-
+      GET /_fragment HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: application/x-www-form-urlencoded
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+
+    matchers:
+    - type: status
+      status: 
+        - 403
+
+
+  - raw: 
+      - |-
+        GET /_fragment?_hash={{base64(sha256(secret))}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+      - |-
+        GET /_fragment?_hash={{base64(sha1(secret))}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+
+    matchers:
+    - type: status
+      status: 
+        - 403
+
+
+    payloads:
+      secret:
+        - ThisTokenIsNotSoSecretChangeIt
+        - ThisEzPlatformTokenIsNotSoSecret_PleaseChangeIt
+        - xxxxxxxaxaxaxa
+        - 97829395eda62d81f37980176ded371a
+        - YOUR_APP_SECRET
+        - 879a6adeceeccbdc835a19f7e3aad7e8
+        - some_new_secret_123
+        - f96c2d666ace1278ec4c9e2304381bc3
+        - 7d41a4acde33432b1d51eae15a301550
+        - 236cd9304bb88b11e2bb4d56108dffa8
+        - 8cfa2bd0b50b7db00e9c186be68f7ce7465123
+        
+
+    attack: pitchfork
+
+

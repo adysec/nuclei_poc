@@ -1,0 +1,59 @@
+id: user_private_files-a2c5e232-3561-43a1-bdfa-4a68f20b5889
+
+info:
+  name: >
+    Frontend File Manager & Sharing – User Private Files <= 1.1.1 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Frontend File Manager & Sharing – User Private Files plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 1.1.1. This is due to missing capability checks and nonce validation on several functions such as dpk_upvf_rmv_file(), dpk_upvf_rmv_access(), and dpk_upvf_update_doc(). This makes it possible for unauthenticated attackers to modify several settings and modify files (via deletion and settings updates).
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a2c5e232-3561-43a1-bdfa-4a68f20b5889?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/user-private-files/"
+    google-query: inurl:"/wp-content/plugins/user-private-files/"
+    shodan-query: 'http.html:"wp-content/plugins/user-private-files/"'
+  tags: cve,wordpress,wp-plugin,user-private-files,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-private-files/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "user-private-files"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.1')

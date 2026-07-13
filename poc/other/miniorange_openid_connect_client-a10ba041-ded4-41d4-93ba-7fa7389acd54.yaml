@@ -1,0 +1,59 @@
+id: miniorange_openid_connect_client-a10ba041-ded4-41d4-93ba-7fa7389acd54
+
+info:
+  name: >
+    WordPress OpenID Connect Client <= 2.1.7 - Authentication Bypass
+  author: topscoder
+  severity: critical
+  description: >
+    The WordPress OpenID Connect Client plugin for WordPress is vulnerable to authentication bypass in versions up to, and including 2.1.7. This is due to the plugin accepting a user supplied email address that is passed to wp_set_auth_cookie() with no further identity validation to verify that the email supplied belongs to the user trying to log in with that email address. This makes it possible for unauthenticated attackers to log in as a site administrator granted they have access to a site admin's email address.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a10ba041-ded4-41d4-93ba-7fa7389acd54?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/miniorange-openid-connect-client/"
+    google-query: inurl:"/wp-content/plugins/miniorange-openid-connect-client/"
+    shodan-query: 'http.html:"wp-content/plugins/miniorange-openid-connect-client/"'
+  tags: cve,wordpress,wp-plugin,miniorange-openid-connect-client,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/miniorange-openid-connect-client/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "miniorange-openid-connect-client"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.7')

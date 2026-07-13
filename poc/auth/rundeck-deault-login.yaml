@@ -1,0 +1,33 @@
+id: rundeck-deault-login
+
+info:
+  name: Rundeck Default Login
+  author: kaks3c
+  severity: critical
+  description: Login using rundeck default admin credentials.
+  reference:
+    - https://github.com/karkis3c/bugbounty/blob/main/poc/rundeck-rce.md
+
+http:
+  - method: POST
+    path:
+      - http://{{Hostname}}/j_security_check
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: j_username={{username}}&j_password={{password}}
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - '/user/error'
+          - 'grails_remember_me='
+        condition: and
+        negative: true

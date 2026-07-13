@@ -1,0 +1,59 @@
+id: memphis_documents_library-f2febf69-b146-4ca5-bfa9-f5477da5cd6c
+
+info:
+  name: >
+    Memphis Documents Library <= 3.1.5 - Arbitrary File Download
+  author: topscoder
+  severity: high
+  description: >
+    The Memphis Documents Library plugin for WordPress is vulnerable to arbitrary file downloads in versions up to, and including 3.1.5 via the 'mdocs-img-preview' parameter. This makes it possible for unauthenticated users to access and download arbitrary files on the server such as the wp-config.php file which can reveal sensitive information to an attackers.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f2febf69-b146-4ca5-bfa9-f5477da5cd6c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/memphis-documents-library/"
+    google-query: inurl:"/wp-content/plugins/memphis-documents-library/"
+    shodan-query: 'http.html:"wp-content/plugins/memphis-documents-library/"'
+  tags: cve,wordpress,wp-plugin,memphis-documents-library,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/memphis-documents-library/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "memphis-documents-library"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1.5')

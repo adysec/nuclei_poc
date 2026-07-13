@@ -1,0 +1,59 @@
+id: photolio-3e477f41-8765-472a-b48b-d381cf7de5c6
+
+info:
+  name: >
+    Photolio Theme (All Known Versions) - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Photolio Theme for WordPress is vulnerable to Reflected Cross-Site Scripting due to inclusion of a vulnerable version of jPlayer in all known versions. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3e477f41-8765-472a-b48b-d381cf7de5c6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/photolio/"
+    google-query: inurl:"/wp-content/themes/photolio/"
+    shodan-query: 'http.html:"wp-content/themes/photolio/"'
+  tags: cve,wordpress,wp-theme,photolio,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/photolio/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "photolio"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

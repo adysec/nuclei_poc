@@ -1,0 +1,59 @@
+id: hybrid_composer-1bc19bfa-ce44-4654-b074-c8126b60a155
+
+info:
+  name: >
+    Hybrid Composer <= 1.4.6 - Missing Authorization to Arbitrary Options Update
+  author: topscoder
+  severity: high
+  description: >
+    The Hybrid Composer plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the hc_ajax_save_option function in versions up to, and including, 1.4.6. This makes it possible for unauthenticated attackers to fully access and modify administrative settings/actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1bc19bfa-ce44-4654-b074-c8126b60a155?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/hybrid-composer/"
+    google-query: inurl:"/wp-content/plugins/hybrid-composer/"
+    shodan-query: 'http.html:"wp-content/plugins/hybrid-composer/"'
+  tags: cve,wordpress,wp-plugin,hybrid-composer,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hybrid-composer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "hybrid-composer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.6')

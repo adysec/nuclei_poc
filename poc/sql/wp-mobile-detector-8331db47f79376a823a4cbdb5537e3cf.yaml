@@ -1,0 +1,60 @@
+id: wp-mobile-detector-8331db47f79376a823a4cbdb5537e3cf
+
+info:
+  name: "WP Mobile Detector <= 3.5 - Arbitrary File Upload"
+  author: topscoder
+  severity: critical
+  description: "The WP Mobile Detector plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in resize.php file in versions up to, and including, 3.5. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible."
+  reference:
+    - https://blog.sucuri.net/2016/06/wp-mobile-detector-vulnerability-being-exploited-in-the-wild.html
+    - https://www.pluginvulnerabilities.com/2016/05/31/aribitrary-file-upload-vulnerability-in-wp-mobile-detector/
+    - https://wordpress.org/plugins/wp-mobile-detector/changelog/
+    - https://wpscan.com/vulnerability/e4739674-eed4-417e-8c4d-2f5351b057cf
+    - https://aadityapurani.com/2016/06/03/mobile-detector-poc/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-mobile-detector/"
+    google-query: inurl:"/wp-content/plugins/wp-mobile-detector/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-mobile-detector,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-mobile-detector/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-mobile-detector"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.5')

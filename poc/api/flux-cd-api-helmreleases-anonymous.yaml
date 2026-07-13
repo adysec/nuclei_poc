@@ -1,0 +1,72 @@
+# gap: flux-cd-api-helmreleases-anonymous
+id: flux-cd-api-helmreleases-anonymous
+
+info:
+  name: Flux CD Anonymous HelmRelease / GitRepository CRD Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Kubernetes API server proxying Flux CD CRD endpoints
+    (helm.toolkit.fluxcd.io HelmReleases, source.toolkit.fluxcd.io
+    GitRepositories, kustomize.toolkit.fluxcd.io Kustomizations)
+    reachable without an Authorization Bearer token. Class signal:
+    response carries `"kind":"HelmReleaseList"` /
+    `"kind":"GitRepositoryList"` / `"kind":"KustomizationList"` with
+    `apiVersion: *.toolkit.fluxcd.io/v*`.
+
+    Anonymous Flux CRD access leaks the entire GitOps reconcile
+    surface: source repository URLs (frequently embedding deploy-key
+    paths or carrying github.com/$ORG private-repo references), Helm
+    chart values (which routinely contain in-memory secrets via
+    .Values overrides and Sealed Secret keys), Kustomize patches
+    revealing target-cluster topology, and SOPS / AGE / KMS key
+    references that disclose the decryption-key custodian. Combined
+    with `kubernetes-api-server-anonymous-access` this chains to
+    arbitrary apply primitives where the attacker rewrites GitOps
+    state directly via the K8s API. Class detection — keys on Flux
+    CRD shapes, not vendor banner.
+  reference:
+    - https://fluxcd.io/flux/components/
+    - https://fluxcd.io/flux/concepts/
+  tags: custom,exposures,fluxcd,gitops,kubernetes,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/apis/helm.toolkit.fluxcd.io/v2/namespaces/default/helmreleases"
+      - "{{BaseURL}}/apis/helm.toolkit.fluxcd.io/v2beta1/namespaces/default/helmreleases"
+      - "{{BaseURL}}/apis/source.toolkit.fluxcd.io/v1/namespaces/default/gitrepositories"
+      - "{{BaseURL}}/apis/kustomize.toolkit.fluxcd.io/v1/namespaces/default/kustomizations"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"kind"\s*:\s*"(HelmRelease|GitRepository|Kustomization)List"'
+      - type: regex
+        part: body
+        regex:
+          - '"apiVersion"\s*:\s*"[a-z]+\.toolkit\.fluxcd\.io/v[0-9a-z]+'
+
+    extractors:
+      - type: regex
+        part: body
+        name: source-repos
+        regex:
+          - '"url"\s*:\s*"(https?://[^"]+|ssh://[^"]+|git@[^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: chart-names
+        regex:
+          - '"chart"\s*:\s*"([^"]+)"'
+        group: 1

@@ -1,0 +1,59 @@
+id: lana_email_tester-fe4171b9-b17e-4e6e-9ab4-4b1b125e8950
+
+info:
+  name: >
+    Lana Email Tester <= 1.0.0 - Missing Authorization to Mail Relay & Cross-Site Request Forgery
+  author: topscoder
+  severity: low
+  description: >
+    The Lana Email Tester plugin for WordPress is vulnerable to Cross-Site Request Forgery and unauthorized Mail Relay in versions up to, and including, 1.1.0. This is due to missing nonce validation on the lana_email_tester_send_test_wp_mail function as well as a missing capabilities check. This makes it possible for unauthenticated attackers to send emails from the site via forged request granted they can trick a site administrator into performing an action such as clicking on a link or via a properly crafted POST request to admin-post. This can also be exploited by authenticated users without requiring an administrator to perform an action.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fe4171b9-b17e-4e6e-9ab4-4b1b125e8950?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/lana-email-tester/"
+    google-query: inurl:"/wp-content/plugins/lana-email-tester/"
+    shodan-query: 'http.html:"wp-content/plugins/lana-email-tester/"'
+  tags: cve,wordpress,wp-plugin,lana-email-tester,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/lana-email-tester/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "lana-email-tester"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.0')

@@ -1,0 +1,59 @@
+id: post_meta_data_manager-1958c166-282d-4469-b79d-4e959e0492c1
+
+info:
+  name: >
+    Post Meta Data Manager <= 1.2.0 - Missing Authorization to Post, Term, and User Meta Deletion
+  author: topscoder
+  severity: high
+  description: >
+    The Post Meta Data Manager plugin for WordPress is vulnerable to unauthorized modification and loss of data due to missing capability checks on the pmdm_wp_ajax_delete_meta, pmdm_wp_delete_user_meta, and pmdm_wp_delete_user_meta functions hooked via nopriv AJAX actions in all versions up to, and including, 1.2.0. This makes it possible for unauthenticated attackers to delete arbitrary user, term, and post meta.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1958c166-282d-4469-b79d-4e959e0492c1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/post-meta-data-manager/"
+    google-query: inurl:"/wp-content/plugins/post-meta-data-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/post-meta-data-manager/"'
+  tags: cve,wordpress,wp-plugin,post-meta-data-manager,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/post-meta-data-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "post-meta-data-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.0')

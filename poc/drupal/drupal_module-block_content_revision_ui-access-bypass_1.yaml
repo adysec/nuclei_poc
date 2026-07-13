@@ -1,0 +1,55 @@
+
+id: drupal_module-block_content_revision_ui-access-bypass
+info:
+  name: drupal_module-block_content_revision_ui-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module provides a revision UI for Block Content entities. The module doesnt sufficiently respect access restrictions to certain entities when used in conjunction with specific modules. This vulnerability is mitigated by the fact that an attacker must have a role with any of the permissions provided by Block Content Revision UI, and another affected module must be enabled."
+  reference:
+    - https://www.drupal.org/sa-contrib-2021-022
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Complex/A:User/CI:Some/II:Some/E:Theoretical/TD:Uncommon"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/block_content_revision_ui/"
+    google-query: "inurl:'/sites/all/modules/block_content_revision_ui/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/block_content_revision_ui/block_content_revision_ui.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'block_content_revision_ui'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '2.127.1')
+         - compare_versions(version, '2.127.0')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

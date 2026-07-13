@@ -1,0 +1,59 @@
+id: ultimatewoo-53580b24-c0a7-4578-bb11-5952ebcacc42
+
+info:
+  name: >
+    UltimateWoo – The Ultimate WooCommerce Plugin with Unlimited Usage <= 0.1.10 - PHP Object Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The UltimateWoo plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 0.1.10 via deserialization of untrusted input from the vulnerable parameter 'opauth'. This allows attackers to inject a PHP Object. No POP chain is present in the vulnerable plugin. If a POP chain is present via an additional plugin or theme installed on the target system, it could allow the attacker to delete arbitrary files, retrieve sensitive data, or execute code.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/53580b24-c0a7-4578-bb11-5952ebcacc42?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ultimatewoo/"
+    google-query: inurl:"/wp-content/plugins/ultimatewoo/"
+    shodan-query: 'http.html:"wp-content/plugins/ultimatewoo/"'
+  tags: cve,wordpress,wp-plugin,ultimatewoo,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ultimatewoo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ultimatewoo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.1.10')

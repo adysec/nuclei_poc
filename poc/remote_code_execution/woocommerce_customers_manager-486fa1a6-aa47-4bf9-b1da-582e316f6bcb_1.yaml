@@ -1,0 +1,59 @@
+id: woocommerce_customers_manager-486fa1a6-aa47-4bf9-b1da-582e316f6bcb
+
+info:
+  name: >
+    Woocommerce Customers Manager <= 26.4 - Authenticated Account Creation and Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    The Woocommerce Customers Manager plugin for WordPress is vulnerable to authorization bypass due to a missing capability checks in the user import in versions up to, and including, 26.4. This makes it possible for Subscriber-level attackers to import arbitrary user information to create or update administrative accounts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/486fa1a6-aa47-4bf9-b1da-582e316f6bcb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-customers-manager/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-customers-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-customers-manager/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-customers-manager,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-customers-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-customers-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 26.5')

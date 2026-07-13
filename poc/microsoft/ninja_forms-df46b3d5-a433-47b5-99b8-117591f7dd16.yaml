@@ -1,0 +1,59 @@
+id: ninja_forms-df46b3d5-a433-47b5-99b8-117591f7dd16
+
+info:
+  name: >
+    Ninja Forms Contact Form – The Drag and Drop Form Builder for WordPress <= 3.6.10 - Code Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Ninja Forms Contact Form – The Drag and Drop Form Builder for WordPress plugin for WordPress is vulnerable to code injection in versions up to, and including 3.6.10 due to insufficient validation on Merge Tags that makes it possible to call arbitrary Ninja Form classes. This could lead to a variety of actions, however, one notable one is deserialization when the NF_Admin_Processes_ImportForm::startup method is called.  On sites with a POP chain this could be used to achieve remote code execution in the worst possible scenarios.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/df46b3d5-a433-47b5-99b8-117591f7dd16?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ninja-forms/"
+    google-query: inurl:"/wp-content/plugins/ninja-forms/"
+    shodan-query: 'http.html:"wp-content/plugins/ninja-forms/"'
+  tags: cve,wordpress,wp-plugin,ninja-forms,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ninja-forms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ninja-forms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 3.6', '<= 3.6.10')

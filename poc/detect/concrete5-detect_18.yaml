@@ -1,0 +1,55 @@
+id: concrete5-detect
+
+info:
+  name: Concrete5 Detection
+  author: Chirag Mistry
+  severity: info
+  description: |
+    An instance running Concrete5 is detected by looking for specific HTTP headers, HTML tags, and known endpoints.
+  metadata:
+    verified: true
+    max-request: 8
+  tags: concrete5,detect,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/index.php"
+      - "{{BaseURL}}/concrete/js/build/"
+      - "{{BaseURL}}/concrete/block/"
+      - "{{BaseURL}}/dashboard/"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Powered by Concrete5"
+          - "X-Powered-By-Concrete5"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'Concrete5 ([0-9.]+)'
+          - 'Powered by Concrete5 ([0-9.]+)'
+
+      - type: regex
+        part: body
+        name: concrete5_id
+        regex:
+          - 'concrete5-site-id=([a-z0-9]+)'
+          - 'concrete5\.org/([^/]+)'
+# digest: 4b0a00483046022100df9657c7d21ad1a3407f17d6bccfc5276673f1f94a185b15537e1b70caf0c2d2022100897e7a53c331f0a8633492620362bb0cbc4cbfc84670a03ba5744adae90f55c0:922c64590222798bb761d5b6d8e72950

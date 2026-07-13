@@ -1,0 +1,59 @@
+
+id: drupal_module-metatag-information-disclosure
+info:
+  name: drupal_module-metatag-information-disclosure
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to customize meta tags to help with a sites search engine ranking and improve the display of page summaries when shared on social networks. The module doesnt sufficiently check for a site being in maintenance mode. This vulnerability is mitigated by the fact that the site must be configured to disallow access to certain content, and must be put into maintenance mode."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-058
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:Uncommon"
+    vulnerability: "information-disclosure"
+    fofa-query: "/sites/all/modules/metatag/"
+    google-query: "inurl:'/sites/all/modules/metatag/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/metatag/metatag.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'metatag'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.8')
+         - compare_versions(version, '8.x-1.7')
+         - compare_versions(version, '8.x-1.6')
+         - compare_versions(version, '8.x-1.5')
+         - compare_versions(version, '8.x-1.4')
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

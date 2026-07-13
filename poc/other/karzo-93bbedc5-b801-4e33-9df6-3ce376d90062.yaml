@@ -1,0 +1,51 @@
+id: karzo-93bbedc5-b801-4e33-9df6-3ce376d90062
+
+info:
+  name: >
+    Karzo < 2.6 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/93bbedc5-b801-4e33-9df6-3ce376d90062?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/karzo/"
+    google-query: inurl:"/wp-content/themes/karzo/"
+    shodan-query: 'http.html:"wp-content/themes/karzo/"'
+  tags: cve,wordpress,wp-theme,karzo,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/karzo/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "karzo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.6')

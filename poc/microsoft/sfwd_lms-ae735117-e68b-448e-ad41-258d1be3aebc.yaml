@@ -1,0 +1,59 @@
+id: sfwd_lms-ae735117-e68b-448e-ad41-258d1be3aebc
+
+info:
+  name: >
+    LearnDash LMS <= 4.10.2 - Sensitive Information Exposure via API
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ae735117-e68b-448e-ad41-258d1be3aebc?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sfwd-lms/"
+    google-query: inurl:"/wp-content/plugins/sfwd-lms/"
+    shodan-query: 'http.html:"wp-content/plugins/sfwd-lms/"'
+  tags: cve,wordpress,wp-plugin,sfwd-lms,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)learndash_quiz_front.min.css\\?ver=([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)learndash_quiz_front.min.css\\?ver=([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sfwd-lms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.10.2')

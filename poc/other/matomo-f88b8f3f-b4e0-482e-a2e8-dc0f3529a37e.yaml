@@ -1,0 +1,59 @@
+id: matomo-f88b8f3f-b4e0-482e-a2e8-dc0f3529a37e
+
+info:
+  name: >
+    Matomo Analytics <= 5.1.0 - Cross-Site Request Forgery to Notice Dismissal
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f88b8f3f-b4e0-482e-a2e8-dc0f3529a37e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/matomo/"
+    google-query: inurl:"/wp-content/plugins/matomo/"
+    shodan-query: 'http.html:"wp-content/plugins/matomo/"'
+  tags: cve,wordpress,wp-plugin,matomo,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/matomo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "matomo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.1.0')

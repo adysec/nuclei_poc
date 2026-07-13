@@ -1,0 +1,59 @@
+id: wp-job-manager-de2a96378c8649334d046a951b902360
+
+info:
+  name: "WP Job Manager <= 1.29.2 - PHP Object Injection"
+  author: topscoder
+  severity: critical
+  description: "The WP Job Manager plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 1.29.2 via deserialization of untrusted input in the get_job_listings function. This allows unauthorized attackers to inject a PHP Object. The additional presence of a POP chain allows attackers to implement their own payload and/or unserialize malicious input."
+  reference:
+    - https://github.com/Automattic/WP-Job-Manager/commit/e599ba5dbd96d8eea24ff33c4f0b71879b0a57d5#diff-580ccc67d45d3769b54696bca2beb42b
+    - https://hackerone.com/reports/308489
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-wp-job-manager-php-object-injection-1-29-2/
+    - https://wpscan.com/vulnerability/3c520e91-c686-4cc3-93c3-823f6a60969c
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-job-manager/"
+    google-query: inurl:"/wp-content/plugins/wp-job-manager/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-job-manager,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-job-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-job-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.29.2')

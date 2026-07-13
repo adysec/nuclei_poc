@@ -1,0 +1,59 @@
+id: netroics_blog_posts_grid-d67d5662-0cc7-4b14-a50b-15158f6e4239
+
+info:
+  name: >
+    Netroics Blog Posts Grid <= 1.0 - Authenticated (Subscriber+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Netroics Blog Posts Grid plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘title’ parameter in versions up to, and including, 1.0  due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d67d5662-0cc7-4b14-a50b-15158f6e4239?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/netroics-blog-posts-grid/"
+    google-query: inurl:"/wp-content/plugins/netroics-blog-posts-grid/"
+    shodan-query: 'http.html:"wp-content/plugins/netroics-blog-posts-grid/"'
+  tags: cve,wordpress,wp-plugin,netroics-blog-posts-grid,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/netroics-blog-posts-grid/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "netroics-blog-posts-grid"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

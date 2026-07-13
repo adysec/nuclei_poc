@@ -1,0 +1,59 @@
+id: knews-f52d5c44-4a5e-4a45-b622-66aa4e509fd8
+
+info:
+  name: >
+    Knews Multilingual Newsletters < 1.2.6 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Knews Multilingual Newsletters plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.2.5. This is due to missing or incorrect nonce validation on the several functions. This makes it possible for unauthenticated attackers to inject SQL queries via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f52d5c44-4a5e-4a45-b622-66aa4e509fd8?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/knews/"
+    google-query: inurl:"/wp-content/plugins/knews/"
+    shodan-query: 'http.html:"wp-content/plugins/knews/"'
+  tags: cve,wordpress,wp-plugin,knews,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/knews/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "knews"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.2.6')

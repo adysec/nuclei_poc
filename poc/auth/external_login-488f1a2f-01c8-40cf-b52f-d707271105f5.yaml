@@ -1,0 +1,59 @@
+id: external_login-488f1a2f-01c8-40cf-b52f-d707271105f5
+
+info:
+  name: >
+    External Login <= 1.11.2 - Unauthenticated SQL Injection via log
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/488f1a2f-01c8-40cf-b52f-d707271105f5?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/external-login/"
+    google-query: inurl:"/wp-content/plugins/external-login/"
+    shodan-query: 'http.html:"wp-content/plugins/external-login/"'
+  tags: cve,wordpress,wp-plugin,external-login,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/external-login/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "external-login"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.11.2')

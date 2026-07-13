@@ -1,0 +1,59 @@
+id: running_line-7b6557de-fd4f-4172-ad7d-940f9f3ea2db
+
+info:
+  name: >
+    Running Line <= 1.2 - Cross-Site Request Forgery to Settings Update
+  author: topscoder
+  severity: medium
+  description: >
+    The Running Line plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including 1.2 due to missing nonce validation on the running_line_admin() function. This makes it possible for unauthenticated attackers to modify the plugin's settings and potentially inject malicious web scripts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7b6557de-fd4f-4172-ad7d-940f9f3ea2db?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/running-line/"
+    google-query: inurl:"/wp-content/plugins/running-line/"
+    shodan-query: 'http.html:"wp-content/plugins/running-line/"'
+  tags: cve,wordpress,wp-plugin,running-line,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/running-line/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "running-line"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2')

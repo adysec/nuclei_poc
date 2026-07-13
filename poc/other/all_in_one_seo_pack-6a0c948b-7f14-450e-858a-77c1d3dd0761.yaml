@@ -1,0 +1,59 @@
+id: all_in_one_seo_pack-6a0c948b-7f14-450e-858a-77c1d3dd0761
+
+info:
+  name: >
+    All in One SEO <= 2.9.1.1 - Authenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The All in One SEO plugin for WordPress is vulnerable to stored Cross-Site Scripting in versions up to, and including 2.9.1.1, via post meta values. This makes it possible for attackers with Contributor level permissions and above to inject arbitrary web scripts in administrative pages that execute whenever a user accesses the page with the stored web scripts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6a0c948b-7f14-450e-858a-77c1d3dd0761?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/all-in-one-seo-pack/"
+    google-query: inurl:"/wp-content/plugins/all-in-one-seo-pack/"
+    shodan-query: 'http.html:"wp-content/plugins/all-in-one-seo-pack/"'
+  tags: cve,wordpress,wp-plugin,all-in-one-seo-pack,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/all-in-one-seo-pack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "all-in-one-seo-pack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.10')

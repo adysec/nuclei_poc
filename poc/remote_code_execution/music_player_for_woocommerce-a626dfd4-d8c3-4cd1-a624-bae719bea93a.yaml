@@ -1,0 +1,59 @@
+id: music_player_for_woocommerce-a626dfd4-d8c3-4cd1-a624-bae719bea93a
+
+info:
+  name: >
+    Music Player for WooCommerce <= 1.0.172 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Music Player for WooCommerce plugin for WordPress is vulnerable to Stored Cross-Site Scripting several parameters in versions up to, and including, 1.0.172  due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a626dfd4-d8c3-4cd1-a624-bae719bea93a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 6.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/music-player-for-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/music-player-for-woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/music-player-for-woocommerce/"'
+  tags: cve,wordpress,wp-plugin,music-player-for-woocommerce,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/music-player-for-woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "music-player-for-woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.172')

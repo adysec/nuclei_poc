@@ -1,0 +1,59 @@
+id: hide_admin_bar_based_on_user_roles-8ea0e5ae-c8b8-4782-a130-e5460a81b066
+
+info:
+  name: >
+    Hide Admin Bar Based On User Roles < 3.1.0 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Hide Admin Bar Based On User Roles plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions before 3.1.0. This is due to missing or incorrect nonce validation on the save_user_roles function. This makes it possible for unauthenticated attackers to arbitrarily change plugin settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8ea0e5ae-c8b8-4782-a130-e5460a81b066?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/hide-admin-bar-based-on-user-roles/"
+    google-query: inurl:"/wp-content/plugins/hide-admin-bar-based-on-user-roles/"
+    shodan-query: 'http.html:"wp-content/plugins/hide-admin-bar-based-on-user-roles/"'
+  tags: cve,wordpress,wp-plugin,hide-admin-bar-based-on-user-roles,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hide-admin-bar-based-on-user-roles/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "hide-admin-bar-based-on-user-roles"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.1.0')

@@ -1,0 +1,59 @@
+id: user_control-bb6cd3a6-565e-4acf-82f0-25e85f0678bb
+
+info:
+  name: >
+    User Control <= 2.1.0 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The User Control plugin for WordPress is vulnerable to generic SQL Injection via the 'users' parameter in versions up to, and including, 2.1.0 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bb6cd3a6-565e-4acf-82f0-25e85f0678bb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/user-control/"
+    google-query: inurl:"/wp-content/plugins/user-control/"
+    shodan-query: 'http.html:"wp-content/plugins/user-control/"'
+  tags: cve,wordpress,wp-plugin,user-control,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-control/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "user-control"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.0')

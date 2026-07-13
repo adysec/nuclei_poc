@@ -1,0 +1,59 @@
+id: instantio-a7f82847-433d-49b1-815d-b0d9e70068c2
+
+info:
+  name: >
+    Instantio – WooCommerce Quick Checkout | Instant Checkout, Side Cart & Popup Cart <= 1.2.5 - Cross Site Request Forgery
+  author: topscoder
+  severity: high
+  description: >
+    The Instantio – WooCommerce Quick Checkout | Instant Checkout, Side Cart & Popup Cart plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.2.5. This is due to missing or incorrect nonce validation on the instantio_lite_ajax_quickview_variable_products function. This makes it possible for unauthenticated attackers to add products to a cart via a forged request granted they can trick a site user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a7f82847-433d-49b1-815d-b0d9e70068c2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/instantio/"
+    google-query: inurl:"/wp-content/plugins/instantio/"
+    shodan-query: 'http.html:"wp-content/plugins/instantio/"'
+  tags: cve,wordpress,wp-plugin,instantio,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/instantio/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "instantio"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.5')

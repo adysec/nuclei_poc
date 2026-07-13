@@ -1,0 +1,59 @@
+id: lws_hide_login-dd02becd-77e5-46b9-acc9-dba6c5caba27
+
+info:
+  name: >
+    LWS Plugins  <= (Various Versions) - Missing Authorization Checks
+  author: topscoder
+  severity: low
+  description: >
+    Several LWS Plugins for WordPress are vulnerable to authorization bypass due to making admin settings pages available to users with read access (LWS Affiliation in versions up to, and including, 2.1; LWS Optimize in versions up to, and including, 1.5; LWS Tools in versions up to, and including, 2.1; LWS Cleaner in versions up to, and including, 2.0.3; LWS SMS in versions up to, and including, 2.1; LWS Hide Login in versions up to, and including, 2.0.2). This makes it possible for authenticated attackers, with subscriber-level permissions and above, to change plugin settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dd02becd-77e5-46b9-acc9-dba6c5caba27?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/lws-hide-login/"
+    google-query: inurl:"/wp-content/plugins/lws-hide-login/"
+    shodan-query: 'http.html:"wp-content/plugins/lws-hide-login/"'
+  tags: cve,wordpress,wp-plugin,lws-hide-login,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/lws-hide-login/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "lws-hide-login"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.2')

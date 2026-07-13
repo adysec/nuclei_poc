@@ -1,0 +1,42 @@
+# gap: owasp-wstg-conf-07-missing-hsts
+id: owasp-wstg-conf-07-missing-hsts
+
+info:
+  name: Missing HTTP Strict Transport Security Header
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects HTTPS responses served without the Strict-Transport-Security
+    response header. This template only fires for https:// targets where
+    the header is completely absent from the response, which leaves
+    browsers free to downgrade to plaintext HTTP and exposes the session
+    to network-level interception and cookie-stealing attacks on hostile
+    networks. Plain-HTTP targets are skipped because HSTS is meaningless
+    over an insecure transport.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/07-Test_HTTP_Strict_Transport_Security
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+  tags: custom,misconfig,headers,hsts,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(BaseURL, "https://")'
+      - type: status
+        status:
+          - 200
+          - 301
+          - 302
+          - 401
+          - 403
+      - type: word
+        part: header
+        case-insensitive: true
+        negative: true
+        words:
+          - "strict-transport-security"

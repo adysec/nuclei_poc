@@ -1,0 +1,59 @@
+id: wp_editor-4618c1f4-c0aa-47f5-8c0b-2cb4a021f2e0
+
+info:
+  name: >
+    WP Editor <= 1.2.9.1 - Authenticated (Administrator+) Directory Traversal to Arbitrary File Read
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4618c1f4-c0aa-47f5-8c0b-2cb4a021f2e0?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-editor/"
+    google-query: inurl:"/wp-content/plugins/wp-editor/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-editor/"'
+  tags: cve,wordpress,wp-plugin,wp-editor,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-editor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-editor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.9.1')

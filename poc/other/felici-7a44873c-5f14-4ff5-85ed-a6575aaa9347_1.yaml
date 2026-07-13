@@ -1,0 +1,59 @@
+id: felici-7a44873c-5f14-4ff5-85ed-a6575aaa9347
+
+info:
+  name: >
+    Felici (All Versions) - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Felici theme for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'uploadify.php' file. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7a44873c-5f14-4ff5-85ed-a6575aaa9347?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/felici/"
+    google-query: inurl:"/wp-content/themes/felici/"
+    shodan-query: 'http.html:"wp-content/themes/felici/"'
+  tags: cve,wordpress,wp-theme,felici,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/felici/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "felici"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

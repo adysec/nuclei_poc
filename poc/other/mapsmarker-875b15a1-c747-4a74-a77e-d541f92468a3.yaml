@@ -1,0 +1,59 @@
+id: mapsmarker-875b15a1-c747-4a74-a77e-d541f92468a3
+
+info:
+  name: >
+    Leaflet Maps Marker Pro < 1.5.8 - Path Traversal
+  author: topscoder
+  severity: high
+  description: >
+    The Maps Marker Pro plugin for WordPress is vulnerable to Path Traversal in versions up to, and including, 1.5.7. This allows unauthenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/875b15a1-c747-4a74-a77e-d541f92468a3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mapsmarker/"
+    google-query: inurl:"/wp-content/plugins/mapsmarker/"
+    shodan-query: 'http.html:"wp-content/plugins/mapsmarker/"'
+  tags: cve,wordpress,wp-plugin,mapsmarker,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mapsmarker/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mapsmarker"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.8')

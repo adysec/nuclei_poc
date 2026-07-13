@@ -1,0 +1,51 @@
+
+id: drupal_module-libraries_ui-access-bypass
+info:
+  name: drupal_module-libraries_ui-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables a UI to display all libraries provided by modules and themes on the Drupal site. The module doesnt sufficiently protect the libraries reporting page. It curently is using the access content permission and not a proper administrative/access permission. The vulnerability/library information can be exploited by simply visiting/knowing the url of the reporting page. The solution is to protect the page via a module specific permission that must be granted by an administrative user."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-027
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:None/A:None/CI:None/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/libraries_ui/"
+    google-query: "inurl:'/sites/all/modules/libraries_ui/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/libraries_ui/libraries_ui.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'libraries_ui'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.0')

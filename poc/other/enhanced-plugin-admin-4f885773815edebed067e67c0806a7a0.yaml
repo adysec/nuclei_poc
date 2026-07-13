@@ -1,0 +1,58 @@
+id: enhanced-plugin-admin-4f885773815edebed067e67c0806a7a0
+
+info:
+  name: "Enhanced Admin Plugin < 1.16 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Enhanced Admin Plugin for WordPress is vulnerable to Cross-Site Scripting via the 'REQUEST_URI' variable in versions before 1.16 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-enhanced-plugin-admin-cross-site-scripting-1-15/
+    - https://wordpress.org/plugins/enhanced-plugin-admin/#developers
+    - https://plugins.trac.wordpress.org/changeset/1637850
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/enhanced-plugin-admin/"
+    google-query: inurl:"/wp-content/plugins/enhanced-plugin-admin/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,enhanced-plugin-admin,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/enhanced-plugin-admin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "enhanced-plugin-admin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.16')

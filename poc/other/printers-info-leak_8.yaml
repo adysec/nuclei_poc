@@ -1,0 +1,40 @@
+id: printers-info-leak
+
+info:
+  name: Unauthorized Printer Access
+  author: pussycat0x,matejsmycka
+  severity: info
+  description: |
+    Unauthorized access to printers allows attackers to print, eavesdrop sensitive documents.
+  impact: |
+     Attackers can gain access to sensitive printed documents, manipulate print jobs, and potentially compromise printer security
+  remediation: |
+     Implement proper network segmentation, disable unnecessary printer services, and ensure printers are not directly accessible from untrusted networks.
+  reference:
+    - https://book.hacktricks.wiki/en/network-services-pentesting/9100-pjl.html
+    - https://en.wikipedia.org/wiki/Printer_Job_Language
+  metadata:
+    max-request: 1
+    vendor: generic
+    product: printer
+    shodan-query: port:9100
+  tags: network,iot,printer,misconfig,tcp,pjl
+
+tcp:
+  - inputs:
+      - data: "@PJL INFO ID\n"
+    host:
+      - "{{Hostname}}"
+    port: 9100
+
+    matchers:
+      - type: binary
+        binary:
+          - "40504a4c20494e464f2049440d0a22"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '"([^"]+)"'
+# digest: 490a0046304402205f18551b019bf42aec010b099deaea6c7a2f0671fb44bb3c690f56c1a48dd2eb022021707d7b354b93c5da65e6d55ca2346af97635917c3141a37e32e85b5797f0bd:922c64590222798bb761d5b6d8e72950

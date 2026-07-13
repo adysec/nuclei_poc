@@ -1,0 +1,59 @@
+id: premium_seo_pack_light_version-b108ba89-56c4-44a8-af61-ccd6f7f73562
+
+info:
+  name: >
+    AA-Team Premium SEO Pack <= 1.8.0 - Local File Disclosure and Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The AA-Team Premium SEO Pack plugin for WordPress is vulnerable to Remote Code Execution in versions up to, and including, 1.8.0 via the 'file_content' parameter. This makes it possible for unauthenticated attackers that include the default connection key to upload arbitrary files like shell scripts that can be used to execute code on the server. The plugin is also vulnerable to Local File Disclosure via the 'file' parameter. This makes it possible for unauthenticated attackers who include the default connection key to read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b108ba89-56c4-44a8-af61-ccd6f7f73562?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/premium-seo-pack-light-version/"
+    google-query: inurl:"/wp-content/plugins/premium-seo-pack-light-version/"
+    shodan-query: 'http.html:"wp-content/plugins/premium-seo-pack-light-version/"'
+  tags: cve,wordpress,wp-plugin,premium-seo-pack-light-version,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/premium-seo-pack-light-version/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "premium-seo-pack-light-version"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.0')

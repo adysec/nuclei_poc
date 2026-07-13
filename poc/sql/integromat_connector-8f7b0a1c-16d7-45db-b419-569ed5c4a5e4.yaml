@@ -1,0 +1,59 @@
+id: integromat_connector-8f7b0a1c-16d7-45db-b419-569ed5c4a5e4
+
+info:
+  name: >
+    Make, formerly Integromat Connector <= 1.5.2 - Authenticated (Subscriber+) Information Disclosure
+  author: topscoder
+  severity: low
+  description: >
+    The Make plugin for WordPress is vulnerable to authorization bypass due to a missing capability check and nonce verification on an admin_menu action in versions up to, and including, 1.5.2. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to download the plugin's logs which may contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8f7b0a1c-16d7-45db-b419-569ed5c4a5e4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/integromat-connector/"
+    google-query: inurl:"/wp-content/plugins/integromat-connector/"
+    shodan-query: 'http.html:"wp-content/plugins/integromat-connector/"'
+  tags: cve,wordpress,wp-plugin,integromat-connector,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/integromat-connector/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "integromat-connector"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.2')

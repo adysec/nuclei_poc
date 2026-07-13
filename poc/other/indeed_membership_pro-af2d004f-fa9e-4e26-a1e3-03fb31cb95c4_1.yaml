@@ -1,0 +1,59 @@
+id: indeed_membership_pro-af2d004f-fa9e-4e26-a1e3-03fb31cb95c4
+
+info:
+  name: >
+    Ultimate Membership Pro <= 8.6.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Ultimate Membership Pro plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 8.6.1. This is due to missing or incorrect nonce validation on various AJAX functions. This makes it possible for unauthenticated attackers to perform a variety of tasks, such as deleting users and coupons, via forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/af2d004f-fa9e-4e26-a1e3-03fb31cb95c4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/indeed-membership-pro/"
+    google-query: inurl:"/wp-content/plugins/indeed-membership-pro/"
+    shodan-query: 'http.html:"wp-content/plugins/indeed-membership-pro/"'
+  tags: cve,wordpress,wp-plugin,indeed-membership-pro,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/indeed-membership-pro/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "indeed-membership-pro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 8.6.2')

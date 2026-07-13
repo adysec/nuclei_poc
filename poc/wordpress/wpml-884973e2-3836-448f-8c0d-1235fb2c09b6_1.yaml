@@ -1,0 +1,59 @@
+id: wpml-884973e2-3836-448f-8c0d-1235fb2c09b6
+
+info:
+  name: >
+    WPML < 3.1.9 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/884973e2-3836-448f-8c0d-1235fb2c09b6?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpml/"
+    google-query: inurl:"/wp-content/plugins/wpml/"
+    shodan-query: 'http.html:"wp-content/plugins/wpml/"'
+  tags: cve,wordpress,wp-plugin,wpml,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpml/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpml"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.1.9')

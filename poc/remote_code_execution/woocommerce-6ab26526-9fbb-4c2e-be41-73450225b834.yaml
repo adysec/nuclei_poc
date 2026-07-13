@@ -1,0 +1,59 @@
+id: woocommerce-6ab26526-9fbb-4c2e-be41-73450225b834
+
+info:
+  name: >
+    WooCommerce <= 3.4.4 - Authenticated PHP Object Injection
+  author: topscoder
+  severity: low
+  description: >
+    The WooCommerce plugin for WordPress is vulnerable to PHP Object Injection by users with access to edit attributes in versions up to, and including 3.4.4.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6ab26526-9fbb-4c2e-be41-73450225b834?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 6.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce/"
+    google-query: inurl:"/wp-content/plugins/woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce/"'
+  tags: cve,wordpress,wp-plugin,woocommerce,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.4.5')

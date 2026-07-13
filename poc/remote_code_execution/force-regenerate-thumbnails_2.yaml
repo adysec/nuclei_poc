@@ -1,0 +1,49 @@
+id: wordpress-force-regenerate-thumbnails
+
+info:
+  name: Force Regenerate Thumbnails Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/force-regenerate-thumbnails/
+  metadata:
+    plugin_namespace: force-regenerate-thumbnails
+    wpscan: https://wpscan.com/plugin/force-regenerate-thumbnails
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/force-regenerate-thumbnails/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/force-regenerate-thumbnails.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100897fc7f211600ae252ba7b182fc93939d47e3f83050f905e9eca92fea3e89636022100a6940e9013c997102720ac029c92f356cffb4731e9ba906077840ac8f1df296c:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,59 @@
+id: woocommerce-c46786ece887d935356afec83266848d
+
+info:
+  name: "WooCommerce <= 4.0.4 - Unauthorized Post Meta Creation/Modification"
+  author: topscoder
+  severity: high
+  description: "The WooCommerce plugin for WordPress is vulnerable to arbitrary product meta data creation/overwriting due to
+a lack of escaping and validation on the post meta data being supplied during product duplication in versions up to, and including 4.0.4. This makes it possible for authenticated attackers, with product duplicating capabilities, to modify post meta that could potential be used to achieve remote code execution."
+  reference:
+    - https://plugins.trac.wordpress.org/browser/woocommerce/tags/4.1.0/readme.txt?rev=2298743#L191
+    - https://raw.githubusercontent.com/woocommerce/woocommerce/trunk/changelog.txt
+    - https://wpdeeply.com/woocommerce-4-1-0-remote-code-execution/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce/"
+    google-query: inurl:"/wp-content/plugins/woocommerce/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,woocommerce,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.1.0')

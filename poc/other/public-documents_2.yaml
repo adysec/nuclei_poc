@@ -1,0 +1,40 @@
+id: public-documents
+
+info:
+  name: Alerts on pages that contain links to Excel, Word or CSV documents
+  author: geeknik
+  severity: info
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "text/html"
+      # Match only actual href/src attribute values pointing to document files,
+      # not incidental mentions of extensions in page text or comments.
+      - type: regex
+        part: body
+        regex:
+          - "href\\s*=\\s*[\"'][^\"']*\\.xlsx?[\"']"
+          - "href\\s*=\\s*[\"'][^\"']*\\.docx?[\"']"
+          - "href\\s*=\\s*[\"'][^\"']*\\.csv[\"']"
+          - "src\\s*=\\s*[\"'][^\"']*\\.xlsx?[\"']"
+          - "src\\s*=\\s*[\"'][^\"']*\\.docx?[\"']"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: public_document_links
+        regex:
+          - "(?:href|src)\\s*=\\s*[\"']([^\"']*\\.(?:xlsx?|docx?|csv))[\"']"
+        group: 1

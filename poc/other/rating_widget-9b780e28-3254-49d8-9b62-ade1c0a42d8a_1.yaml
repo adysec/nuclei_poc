@@ -1,0 +1,59 @@
+id: rating_widget-9b780e28-3254-49d8-9b62-ade1c0a42d8a
+
+info:
+  name: >
+    Rating Widget Plugin < 2.9.0 - Sensitive Information Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The Rating Widget plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 2.8 via the 'rwdbg' parameter. This can allow unauthenticated attackers to extract sensitive data including usernames, paths, and themes of the plugins.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9b780e28-3254-49d8-9b62-ade1c0a42d8a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/rating-widget/"
+    google-query: inurl:"/wp-content/plugins/rating-widget/"
+    shodan-query: 'http.html:"wp-content/plugins/rating-widget/"'
+  tags: cve,wordpress,wp-plugin,rating-widget,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/rating-widget/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "rating-widget"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.9.0')

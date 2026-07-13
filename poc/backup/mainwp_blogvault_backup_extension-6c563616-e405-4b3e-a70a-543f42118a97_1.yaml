@@ -1,0 +1,59 @@
+id: mainwp_blogvault_backup_extension-6c563616-e405-4b3e-a70a-543f42118a97
+
+info:
+  name: >
+    MainWP (Various Extensions) - Authenticated (Subscriber+) Arbitrary Plugin Installation
+  author: topscoder
+  severity: low
+  description: >
+    Several MainWP extensions for WordPress are vulnerable to authorization bypass due to a missing capability check on an unknown function. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to install arbitrary plugins.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6c563616-e405-4b3e-a70a-543f42118a97?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mainwp-blogvault-backup-extension/"
+    google-query: inurl:"/wp-content/plugins/mainwp-blogvault-backup-extension/"
+    shodan-query: 'http.html:"wp-content/plugins/mainwp-blogvault-backup-extension/"'
+  tags: cve,wordpress,wp-plugin,mainwp-blogvault-backup-extension,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mainwp-blogvault-backup-extension/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mainwp-blogvault-backup-extension"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3')

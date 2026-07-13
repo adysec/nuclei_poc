@@ -1,0 +1,59 @@
+id: traveler-5d875004-a589-4657-953c-ca175e3157c2
+
+info:
+  name: >
+    Travel Booking WordPress Theme < 2.8.4 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Travel Booking WordPress Theme for WordPress is vulnerable to blind SQL Injection via the ‘location_id’ parameter in versions up to, and including, 2.8.3 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for ;unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5d875004-a589-4657-953c-ca175e3157c2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/traveler/"
+    google-query: inurl:"/wp-content/themes/traveler/"
+    shodan-query: 'http.html:"wp-content/themes/traveler/"'
+  tags: cve,wordpress,wp-theme,traveler,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/traveler/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "traveler"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.8.4')

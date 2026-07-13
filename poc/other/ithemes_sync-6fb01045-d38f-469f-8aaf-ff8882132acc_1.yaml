@@ -1,0 +1,59 @@
+id: ithemes_sync-6fb01045-d38f-469f-8aaf-ff8882132acc
+
+info:
+  name: >
+    iThemes Sync <= 2.0.17 - Authentication Bypass
+  author: topscoder
+  severity: critical
+  description: >
+    The iThemes Sync plugin for WordPress is vulnerable to authentication bypass due to a missing validation on the secure key in versions up to, and including, 2.0.17. This makes it possible for unauthenticated attackers to add their own secure key leading to a complete compromise of the affected website.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6fb01045-d38f-469f-8aaf-ff8882132acc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ithemes-sync/"
+    google-query: inurl:"/wp-content/plugins/ithemes-sync/"
+    shodan-query: 'http.html:"wp-content/plugins/ithemes-sync/"'
+  tags: cve,wordpress,wp-plugin,ithemes-sync,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ithemes-sync/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ithemes-sync"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.18')

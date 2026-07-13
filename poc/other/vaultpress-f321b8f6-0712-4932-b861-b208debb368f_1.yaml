@@ -1,0 +1,59 @@
+id: vaultpress-f321b8f6-0712-4932-b861-b208debb368f
+
+info:
+  name: >
+    VaultPress <= 1.8.6 - Remote Code Execution
+  author: topscoder
+  severity: critical
+  description: >
+    The VaultPress plugin for WordPress is vulnerable to Remote Code Execution in versions up to, and including, 1.8.6 via the vaultpress/class.vaultpress-ixr-ssl-client.php file. This allows unauthenticated attackers to execute code on the server. This requires a man in the middle attack to be successful as an attacker needs to obtain the secret key retrieved from https://www.vaultpress.com. The plugin does not force the use of SSL to retrieve this secret key making it readable to attackers analyzing the traffic.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f321b8f6-0712-4932-b861-b208debb368f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/vaultpress/"
+    google-query: inurl:"/wp-content/plugins/vaultpress/"
+    shodan-query: 'http.html:"wp-content/plugins/vaultpress/"'
+  tags: cve,wordpress,wp-plugin,vaultpress,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/vaultpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "vaultpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.6')

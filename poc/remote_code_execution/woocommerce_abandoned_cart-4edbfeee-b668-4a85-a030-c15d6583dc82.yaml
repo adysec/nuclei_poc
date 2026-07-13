@@ -1,0 +1,59 @@
+id: woocommerce_abandoned_cart-4edbfeee-b668-4a85-a030-c15d6583dc82
+
+info:
+  name: >
+    Abandoned Cart Lite for WooCommerce <= 5.16.0 - Improper Authorization via wcal_preview_emails
+  author: topscoder
+  severity: low
+  description: >
+    The Abandoned Cart Lite for WooCommerce plugin for WordPress is vulnerable to unauthorized access of data due to a missing capability check on the wcal_preview_emails function in all versions up to and including 5.16.0. This makes it possible for unauthenticated attackers to preview emails, granted they are able to obtain a nonce via a separate vulnerability.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4edbfeee-b668-4a85-a030-c15d6583dc82?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 3.7
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-abandoned-cart/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-abandoned-cart/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-abandoned-cart/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-abandoned-cart,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-abandoned-cart/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-abandoned-cart"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.16.1')

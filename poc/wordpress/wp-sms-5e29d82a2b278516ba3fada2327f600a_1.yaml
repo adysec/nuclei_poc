@@ -1,0 +1,59 @@
+id: wp-sms-5e29d82a2b278516ba3fada2327f600a
+
+info:
+  name: >
+    WP SMS <= 6.1.4 - Reflected Cross-Site Scripting via 'delete_mobile'
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/04970416-06db-4339-ac22-34fde5a48f2a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-sms/"
+    google-query: inurl:"/wp-content/plugins/wp-sms/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-sms,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-sms/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-sms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.1.4')

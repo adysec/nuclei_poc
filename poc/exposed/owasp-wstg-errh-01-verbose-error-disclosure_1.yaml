@@ -1,0 +1,52 @@
+# gap: owasp-wstg-errh-01-verbose-error-disclosure
+id: owasp-wstg-errh-01-verbose-error-disclosure
+
+info:
+  name: Verbose Error Page / Stack Trace Disclosure (WSTG-ERRH-01)
+  author: TyrusRC
+  severity: low
+  description: |
+    Requests a non-existent .php path with a randomized filename to
+    deliberately provoke a framework error page, then matches common
+    stack-trace markers (PHP Fatal error, Python Traceback, Java
+    Exception/NullPointerException/RuntimeException, generic "at line
+    N" / "Stack trace:") in the response body. A text/html or
+    text/plain content-type gate avoids matching opaque binary or
+    JSON-API error envelopes. Stack-trace disclosure leaks framework
+    versions, file paths, and code structure useful to attackers.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/08-Testing_for_Error_Handling/01-Testing_For_Improper_Error_Handling
+    - https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html
+  tags: custom,misconfig,errors,disclosure,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{rand_text_alpha(12)}}.php"
+      - "{{BaseURL}}/{{rand_text_alpha(12)}}"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 500
+      - type: word
+        part: header
+        case-insensitive: true
+        condition: or
+        words:
+          - "content-type: text/html"
+          - "content-type: text/plain"
+      - type: regex
+        part: body
+        condition: or
+        regex:
+          - 'Traceback \(most recent call last\)'
+          - 'Exception in thread "[^"]+"'
+          - 'NullPointerException'
+          - '(?i)(in|at)\s+[/\\][\w./\\\-]+\s+(?:on\s+)?line\s+[0-9]+'
+          - '<b>Fatal error</b>'
+          - 'Stack trace:'
+          - 'RuntimeException'
+          - '(?i)error in /[a-z_/\-]+\.php on line [0-9]+'

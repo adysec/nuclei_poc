@@ -1,0 +1,56 @@
+id: weebly-detect
+
+info:
+  name: Weebly Detection
+  author: Chirag Mistry
+  severity: info
+  description: |
+    An instance running Weebly is detected by looking for specific HTTP headers, HTML tags, and known endpoints.
+  metadata:
+    max-request: 7
+    shodan-query: product:"Weebly"
+  tags: weebly, detect, tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/index.php"
+      - "{{BaseURL}}/weebly/"
+      - "{{BaseURL}}/site/"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "Powered by Weebly"
+          - "weebly.com"
+          - "X-Powered-By-Weebly"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+          - 403
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'Weebly ([0-9.]+)'
+          - 'Powered by Weebly ([0-9.]+)'
+
+      - type: regex
+        part: body
+        name: weebly_id
+        regex:
+          - 'weebly-site-id=([a-z0-9]+)'
+          - 'weebly\.com/([^/]+)'
+# digest: 4a0a00473045022100e5a4af75c6c954cae6e6ba7cd2fd3eb63d0d06117af954fa5e1a6436413ddbd302201eacaf6bd53d5822d1710966f80ff1d3df8cf1940acf5e1626030744d0c413c4:922c64590222798bb761d5b6d8e72950

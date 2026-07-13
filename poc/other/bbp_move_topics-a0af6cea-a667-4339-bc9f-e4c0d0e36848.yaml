@@ -1,0 +1,51 @@
+id: bbp_move_topics-a0af6cea-a667-4339-bc9f-e4c0d0e36848
+
+info:
+  name: >
+    bbPress Move Topics <= 1.1.6 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a0af6cea-a667-4339-bc9f-e4c0d0e36848?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/bbp-move-topics/"
+    google-query: inurl:"/wp-content/plugins/bbp-move-topics/"
+    shodan-query: 'http.html:"wp-content/plugins/bbp-move-topics/"'
+  tags: cve,wordpress,wp-plugin,bbp-move-topics,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/bbp-move-topics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "bbp-move-topics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.6')

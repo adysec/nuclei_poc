@@ -1,0 +1,59 @@
+id: formcraft-2ddfb494-1a63-4958-849e-392eec09615d
+
+info:
+  name: >
+    Formcraft (Unknown Versions) - Arbitrary File Deletion
+  author: topscoder
+  severity: critical
+  description: >
+    The formcraft plugin for WordPress is vulnerable to Arbitrary File Deletion via the 'function.php' file. This makes it possible for unauthenticated attackers to delete files within the scope of the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2ddfb494-1a63-4958-849e-392eec09615d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:H
+    cvss-score: 9.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/formcraft/"
+    google-query: inurl:"/wp-content/plugins/formcraft/"
+    shodan-query: 'http.html:"wp-content/plugins/formcraft/"'
+  tags: cve,wordpress,wp-plugin,formcraft,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/formcraft/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "formcraft"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.5')

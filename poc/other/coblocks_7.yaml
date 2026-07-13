@@ -1,0 +1,49 @@
+id: wordpress-coblocks
+
+info:
+  name: Page Builder Gutenberg Blocks – CoBlocks Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/coblocks/
+  metadata:
+    plugin_namespace: coblocks
+    wpscan: https://wpscan.com/plugin/coblocks
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/coblocks/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/coblocks.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502200ed022ed7e219e7990c62b8c4b104f65b7802264b8c0a3703541a66a36ca529f022100f266f2cc89ac477215e6da8796a8bd37bf2696bbbf2a400ea8c425fbeee0bfeb:922c64590222798bb761d5b6d8e72950

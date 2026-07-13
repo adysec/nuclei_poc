@@ -1,0 +1,59 @@
+id: unlimited_popups-61516b71-3346-4033-b55b-a35c5b4ca3dc
+
+info:
+  name: >
+    Unlimited Pop-Ups < 1.4.4 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Unlimited Pop-Ups plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.4.3 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/61516b71-3346-4033-b55b-a35c5b4ca3dc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/unlimited-popups/"
+    google-query: inurl:"/wp-content/plugins/unlimited-popups/"
+    shodan-query: 'http.html:"wp-content/plugins/unlimited-popups/"'
+  tags: cve,wordpress,wp-plugin,unlimited-popups,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/unlimited-popups/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "unlimited-popups"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.3')

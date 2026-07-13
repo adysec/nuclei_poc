@@ -1,0 +1,59 @@
+id: ipanorama_360_virtual_tour_builder_lite-00687370-8374-44cc-8fd1-53b462acd061
+
+info:
+  name: >
+    iPanorama 360 – WordPress Virtual Tour Builder <= 1.7.3 - Authenticated (Admin+) SQL injection
+  author: topscoder
+  severity: low
+  description: >
+    The iPanorama 360 plugin for WordPress is vulnerable to SQL Injection via the 'orderby' parameter in versions up to, and including, 1.7.3 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers, with admin-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/00687370-8374-44cc-8fd1-53b462acd061?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ipanorama-360-virtual-tour-builder-lite/"
+    google-query: inurl:"/wp-content/plugins/ipanorama-360-virtual-tour-builder-lite/"
+    shodan-query: 'http.html:"wp-content/plugins/ipanorama-360-virtual-tour-builder-lite/"'
+  tags: cve,wordpress,wp-plugin,ipanorama-360-virtual-tour-builder-lite,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ipanorama-360-virtual-tour-builder-lite/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ipanorama-360-virtual-tour-builder-lite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.8.0')

@@ -1,0 +1,47 @@
+# gap: owasp-wstg-clnt-13-xssi-jsonp-exposure
+id: owasp-wstg-clnt-13-xssi-jsonp-exposure
+
+info:
+  name: Cross-Site Script Inclusion (XSSI) via JSONP Callback Wrapping
+  author: TyrusRC
+  severity: medium
+  description: |
+    Probes common JSONP-style user-info endpoints with an attacker-controlled
+    callback name (nucleiCanary) and detects responses that wrap the body
+    using the supplied callback. A hit confirms the endpoint will execute as
+    JavaScript when loaded cross-origin via a <script> tag, enabling XSSI
+    data exfiltration when the wrapped JSON contains authenticated user
+    data. The operator should inspect the wrapped payload for sensitivity;
+    this template only confirms the wrapping behaviour, not the presence of
+    authenticated content.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/11-Client-side_Testing/13-Testing_for_Cross_Site_Script_Inclusion
+    - https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+  tags: custom,misconfig,xssi,jsonp,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/userinfo?callback=nucleiCanary"
+      - "{{BaseURL}}/api/user?callback=nucleiCanary"
+      - "{{BaseURL}}/api/profile?callback=nucleiCanary"
+      - "{{BaseURL}}/userinfo?callback=nucleiCanary"
+      - "{{BaseURL}}/me?callback=nucleiCanary"
+      - "{{BaseURL}}/user?callback=nucleiCanary"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        condition: or
+        words:
+          - "application/javascript"
+          - "text/javascript"
+      - type: regex
+        part: body
+        regex:
+          - "^\\s*(?:/\\*[^*]*\\*/\\s*)?nucleiCanary\\s*\\("

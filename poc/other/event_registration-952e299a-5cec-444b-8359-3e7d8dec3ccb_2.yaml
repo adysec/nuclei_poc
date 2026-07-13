@@ -1,0 +1,59 @@
+id: event_registration-952e299a-5cec-444b-8359-3e7d8dec3ccb
+
+info:
+  name: >
+    Event Registration <= 6.02.02 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Event Registration plugin for WordPress is vulnerable to generic SQL Injection via the ‘submitted_token’ and ‘qanda’ parameters in versions up to, and including, 6.02.02 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/952e299a-5cec-444b-8359-3e7d8dec3ccb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/event-registration/"
+    google-query: inurl:"/wp-content/plugins/event-registration/"
+    shodan-query: 'http.html:"wp-content/plugins/event-registration/"'
+  tags: cve,wordpress,wp-plugin,event-registration,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/event-registration/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "event-registration"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.02.02')

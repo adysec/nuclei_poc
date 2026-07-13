@@ -1,0 +1,59 @@
+id: wp_ultimate_csv_importer-0d50f217-7a53-49bf-9ce9-9922d0b3e18b
+
+info:
+  name: >
+    WP Ultimate CSV Importer <= 3.7 - Arbitrary File Read
+  author: topscoder
+  severity: high
+  description: >
+    The WP Ultimate CSV Importer plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the templates/readfile.php file in versions up to, and including, 3.7. This makes it possible for unauthenticated attackers to read any files on the vulnerable service that PHP has access to.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0d50f217-7a53-49bf-9ce9-9922d0b3e18b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-ultimate-csv-importer/"
+    google-query: inurl:"/wp-content/plugins/wp-ultimate-csv-importer/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-ultimate-csv-importer/"'
+  tags: cve,wordpress,wp-plugin,wp-ultimate-csv-importer,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-ultimate-csv-importer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-ultimate-csv-importer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.7')

@@ -1,0 +1,37 @@
+id: openclaw-responses-endpoint
+
+info:
+  name: OpenClaw Responses API Endpoint Exposed
+  author: lobster-guard
+  severity: medium
+  description: |
+    Detects exposed /v1/responses endpoint (OpenAI Responses API compat).
+    This endpoint allows creating and managing agent responses, potentially
+    enabling unauthorized task execution.
+  tags: openclaw,api,responses
+  remediation: Require authentication for /v1/responses. Set auth.mode=token in Gateway config.
+  classification:
+    cwe-id: CWE-306
+  metadata:
+    max-request: 1
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/v1/responses"
+    headers:
+      Content-Type: "application/json"
+    body: '{"model":"probe","input":"test"}'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+      - type: regex
+        part: body
+        regex:
+          - '"(output|choices|id|object)"'

@@ -1,0 +1,59 @@
+id: auto_delete_posts-ce3ff7f9-ccad-45c0-a278-f66fbb6263ee
+
+info:
+  name: >
+    Auto Delete Posts <= 1.3.0 - Cross-Site Request Forgery to Arbitrary Settings Update
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ce3ff7f9-ccad-45c0-a278-f66fbb6263ee?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/auto-delete-posts/"
+    google-query: inurl:"/wp-content/plugins/auto-delete-posts/"
+    shodan-query: 'http.html:"wp-content/plugins/auto-delete-posts/"'
+  tags: cve,wordpress,wp-plugin,auto-delete-posts,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/auto-delete-posts/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "auto-delete-posts"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.0')

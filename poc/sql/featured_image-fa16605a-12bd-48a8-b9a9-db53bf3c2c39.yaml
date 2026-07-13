@@ -1,0 +1,51 @@
+id: featured_image-fa16605a-12bd-48a8-b9a9-db53bf3c2c39
+
+info:
+  name: >
+    Featured Image <= 2.1 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fa16605a-12bd-48a8-b9a9-db53bf3c2c39?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/featured-image/"
+    google-query: inurl:"/wp-content/plugins/featured-image/"
+    shodan-query: 'http.html:"wp-content/plugins/featured-image/"'
+  tags: cve,wordpress,wp-plugin,featured-image,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/featured-image/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "featured-image"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1')

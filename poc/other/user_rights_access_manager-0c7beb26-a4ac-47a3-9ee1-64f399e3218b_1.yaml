@@ -1,0 +1,59 @@
+id: user_rights_access_manager-0c7beb26-a4ac-47a3-9ee1-64f399e3218b
+
+info:
+  name: >
+    User Rights Access Manager <= 1.0.3 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The User Rights Access Manager plugin for WordPress is vulnerable to unauthorized access in versions up to, and including, 1.0.3. This is due to improper implementation of access controls. This makes it possible for authenticated attackers, with administrator-level permissions and above, to take actions or access information for which privileges were removed via the plugin.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0c7beb26-a4ac-47a3-9ee1-64f399e3218b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 6.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/user-rights-access-manager/"
+    google-query: inurl:"/wp-content/plugins/user-rights-access-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/user-rights-access-manager/"'
+  tags: cve,wordpress,wp-plugin,user-rights-access-manager,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-rights-access-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "user-rights-access-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.3')

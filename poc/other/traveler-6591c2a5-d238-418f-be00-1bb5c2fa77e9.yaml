@@ -1,0 +1,59 @@
+id: traveler-6591c2a5-d238-418f-be00-1bb5c2fa77e9
+
+info:
+  name: >
+    Traveler – Travel Booking WordPress Theme < 2.8.4 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Traveler – Travel Booking WordPress Theme for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘child_number’ parameter in versions up to, and including, 2.8.3 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6591c2a5-d238-418f-be00-1bb5c2fa77e9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/traveler/"
+    google-query: inurl:"/wp-content/themes/traveler/"
+    shodan-query: 'http.html:"wp-content/themes/traveler/"'
+  tags: cve,wordpress,wp-theme,traveler,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/traveler/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "traveler"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.8.4')

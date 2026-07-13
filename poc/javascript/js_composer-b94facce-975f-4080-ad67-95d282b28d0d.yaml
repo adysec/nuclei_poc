@@ -1,0 +1,59 @@
+id: js_composer-b94facce-975f-4080-ad67-95d282b28d0d
+
+info:
+  name: >
+    WPBakery Page Builder for WordPress (formerly Visual Composer) <= 4.7.3 - Multiple Cross-Site Scripting Issues
+  author: topscoder
+  severity: high
+  description: >
+    The WPBakery Page Builder for WordPress plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 4.7.3 that made it possible for attackers to inject arbitrary web scripts into pages.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b94facce-975f-4080-ad67-95d282b28d0d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/js_composer/"
+    google-query: inurl:"/wp-content/plugins/js_composer/"
+    shodan-query: 'http.html:"wp-content/plugins/js_composer/"'
+  tags: cve,wordpress,wp-plugin,js_composer,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/js_composer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "js_composer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 4.7.4')

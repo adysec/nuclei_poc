@@ -1,0 +1,36 @@
+id: Symfony-Profiler-open
+info:
+  name: Symfony Profiler - Sensitive Information Exposure
+  author: nored0x
+  severity: high
+  description: |
+    Nuclei template to detect Symfony profiler endpoints revealing sensitive database/mailer configuration.
+  tags:
+    - sensitive-info
+    - profiling-endpoint
+    - symfony
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/app_dev.php/_profiler/open?file=app/config/parameters.yml'
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - database_host
+          - database_password
+          - mailer_password
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "parameters:"

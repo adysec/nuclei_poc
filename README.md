@@ -83,10 +83,10 @@ cargo run --bin 1_clone_repos
 3. 3_move_file — 预过滤非 nuclei 文件（→ `poc_non_nuclei/`）后将 PoC 按类别归档到 `tmp/` 和 `poc_all/`。
 4. 4_download_nuclei — 下载/准备 Nuclei 引擎（若需要）以便后续验证。
 5. 5_check_poc — 先 `auto_fix_poc()` 修复常见格式问题，再运行 nuclei 校验；通过→`poc/`，未通过→`poc_needs_review/`（不删除）。
-6. 6_get_count — 统计当前已归档 PoC 的数量并输出统计信息。
-7. 7_get_pocname — 生成结构化索引：`poc_index.json`（含分类/质量分/CVE等元数据）、`poc_summary.json`（统计摘要）及 `poc.txt`（纯文本清单）。
-8. 8_dedup_high_quality — 新的去重与高质量筛选器（简单评分+内容哈希），用于基线对比。
-9. 9_dedup_advanced — 高级去重与格式修复（多因素评分+CVE/URL双索引+自动修复severity/ID+命名标准化+JSON报告），输出到 `poc_high_quality/`。
+6. 6_get_pocname — 生成结构化索引：`poc_index.json`（含分类/质量分/CVE等元数据）、`poc_summary.json`（统计摘要）及 `poc.txt`（纯文本清单）。
+7. 7_dedup_advanced — 多因素评分去重+格式修复。（读取 poc/ → 输出 poc_dedup/）
+8. 8_dedup_high_quality — 多级评分梯度精选，产生 poc_gold_11 ~ poc_gold_15 目录。
+9. 9_generate_browser_index — 生成 GitHub Pages 前端所需的 JSON 索引文件到 poc_browser/。
 
 ### 输出策略与安全回滚
 
@@ -96,14 +96,15 @@ cargo run --bin 1_clone_repos
 - `poc_non_nuclei/`：Step 3 拦截的非 nuclei 文件（如 docker-compose.yml 等），保留以备审计，不进入后续管线。
 - `poc_needs_review/`：Step 5 nuclei 验证未通过的文件，保留供人工审核——不直接删除。
 - `poc/`：nuclei 校验通过且经过 auto-fix 的组织化 PoC，可直接用于扫描。
-- `poc_high_quality/`：Step 9 高级多因素去重+格式修复后的最终高质量输出。
+- `poc_dedup/`：Step 7 多因素去重+格式修复后的输出。
+- `poc_gold_11 ~ poc_gold_15`：Step 8 多级评分精选，评分越高越精品。
 
 **格式过滤策略（保守原则）**：
 1. Step 3: `is_nuclei_template()` 快速结构检查 → 拦截明显非 nuclei 的 YAML 文件（无 `id` 字段、无协议字段）
 2. Step 5: `auto_fix_poc()` 修复 severity 大小写/空值/CVE 空格 → 再运行 nuclei 验证 → 未通过则移入 `poc_needs_review/`
-3. Step 9: CVE 匹配权重 30 分（不单独触发重复判定），同一 CVE 的不同产品/端点变体不会被误删
+3. Step 7: CVE 匹配权重 30 分（不单独触发重复判定），同一 CVE 的不同产品/端点变体不会被误删
 
-第9步评分规则（0-80分，18因子）：
+评分规则（0-80分，18因子）：
 - 基础结构 (0-7): id, name, severity
 - 严重程度 (0-8): critical=8, high=6, medium=4, low=2, info=1
 - 协议支持 (0-10): http+matchers=6, requests+matchers=5, tcp/dns=3ea

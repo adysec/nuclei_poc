@@ -1,0 +1,58 @@
+id: wp-vault
+
+info:
+  name: "WP Vault <= 0.8.6.6 - Local File Inclusion"
+  author: topscoder
+  severity: medium
+  description: "The WP Vault plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 0.8.6.6 via the 'wpv-image' parameter. This allows unauthenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included."
+  reference:
+    - https://lenonleite.com.br/en/2016/11/30/wp-vault-0-8-6-6-local-file-inclusion/
+    - https://packetstormsecurity.com/files/139979/WordPress-WP-Vault-0.8.6.6-Local-File-Inclusion.html
+    - https://wpscan.com/vulnerability/99f98dda-14cf-43fb-bc6c-123f78b44ea7
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-vault/"
+    google-query: inurl:"/wp-content/plugins/wp-vault/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-vault,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-vault/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-vault"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.8.6.6')

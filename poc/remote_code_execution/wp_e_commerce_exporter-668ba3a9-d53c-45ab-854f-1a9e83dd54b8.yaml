@@ -1,0 +1,59 @@
+id: wp_e_commerce_exporter-668ba3a9-d53c-45ab-854f-1a9e83dd54b8
+
+info:
+  name: >
+    WP e-Commerce – Store Exporter <= 1.6.6 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The WP e-Commerce – Store Exporter plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the wpsc_get_action() function in versions up to, and including 1.6.6. This makes it possible for unauthenticated attackers to gain access to restricted actions that allow them to update the plugin settings and dismiss notices among many other actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/668ba3a9-d53c-45ab-854f-1a9e83dd54b8?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-e-commerce-exporter/"
+    google-query: inurl:"/wp-content/plugins/wp-e-commerce-exporter/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-e-commerce-exporter/"'
+  tags: cve,wordpress,wp-plugin,wp-e-commerce-exporter,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-e-commerce-exporter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-e-commerce-exporter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.6')

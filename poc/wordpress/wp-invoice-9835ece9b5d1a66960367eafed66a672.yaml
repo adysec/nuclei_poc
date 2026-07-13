@@ -1,0 +1,59 @@
+id: wp-invoice-9835ece9b5d1a66960367eafed66a672
+
+info:
+  name: "WP-Invoice – Web Invoice and Billing <= 4.3.1 - Cross-Site Request Forgery to Stored Cross-Site Scripting"
+  author: topscoder
+  severity: high
+  description: "The WP-Invoice – Web Invoice and Billing plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 4.3.1. This is due to missing  nonce validation on the save settings function. This makes it possible for unauthenticated attackers to modify the plugin's settings and inject malicious web scripts via a forged request granted they can trick a site administrator into performing an action such as clicking on a link."
+  reference:
+    - https://packetstormsecurity.com/files/166824/wpinvoice431-xss.txt
+    - https://patchstack.com/database/vulnerability/wp-invoice-/wordpress-wp-invoice-plugin-4-3-1-arbitrary-settings-update-via-cross-site-request-forgery-csrf-vulnerability
+    - https://wpscan.com/vulnerability/ba760ada-1db7-43b4-a6c4-3a5efe888471
+    - https://wpscan.com/vulnerability/7e40e506-ad02-44ca-9d21-3634f3907aad
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-invoice/"
+    google-query: inurl:"/wp-content/plugins/wp-invoice/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-invoice,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-invoice/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-invoice"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.3.1')

@@ -1,0 +1,59 @@
+id: real3d_flipbook-82802e80-efb5-4aa3-9fea-9c21bfb71efa
+
+info:
+  name: >
+    Real3D Flipbook <= 2.8 - Unauthenticated Arbitrary File or Directory Delete
+  author: topscoder
+  severity: critical
+  description: >
+    The Real3D Flipbook plugin for WordPress is vulnerable to Unauthenticated File or Directory Delete in versions up to, and including, 2.8. This is due to missing privilege checks. This makes it possible for unauthenticated attackers to delete arbitrary files or folders on the site.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/82802e80-efb5-4aa3-9fea-9c21bfb71efa?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:H/A:H
+    cvss-score: 10
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/real3d-flipbook/"
+    google-query: inurl:"/wp-content/plugins/real3d-flipbook/"
+    shodan-query: 'http.html:"wp-content/plugins/real3d-flipbook/"'
+  tags: cve,wordpress,wp-plugin,real3d-flipbook,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/real3d-flipbook/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "real3d-flipbook"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.9')

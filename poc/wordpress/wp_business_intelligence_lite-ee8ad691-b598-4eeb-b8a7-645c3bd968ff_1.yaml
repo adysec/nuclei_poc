@@ -1,0 +1,59 @@
+id: wp_business_intelligence_lite-ee8ad691-b598-4eeb-b8a7-645c3bd968ff
+
+info:
+  name: >
+    WP Business intelligence lite < 1.3 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The WP Business intelligence lite plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'ofc_upload_image.php' files in versions before 1.3. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ee8ad691-b598-4eeb-b8a7-645c3bd968ff?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-business-intelligence-lite/"
+    google-query: inurl:"/wp-content/plugins/wp-business-intelligence-lite/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-business-intelligence-lite/"'
+  tags: cve,wordpress,wp-plugin,wp-business-intelligence-lite,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-business-intelligence-lite/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-business-intelligence-lite"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.3')

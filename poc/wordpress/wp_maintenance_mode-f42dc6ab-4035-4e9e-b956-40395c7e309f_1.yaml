@@ -1,0 +1,59 @@
+id: wp_maintenance_mode-f42dc6ab-4035-4e9e-b956-40395c7e309f
+
+info:
+  name: >
+    WP Maintenance Mode <= 1.8.7 - Missing Authorization Checks & Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f42dc6ab-4035-4e9e-b956-40395c7e309f?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-maintenance-mode/"
+    google-query: inurl:"/wp-content/plugins/wp-maintenance-mode/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-maintenance-mode/"'
+  tags: cve,wordpress,wp-plugin,wp-maintenance-mode,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-maintenance-mode/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-maintenance-mode"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.8.8')

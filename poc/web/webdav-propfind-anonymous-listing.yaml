@@ -1,0 +1,68 @@
+# gap: webdav-propfind-anonymous-listing
+id: webdav-propfind-anonymous-listing
+
+info:
+  name: WebDAV PROPFIND Anonymous Directory Listing
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a WebDAV-enabled server that responds to an unauthenticated
+    PROPFIND request with HTTP 207 Multi-Status and an XML body
+    enumerating the directory contents — the WebDAV equivalent of an
+    open directory listing, but more dangerous because PROPFIND
+    discloses file modification timestamps, ETag values, and
+    server-side metadata not visible via GET / index. The probe sends
+    PROPFIND with Depth: 1 to root and matches the canonical
+    `<D:multistatus xmlns:D="DAV:">` response envelope.
+
+    Anonymous PROPFIND leaks the entire reachable file tree under the
+    DAV root. Many WebDAV deployments share storage with the web
+    application root (Apache mod_dav, IIS DAV, Nextcloud), so PROPFIND
+    enumerates source files, configuration files, backup directories,
+    deleted-file tombstones, and uploaded user content. Combined with
+    other WebDAV methods (MOVE, COPY, PUT) on anonymous-permitted
+    paths the exposure escalates to arbitrary file write and arbitrary
+    file read. Class detection — keys on WebDAV multi-status XML
+    grammar (RFC 4918 §9.1), not vendor banner. Complements upstream
+    `webdav-enabled` (OPTIONS-only Ms-Author-Via header detection).
+  reference:
+    - https://datatracker.ietf.org/doc/html/rfc4918
+    - https://owasp.org/www-community/attacks/WebDAV_Application_Misconfiguration
+    - https://www.acunetix.com/vulnerabilities/web/webdav-enabled/
+  tags: custom,vulnerabilities,webdav,disclosure,owasp,cwe-548
+
+http:
+  - raw:
+      - |+
+        PROPFIND / HTTP/1.1
+        Host: {{Hostname}}
+        Depth: 1
+        Content-Type: application/xml
+        Content-Length: 0
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 207
+      - type: regex
+        part: body
+        regex:
+          - '<[A-Za-z][A-Za-z0-9]*:multistatus\s+xmlns:[A-Za-z][A-Za-z0-9]*\s*=\s*["'']DAV:["'']'
+      - type: word
+        part: body
+        words:
+          - "<D:href"
+          - "<d:href"
+          - "<href"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: leaked-paths
+        regex:
+          - '<[A-Za-z]*:?href[^>]*>([^<]+)</[A-Za-z]*:?href>'
+        group: 1

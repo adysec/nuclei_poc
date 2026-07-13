@@ -1,0 +1,73 @@
+# gap: n8n-api-anonymous-workflows
+id: n8n-api-anonymous-workflows
+
+info:
+  name: n8n REST API Anonymous Workflow Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an n8n workflow-automation instance where /api/v1/workflows
+    is reachable without an X-N8N-API-KEY header, returning the
+    workflow catalog as a JSON `data` array. Class signal: response
+    is `{"data":[…],"nextCursor":…}` whose entries carry the n8n
+    workflow shape (`id`, `name`, `active`, `nodes`, `connections`,
+    `staticData`).
+
+    Anonymous workflow access leaks the entire automation graph:
+    every connected webhook URL (frequently containing in-memory
+    bearer tokens in the path or query), credential references
+    (n8n stores credential IDs inside node configs and the leak
+    discloses which third-party services are connected — Slack,
+    GitHub, GitLab, AWS, Azure, OpenAI, databases), expression-
+    evaluated parameters that often embed environment variables
+    via `{{ $env.API_KEY }}`, and staticData entries that persist
+    state between executions. Combined with /api/v1/credentials/
+    schema the response chains into credential extraction. Class
+    detection — keys on n8n REST API shape, complements upstream
+    `n8n-config` (which probes /rest/settings).
+  reference:
+    - https://docs.n8n.io/api/
+    - https://docs.n8n.io/api/authentication/
+  tags: custom,exposures,n8n,automation,workflow,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/workflows"
+      - "{{BaseURL}}/api/v1/workflows?limit=1"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"data"\s*:\s*\['
+      - type: word
+        part: body
+        words:
+          - '"active"'
+          - '"nodes"'
+          - '"connections"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: workflow-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: credential-refs
+        regex:
+          - '"credentials"\s*:\s*\{[^}]*"id"\s*:\s*"([^"]+)"'
+        group: 1

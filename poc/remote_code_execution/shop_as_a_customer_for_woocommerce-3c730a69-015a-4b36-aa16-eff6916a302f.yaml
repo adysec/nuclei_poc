@@ -1,0 +1,59 @@
+id: shop_as_a_customer_for_woocommerce-3c730a69-015a-4b36-aa16-eff6916a302f
+
+info:
+  name: >
+    Shop as a Customer for WooCommerce <= 1.2.3 - Authenticated (Shop Manager+) Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    The Shop as a Customer for WooCommerce plugin for WordPress is vulnerable to privilege escalation in versions up to, and including, 1.2.3. This makes it possible for authenticated attackers, with WooCommerce Shop Manager permissions or above, to log in as any user, such as an administrator.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3c730a69-015a-4b36-aa16-eff6916a302f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/shop-as-a-customer-for-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/shop-as-a-customer-for-woocommerce/"
+    shodan-query: 'http.html:"wp-content/plugins/shop-as-a-customer-for-woocommerce/"'
+  tags: cve,wordpress,wp-plugin,shop-as-a-customer-for-woocommerce,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/shop-as-a-customer-for-woocommerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "shop-as-a-customer-for-woocommerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.3')

@@ -1,0 +1,59 @@
+id: shariff_sharing-11f883d2-c183-4cc9-a330-6c50610a5c39
+
+info:
+  name: >
+    Shariff Sharing < 1.0.8 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Shariff Sharing plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘shariff_image' parameter in versions before 1.0.8 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/11f883d2-c183-4cc9-a330-6c50610a5c39?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/shariff-sharing/"
+    google-query: inurl:"/wp-content/plugins/shariff-sharing/"
+    shodan-query: 'http.html:"wp-content/plugins/shariff-sharing/"'
+  tags: cve,wordpress,wp-plugin,shariff-sharing,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/shariff-sharing/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "shariff-sharing"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.0.8')

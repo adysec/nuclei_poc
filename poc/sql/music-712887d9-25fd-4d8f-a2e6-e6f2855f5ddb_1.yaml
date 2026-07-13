@@ -1,0 +1,59 @@
+id: music-712887d9-25fd-4d8f-a2e6-e6f2855f5ddb
+
+info:
+  name: >
+    Music <= 1.5 - Multiple Vulnerabilities
+  author: topscoder
+  severity: critical
+  description: >
+    The Music theme for WordPress is vulnerable to Cross-Site Scripting, Content Spoofing, and Path Traversal in all known versions. This is due to inclusion of a vulnerable version of jPlayer. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser, create fake content, and read the contents of arbitrary files on the server, which can contain sensitive information.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/712887d9-25fd-4d8f-a2e6-e6f2855f5ddb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:N
+    cvss-score: 10
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/music/"
+    google-query: inurl:"/wp-content/themes/music/"
+    shodan-query: 'http.html:"wp-content/themes/music/"'
+  tags: cve,wordpress,wp-theme,music,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/music/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "music"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5')

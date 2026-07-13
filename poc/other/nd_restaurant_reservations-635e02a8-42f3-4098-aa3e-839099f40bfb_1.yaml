@@ -1,0 +1,59 @@
+id: nd_restaurant_reservations-635e02a8-42f3-4098-aa3e-839099f40bfb
+
+info:
+  name: >
+    Restaurant Reservations <= 1.7 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The plugin Restaurant Reservations is vulnerable to SQL Injection via an several parameters in versions up to, and including, 1.7 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/635e02a8-42f3-4098-aa3e-839099f40bfb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/nd-restaurant-reservations/"
+    google-query: inurl:"/wp-content/plugins/nd-restaurant-reservations/"
+    shodan-query: 'http.html:"wp-content/plugins/nd-restaurant-reservations/"'
+  tags: cve,wordpress,wp-plugin,nd-restaurant-reservations,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/nd-restaurant-reservations/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "nd-restaurant-reservations"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7')

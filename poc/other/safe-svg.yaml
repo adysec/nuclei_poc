@@ -1,0 +1,59 @@
+id: safe-svg
+
+info:
+  name: "Safe SVG <= 1.9.5 - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Safe SVG plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.9.5 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - https://github.com/darylldoyle/svg-sanitizer/issues/31
+    - https://github.com/darylldoyle/safe-svg/issues/9
+    - https://wpscan.com/vulnerability/a23e3629-c6d7-478a-9c74-0f3d27430216
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-safe-svg-cross-site-scripting-1-9-5/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/safe-svg/"
+    google-query: inurl:"/wp-content/plugins/safe-svg/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,safe-svg,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/safe-svg/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "safe-svg"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.5')

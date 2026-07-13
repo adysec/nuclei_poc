@@ -1,0 +1,59 @@
+id: zero_spam-03d8b8e7-5702-42d4-8cd9-ae3ff1a74a7e
+
+info:
+  name: >
+    Zero Spam for WordPress <= 5.4.4 - Authenticated(Administrator+) SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Zero Spam for WordPress plugin is vulnerable to generic SQL Injection via the 'type', 'country', and 's' parameters in versions up to, and including, 5.4.4 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers with administrator-level permissions to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. prepare_items
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/03d8b8e7-5702-42d4-8cd9-ae3ff1a74a7e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/zero-spam/"
+    google-query: inurl:"/wp-content/plugins/zero-spam/"
+    shodan-query: 'http.html:"wp-content/plugins/zero-spam/"'
+  tags: cve,wordpress,wp-plugin,zero-spam,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/zero-spam/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "zero-spam"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.4.5')

@@ -1,0 +1,59 @@
+id: leads_5050_visitor_insights-15d9c743-5700-482a-a6bc-ecf541ea9e7d
+
+info:
+  name: >
+    leads5050-visitor-insights <= 1.0.5 - Authorization Bypass
+  author: topscoder
+  severity: low
+  description: >
+    The leads5050-visitor-insights plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the leads5050_set_license function in versions up to, and including, 1.0.5. This makes it possible for authenticated attackers, with subscriber-level permissions and above, to edit the license data in the plugin's settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/15d9c743-5700-482a-a6bc-ecf541ea9e7d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/leads-5050-visitor-insights/"
+    google-query: inurl:"/wp-content/plugins/leads-5050-visitor-insights/"
+    shodan-query: 'http.html:"wp-content/plugins/leads-5050-visitor-insights/"'
+  tags: cve,wordpress,wp-plugin,leads-5050-visitor-insights,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/leads-5050-visitor-insights/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "leads-5050-visitor-insights"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.5')

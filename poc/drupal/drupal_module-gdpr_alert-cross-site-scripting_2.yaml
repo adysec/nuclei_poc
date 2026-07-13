@@ -1,0 +1,51 @@
+
+id: drupal_module-gdpr_alert-cross-site-scripting
+info:
+  name: drupal_module-gdpr_alert-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to define configurable GDPR alert messages. The module doesnt sufficiently filter user-supplied text leading to a Cross Site Scripting (XSS) vulnerability. This vulnerability is mitigated by the fact that an attacker needs additional permissions. The vulnerability can be exploited by an attacker with a role with the permission administer gdpr alert regardless of other configurations."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-023
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Theoretical/TD:Uncommon"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/gdpr_alert/"
+    google-query: "inurl:'/sites/all/modules/gdpr_alert/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/gdpr_alert/gdpr_alert.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'gdpr_alert'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '1.0.0')

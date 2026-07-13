@@ -1,0 +1,102 @@
+id: multi-takeover-check
+info:
+  name: Instagram, LinkedIn, X, YouTube Takeover Check
+  author: votre-nom
+  severity: high
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    pipeline: true
+    extractors:
+      # Instagram
+      - type: regex
+        name: instagram-username
+        group: 1
+        regex:
+          - https:\/\/(?:www\.)?instagram\.com\/([^"'/\s<]+)
+
+      # X
+      - type: regex
+        name: x-username
+        group: 1
+        regex:
+          - https:\/\/(?:www\.)?x\.com\/([^"'/\s<]+)
+
+      # LinkedIn (company)
+      - type: regex
+        name: linkedin-company
+        group: 1
+        regex:
+          - https:\/\/(?:www\.)?linkedin\.com\/company\/([^"'/\s<]+)
+
+      # YouTube (user)
+      - type: regex
+        name: youtube-user
+        group: 1
+        regex:
+          - https:\/\/(?:www\.)?youtube\.com\/user\/([^"'/\s<]+)
+
+
+  - method: GET
+    pipeline: true
+    path:
+      - "https://www.instagram.com/{{instagram-username}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "Sorry, this page isn't available."
+        name: instagram-takeover
+
+
+  - method: GET
+    pipeline: true
+    path:
+      - "https://www.x.com/{{x-username}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "Ce compte n'existe pas."
+        name: x-takeover
+
+
+  - method: GET
+    pipeline: true
+    path:
+      - "https://www.linkedin.com/company/{{linkedin-company}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "Cette page LinkedIn n’est pas disponible"
+        name: linkedin-takeover
+
+
+  - method: GET
+    pipeline: true
+    path:
+      - "https://www.youtube.com/user/{{youtube-user}}"
+
+    matchers:
+      - type: status
+        status:
+          - 404
+        name: youtube-takeover

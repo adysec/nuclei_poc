@@ -1,0 +1,47 @@
+# gap: owasp-wstg-athn-06-browser-cache-sensitive
+id: owasp-wstg-athn-06-browser-cache-sensitive
+
+info:
+  name: Sensitive Page Cacheable by Browser (WSTG-ATHN-06)
+  author: TyrusRC
+  severity: low
+  description: |
+    Probes a small set of authenticated/sensitive HTML pages (/login,
+    /account, /profile, /dashboard, /checkout) and fires when the
+    canonical Cache-Control: no-store directive is absent on the
+    response. When sensitive HTML is allowed into browser or shared
+    intermediary caches, post-logout back-button replay and disclosure
+    on shared workstations become viable attacks. JSON/API responses
+    are skipped via a Content-Type: text/html gate so this only fires
+    on cacheable rendered pages. (Pragma: no-cache is an HTTP/1.0
+    relic — its presence or absence is not used as a gate.)
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/04-Authentication_Testing/06-Testing_for_Browser_Cache_Weaknesses
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+  tags: custom,misconfig,headers,cache,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/account"
+      - "{{BaseURL}}/profile"
+      - "{{BaseURL}}/dashboard"
+      - "{{BaseURL}}/checkout"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "content-type: text/html"
+      - type: word
+        part: header
+        case-insensitive: true
+        negative: true
+        words:
+          - "cache-control: no-store"

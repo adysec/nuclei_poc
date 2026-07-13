@@ -1,0 +1,59 @@
+id: login_with_cognito-44cbaa25-7e91-4b2e-81c4-ba1d7ba02350
+
+info:
+  name: >
+    Multiple miniOrange Plugins (Various Version) - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    Multiple miniorange Plugins for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'appId' parameter due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/44cbaa25-7e91-4b2e-81c4-ba1d7ba02350?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/login-with-cognito/"
+    google-query: inurl:"/wp-content/plugins/login-with-cognito/"
+    shodan-query: 'http.html:"wp-content/plugins/login-with-cognito/"'
+  tags: cve,wordpress,wp-plugin,login-with-cognito,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/login-with-cognito/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "login-with-cognito"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.3')

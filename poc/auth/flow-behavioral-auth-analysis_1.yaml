@@ -1,0 +1,260 @@
+id: flow-behavioral-auth-analysis
+
+info:
+  name: Behavioral Authentication Analysis
+  author: geeknik
+  severity: medium
+  description: |
+    Dynamic authentication mechanism analysis using Flow Protocol for multi-step
+    security validation. This template performs comprehensive authentication security
+    analysis including login behavior assessment, session management testing, and
+    access control validation while maintaining defensive research principles for
+    identifying authentication weaknesses.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/
+    - https://tools.ietf.org/html/rfc6749
+  tags: authentication,flow,security,behavioral-analysis,defensive
+
+flow: |
+  // Initialize authentication test parameters
+  template["test_credentials"] = [
+    {"username": "admin", "password": "admin"},
+    {"username": "administrator", "password": "password"},
+    {"username": "test", "password": "test"},
+    {"username": "guest", "password": "guest"},
+    {"username": "admin", "password": "123456"},
+    {"username": "root", "password": "root"}
+  ];
+
+  template["auth_findings"] = [];
+  template["session_tokens"] = [];
+  let authScore = 100;
+
+  // Analyze login form for security features
+  http("login-form-analysis");
+
+  const loginResponse = template["login_form_response"];
+  if (loginResponse) {
+    template["auth_features"] = {
+      "csrf_protection": loginResponse.includes("csrf") || loginResponse.includes("_token"),
+      "captcha_present": loginResponse.includes("captcha") || loginResponse.includes("recaptcha"),
+      "lockout_indication": loginResponse.includes("lockout") || loginResponse.includes("attempts"),
+      "mfa_supported": loginResponse.includes("2fa") || loginResponse.includes("mfa")
+    };
+
+    // Deduct points for missing security features
+    if (!template["auth_features"]["csrf_protection"]) authScore -= 20;
+    if (!template["auth_features"]["captcha_present"]) authScore -= 10;
+    if (!template["auth_features"]["mfa_supported"]) authScore -= 15;
+  }
+
+  // Test authentication with common credentials
+  for (let cred of iterate(template["test_credentials"])) {
+    set("username", cred.username);
+    set("password", cred.password);
+
+    http("login-attempt");
+
+    const loginStatus = template["login_status"];
+    const loginResp = template["login_response"];
+
+    template["login_successful"] = (
+      loginStatus === "200" ||
+      loginStatus === "302" ||
+      (loginResp && (loginResp.includes("welcome") ||
+                    loginResp.includes("dashboard") ||
+                    loginResp.includes("profile")))
+    );
+
+    if (template["login_successful"]) {
+      // Extract session information
+      const sessionRegex = /(?:sessionid|JSESSIONID|PHPSESSID|session_id)=([^;]+)/i;
+      const cookieMatch = template["login_headers"] ?
+                         template["login_headers"].match(sessionRegex) : null;
+
+      if (cookieMatch) {
+        template["session_tokens"].push({
+          "username": cred.username,
+          "token": cookieMatch[1],
+          "timestamp": new Date().toISOString()
+        });
+      }
+
+      template["auth_findings"].push({
+        "type": "weak_credentials",
+        "username": cred.username,
+        "password": cred.password,
+        "severity": "high"
+      });
+
+      authScore -= 25;
+
+      // Test session management if login successful
+      http("session-test");
+
+      const sessionHeaders = template["session_headers"];
+      if (sessionHeaders) {
+        template["session_security"] = {
+          "secure_flag": sessionHeaders.includes("Secure"),
+          "httponly_flag": sessionHeaders.includes("HttpOnly"),
+          "samesite_attribute": sessionHeaders.includes("SameSite")
+        };
+
+        // Deduct points for missing session security
+        if (!template["session_security"]["secure_flag"]) authScore -= 15;
+        if (!template["session_security"]["httponly_flag"]) authScore -= 10;
+      }
+
+      // Test privilege escalation
+      http("privilege-test");
+
+      const privilegeStatus = template["privilege_test_status"];
+      const privilegeResp = template["privilege_test_response"];
+
+      template["privilege_escalation"] = (
+        privilegeStatus === "200" &&
+        privilegeResp &&
+        (privilegeResp.includes("admin") ||
+         privilegeResp.includes("configuration") ||
+         privilegeResp.includes("users"))
+      );
+
+      if (template["privilege_escalation"]) {
+        template["auth_findings"].push({
+          "type": "privilege_escalation",
+          "username": cred.username,
+          "severity": "critical"
+        });
+        authScore -= 30;
+      }
+
+      // Only test first successful login to avoid account lockouts
+      break;
+    }
+  }
+
+  // Calculate final authentication security score
+  template["auth_security_score"] = Math.max(authScore, 0);
+  template["auth_risk_level"] = authScore > 80 ? "Low" :
+                               authScore > 60 ? "Medium" :
+                               authScore > 40 ? "High" : "Critical";
+
+http:
+  - id: login-form-analysis
+    method: GET
+    path:
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/admin/login"
+      - "{{BaseURL}}/auth/login"
+      - "{{BaseURL}}/signin"
+
+    matchers:
+      - type: word
+        words:
+          - "login"
+          - "username"
+          - "password"
+        condition: or
+        internal: true
+
+    extractors:
+      - type: regex
+        name: login_form_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: login-attempt
+    method: POST
+    path:
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/admin/login"
+      - "{{BaseURL}}/auth/login"
+
+    body: |
+      username={{username}}&password={{password}}
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 302
+          - 401
+          - 403
+        internal: true
+
+    extractors:
+      - type: regex
+        name: login_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+      - type: regex
+        name: login_response
+        internal: true
+        regex:
+          - "(?s).*"
+      - type: regex
+        name: login_headers
+        part: header
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: session-test
+    method: GET
+    path:
+      - "{{BaseURL}}/dashboard"
+      - "{{BaseURL}}/profile"
+      - "{{BaseURL}}/account"
+
+    cookie-reuse: true
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 302
+        internal: true
+
+    extractors:
+      - type: regex
+        name: session_headers
+        part: header
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: privilege-test
+    method: GET
+    path:
+      - "{{BaseURL}}/admin"
+      - "{{BaseURL}}/admin/users"
+      - "{{BaseURL}}/config"
+      - "{{BaseURL}}/settings"
+
+    cookie-reuse: true
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 403
+        internal: true
+
+    extractors:
+      - type: regex
+        name: privilege_test_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+      - type: regex
+        name: privilege_test_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+# Flow template - matchers and extractors handled by Flow logic

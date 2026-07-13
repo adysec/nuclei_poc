@@ -1,0 +1,59 @@
+id: shortpixel_image_optimiser-9f23bf62-6008-4a9c-a7ae-a2e513699684
+
+info:
+  name: >
+    ShortPixel Image Optimizer <= 5.4.1 - Authenticated(Editor+) PHP Object Injection
+  author: topscoder
+  severity: low
+  description: >
+    The ShortPixel Image Optimizer plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 5.4.1 via deserialization of untrusted input in post content. This allows authenticated attackers with editor capabilities or above to inject a PHP Object. No POP chain is present in the vulnerable plugin. If a POP chain is present via an additional plugin or theme installed on the target system, it could allow the attacker to delete arbitrary files, retrieve sensitive data, or execute code.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9f23bf62-6008-4a9c-a7ae-a2e513699684?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 6.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/shortpixel-image-optimiser/"
+    google-query: inurl:"/wp-content/plugins/shortpixel-image-optimiser/"
+    shodan-query: 'http.html:"wp-content/plugins/shortpixel-image-optimiser/"'
+  tags: cve,wordpress,wp-plugin,shortpixel-image-optimiser,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/shortpixel-image-optimiser/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "shortpixel-image-optimiser"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.4.2')

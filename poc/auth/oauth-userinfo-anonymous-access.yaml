@@ -1,0 +1,70 @@
+# gap: oauth-userinfo-anonymous-access
+id: oauth-userinfo-anonymous-access
+
+info:
+  name: OIDC UserInfo Endpoint Anonymous Access
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects an OIDC UserInfo endpoint reachable without a Bearer token.
+    Per OIDC Core §5.3, the UserInfo endpoint MUST be a protected
+    resource that returns claims only when invoked with a valid
+    access token. The compliant 401 response carries
+    `WWW-Authenticate: Bearer realm="…", error="invalid_token"`; a
+    200 response containing OIDC claim fields (`sub`, `email`,
+    `preferred_username`, `email_verified`) without an Authorization
+    header is a spec violation.
+
+    Anonymous UserInfo access leaks the current session's identity
+    claims if the endpoint is wired up to a default / hardcoded
+    identity, or — more dangerously — returns the claim shape for a
+    test-user that an attacker can use to fingerprint claim names
+    and shapes for the relying party's claim-mapping logic. Class
+    detection — keys on OIDC standardized UserInfo claim shape, not
+    vendor banner.
+  reference:
+    - https://openid.net/specs/openid-connect-core-1_0.html#UserInfo
+    - https://datatracker.ietf.org/doc/html/rfc6750
+  tags: custom,misconfig,oauth,oidc,userinfo,owasp,cwe-287
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/userinfo"
+      - "{{BaseURL}}/oauth2/userinfo"
+      - "{{BaseURL}}/connect/userinfo"
+      - "{{BaseURL}}/oidc/userinfo"
+      - "{{BaseURL}}/api/oauth/userinfo"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"sub"'
+      - type: regex
+        part: body
+        regex:
+          - '"(email|preferred_username|name|email_verified|given_name|family_name)"\s*:'
+
+    extractors:
+      - type: regex
+        part: body
+        name: leaked-sub
+        regex:
+          - '"sub"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: leaked-email
+        regex:
+          - '"email"\s*:\s*"([^"]+)"'
+        group: 1

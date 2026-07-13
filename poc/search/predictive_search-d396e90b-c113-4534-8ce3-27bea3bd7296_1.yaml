@@ -1,0 +1,59 @@
+id: predictive_search-d396e90b-c113-4534-8ce3-27bea3bd7296
+
+info:
+  name: >
+    Predictive Search <= 1.2.2 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    The Predictive Search plugin for WordPress is vulnerable to unauthorized modification and disclosure of data due to missing capability checks on the wp_predictive_search_rebuild_cat_cache_ajax and wp_predictive_search_build_category_cache_error_ajax functions called via wp_ajax and wp_ajax_nopriv hooks in versions up to, and including, 1.2.2. This makes it possible for unauthenticated attackers to rebuild category cache and view any messages in the error log.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d396e90b-c113-4534-8ce3-27bea3bd7296?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/predictive-search/"
+    google-query: inurl:"/wp-content/plugins/predictive-search/"
+    shodan-query: 'http.html:"wp-content/plugins/predictive-search/"'
+  tags: cve,wordpress,wp-plugin,predictive-search,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/predictive-search/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "predictive-search"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.2')

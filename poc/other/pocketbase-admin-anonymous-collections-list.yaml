@@ -1,0 +1,75 @@
+# gap: pocketbase-admin-anonymous-collections-list
+id: pocketbase-admin-anonymous-collections-list
+
+info:
+  name: PocketBase Collections Listable Anonymously
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a PocketBase instance whose `/api/collections` or
+    `/api/collections/_pb_users_auth_/records` endpoints return
+    paginated content without authentication. This is the bug
+    class behind every PocketBase data leak: when an admin
+    leaves a collection's `listRule`/`viewRule` empty
+    (PocketBase treats empty as "no restriction" for any role,
+    including anonymous), the entire collection is readable to
+    unauthenticated clients.
+
+    Class signal: response is the PocketBase pagination
+    envelope (`"page"` + `"perPage"` + `"totalItems"` +
+    `"items"` co-occurrence). This 4-key envelope is unique to
+    PocketBase's `listRecords` handler and discriminates from
+    generic paginated APIs.
+  reference:
+    - https://pocketbase.io/docs/api-collections/
+    - https://pocketbase.io/docs/api-records/
+    - https://pocketbase.io/docs/collections/
+  tags: custom,exposures,pocketbase,baas,disclosure,cwe-306
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/collections/_pb_users_auth_/records?perPage=1"
+      - "{{BaseURL}}/api/collections?perPage=1"
+      - "{{BaseURL}}/api/collections/users/records?perPage=1"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # PocketBase listRecords envelope: 4-key pagination shape.
+        words:
+          - '"page"'
+          - '"perPage"'
+          - '"totalItems"'
+          - '"items"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: total-items
+        regex:
+          - '"totalItems"\s*:\s*([0-9]+)'
+        group: 1
+      - type: regex
+        part: body
+        name: collection-ids
+        regex:
+          - '"collectionId"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: leaked-emails
+        regex:
+          - '"email"\s*:\s*"([^"]+@[^"]+)"'
+        group: 1

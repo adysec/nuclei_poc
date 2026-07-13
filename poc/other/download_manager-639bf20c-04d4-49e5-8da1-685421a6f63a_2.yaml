@@ -1,0 +1,59 @@
+id: download_manager-639bf20c-04d4-49e5-8da1-685421a6f63a
+
+info:
+  name: >
+    Download Manager <= 2.8.7 - Sensitive Information Disclosure via Directory Listing
+  author: topscoder
+  severity: medium
+  description: >
+    The Download Manager plugin for WordPress is vulnerable to Directory Listing in versions up to, and including, 2.8.7. This is due to the 'wpdm_dir_tree()' function being called during the 'init' action. This makes it possible for unauthenticated attackers to read all of the files listed in that directory.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/639bf20c-04d4-49e5-8da1-685421a6f63a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/download-manager/"
+    google-query: inurl:"/wp-content/plugins/download-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/download-manager/"'
+  tags: cve,wordpress,wp-plugin,download-manager,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.8.8')

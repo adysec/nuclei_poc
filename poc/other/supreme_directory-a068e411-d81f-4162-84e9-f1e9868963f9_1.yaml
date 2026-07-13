@@ -1,0 +1,59 @@
+id: supreme_directory-a068e411-d81f-4162-84e9-f1e9868963f9
+
+info:
+  name: >
+    Supreme Directory < 1.1.9 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Supreme Directory plugin for WordPress is vulnerable to Cross-Site Scripting via the 's' parameter in versions before 1.1.9 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a068e411-d81f-4162-84e9-f1e9868963f9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/supreme-directory/"
+    google-query: inurl:"/wp-content/themes/supreme-directory/"
+    shodan-query: 'http.html:"wp-content/themes/supreme-directory/"'
+  tags: cve,wordpress,wp-theme,supreme-directory,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/supreme-directory/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "supreme-directory"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.1.9')

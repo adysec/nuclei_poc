@@ -1,0 +1,59 @@
+id: our_services_showcase-e62a58ec-4ea5-4241-8148-fc8801bd59b3
+
+info:
+  name: >
+    Our Services Showcase <= 2.0 - Missing Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The Our Services Showcase plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the smartcat_services_update_order() function which is called via an AJAX action in versions up to, and including, 2.0. This makes it possible for authenticated attackers with subscriber level permissions and above to modify the sc_member_order value for any post.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e62a58ec-4ea5-4241-8148-fc8801bd59b3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/our-services-showcase/"
+    google-query: inurl:"/wp-content/plugins/our-services-showcase/"
+    shodan-query: 'http.html:"wp-content/plugins/our-services-showcase/"'
+  tags: cve,wordpress,wp-plugin,our-services-showcase,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/our-services-showcase/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "our-services-showcase"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0')

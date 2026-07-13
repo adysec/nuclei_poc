@@ -1,0 +1,42 @@
+# gap: owasp-wstg-conf-04-admin-interfaces
+id: owasp-wstg-conf-04-admin-interfaces
+
+info:
+  name: Generic Admin Interface Exposure
+  author: TyrusRC
+  severity: info
+  description: |
+    Detects generic administrative or management interfaces reachable on a
+    curated list of conventional paths (/admin/, /administrator/,
+    /manager/, /console/, /backend/, /controlpanel/). Findings are gated
+    on both a 200/401/403 response and the presence of distinctive admin
+    UI title markers to avoid firing on every SPA shell that returns 200
+    for unknown routes.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/05-Enumerate_Infrastructure_and_Application_Admin_Interfaces
+  tags: custom,misconfig,admin,exposure,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/admin/"
+      - "{{BaseURL}}/administrator/"
+      - "{{BaseURL}}/manager/"
+      - "{{BaseURL}}/console/"
+      - "{{BaseURL}}/backend/"
+      - "{{BaseURL}}/controlpanel/"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 401
+          - 403
+      - type: dsl
+        dsl:
+          - 'contains(tolower(header), "www-authenticate")'
+          - 'regex("(?is)<form[^>]*action\\s*=\\s*[\"\\x27][^\"\\x27]*(login|signin|admin|auth)", body)'
+          - 'contains(tolower(body), "<title>admin") || contains(tolower(body), "<title>administration") || contains(tolower(body), "<title>admin login") || contains(tolower(body), "<title>admin panel")'
+          - 'contains(tolower(body), "administrator login") || contains(tolower(body), "sign in to administration")'
+        condition: or

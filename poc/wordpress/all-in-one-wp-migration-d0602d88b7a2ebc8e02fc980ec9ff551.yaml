@@ -1,0 +1,59 @@
+id: all-in-one-wp-migration-d0602d88b7a2ebc8e02fc980ec9ff551
+
+info:
+  name: >
+    All-in-One WP Migration and Backup <= 7.86 - Unauthenticated Information Disclosure via Error Logs
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c4901d9d-7b37-40d5-a42b-59c80bbbe8ff?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/all-in-one-wp-migration/"
+    google-query: inurl:"/wp-content/plugins/all-in-one-wp-migration/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,all-in-one-wp-migration,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/all-in-one-wp-migration/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "all-in-one-wp-migration"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.86')

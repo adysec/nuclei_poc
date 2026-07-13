@@ -1,0 +1,59 @@
+id: gantry-5aeca3b6-6b1b-40b5-8824-de4a90c7ddc3
+
+info:
+  name: >
+    Gantry 4 Framework <= 4.1.3 - Remote Code Execution
+  author: topscoder
+  severity: low
+  description: >
+    The Gantry Web Theme Framework for WordPress is vulnerable to Remote Code Execution in versions up to, and including, 4.1.3 via the $_POST[‘data’] JSON that can passed to eval() when the right conditions are met. This makes it possible authenticated attackers, with minimal privileges such as a subscriber, to execute code on the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5aeca3b6-6b1b-40b5-8824-de4a90c7ddc3?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gantry/"
+    google-query: inurl:"/wp-content/plugins/gantry/"
+    shodan-query: 'http.html:"wp-content/plugins/gantry/"'
+  tags: cve,wordpress,wp-plugin,gantry,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gantry/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gantry"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.1.3')

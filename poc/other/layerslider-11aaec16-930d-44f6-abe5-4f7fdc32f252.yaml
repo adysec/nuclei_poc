@@ -1,0 +1,59 @@
+id: layerslider-11aaec16-930d-44f6-abe5-4f7fdc32f252
+
+info:
+  name: >
+    LayerSlider <= 6.2.0 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The LayerSlider plugin for WordPress is vulnerable to Cross-Site Request forgery in versions up to, and including 6.2.0, due missing nonce validation on an unspecified function that makes it possible for attackers to trick site administrators into performing unwanted actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/11aaec16-930d-44f6-abe5-4f7fdc32f252?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/LayerSlider/"
+    google-query: inurl:"/wp-content/plugins/LayerSlider/"
+    shodan-query: 'http.html:"wp-content/plugins/LayerSlider/"'
+  tags: cve,wordpress,wp-plugin,LayerSlider,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/LayerSlider/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "LayerSlider"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 6.2.1')

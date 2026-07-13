@@ -1,0 +1,87 @@
+# gap: k8s-opa-gatekeeper-port-tag-bypass
+id: k8s-opa-gatekeeper-port-tag-bypass
+
+info:
+  name: Kubernetes OPA Gatekeeper disallowedtags Bypass via Registry Port
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects anonymous-accessible Kubernetes API servers that admit Pod
+    creation with an image identifier of the form 'registry.host:PORT/
+    image' (registry port colon, no explicit tag). The OPA Gatekeeper
+    'disallowedtags' ConstraintTemplate, and any Rego policy that uses
+    `not contains(image, ":")` to infer 'has-tag', is bypassable by such
+    identifiers because the colon is satisfied by the registry port — but
+    Kubernetes defaults the missing tag to ':latest', defeating the
+    policy intent (Reversec advisory, 2025-07).
+
+    The probe performs a dry-run Pod create with image
+    'registry.example.com:443/nuclei/canary'. A 200/201 admission-allowed
+    response with the pod kind echoed back confirms the admission
+    pipeline permits untagged-latest deployment despite any
+    disallowedtags-class policy claimed to be in effect. The bypass
+    exposes the cluster to arbitrary attacker-supplied container images
+    (cluster-admin-grade impact on clusters with permissive RBAC), and
+    bypasses cluster admission policy — auth bypass of the cluster's
+    admission control plane.
+
+    Note: this template fires whenever an anonymous API server admits
+    the dry-run Pod create — strictly that's an anonymous-K8s-API
+    finding (see kubernetes-api-server-anonymous-access) with the
+    additional signal that no disallowedtags-class policy blocks the
+    port-image identifier. Investigate paired findings together.
+  reference:
+    - https://labs.reversec.com/advisories/2025/07/gatekeeper-constraint-bypass
+    - https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/
+  tags: custom,cloud,kubernetes,k8s,opa,gatekeeper,admission,bypass
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/v1/namespaces/default/pods?dryRun=All"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {
+          "name": "nuclei-opa-portbypass-{{rand_text_alpha(6)}}",
+          "labels": {"nuclei-probe": "opa-port-bypass"}
+        },
+        "spec": {
+          "containers": [
+            {
+              "name": "c",
+              "image": "registry.example.com:443/nuclei/canary"
+            }
+          ]
+        }
+      }
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+          - 202
+      - type: word
+        part: body
+        words:
+          - '"kind":"Pod"'
+      - type: word
+        part: body
+        words:
+          - 'nuclei-opa-portbypass-'
+      - type: word
+        part: body
+        words:
+          - 'registry.example.com:443/nuclei/canary'
+
+    extractors:
+      - type: regex
+        part: body
+        name: pod-uid
+        regex:
+          - '"uid"\s*:\s*"([a-f0-9-]+)"'
+        group: 1

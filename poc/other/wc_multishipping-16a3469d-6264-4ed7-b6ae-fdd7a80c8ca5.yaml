@@ -1,0 +1,59 @@
+id: wc_multishipping-16a3469d-6264-4ed7-b6ae-fdd7a80c8ca5
+
+info:
+  name: >
+    Chronopost & Mondial relay pour WooCommerce - WCMultiShipping <= 2.3.7 - Incorrect Authorization
+  author: topscoder
+  severity: low
+  description: >
+    The UPS, Mondial Relay & Chronopost for WooCommerce – WCMultiShipping plugin for WordPress is vulnerable to unauthorized access of data due to an incorrect capability check on the wms_chronopost_test_credentials_ajax() function in all versions up to, and including, 2.3.7. This makes it possible for authenticated attackers, with subscriber-level access and above, to test account credentials.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/16a3469d-6264-4ed7-b6ae-fdd7a80c8ca5?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wc-multishipping/"
+    google-query: inurl:"/wp-content/plugins/wc-multishipping/"
+    shodan-query: 'http.html:"wp-content/plugins/wc-multishipping/"'
+  tags: cve,wordpress,wp-plugin,wc-multishipping,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wc-multishipping/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wc-multishipping"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3.7')

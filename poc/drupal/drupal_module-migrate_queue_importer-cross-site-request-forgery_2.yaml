@@ -1,0 +1,53 @@
+
+id: drupal_module-migrate_queue_importer-cross-site-request-forgery
+info:
+  name: drupal_module-migrate_queue_importer-cross-site-request-forgery
+  author: me
+  severity: medium
+  description: "The Migrate queue importer module enables you to create cron migrations(configuration entities) with a reference towards migration entities in order to import them during cron runs. The module doesnt sufficiently protect against Cross Site Request Forgery under specific scenarios allowing an attacker to enable/disable a cron migration. This vulnerability is mitigated by the fact that an attacker must know the id of the migration."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-024
+  metadata:
+    security-risk: "Moderately critical 10∕25 AC:Basic/A:Admin/CI:None/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-request-forgery"
+    fofa-query: "/sites/all/modules/migrate_queue_importer/"
+    google-query: "inurl:'/sites/all/modules/migrate_queue_importer/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/migrate_queue_importer/migrate_queue_importer.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'migrate_queue_importer'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 2.1.1')

@@ -1,0 +1,59 @@
+id: wp_maintenance-87a1cc00-330c-40c3-a174-8ea50075c4bd
+
+info:
+  name: >
+    WP Maintenance <= 6.1.3 - IP Restriction Bypass
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/87a1cc00-330c-40c3-a174-8ea50075c4bd?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-maintenance/"
+    google-query: inurl:"/wp-content/plugins/wp-maintenance/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-maintenance/"'
+  tags: cve,wordpress,wp-plugin,wp-maintenance,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-maintenance/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-maintenance"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.1.3')

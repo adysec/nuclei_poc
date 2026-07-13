@@ -1,0 +1,45 @@
+id: ASVS-4-0-3-V3-4-1
+
+info:
+  name: ASVS 3.4.1 Check
+  author: AmirHossein Raeisi
+  severity: info
+  classification:
+    cwe-id: CWE-614
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes
+    - https://vulnerable-pages.onrender.com/set-cookie
+    - https://github.com/projectdiscovery/nuclei-templates/blob/main/http/misconfiguration/cookies-without-secure.yaml
+  tags: asvs,3.4.1
+  description: |
+    Verify that cookie-based session tokens have the 'Secure' attribute set.
+
+flow: |
+    http()
+    javascript()
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    host-redirects: true
+    max-redirects: 2
+
+javascript:
+  - code: |
+      content = template.http_all_headers
+      const setCookieLines = content
+        .split(/\r\n/)
+        .filter(line => line.trim().toLowerCase().startsWith('set-cookie:'));
+      const nonSecureCookies = setCookieLines.filter(line => !line.toLowerCase().includes('secure'));
+      const cookieNames = nonSecureCookies.map(line => {
+        const match = line.match(/set-cookie:\s*([^=]+)=/i);
+        return match ? match[1] : null;
+      }).filter(Boolean).filter(cookieName => cookieName.toLowerCase().includes('session'));  // Check for 'session' in the cookie name
+      cookieNames
+
+    extractors:
+      - type: regex
+        regex:
+          - '[a-zA-Z0-9_-]+'
+# digest: 4b0a00483046022100a9988bb7771384dad914aecf5a0cb5bb6d5325a662e67ad6045ce032c7c1b352022100cbd76a81cb762ba0ff4d5e9641cac769a7518de3680987639e0565c4832496d7:236a7c23afe836fbe231d6e037cff444

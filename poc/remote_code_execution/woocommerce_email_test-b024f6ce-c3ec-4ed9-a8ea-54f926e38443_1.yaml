@@ -1,0 +1,59 @@
+id: woocommerce_email_test-b024f6ce-c3ec-4ed9-a8ea-54f926e38443
+
+info:
+  name: >
+    WooCommerce Email Test <= 1.5 - Sensitive Data Exposure
+  author: topscoder
+  severity: medium
+  description: >
+    The WooCommerce Email Test for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 1.5 by opening the following URL https://www.example.de/?woocommerce_email_test=WC_Email_Customer_Completed_Order. This can allow unauthorized attackers to extract sensitive data including customer details, orders, payment information, etc.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b024f6ce-c3ec-4ed9-a8ea-54f926e38443?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-email-test/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-email-test/"
+    shodan-query: 'http.html:"wp-content/plugins/woocommerce-email-test/"'
+  tags: cve,wordpress,wp-plugin,woocommerce-email-test,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-email-test/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-email-test"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5')

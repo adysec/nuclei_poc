@@ -1,0 +1,59 @@
+id: gallery_bank-13e7c4ab-7856-41a5-8cd9-4f8118af534d
+
+info:
+  name: >
+    Gallery Bank – WordPress Photo Gallery <= 3.0.101 - SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Gallery Bank – WordPress Photo Gallery plugin for WordPress is vulnerable to generic SQL Injection via the ‘show_albums’ attribute in versions up to, and including, 3.0.101 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers, with editor-level permissions and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/13e7c4ab-7856-41a5-8cd9-4f8118af534d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gallery-bank/"
+    google-query: inurl:"/wp-content/plugins/gallery-bank/"
+    shodan-query: 'http.html:"wp-content/plugins/gallery-bank/"'
+  tags: cve,wordpress,wp-plugin,gallery-bank,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gallery-bank/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gallery-bank"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.101')

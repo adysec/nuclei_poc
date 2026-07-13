@@ -1,0 +1,59 @@
+id: wp_automatic-fa45d830-fa28-4d94-a6d5-2dc2b8456cf2
+
+info:
+  name: >
+    WordPress Automatic Plugin <= 2.0.3 - Cross-Site Request Forgery to SQL Injection
+  author: topscoder
+  severity: medium
+  description: >
+    The "WordPress Automatic Plugin" plugin for WordPress is vulnerable to generic SQL Injection via the ‘q’ parameter in versions up to, and including, 2.0.3 due to insufficient escaping on the user-supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fa45d830-fa28-4d94-a6d5-2dc2b8456cf2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-automatic/"
+    google-query: inurl:"/wp-content/plugins/wp-automatic/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-automatic/"'
+  tags: cve,wordpress,wp-plugin,wp-automatic,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-automatic/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-automatic"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.3')

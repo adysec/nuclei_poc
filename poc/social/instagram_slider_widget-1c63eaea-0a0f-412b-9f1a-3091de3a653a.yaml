@@ -1,0 +1,59 @@
+id: instagram_slider_widget-1c63eaea-0a0f-412b-9f1a-3091de3a653a
+
+info:
+  name: >
+    Social Slider Feed <= 2.0.4 - Missing Authorization to Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Social Slider Feed plugin for WordPress is vulnerable to authenticated arbitrary API key update via the YouTube API key in versions up to, and including 2.0.4. This makes it possible for a subscriber-level attacker to change the API key. Proper sanitization is also missing allowing the attacker to inject malicious code that is executed when someone visits an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1c63eaea-0a0f-412b-9f1a-3091de3a653a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/instagram-slider-widget/"
+    google-query: inurl:"/wp-content/plugins/instagram-slider-widget/"
+    shodan-query: 'http.html:"wp-content/plugins/instagram-slider-widget/"'
+  tags: cve,wordpress,wp-plugin,instagram-slider-widget,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/instagram-slider-widget/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "instagram-slider-widget"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.4')

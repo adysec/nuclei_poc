@@ -1,0 +1,59 @@
+id: wps_cleaner-fb147a5d-65ad-4304-b13a-670f11398e63
+
+info:
+  name: >
+    WPS Cleaner <= 1.4.4 - Missing Authorization Checks
+  author: topscoder
+  severity: low
+  description: >
+    The WPS Cleaner plugin for WordPress is vulnerable to authorization bypass in versions up to, and including, 1.4.4. This is due to missing capability and nonce checks on 7 different functions found in the '/classes/plugin.php' file. This makes it possible for authenticated attackers with minimal permissions, such as a subscriber, to perform a variety of actions such as deleting arbitrary files, creating zip archives, deleting zip archives, and deleting alerts among some additional actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fb147a5d-65ad-4304-b13a-670f11398e63?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wps-cleaner/"
+    google-query: inurl:"/wp-content/plugins/wps-cleaner/"
+    shodan-query: 'http.html:"wp-content/plugins/wps-cleaner/"'
+  tags: cve,wordpress,wp-plugin,wps-cleaner,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wps-cleaner/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wps-cleaner"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.4')

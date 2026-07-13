@@ -1,0 +1,59 @@
+id: wishlist_and_compare-d99614e6-4543-4594-9a46-71ecc986be45
+
+info:
+  name: >
+    Wishlist and Compare for WooCommerce <= 1.0.4 - Authorization Bypass
+  author: topscoder
+  severity: high
+  description: >
+    The Wishlist and Compare for WooCommerce plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on several functions in versions up to, and including, 1.0.4. This makes it possible for unauthenticated attackers to edit plugin settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d99614e6-4543-4594-9a46-71ecc986be45?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wishlist-and-compare/"
+    google-query: inurl:"/wp-content/plugins/wishlist-and-compare/"
+    shodan-query: 'http.html:"wp-content/plugins/wishlist-and-compare/"'
+  tags: cve,wordpress,wp-plugin,wishlist-and-compare,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wishlist-and-compare/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wishlist-and-compare"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.4')

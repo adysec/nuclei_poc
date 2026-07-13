@@ -1,0 +1,59 @@
+id: wp_user_frontend-8a2186c9-fa27-4d7d-be41-c82711c49334
+
+info:
+  name: >
+    WP User Frontend < 2.3.11 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The WP User Frontend plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'wpuf_file_upload' and 'wpuf_insert_image' AJAX actions in versions before 2.3.11. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8a2186c9-fa27-4d7d-be41-c82711c49334?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-user-frontend/"
+    google-query: inurl:"/wp-content/plugins/wp-user-frontend/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-user-frontend/"'
+  tags: cve,wordpress,wp-plugin,wp-user-frontend,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-user-frontend/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-user-frontend"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.3.11')

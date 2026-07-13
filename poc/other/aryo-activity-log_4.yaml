@@ -1,0 +1,49 @@
+id: wordpress-aryo-activity-log
+
+info:
+  name: Activity Log – Monitor & Record User Changes Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/aryo-activity-log/
+  metadata:
+    plugin_namespace: aryo-activity-log
+    wpscan: https://wpscan.com/plugin/aryo-activity-log
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/aryo-activity-log/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/aryo-activity-log.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100efbaab2a31dadd392aeae212ca905aeef6dfe9fbd1bbf974a2ee5916cf486c90022100bcc1f2202b80222c703293610552ef46d0151603bd16047ad061f29abe130d98:922c64590222798bb761d5b6d8e72950

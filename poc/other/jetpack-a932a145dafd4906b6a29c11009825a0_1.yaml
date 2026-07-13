@@ -1,0 +1,58 @@
+id: jetpack-a932a145dafd4906b6a29c11009825a0
+
+info:
+  name: "Jetpack <= 6.4.2 - Cross-Site Scripting via post_meta"
+  author: topscoder
+  severity: medium
+  description: "Jetpack up to 6.4.2 is vulnerable to stored Cross-Site Scripting. This allows attackers with contributor privileges to inject arbitrary JavaScript code into the HTML markup of a blog post."
+  reference:
+    - https://jetpack.com/2018/09/04/jetpack-6-5-general-maintenance-and-security-update/
+    - https://web.archive.org/web/20190328023701/https%3A//www.ripstech.com/php-security-calendar-2018/
+    - https://wpscan.com/vulnerability/5e63453f-4d95-4bc3-9338-2d77f95f9ee7
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/jetpack/"
+    google-query: inurl:"/wp-content/plugins/jetpack/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,jetpack,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jetpack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jetpack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.4.2')

@@ -1,0 +1,59 @@
+id: workup-f9dc401e-0247-4f49-8092-8841ea6c1f90
+
+info:
+  name: >
+    Workup – Job Board WordPress Theme <= 2.1.5 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The "Workup – Job Board WordPress Theme" theme for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘filter-title’ parameter in versions up to, and including, 2.1.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f9dc401e-0247-4f49-8092-8841ea6c1f90?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/workup/"
+    google-query: inurl:"/wp-content/themes/workup/"
+    shodan-query: 'http.html:"wp-content/themes/workup/"'
+  tags: cve,wordpress,wp-theme,workup,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/workup/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "workup"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.5')

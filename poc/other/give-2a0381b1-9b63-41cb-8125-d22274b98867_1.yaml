@@ -1,0 +1,59 @@
+id: give-2a0381b1-9b63-41cb-8125-d22274b98867
+
+info:
+  name: >
+    GiveWP <= 2.25.1 - Cross-Site Request Forgery to Cross-Site Scripting via render_dropdown
+  author: topscoder
+  severity: medium
+  description: >
+    The GiveWP plugin is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.25.1. This is due to missing or incorrect nonce validation on the 'render_dropdown' AJAX function. This makes it possible for unauthenticated attackers to execute JavaScript in the browser of an administrator via forged request granted a CSV file containing JavaScript in the column names has been uploaded and they can trick a site administrator into performing an action such as clicking on a link. Note that it is only possible to upload CSV files containing JavaScript tags in cases where ALLOW_UNFILTERED_UPLOADS is enabled.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2a0381b1-9b63-41cb-8125-d22274b98867?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/give/"
+    google-query: inurl:"/wp-content/plugins/give/"
+    shodan-query: 'http.html:"wp-content/plugins/give/"'
+  tags: cve,wordpress,wp-plugin,give,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/give/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "give"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.25.1')

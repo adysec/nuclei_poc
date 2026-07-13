@@ -1,0 +1,59 @@
+id: jupiterx_core-52daa230-1600-4ace-9adf-3f4e9be51e9f
+
+info:
+  name: >
+    Jupiter X Core <= 2.0.9 - Missing Authorization Checks
+  author: topscoder
+  severity: low
+  description: >
+    The JupiterX Core plugin for WordPress suffers from several access control issues in versions up to, and including, 2.0.9. This allows authenticated users to view health check information, import templates, reset the database, create and restore partial database backups, and obtain the paths to created database backups which are protected by an .htaccess file
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/52daa230-1600-4ace-9adf-3f4e9be51e9f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:L/A:L
+    cvss-score: 7.6
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/jupiterx-core/"
+    google-query: inurl:"/wp-content/plugins/jupiterx-core/"
+    shodan-query: 'http.html:"wp-content/plugins/jupiterx-core/"'
+  tags: cve,wordpress,wp-plugin,jupiterx-core,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jupiterx-core/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jupiterx-core"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0.9')

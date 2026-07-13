@@ -1,0 +1,57 @@
+
+id: drupal_module-super_login-access-bypass
+info:
+  name: drupal_module-super_login-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to login with an email address. The module doesnt sufficiently check if a user account is active when using email login. This vulnerability is mitigated by the fact that an attacker must have an account in the website that is blocked."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-001
+  metadata:
+    security-risk: "Critical 18∕25 AC:None/A:None/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/super_login/"
+    google-query: "inurl:'/sites/all/modules/super_login/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/super_login/super_login.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'super_login'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.6')
+         - compare_versions(version, '8.x-1.5')
+         - compare_versions(version, '8.x-1.4')
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

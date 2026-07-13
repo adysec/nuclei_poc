@@ -1,0 +1,59 @@
+id: gutenberg-63f26380-0bc2-4fe7-9e9d-05c688c201f9
+
+info:
+  name: >
+    Gutenberg 12.9.0 - 18.0.0 - Unauthenticated & Authenticated (Contributor+) Stored Cross-Site Scripting via Avatar Block
+  author: topscoder
+  severity: low
+  description: >
+    The Gutenberg plugin for WordPress is vulnerable to Stored Cross-Site Scripting via user display names in the Avatar block in versions 12.9.0 to 18.0.0 due to insufficient output escaping on the display name. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.  In addition, it also makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that have the comment block present and display the comment author's avatar.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/63f26380-0bc2-4fe7-9e9d-05c688c201f9?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gutenberg/"
+    google-query: inurl:"/wp-content/plugins/gutenberg/"
+    shodan-query: 'http.html:"wp-content/plugins/gutenberg/"'
+  tags: cve,wordpress,wp-plugin,gutenberg,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gutenberg/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gutenberg"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 12.9.0', '<= 18.0.0')

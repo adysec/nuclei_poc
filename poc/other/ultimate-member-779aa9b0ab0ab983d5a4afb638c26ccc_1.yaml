@@ -1,0 +1,59 @@
+id: ultimate-member-779aa9b0ab0ab983d5a4afb638c26ccc
+
+info:
+  name: >
+    Ultimate Member – User Profile, Registration, Login, Member Directory, Content Restriction & Membership Plugin <= 2.10.1 - Unauthenticated Blind SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Ultimate Member – User Profile, Registration, Login, Member Directory, Content Restriction & Membership Plugin plugin for WordPress is vulnerable to blind SQL Injection via the search parameter in all versions up to, and including, 2.10.1 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. This vulnerability was partially patched in version 2.9.2 when initially addressing CVE-2025-0308.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8f539e25-5483-417d-a3c5-e7034c03c673?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ultimate-member/"
+    google-query: inurl:"/wp-content/plugins/ultimate-member/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,ultimate-member,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ultimate-member/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ultimate-member"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.10.1')

@@ -1,0 +1,59 @@
+id: email_subscribers-01d19333-d315-4715-8365-719260ae0ee4
+
+info:
+  name: >
+    Email Subscribers & Newsletters < 2.9.1 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Email Subscribers & Newsletters plugin for WordPress is vulnerable to Cross-Site Scripting in versions before 2.9.1 via the following parameters: 1) 'search' and 'es_mail_group' parameters in sendmail.php 2) 'search', 'sts', and 'cnt' parameters in view-subscriber-show.php 3) 'pagemail' parameter in sentmail-preview.php. This is due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/01d19333-d315-4715-8365-719260ae0ee4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/email-subscribers/"
+    google-query: inurl:"/wp-content/plugins/email-subscribers/"
+    shodan-query: 'http.html:"wp-content/plugins/email-subscribers/"'
+  tags: cve,wordpress,wp-plugin,email-subscribers,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/email-subscribers/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "email-subscribers"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.9.1')

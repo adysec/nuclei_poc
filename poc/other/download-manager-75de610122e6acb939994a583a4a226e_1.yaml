@@ -1,0 +1,59 @@
+id: download-manager-75de610122e6acb939994a583a4a226e
+
+info:
+  name: "WordPress Download Manager <= 2.9.45 - Cross-Site Request Forgery"
+  author: topscoder
+  severity: high
+  description: "The WordPress Download Manager plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.9.45. This is due to missing or incorrect nonce validation on the request of saving settings. This makes it possible for unauthenticated attackers to modify administrative settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link."
+  reference:
+    - https://sumofpwn.nl/advisory/2016/cross_site_request_forgery_in_wordpress_download_manager_plugin.html
+    - https://seclists.org/fulldisclosure/2017/Feb/82
+    - https://plugins.trac.wordpress.org/changeset/1616450/download-manager
+    - https://wpscan.com/vulnerability/4f1196b4-807f-4238-8cfa-82046f786cb4
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/download-manager/"
+    google-query: inurl:"/wp-content/plugins/download-manager/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,download-manager,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.9.45')

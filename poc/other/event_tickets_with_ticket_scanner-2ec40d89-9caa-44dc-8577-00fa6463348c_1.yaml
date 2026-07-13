@@ -1,0 +1,59 @@
+id: event_tickets_with_ticket_scanner-2ec40d89-9caa-44dc-8577-00fa6463348c
+
+info:
+  name: >
+    Event Tickets with Ticket Scanner <= 1.5.4 - Authenticated (Subscriber+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Event Tickets with Ticket Scanner plugin for WordPress is vulnerable to Stored Cross-Site Scripting  in versions up to, and including, 1.5.4 via the 'data[codes]' parameter saved through the 'sasoEventtickets_executeAdminSettings' AJAX action, due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with minimal permissions such as a subscriber, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2ec40d89-9caa-44dc-8577-00fa6463348c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/event-tickets-with-ticket-scanner/"
+    google-query: inurl:"/wp-content/plugins/event-tickets-with-ticket-scanner/"
+    shodan-query: 'http.html:"wp-content/plugins/event-tickets-with-ticket-scanner/"'
+  tags: cve,wordpress,wp-plugin,event-tickets-with-ticket-scanner,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/event-tickets-with-ticket-scanner/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "event-tickets-with-ticket-scanner"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.5')

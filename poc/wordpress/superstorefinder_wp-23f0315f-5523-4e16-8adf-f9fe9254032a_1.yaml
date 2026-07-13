@@ -1,0 +1,59 @@
+id: superstorefinder_wp-23f0315f-5523-4e16-8adf-f9fe9254032a
+
+info:
+  name: >
+    Super Store Finder <= 6.1, Super Interactive Maps <= 1.9, Super Logo Showcase <= 2.2  - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Super Store Finder, Super Interactive Maps, and Super Logo Showcase plugins for WordPress are vulnerable to arbitrary file uploads due to missing file type validation in the /pages/import.php file in versions up to, and including, 6.1, 1.9. and 2.2 respectively. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/23f0315f-5523-4e16-8adf-f9fe9254032a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/superstorefinder-wp/"
+    google-query: inurl:"/wp-content/plugins/superstorefinder-wp/"
+    shodan-query: 'http.html:"wp-content/plugins/superstorefinder-wp/"'
+  tags: cve,wordpress,wp-plugin,superstorefinder-wp,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/superstorefinder-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "superstorefinder-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.1')

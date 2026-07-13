@@ -1,0 +1,59 @@
+id: taxonomy_terms_order-fe7e6a53-36c3-41fc-bae8-a9e1de2494ad
+
+info:
+  name: >
+    Category Order and Taxonomy Terms Order <= 1.5.2.2 - Authenticated PHP Object Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Category Order and Taxonomy Terms Order plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 1.5.2.2 via deserialization of untrusted input from the 'order' parameter. This allows authenticated attackers, with subscriber-level permissions and above, to inject a PHP Object. No known POP chain is present in the vulnerable plugin. If a POP chain is present via an additional plugin or theme installed on the target system, it could allow the attacker to delete arbitrary files, retrieve sensitive data, or execute code.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fe7e6a53-36c3-41fc-bae8-a9e1de2494ad?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 8.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/taxonomy-terms-order/"
+    google-query: inurl:"/wp-content/plugins/taxonomy-terms-order/"
+    shodan-query: 'http.html:"wp-content/plugins/taxonomy-terms-order/"'
+  tags: cve,wordpress,wp-plugin,taxonomy-terms-order,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/taxonomy-terms-order/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "taxonomy-terms-order"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.3')

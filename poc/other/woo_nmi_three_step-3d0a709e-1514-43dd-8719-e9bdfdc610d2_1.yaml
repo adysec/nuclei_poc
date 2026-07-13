@@ -1,0 +1,59 @@
+id: woo_nmi_three_step-3d0a709e-1514-43dd-8719-e9bdfdc610d2
+
+info:
+  name: >
+    NMI Gateway For WooCommerce <= 1.6.11 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The NMI Gateway For WooCommerce plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.6.11. This is due to missing or incorrect nonce validation on the 'bng701_stepOne_addBilling', 'bng701_stepOne' and 'bng701_deletePaymentMethod' functions. This makes it possible for unauthenticated attackers to gain otherwise restricted access to other users' accounts and perform unwanted actions via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3d0a709e-1514-43dd-8719-e9bdfdc610d2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woo-nmi-three-step/"
+    google-query: inurl:"/wp-content/plugins/woo-nmi-three-step/"
+    shodan-query: 'http.html:"wp-content/plugins/woo-nmi-three-step/"'
+  tags: cve,wordpress,wp-plugin,woo-nmi-three-step,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woo-nmi-three-step/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woo-nmi-three-step"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.11')

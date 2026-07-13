@@ -1,0 +1,103 @@
+# gap: open-redirect-referer-reflection
+id: open-redirect-referer-reflection
+
+info:
+  name: Open Redirect via Referer Header Reflection
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects open-redirect endpoints that build the outbound Location
+    header from the inbound Referer rather than a validated allowlist.
+    The probe sends a Referer carrying a Nuclei canary host
+    (`https://<canary>.invalid/`) to common post-action paths
+    (/logout, /signout, /login, /redirect, /goto, /go) and fires if
+    the response Location header echoes the canary host. Distinct
+    from the URL-parameter-based open-redirect class (already
+    covered by `open-redirect-location-header-reflection` and
+    `oauth-redirect-uri-open-redirect`) because the Referer sink
+    requires the user to navigate via a controlled origin — the
+    same attack the URL-param variant uses, but reaching a
+    different application sink that frequently lacks validation.
+
+    Open redirects underpin phishing campaigns under the issuer's
+    brand and chain to OAuth authorization-code theft when the
+    sink is reached during a logged-in session. The Referer
+    variant in particular has been a recurring source of
+    HackerOne open-redirect findings against
+    /logout?return_url=... style endpoints that fall back to
+    Referer when no return_url is supplied. Class detection —
+    keys on Referer-canary reflection in Location, not vendor
+    banner.
+  reference:
+    - https://owasp.org/www-community/attacks/Open_redirect
+    - https://cwe.mitre.org/data/definitions/601.html
+    - https://hackerone.com/reports/111968
+  tags: custom,vulnerabilities,open-redirect,referer,phishing,owasp,cwe-601
+
+variables:
+  canary: "nuclei-rdir-{{rand_text_alpha(8)}}"
+
+http:
+  - raw:
+      - |+
+        GET /logout HTTP/1.1
+        Host: {{Hostname}}
+        Referer: https://{{canary}}.invalid/
+        Accept: text/html
+
+
+      - |+
+        GET /signout HTTP/1.1
+        Host: {{Hostname}}
+        Referer: https://{{canary}}.invalid/
+        Accept: text/html
+
+
+      - |+
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+        Referer: https://{{canary}}.invalid/
+        Accept: text/html
+
+
+      - |+
+        GET /redirect HTTP/1.1
+        Host: {{Hostname}}
+        Referer: https://{{canary}}.invalid/
+        Accept: text/html
+
+
+      - |+
+        GET /go HTTP/1.1
+        Host: {{Hostname}}
+        Referer: https://{{canary}}.invalid/
+        Accept: text/html
+
+
+      - |+
+        GET /goto HTTP/1.1
+        Host: {{Hostname}}
+        Referer: https://{{canary}}.invalid/
+        Accept: text/html
+
+
+    unsafe: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?i)Location:[^\r\n]*{{canary}}\.invalid'
+      - type: regex
+        part: body
+        regex:
+          - '(?i)<meta[^>]+http-equiv\s*=\s*["'']refresh["''][^>]+{{canary}}\.invalid'
+          - '(?i)(window\.location|document\.location)\s*=\s*["''][^"'']*{{canary}}\.invalid'
+
+    extractors:
+      - type: regex
+        part: header
+        name: reflected-location
+        regex:
+          - '(?i)Location:\s*([^\r\n]+)'
+        group: 1

@@ -1,0 +1,59 @@
+id: multiple_domain-b9f5b68f-bf81-4157-920a-f14eb29390a6
+
+info:
+  name: >
+    Multiple Domain <= 1.0.2 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Multiple Domain plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.0.2 due to insufficient input sanitization and output escaping in the Canonical and Alternate Tags. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b9f5b68f-bf81-4157-920a-f14eb29390a6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/multiple-domain/"
+    google-query: inurl:"/wp-content/plugins/multiple-domain/"
+    shodan-query: 'http.html:"wp-content/plugins/multiple-domain/"'
+  tags: cve,wordpress,wp-plugin,multiple-domain,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/multiple-domain/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "multiple-domain"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.2')

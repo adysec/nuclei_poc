@@ -1,0 +1,63 @@
+# gap: h2c-cleartext-upgrade-accepted
+id: h2c-cleartext-upgrade-accepted
+
+info:
+  name: HTTP/2 Cleartext (h2c) Upgrade Accepted by Edge Proxy
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an edge proxy / reverse proxy that accepts and forwards
+    an HTTP/2 cleartext upgrade (`Upgrade: h2c` + `HTTP2-Settings`)
+    on top of a regular HTTP/1.1 connection. This is the
+    h2cSmuggler primitive (Bishop Fox, Jake Miller):
+
+    - The frontend accepts the upgrade,
+    - re-establishes the upstream connection as raw h2c with no
+      proxy-layer authentication / ACLs,
+    - the attacker then frame-multiplexes arbitrary internal
+      paths over that pipe, bypassing the WAF and any path-based
+      auth that ran only on the HTTP/1.1 front edge.
+
+    Wire-format: the canonical confirmation is the response status
+    `101 Switching Protocols` with `Upgrade: h2c` (and optionally
+    `Connection: Upgrade`) echoed back. Most non-vulnerable
+    servers respond 200/400/426/501.
+
+    This is a CLASS detector — replays on every reverse-proxy /
+    backend pair where the front edge does not strip
+    h2c-upgrade hop-by-hop headers, regardless of vendor. h2c
+    support continues to spread (nginx, HAProxy, Envoy) so this
+    class is alive and growing.
+  reference:
+    - https://bishopfox.com/blog/h2c-smuggling-request
+    - https://github.com/BishopFox/h2csmuggler
+    - https://book.hacktricks.xyz/pentesting-web/h2c-smuggling
+  tags: custom,vulnerabilities,smuggling,h2c,proxy,owasp,cwe-444
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Connection: Upgrade, HTTP2-Settings
+        Upgrade: h2c
+        HTTP2-Settings: AAMAAABkAARAAAAAAAIAAAAA
+        Accept: */*
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 101
+      - type: regex
+        part: header
+        regex:
+          - '(?i)upgrade:\s*h2c'
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - "Upgrade"
+          - "Connection"
+          - "Server"

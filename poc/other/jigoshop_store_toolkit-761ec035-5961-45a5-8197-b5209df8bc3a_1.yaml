@@ -1,0 +1,59 @@
+id: jigoshop_store_toolkit-761ec035-5961-45a5-8197-b5209df8bc3a
+
+info:
+  name: >
+    Jigoshop – Store Toolkit <= 1.3.8 - Missing Authorization Checks
+  author: topscoder
+  severity: high
+  description: >
+    The Jigoshop – Store Toolkit plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the 'jigo_st_admin_init' function in versions up to, and including 1.3.8. This makes it possible for unauthenticated attackers to gain access to restricted actions like deleting inactive user accounts, unlinking downloads, and more.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/761ec035-5961-45a5-8197-b5209df8bc3a?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/jigoshop-store-toolkit/"
+    google-query: inurl:"/wp-content/plugins/jigoshop-store-toolkit/"
+    shodan-query: 'http.html:"wp-content/plugins/jigoshop-store-toolkit/"'
+  tags: cve,wordpress,wp-plugin,jigoshop-store-toolkit,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jigoshop-store-toolkit/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jigoshop-store-toolkit"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.8')

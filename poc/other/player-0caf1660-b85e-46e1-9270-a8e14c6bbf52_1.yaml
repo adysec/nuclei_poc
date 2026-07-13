@@ -1,0 +1,59 @@
+id: player-0caf1660-b85e-46e1-9270-a8e14c6bbf52
+
+info:
+  name: >
+    SpiderVPlayer < 1.5.18 - Multiple Blind Authenticated SQL Injections
+  author: topscoder
+  severity: low
+  description: >
+    The SpiderVPlayer plugin for WordPress is vulnerable to Multiple Blind Authenticated SQL Injections via the 'order_by' parameter used in various functions in versions before 1.5.18 due to a lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0caf1660-b85e-46e1-9270-a8e14c6bbf52?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/player/"
+    google-query: inurl:"/wp-content/plugins/player/"
+    shodan-query: 'http.html:"wp-content/plugins/player/"'
+  tags: cve,wordpress,wp-plugin,player,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/player/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "player"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.5.18')

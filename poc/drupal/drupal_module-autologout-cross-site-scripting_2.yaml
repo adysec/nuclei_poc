@@ -1,0 +1,51 @@
+
+id: drupal_module-autologout-cross-site-scripting
+info:
+  name: drupal_module-autologout-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module provides a site administrator the ability to log users out after a specified time of inactivity. It is highly customizable and includes site policies by role to enforce log out. The module does not sufficiently filter user-supplied text that is stored in the configuration, resulting in a persistent Cross Site Scripting vulnerability (XSS). This vulnerability is mitigated by the fact that an attacker must have a role with the permission administer autologout."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-081
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:Admin/CI:Some/II:Some/E:Proof/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/autologout/"
+    google-query: "inurl:'/sites/all/modules/autologout/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/autologout/autologout.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'autologout'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-4.x-dev')

@@ -1,0 +1,54 @@
+
+id: drupal_module-opigno_learning_path-access-bypass
+info:
+  name: drupal_module-opigno_learning_path-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "In certain configuration cases, when a learning path is configured as semi-private, anonymous users are allowed to join a learning path when they should not."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-047
+  metadata:
+    security-risk: "Moderately critical 10∕25 AC:Basic/A:User/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/opigno_learning_path/"
+    google-query: "inurl:'/sites/all/modules/opigno_learning_path/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/opigno_learning_path/opigno_learning_path.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'opigno_learning_path'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

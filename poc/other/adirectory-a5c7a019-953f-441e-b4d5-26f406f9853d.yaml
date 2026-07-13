@@ -1,0 +1,59 @@
+id: adirectory-a5c7a019-953f-441e-b4d5-26f406f9853d
+
+info:
+  name: >
+    aDirectory – WordPress Directory Listing Plugin <= 1.6.5 - Unauthenticated PHP Object Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The aDirectory – WordPress Directory Listing Plugin plugin for WordPress is vulnerable to PHP Object Injection in all versions up to, and including, 1.6.5 via deserialization of untrusted input from the 'carousel_settings' attribute in the 'adqs_taxonomies' shortcode. This makes it possible for unauthenticated attackers to inject a PHP Object. No known POP chain is present in the vulnerable software, which means this vulnerability has no impact unless another plugin or theme containing a POP chain is installed on the site. If a POP chain is present via an additional plugin or theme installed on the target system, it may allow the attacker to perform actions like delete arbitrary files, retrieve sensitive data, or execute code depending on the POP chain present.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a5c7a019-953f-441e-b4d5-26f406f9853d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/adirectory/"
+    google-query: inurl:"/wp-content/plugins/adirectory/"
+    shodan-query: 'http.html:"wp-content/plugins/adirectory/"'
+  tags: cve,wordpress,wp-plugin,adirectory,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/adirectory/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "adirectory"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.5')

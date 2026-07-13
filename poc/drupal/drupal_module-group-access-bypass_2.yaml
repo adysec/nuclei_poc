@@ -1,0 +1,53 @@
+
+id: drupal_module-group-access-bypass
+info:
+  name: drupal_module-group-access-bypass
+  author: me
+  severity: medium
+  description: "The Group module has the ability to make content private to specific groups. When viewing a list of entities, e.g. nodes, a visitor should only see those entities that are either not attached to a group or that they have group access to. The module doesnt sufficiently enforce list access under the scenario where two users have the same outsider and insider permissions, but are members of different groups without any individual roles being assigned to said memberships. In such a scenario, the permissions hash for both will be the same even though it should differ. This vulnerability is mitigated by the fact that an attacker must have the same hash as someone else, which is quite rare yet not unthinkable."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-054
+  metadata:
+    security-risk: "Less critical 8∕25 AC:Complex/A:User/CI:Some/II:None/E:Theoretical/TD:Uncommon"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/group/"
+    google-query: "inurl:'/sites/all/modules/group/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/group/group.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'group'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '>=2.0.0 <= 2.2.2 || >=3.0.0 <= 3.2.2')

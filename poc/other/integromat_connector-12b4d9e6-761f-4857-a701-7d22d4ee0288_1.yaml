@@ -1,0 +1,59 @@
+id: integromat_connector-12b4d9e6-761f-4857-a701-7d22d4ee0288
+
+info:
+  name: >
+    Make, formerly Integromat Connector <= 1.5.1 - Missing Authorization to Arbitrary Options Update
+  author: topscoder
+  severity: low
+  description: >
+    The Make, formerly Integromat Connector plugin for WordPress is vulnerable to arbitrary options updates in versions up to, and including, 1.5.1 due to missing authorization checks on the function called via 'admin_menu' in addition to insufficient option validation. This makes it possible for authenticated attackers with minimal permissions, such as a subscriber, to update arbitrary options on a vulnerable site which can be used to create new administrative user accounts or redirect site visitors to a malicious domain among many other actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/12b4d9e6-761f-4857-a701-7d22d4ee0288?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/integromat-connector/"
+    google-query: inurl:"/wp-content/plugins/integromat-connector/"
+    shodan-query: 'http.html:"wp-content/plugins/integromat-connector/"'
+  tags: cve,wordpress,wp-plugin,integromat-connector,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/integromat-connector/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "integromat-connector"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.1')

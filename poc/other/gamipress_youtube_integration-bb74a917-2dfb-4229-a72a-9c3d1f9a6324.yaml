@@ -1,0 +1,59 @@
+id: gamipress_youtube_integration-bb74a917-2dfb-4229-a72a-9c3d1f9a6324
+
+info:
+  name: >
+    GamiPress – Youtube integration <= 1.0.7 - Authenticated (Contributor+) Stored Cross-Site Scripting via Shortcode
+  author: topscoder
+  severity: low
+  description: >
+    The GamiPress – Youtube integration plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the plugin's shortcode(s) in versions up to, and including, 1.0.7 due to insufficient input sanitization and output escaping on user supplied attributes. This makes it possible for authenticated attackers with contributor-level and above permissions to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bb74a917-2dfb-4229-a72a-9c3d1f9a6324?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/gamipress-youtube-integration/"
+    google-query: inurl:"/wp-content/plugins/gamipress-youtube-integration/"
+    shodan-query: 'http.html:"wp-content/plugins/gamipress-youtube-integration/"'
+  tags: cve,wordpress,wp-plugin,gamipress-youtube-integration,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gamipress-youtube-integration/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gamipress-youtube-integration"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.7')

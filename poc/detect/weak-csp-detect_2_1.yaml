@@ -1,0 +1,64 @@
+id: weak-csp-detect
+
+info:
+  name: Weak Content Security Policy - Detect
+  author: pussycat0x,celbahraoui
+  severity: info
+  description: |
+    Detected misconfigured CSP directives containing unsafe and overly permissive keywords that weakened resource loading restrictions. This configuration allowed high-risk script behaviors, resulting in reduced protection against XSS attacks.
+  reference:
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/object-src
+    - https://content-security-policy.com/
+  metadata:
+    max-request: 1
+    verified: true
+  tags: csp,misconfig,headers
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+        case-insensitive: true
+
+      - type: dsl
+        condition: or
+        dsl:
+          - "!regex('(?i)\\bscript-src\\b', header)"
+          - "!regex('(?i)\\bobject-src\\b', header)"
+          - "regex('(?i)script-src[^;]*(?:\\x27unsafe-inline\\x27|\\x27unsafe-eval\\x27|\\x27unsafe-hashes\\x27|\\*|data:|blob:)[^;]*(?:;|$)', header)"
+          - "regex('(?i)default-src[^;]*(?:\\x27unsafe-inline\\x27|\\x27unsafe-eval\\x27|\\x27unsafe-hashes\\x27|\\*|data:|blob:)[^;]*(?:;|$)', header)"
+
+    extractors:
+      - type: regex
+        part: header
+        name: script-src-directive
+        group: 1
+        regex:
+          - '(?i)(script-src[^;]+)'
+
+      - type: regex
+        part: header
+        name: default-src-directive
+        group: 1
+        regex:
+          - '(?i)(default-src[^;]+)'
+
+      - type: dsl
+        name: missing-script-src
+        dsl:
+          - "!regex('(?i)\\bscript-src\\b', header)"
+
+      - type: dsl
+        name: missing-object-src
+        dsl:
+          - "!regex('(?i)\\bobject-src\\b', header)"
+# digest: 4a0a00473045022056c9421a7105679da346301a5b4e87b69cbd5a000fb6145b70074f8fcc2373c3022100f11c39357107aa46cb31992db264e85ecb189066de4b1c9b30c187f1a72175b9:922c64590222798bb761d5b6d8e72950

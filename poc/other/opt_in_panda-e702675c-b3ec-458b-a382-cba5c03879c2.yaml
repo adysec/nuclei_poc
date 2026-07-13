@@ -1,0 +1,59 @@
+id: opt_in_panda-e702675c-b3ec-458b-a382-cba5c03879c2
+
+info:
+  name: >
+    OnePress Opt-In Panda <= 2.6.2 - Missing Authorization on AJAX Actions
+  author: topscoder
+  severity: medium
+  description: >
+    The OnePress Opt-In Panda plugin for WordPress is vulnerable to unauthorized modification of settings and retrieval of plugin settings due to missing capability checks on various AJAX actions in versions up to, and including 2.6.2.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e702675c-b3ec-458b-a382-cba5c03879c2?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/opt-in-panda/"
+    google-query: inurl:"/wp-content/plugins/opt-in-panda/"
+    shodan-query: 'http.html:"wp-content/plugins/opt-in-panda/"'
+  tags: cve,wordpress,wp-plugin,opt-in-panda,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/opt-in-panda/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "opt-in-panda"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.6.2')

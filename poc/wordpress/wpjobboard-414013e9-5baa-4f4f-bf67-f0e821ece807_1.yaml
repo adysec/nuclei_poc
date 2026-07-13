@@ -1,0 +1,59 @@
+id: wpjobboard-414013e9-5baa-4f4f-bf67-f0e821ece807
+
+info:
+  name: >
+    WPJobBoard <= 5.6.4 - Reflected Cross-Site Scripting & Cross-Frame Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WPJobBoard plugin for WordPress is vulnerable to Reflected Cross-Site Scripting and Cross-Frame Scripting via the ‘query' and 'location’ parameters in versions up to, and including, 5.6.4 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/414013e9-5baa-4f4f-bf67-f0e821ece807?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpjobboard/"
+    google-query: inurl:"/wp-content/plugins/wpjobboard/"
+    shodan-query: 'http.html:"wp-content/plugins/wpjobboard/"'
+  tags: cve,wordpress,wp-plugin,wpjobboard,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpjobboard/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpjobboard"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.6.4')

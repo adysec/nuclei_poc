@@ -1,0 +1,59 @@
+id: eunice-45323807-c347-44ac-bf22-11b4feda02e6
+
+info:
+  name: >
+    Eunice (All Versions) - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Eunice theme for WordPress is vulnerable to Reflected Cross-Site Scripting via an unspecified parameter in all known versions due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/45323807-c347-44ac-bf22-11b4feda02e6?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/eunice/"
+    google-query: inurl:"/wp-content/themes/eunice/"
+    shodan-query: 'http.html:"wp-content/themes/eunice/"'
+  tags: cve,wordpress,wp-theme,eunice,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/eunice/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "eunice"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

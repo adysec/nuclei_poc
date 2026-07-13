@@ -1,0 +1,59 @@
+id: updraftplus-2e329432-c404-4312-969b-42cac345637d
+
+info:
+  name: >
+    UpdraftPlus 1.22.14 to 1.23.2 and UpdraftPlus (Premium) 2.22.14 to 2.23.2 - Privilege Escalation via updraft_central_ajax_handler
+  author: topscoder
+  severity: low
+  description: >
+    The UpdraftPlus plugin for WordPress is vulnerable to Privilege Escalation due to missing authorization on the 'updraft_central_ajax_handler' function in versions from 1.22.14 to 1.23.2 inclusive, and 2.22.14 to 2.23.2 of the premium version. This allows authenticated attackers, with subscriber-level permissions or above, to update the plugin's settings in such a way that can allow them to perform administrator-level actions on some sites.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2e329432-c404-4312-969b-42cac345637d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/updraftplus/"
+    google-query: inurl:"/wp-content/plugins/updraftplus/"
+    shodan-query: 'http.html:"wp-content/plugins/updraftplus/"'
+  tags: cve,wordpress,wp-plugin,updraftplus,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/updraftplus/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "updraftplus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 2.22.14', '<= 2.23.2')

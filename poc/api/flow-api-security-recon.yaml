@@ -1,0 +1,215 @@
+id: flow-api-security-recon
+
+info:
+  name: API Security Reconnaissance Engine
+  author: geeknik
+  severity: medium
+  description: |
+    Intelligent API discovery and security assessment using Flow Protocol for dynamic
+    endpoint analysis, authentication testing, and vulnerability detection. This template
+    performs comprehensive API security reconnaissance including endpoint discovery,
+    authentication bypass testing, and parameter manipulation assessment for defensive
+    security research purposes.
+  reference:
+    - https://owasp.org/www-project-api-security/
+    - https://tools.ietf.org/html/rfc7231
+  tags: api,security,flow,reconnaissance,rest,defensive
+
+flow: |
+  // Discover API endpoints through common paths
+  http("api-discovery");
+
+  // Parse API discovery response and extract endpoints
+  const response = template["discovery_response"];
+  let endpoints = [];
+
+  // Look for OpenAPI/Swagger definitions
+  if (response && (response.includes("swagger") || response.includes("openapi"))) {
+    const pathRegex = /"([^"]*\/[^"]*)"/g;
+    let match;
+    while ((match = pathRegex.exec(response)) !== null) {
+      if (match[1].startsWith('/')) {
+        endpoints.push(match[1]);
+      }
+    }
+  }
+
+  // Default API endpoints if none discovered
+  if (endpoints.length === 0) {
+    endpoints = [
+      "/api/v1/users",
+      "/api/v1/admin",
+      "/api/users",
+      "/api/config",
+      "/api/status",
+      "/api/health"
+    ];
+  }
+
+  template["api_endpoints"] = endpoints.slice(0, 8);
+  template["security_findings"] = [];
+  let riskScore = 0;
+
+  // Test each discovered endpoint
+  for (let endpoint of iterate(template["api_endpoints"])) {
+    set("current_endpoint", endpoint);
+
+    // Test endpoint accessibility
+    http("endpoint-test");
+
+    const endpointStatus = template["endpoint_status"];
+    const endpointResponse = template["endpoint_response"];
+
+    // Analyze endpoint response
+    template["requires_auth"] = (
+      endpointStatus === "401" ||
+      endpointStatus === "403" ||
+      (endpointResponse && endpointResponse.includes("unauthorized"))
+    );
+
+    template["endpoint_accessible"] = endpointStatus === "200";
+
+    // Test authentication bypass if endpoint requires auth
+    if (template["requires_auth"]) {
+      http("auth-bypass-test");
+
+      const bypassStatus = template["auth_bypass_status"];
+      const bypassResponse = template["auth_bypass_response"];
+
+      template["auth_bypass_successful"] = (
+        bypassStatus === "200" &&
+        bypassResponse &&
+        !bypassResponse.includes("unauthorized") &&
+        !bypassResponse.includes("forbidden")
+      );
+
+      if (template["auth_bypass_successful"]) {
+        template["security_findings"].push("Authentication bypass on " + endpoint);
+        riskScore += 40;
+      }
+    }
+
+    // Test for accessible endpoints without authentication
+    if (template["endpoint_accessible"] && endpoint.includes("admin")) {
+      template["security_findings"].push("Admin endpoint accessible without auth: " + endpoint);
+      riskScore += 30;
+    }
+
+    // Test parameter manipulation
+    http("parameter-test");
+
+    const paramResponse = template["param_test_response"];
+    if (paramResponse && (paramResponse.includes("error") || paramResponse.includes("exception"))) {
+      template["security_findings"].push("Parameter manipulation vulnerability on " + endpoint);
+      riskScore += 20;
+    }
+  }
+
+  // Calculate final risk assessment
+  template["api_risk_score"] = Math.min(riskScore, 100);
+  template["api_risk_level"] = riskScore > 70 ? "High" :
+                              riskScore > 40 ? "Medium" : "Low";
+
+http:
+  - id: api-discovery
+    method: GET
+    path:
+      - "{{BaseURL}}/swagger.json"
+      - "{{BaseURL}}/api-docs"
+      - "{{BaseURL}}/openapi.json"
+      - "{{BaseURL}}/docs"
+      - "{{BaseURL}}/api"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 404
+        internal: true
+
+    extractors:
+      - type: regex
+        name: discovery_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: endpoint-test
+    method: GET
+    path:
+      - "{{BaseURL}}{{current_endpoint}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 401
+          - 403
+          - 404
+        internal: true
+
+    extractors:
+      - type: regex
+        name: endpoint_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+      - type: regex
+        name: endpoint_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: auth-bypass-test
+    method: GET
+    path:
+      - "{{BaseURL}}{{current_endpoint}}"
+
+    headers:
+      Authorization: "Bearer test_token"
+      X-API-Key: "test_key"
+      X-Forwarded-For: "127.0.0.1"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 401
+          - 403
+        internal: true
+
+    extractors:
+      - type: regex
+        name: auth_bypass_status
+        internal: true
+        regex:
+          - "HTTP/\\d\\.\\d\\s+(\\d+)"
+      - type: regex
+        name: auth_bypass_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+  - id: parameter-test
+    method: GET
+    path:
+      - "{{BaseURL}}{{current_endpoint}}?id=1&test=value"
+      - "{{BaseURL}}{{current_endpoint}}?limit=9999&offset=-1"
+      - "{{BaseURL}}{{current_endpoint}}?format=json&debug=1"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 500
+        internal: true
+
+    extractors:
+      - type: regex
+        name: param_test_response
+        internal: true
+        regex:
+          - "(?s).*"
+
+# Flow template - matchers and extractors handled by Flow logic

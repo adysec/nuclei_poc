@@ -1,0 +1,59 @@
+id: journey_analytics-c9f8e9b5-f4bf-48e3-b315-1b9b24be6e93
+
+info:
+  name: >
+    Journey Analytics <= 1.0.12 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Journey Analytics plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.0.12. This is due to missing or incorrect nonce validation on the kontxt_analyze_results and kontxt_send_event functions. This makes it possible for unauthenticated attackers to read and edit analytics via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c9f8e9b5-f4bf-48e3-b315-1b9b24be6e93?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/journey-analytics/"
+    google-query: inurl:"/wp-content/plugins/journey-analytics/"
+    shodan-query: 'http.html:"wp-content/plugins/journey-analytics/"'
+  tags: cve,wordpress,wp-plugin,journey-analytics,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/journey-analytics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "journey-analytics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.12')

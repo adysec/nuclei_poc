@@ -1,0 +1,59 @@
+id: login_lockdown-7c9d088c-e71a-4e73-a7e3-d99f3511e519
+
+info:
+  name: >
+    Login Lockdown – Protect Login Form <= 2.06 - Authenticated(Administrator+) SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7c9d088c-e71a-4e73-a7e3-d99f3511e519?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/login-lockdown/"
+    google-query: inurl:"/wp-content/plugins/login-lockdown/"
+    shodan-query: 'http.html:"wp-content/plugins/login-lockdown/"'
+  tags: cve,wordpress,wp-plugin,login-lockdown,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/login-lockdown/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "login-lockdown"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.07')

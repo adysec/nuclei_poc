@@ -1,0 +1,59 @@
+id: export_to_text-19bd105a-823d-4a85-87e1-54291274a842
+
+info:
+  name: >
+    Export to Text <= 2.4 - Unauthenticated Post Export
+  author: topscoder
+  severity: high
+  description: >
+    The Export to Text plugin for WordPress is vulnerable to unauthenticated post exporting due to a missing capability check on the sre2t_ajax() AJAX function and the export_to_text_download() function hooked via wp_loaded in versions up to, and including 2.4. This makes it possible for attackers to retrieve potentially sensitive information within posts.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/19bd105a-823d-4a85-87e1-54291274a842?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/export-to-text/"
+    google-query: inurl:"/wp-content/plugins/export-to-text/"
+    shodan-query: 'http.html:"wp-content/plugins/export-to-text/"'
+  tags: cve,wordpress,wp-plugin,export-to-text,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/export-to-text/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "export-to-text"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.4')

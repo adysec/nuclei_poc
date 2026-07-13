@@ -1,0 +1,59 @@
+id: fushion_theme-f0ff2cb3-a385-4f5c-b555-b6a3dadfc458
+
+info:
+  name: >
+    Fusion <= 2.1 - Arbitrary File Download
+  author: topscoder
+  severity: high
+  description: >
+    The Fusion Theme for WordPress is vulnerable to Arbitrary File Download in versions up to, and including, 2.1. This is due to the '_mysite_download_skin' parameter in the 'dl-skin.php' file. This makes it possible for unauthenticated attackers to download any file within the server of the vulnerable service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f0ff2cb3-a385-4f5c-b555-b6a3dadfc458?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/fushion-theme/"
+    google-query: inurl:"/wp-content/themes/fushion-theme/"
+    shodan-query: 'http.html:"wp-content/themes/fushion-theme/"'
+  tags: cve,wordpress,wp-theme,fushion-theme,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/fushion-theme/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fushion-theme"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1')

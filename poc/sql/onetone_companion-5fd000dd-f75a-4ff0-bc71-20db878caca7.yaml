@@ -1,0 +1,59 @@
+id: onetone_companion-5fd000dd-f75a-4ff0-bc71-20db878caca7
+
+info:
+  name: >
+    OneTone Companion <= 1.1.1 - Open Mailer
+  author: topscoder
+  severity: medium
+  description: >
+    The OneTone Companion plugin for WordPress suffers from an Open Mailer vulnerability in versions up to, and including, 1.1.1. This is due to a lack of authorization on the onetone_contact function which is reachable via nopriv AJAX call. This makes it possible for unauthenticated attackers to send emails with any content to any recipient.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5fd000dd-f75a-4ff0-bc71-20db878caca7?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N
+    cvss-score: 5.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/onetone-companion/"
+    google-query: inurl:"/wp-content/plugins/onetone-companion/"
+    shodan-query: 'http.html:"wp-content/plugins/onetone-companion/"'
+  tags: cve,wordpress,wp-plugin,onetone-companion,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/onetone-companion/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "onetone-companion"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.1')

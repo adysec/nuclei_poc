@@ -1,0 +1,52 @@
+
+id: drupal_module-jquery_ui_datepicker-cross-site-scripting
+info:
+  name: drupal_module-jquery_ui_datepicker-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "jQuery UI is a third-party library used by Drupal. The jQuery UI Datepicker module provides the jQuery UI Datepicker library, which is not included in Drupal 9 core. jQuery UI was previously thought to be end-of-life. Late in 2021, jQuery UI announced that they would be continuing development, and released a jQuery UI 1.13.0 version. As part of this 1.13.0 update, they disclosed the following security issues that may affect site using the jQuery UI Datepicker module:  CVE-2021-41182: XSS in the altField option of the Datepicker widget CVE-2021-41183: XSS in *Text options of the Datepicker widget"
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-004
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:User/CI:Some/II:Some/E:Proof/TD:Default"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/jquery_ui_datepicker/"
+    google-query: "inurl:'/sites/all/modules/jquery_ui_datepicker/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/jquery_ui_datepicker/jquery_ui_datepicker.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'jquery_ui_datepicker'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

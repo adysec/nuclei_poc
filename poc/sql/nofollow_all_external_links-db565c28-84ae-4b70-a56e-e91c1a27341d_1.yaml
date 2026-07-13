@@ -1,0 +1,59 @@
+id: nofollow_all_external_links-db565c28-84ae-4b70-a56e-e91c1a27341d
+
+info:
+  name: >
+    No Follow All External Links 2.1.0 - 2.3.0 - Backdoor
+  author: topscoder
+  severity: low
+  description: >
+    The No Follow All External Links plugin for WordPress is vulnerable to a backdoor in versions 2.1.0 - 2.3.0. This is due to the criminal actor purchasing the plugin and adding the backdoor themselves. This makes it possible for authenticated attackers to inject content into the vulnerable plugin, commonly used in the past for SEO Spam.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/db565c28-84ae-4b70-a56e-e91c1a27341d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/nofollow-all-external-links/"
+    google-query: inurl:"/wp-content/plugins/nofollow-all-external-links/"
+    shodan-query: 'http.html:"wp-content/plugins/nofollow-all-external-links/"'
+  tags: cve,wordpress,wp-plugin,nofollow-all-external-links,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/nofollow-all-external-links/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "nofollow-all-external-links"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 2.1.0', '<= 2.3.0')

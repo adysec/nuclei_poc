@@ -1,0 +1,59 @@
+id: wp_statistics-e6f549c8-673b-4032-9b56-5a2e2239eff3
+
+info:
+  name: >
+    WP Statistics <= 13.2.1 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e6f549c8-673b-4032-9b56-5a2e2239eff3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-statistics/"
+    google-query: inurl:"/wp-content/plugins/wp-statistics/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-statistics/"'
+  tags: cve,wordpress,wp-plugin,wp-statistics,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-statistics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-statistics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 13.2.2')

@@ -1,0 +1,59 @@
+id: flagem-0a45d62f-bd41-4a69-be61-c4d6a7ec555c
+
+info:
+  name: >
+    FlagEm (Unknown Versions) - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The FlagEm plugin for WordPress is vulnerable to Cross-Site Scripting due to insufficient input sanitization and output escaping via the 'cID' parameter in the 'flagit.php' file. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0a45d62f-bd41-4a69-be61-c4d6a7ec555c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/FlagEm/"
+    google-query: inurl:"/wp-content/plugins/FlagEm/"
+    shodan-query: 'http.html:"wp-content/plugins/FlagEm/"'
+  tags: cve,wordpress,wp-plugin,FlagEm,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/FlagEm/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "FlagEm"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

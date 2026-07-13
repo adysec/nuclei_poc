@@ -1,134 +1,204 @@
 # Nuclei POCs
 
-
 <a href="https://github.com/adysec/nuclei_poc/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/adysec/nuclei_poc?color=yellow&logo=riseup&logoColor=yellow&style=flat-square"></a>
 <a href="https://github.com/adysec/nuclei_poc/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/adysec/nuclei_poc?color=orange&style=flat-square"></a>
 <a href="https://github.com/adysec/nuclei_poc/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/adysec/nuclei_poc?color=red&style=flat-square"></a>
 
-Nuclei POC — updated daily
+A curated collection of Nuclei PoCs — automatically collected, validated, deduplicated, and published daily.
 
-[中文](https://github.com/adysec/nuclei_poc/blob/main/README.md) | [English](https://github.com/adysec/nuclei_poc/blob/main/readme_en.md)
+[中文](https://github.com/adysec/nuclei_poc/blob/main/README.md) | [English](https://github.com/adysec/nuclei_poc/blob/main/README_EN.md)
 
-This project has been migrated and rewritten from Python to Rust. The rewrite improves performance significantly when operating on large repositories and validating PoCs — on GitHub Actions the execution time decreased from ~6 hours (old Python version) to ~6 minutes (Rust release binaries), depending on concurrency and environment.
+Migrated from Python to Rust. Full pipeline execution on GitHub Actions dropped from ~6 hours to ~6 minutes.
 
-After the migration the project also improved PoC validation and deduplication logic. To avoid losing PoCs while rolling out new deduplication rules, and to make it easy to compare outputs, the project uses a staged (gray-release) approach and keeps three sets of outputs concurrently.
+---
 
-## How to use
+## Outputs
 
-Clone the repository and enter the directory:
+Four directories cover the full spectrum from raw validation to curated gold:
+
+| Directory | Count | Source | Use Case |
+|-----------|-------|--------|----------|
+| `poc/` | ~600k | Step 5 — nuclei-validated | Daily scanning, categorized, ready for `-t poc/` |
+| `poc_dedup/` | ~152k | Step 8 — ID dedup + semantic similarity dedup | **Dedup set**, broad coverage without redundancy |
+| `poc_gold_15/` | ~1.8k | Step 9 — score ≥15 | **Ultra-tight gold**, lowest false positive rate |
+| `poc_gold_14/` | ~2.9k | Step 9 — score ≥14 | Gold |
+| `poc_gold_13/` | ~45k | Step 9 — score ≥13 | **High-quality gold** |
+| `poc_gold_12/` | ~94k | Step 9 — score ≥12 | **Standard gold**, balanced quality/coverage |
+| `poc_gold_11/` | ~143k | Step 9 — score ≥11 | **Baseline gold**, wide coverage |
+| `poc_excluded/` | ~550 | Step 3 — intercepted non-nuclei files | Kept for audit, not fed into the pipeline |
+
+Containment: `poc_gold_15/ ⊂ poc_gold_14/ ⊂ poc_gold_13/ ⊂ poc_gold_12/ ⊂ poc_gold_11/ ⊂ poc_dedup/ ⊂ poc/`
+
+> **Which to use?** Daily scanning → `poc/`. Maximum detection rate → `poc_dedup/`. Publishing or baselining → `poc_gold/`.
+
+---
+
+## Quick Start
 
 ```bash
 git clone https://github.com/adysec/nuclei_poc
 cd nuclei_poc
+
+# Scan a target
+nuclei -t poc/ -u http://example.com              # Full scan
+nuclei -t poc_dedup/ -u http://example.com        # Dedup set (high detection)
+nuclei -t poc_gold_11/ -u http://example.com      # Baseline gold (wide coverage)
+nuclei -t poc_gold_12/ -u http://example.com      # Standard gold
+nuclei -t poc_gold_13/ -u http://example.com      # High-quality
+nuclei -t poc_gold_15/ -u http://example.com      # Ultra-tight (lowest FPs)
+nuclei -t poc/cve/ -u http://example.com          # By category
 ```
 
-Use Nuclei to run PoC scans against a target URL:
+---
+
+## Pipeline
+
+Runs every 2 hours. 10 stages total:
+
+| # | Binary | Purpose |
+|---|--------|---------|
+| 1 | `1_clone_repos` | Clone upstream repos from `repo.csv`, then re-inject existing poc dirs for cyclic processing |
+| 2 | `2_delete_duplicated` | SHA256 exact dedup (first pass — removes byte-identical files) |
+| 3 | `3_move_file` | Filter non-nuclei files → `poc_excluded/`, categorize the rest into `tmp/` |
+| 5 | `5_check_poc` | `auto_fix_poc()` repair → nuclei validate → pass → `poc/`, fail → `poc_needs_review/` |
+| 6 | `6_get_pocname` | Generate `poc_index.json` + `poc_summary.json` + `poc.txt` |
+| 7 | `7_dedup_advanced` | ID dedup + cross-ID multi-factor semantic similarity dedup + format repair → `poc_dedup/` |
+| 8 | `8_dedup_high_quality` | Quality scoring by tiers (default 11/12/13/14/15) → `poc_gold_{N}/` directories |
+| 9 | `9_generate_browser_index` | Generate chunked JSON index files for GitHub Pages browser viewer |
+
+> Note: Step 4 (download nuclei) has been merged into CI via `nuclei-action@v3`. Step 7: `--threshold` (similarity, default 70). Step 8: `--tiers` (gradient, default 11,12,13,14,15).
+
+### Build & Run
 
 ```bash
-./nuclei -t poc/ -u http://example.com
-# Scan only a subset of PoCs
-./nuclei -t poc/web/ -u http://example.com
-./nuclei -t poc/wordpress/ -u http://example.com
-```
-
-### Configuration
-
-Configure the list of monitored GitHub repositories in the `repo.csv` file. After migrating to Rust, the core pipeline is delivered as separate Rust binaries — the source files are in `src/bin/`.
-
-### Build & Run (Rust)
-
-For best performance, build release binaries in the target environment:
-
-```bash
-# Build release binaries
+# Build all binaries
 cargo build --release
 
-# Run a single pipeline stage (example)
-./target/release/1_clone_repos
+# Run individual stages
+./target/release/1_clone_repos --skip-clone          # Re-inject existing poc dirs, skip upstream clone
+./target/release/8_dedup_high_quality --tiers 10,13,16  # Custom tier thresholds
+./target/release/7_dedup_advanced --threshold 80         # Raise similarity threshold
 
-# Or run in development mode using cargo (useful for debugging)
-cargo run --bin 1_clone_repos
+# Dev / debug
+cargo run --bin 5_check_poc -- --nuclei-bin ./nuclei --jobs 8
 ```
 
-In production it's recommended to build with `--release` and run pipeline stages in CI or containers with appropriate concurrency and resource limits to achieve the short processing time (~6 minutes in our CI, depends on config and machine).
+---
 
-### GitHub Action
+## Directory Layout
 
-Set up a GitHub Action workflow to run the pipeline daily. The workflow requires `Workflow permissions` to be set to `Read and write`.
-
-## Project layout (overview)
-
-### Top-level files and directories
-
-- `Cargo.toml` — Rust project configuration and dependencies
-- `repo.csv` — List of GitHub repositories to monitor/collect (input)
-- `poc_non_nuclei/` — Non-nuclei YAML files intercepted at step 3 (docker-compose.yml, etc.), kept for audit
-- `poc_needs_review/` — Files that failed nuclei validation at step 5, kept for manual review
-- `poc_all/` — Full PoC outputs (archive of raw / historical results)
-- `poc_baseline/` — Simple scoring dedup baseline output (step 8, for comparison)
-- `poc_high_quality/` — Gray-release output after advanced multi-factor deduplication + format repair (step 9)
-- `poc/` — Category-organized PoCs validated by Nuclei, ready for direct scanning
-- `poc.txt` — Text list of archived PoCs for quick reference
-- `src/core/` — Shared library (hashing, YAML parsing/validation/repair, categorization, naming conventions, feature extraction, JSON indexing)
-- `src/bin/` — Rust source files for pipeline stages (each file corresponds to an executable)
-- `target/` — Cargo build output (includes release binaries)
-
-### Pipeline stages
-
-Each `src/bin/<n>_<name>.rs` implements one step of the pipeline:
-
-1. 1_clone_repos — Clone or update repositories listed in `repo.csv` in bulk.
-2. 2_delete_duplicated — First-pass deduplication to remove obvious duplicate PoC files.
-3. 3_move_file — Pre-filter non-nuclei files (→ `poc_non_nuclei/`), then archive and organize cleaned PoCs into `tmp/` and `poc_all/`.
-4. 4_download_nuclei — Download / prepare the Nuclei engine (if needed) for validation.
-5. 5_check_poc — Apply `auto_fix_poc()` to repair common issues, then run nuclei validation; pass→`poc/`, fail→`poc_needs_review/` (never deletes).
-6. 6_get_count — Count archived PoCs and output statistics.
-7. 7_get_pocname — Generate structured index: `poc_index.json` (category/quality-score/CVE metadata), `poc_summary.json` (stats summary), and `poc.txt` (plaintext list).
-8. 8_dedup_high_quality — Simple deduplication & quality filter (scoring + content hash), outputs to `poc_baseline/` for baseline comparison.
-9. 9_dedup_advanced — Advanced deduplication & format repair (multi-factor scoring + CVE/URL dual-index + auto-fix severity/ID casing + naming standardization + JSON report), outputs to `poc_high_quality/`.
-
-### Output strategy & safe rollback
-
-To avoid accidental data loss while iterating on deduplication/filtering rules, the project deliberately keeps three outputs during rollout:
-
-- `poc_all/`: complete archive of produced artifacts for auditing and rollback.
-- `poc/`: step 5 Nuclei-validated and category-organized PoCs, ready for direct scanning.
-- `poc_baseline/`: step 8 simple scoring + content hash dedup output, for baseline comparison.
-- `poc_high_quality/`: step 9 advanced multi-factor deduplication + format-fixed final high-quality output, intended for strict downstream validation and publishing.
-
-Step 9 scoring rules (0-80, 18 factors):
-- Basic structure (0-7): id, name, severity
-- Severity level (0-8): critical=8, high=6, medium=4, low=2, info=1
-- Protocol support (0-10): http+matchers=6, requests+matchers=5, tcp/dns=3ea
-- Metadata richness (0-16): author/description/tags/reference/classification/remediation ×2
-- Detection capability (0-15): matchers=5, extractors=4, URL count (≤6)
-- Vulnerability association (0-10): CVE=6, CNVD=4
-- Format normalization (0-6): http (not requests)=3, no severity casing issues=1, no deprecated network=2
-- File size appropriateness (0-5): 500B-10KB=5, 200-20KB=3, <200=1
-- Multi-protocol bonus (0-3): 2+ protocols=3
-
-You can build and run stages individually while debugging or testing:
-
-```bash
-# Build release
-cargo build --release
-
-# Run a single stage (e.g. step 1)
-./target/release/1_clone_repos
-
-# Or use cargo during development for debugging
-cargo run --bin 1_clone_repos -- <args...>
 ```
+nuclei_poc/
+├── Cargo.toml              # Rust project config
+├── repo.csv                # Upstream repo list (extensible)
+├── .github/workflows/       # GitHub Actions CI
+│
+├── src/
+│   ├── core/               # Shared lib: hash, yaml, category, naming, features, index
+│   └── bin/                # 9 standalone binaries, one per pipeline stage
+│
+├── poc/                    # ✅ Nuclei-validated PoCs (categorized)
+├── poc_dedup/              # 📦 Step 7 dedup: semantic dedup + format repair (~152k)
+├── poc_gold_11/       # ⭐ Gold (score ≥11, ~143k)
+├── poc_gold_12/       # ⭐ Gold (score ≥12, ~94k)
+├── poc_gold_13/       # ⭐⭐ Gold (score ≥13, ~45k)
+├── poc_gold_14/       # ⭐⭐ Gold (score ≥14, ~2.9k)
+├── poc_gold_15/       # ⭐⭐⭐ Gold (score ≥15, ~1.8k)
+├── poc_excluded/           # 🚫 Non-nuclei files (audit trail)
+├── poc_needs_review/       # ⚠️ Failed nuclei validation (manual review)
+├── poc_all/                # 📚 Full archive (historical rollback)
+│
+├── poc.txt                 # Plaintext PoC manifest
+├── poc_index.json          # Structured index (category/CVE/quality score)
+└── poc_summary.json        # Statistics summary
+```
+
+---
+
+## Deduplication Strategy
+
+The project uses a **dedup-first, then extract multi-tier gold** pipeline:
+
+```
+poc/  ──Step 8──▶  poc_dedup/  ──Step 9──▶  poc_gold_11/ ──▶ poc_gold_12/ ──▶ poc_gold_13/ ──▶ poc_gold_14/ ──▶ poc_gold_15/
+                   (~152k)        (~143k)     (~94k)      (~45k)      (~2.9k)    (~1.8k)
+```
+
+Higher tiers are subsets of lower tiers: `gold_15 ⊂ gold_14 ⊂ gold_13 ⊂ gold_12 ⊂ gold_11 ⊂ dedup ⊂ poc`.
+
+### Stage 1: Step 8 → `poc_dedup/` (Full Dedup Set)
+
+| Strategy | Detail |
+|----------|--------|
+| ID dedup | Among PoCs sharing the same `id`, keep only the highest-quality one |
+| Semantic similarity dedup | Cross-ID comparison over 18 factors, score ≥70 → considered duplicate |
+| Format repair | Auto-fix severity casing, empty severity, ID whitespace, etc. |
+| File renaming | Normalize names by CVE/CNVD/protocol/path |
+
+**Positioning**: Full-coverage dedup set, retaining ~24% of PoCs. Broad coverage, zero redundancy.
+
+### Stage 2: Step 9 → `poc_gold_{N}/` (Multi-Tier Gold)
+
+Single pass over `poc_dedup/` produces multiple quality tiers. Each tier
+is independently SHA256-deduplicated.
+
+| Tier | Threshold | Typical count | Use case |
+|------|-----------|---------------|----------|
+| `poc_gold_11/` | ≥11 | ~143k | Baseline quality, wide coverage (94% of dedup) |
+| `poc_gold_12/` | ≥12 | ~94k | Standard gold, balanced quality/coverage |
+| `poc_gold_13/` | ≥13 | ~45k | High quality (30% of dedup) |
+| `poc_gold_14/` | ≥14 | ~2.9k | Very high quality |
+| `poc_gold_15/` | ≥15 | ~1.8k | Ultra-tight, lowest false positive rate |
+
+| Strategy | Detail |
+|----------|--------|
+| Quality scoring | Weighted scoring on `id/info/requests/matchers/severity` (max ~32) |
+| SHA256 exact dedup | Byte-identical files kept only once per tier |
+| Severity whitelist | Only `critical/high/medium` allowed |
+| Auto-fix | `auto_fix_poc()` applied before scoring |
+
+**Positioning**: High-barrier gold set, retaining ~15.7% of PoCs (~62% of dedup). Suitable for publishing and security baseline benchmarking.
+
+### Step 8 Scoring Factors (0–80 points, 18 items)
+
+| Category | Factors | Points |
+|----------|---------|--------|
+| Basic structure | `id`, `name`, `severity` | 0–7 |
+| Severity level | critical=8, high=6, medium=4, low=2, info=1 | 0–8 |
+| Protocol support | http+matchers=6, requests+matchers=5, tcp/dns=3 | 0–10 |
+| Metadata | author/description/tags/reference/classification/remediation | 0–16 |
+| Detection capability | matchers=5, extractors=4, URL count ≤6 | 0–15 |
+| Vulnerability association | CVE=6, CNVD=4 | 0–10 |
+| Format normalization | http (not requests)=3, severity casing=1, no deprecated network=2 | 0–6 |
+| File size | 500B–10KB=5, 200–20KB=3, <200=1 | 0–5 |
+| Multi-protocol | 2+ protocols = 3 | 0–3 |
+
+---
+
+## PR Quality Gate
+
+When a PR touches files under `poc/`, `poc_dedup/`, or `tmp/`, `10_pr_check` is triggered:
+
+- **YAML structure check** — verifies `id`/`info`/protocol fields
+- **nuclei validate** — runs the nuclei engine to validate template legality
+- **Weak matcher detection** — flags overly broad matcher words like `word`/`matchers`
+- **Honeypot check** (opt-in) — detects templates referencing known honeypot URLs
+
+---
+
+## GitHub Actions
+
+The pipeline is configured to run every 2 hours automatically. For use in your own fork:
+
+> Set `Settings → Actions → General → Workflow permissions` to **Read and write**.
+
+Add or modify upstream repositories in `repo.csv` to extend the collection scope.
+
+---
 
 ## Acknowledgements
 
-Thanks to the open-source community and individuals who supported the project.
+- [ProjectDiscovery](https://github.com/projectdiscovery/nuclei) — the Nuclei engine and open-source community
+- [TajangSec](https://github.com/TajangSec) — code optimizations and improvement suggestions
+- [重剑无锋](https://github.com/TideSec) — deduplication rule optimization suggestions
 
-### Projects
-
-Special thanks to [ProjectDiscovery](https://github.com/projectdiscovery/nuclei) for developing the Nuclei tool and for their community support.
-
-### People
-
-Thanks to [TajangSec](https://github.com/TajangSec) for code optimizations and suggestions.
-Thanks to [重剑无锋](https://github.com/TideSec) for the suggestions on improving the deduplication rules.

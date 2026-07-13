@@ -1,0 +1,59 @@
+id: js_jobs-3e1f64f5-090a-4961-8490-d34f458a8d44
+
+info:
+  name: >
+    JS Job Manager < 1.1.9 - Arbitrary Plugin Installation/Activation
+  author: topscoder
+  severity: critical
+  description: >
+    The JS Job Manager plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the jsjobs_ajax function in versions before 1.1.9. This makes it possible for unauthenticated attackers to arbitrarily install and activate plugins.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3e1f64f5-090a-4961-8490-d34f458a8d44?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:H
+    cvss-score: 9.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/js-jobs/"
+    google-query: inurl:"/wp-content/plugins/js-jobs/"
+    shodan-query: 'http.html:"wp-content/plugins/js-jobs/"'
+  tags: cve,wordpress,wp-plugin,js-jobs,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/js-jobs/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "js-jobs"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.1.9')

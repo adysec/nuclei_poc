@@ -1,0 +1,59 @@
+id: wp_reset-86741f4a-8700-45dd-8998-b3f0387c27ed
+
+info:
+  name: >
+    WP Reset <= 2.05 - Unauthenticated Sensitive Information Exposure via wf-licensing.log
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/86741f4a-8700-45dd-8998-b3f0387c27ed?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-reset/"
+    google-query: inurl:"/wp-content/plugins/wp-reset/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-reset/"'
+  tags: cve,wordpress,wp-plugin,wp-reset,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-reset/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-reset"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.05')

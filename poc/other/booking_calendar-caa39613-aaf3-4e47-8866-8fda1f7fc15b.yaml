@@ -1,0 +1,59 @@
+id: booking_calendar-caa39613-aaf3-4e47-8866-8fda1f7fc15b
+
+info:
+  name: >
+    Booking Calendar WpDevArt <= 3.2.11 - Authenticated (Admin+) SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The Booking calendar, Appointment Booking System plugin for WordPress is vulnerable to SQL Injection via the '$email_address' variable in all versions up to, and including, 3.2.11 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers, with administrator-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/caa39613-aaf3-4e47-8866-8fda1f7fc15b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/booking-calendar/"
+    google-query: inurl:"/wp-content/plugins/booking-calendar/"
+    shodan-query: 'http.html:"wp-content/plugins/booking-calendar/"'
+  tags: cve,wordpress,wp-plugin,booking-calendar,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/booking-calendar/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "booking-calendar"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.11')

@@ -1,0 +1,59 @@
+id: fv_wordpress_flowplayer-b3325317-4ce7-468d-aee7-9b40fdf61d3c
+
+info:
+  name: >
+    FV Flowplayer Video Player <= 6.0.3.3 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The FV Flowplayer Video Player plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘page’ parameter in versions up to, and including, 6.0.3.3 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b3325317-4ce7-468d-aee7-9b40fdf61d3c?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fv-wordpress-flowplayer/"
+    google-query: inurl:"/wp-content/plugins/fv-wordpress-flowplayer/"
+    shodan-query: 'http.html:"wp-content/plugins/fv-wordpress-flowplayer/"'
+  tags: cve,wordpress,wp-plugin,fv-wordpress-flowplayer,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fv-wordpress-flowplayer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fv-wordpress-flowplayer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.0.3.3')

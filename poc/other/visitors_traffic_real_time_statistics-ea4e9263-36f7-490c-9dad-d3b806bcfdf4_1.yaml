@@ -1,0 +1,59 @@
+id: visitors_traffic_real_time_statistics-ea4e9263-36f7-490c-9dad-d3b806bcfdf4
+
+info:
+  name: >
+    Visitor Traffic Real Time Statistics <= 2.13 - Cross-Site Request Forgery to Arbitrary Plugin Installation/Activation
+  author: topscoder
+  severity: medium
+  description: >
+    The Visitor Traffic Real Time Statistics Plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.13. This is due to missing or incorrect nonce validation on the 'cp_plugins_do_button_job_later_callback' AJAX action. This makes it possible for unauthenticated attackers to install and activate other plugins via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ea4e9263-36f7-490c-9dad-d3b806bcfdf4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/visitors-traffic-real-time-statistics/"
+    google-query: inurl:"/wp-content/plugins/visitors-traffic-real-time-statistics/"
+    shodan-query: 'http.html:"wp-content/plugins/visitors-traffic-real-time-statistics/"'
+  tags: cve,wordpress,wp-plugin,visitors-traffic-real-time-statistics,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/visitors-traffic-real-time-statistics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "visitors-traffic-real-time-statistics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.13')

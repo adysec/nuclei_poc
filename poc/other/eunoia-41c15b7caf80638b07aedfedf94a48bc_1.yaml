@@ -1,0 +1,57 @@
+id: eunoia-41c15b7caf80638b07aedfedf94a48bc
+
+info:
+  name: "Eunoia (All Versions) - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Eunoia theme for WordPress is vulnerable to Cross-Site Scripting in all versions due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - https://jannefi.blogspot.com/2012/10/xss-vulnerability-in-wp-themes-by-kriesi.html
+    - https://themeforest.net/item/eunoia-responsive-portfolio/2792441
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/eunoia/"
+    google-query: inurl:"/wp-content/themes/eunoia/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,eunoia,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/eunoia/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "eunoia"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>0')

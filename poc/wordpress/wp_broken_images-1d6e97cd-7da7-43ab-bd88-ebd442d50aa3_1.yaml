@@ -1,0 +1,59 @@
+id: wp_broken_images-1d6e97cd-7da7-43ab-bd88-ebd442d50aa3
+
+info:
+  name: >
+    Broken Images <= 0.2 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1d6e97cd-7da7-43ab-bd88-ebd442d50aa3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-broken-images/"
+    google-query: inurl:"/wp-content/plugins/wp-broken-images/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-broken-images/"'
+  tags: cve,wordpress,wp-plugin,wp-broken-images,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-broken-images/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-broken-images"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.2')

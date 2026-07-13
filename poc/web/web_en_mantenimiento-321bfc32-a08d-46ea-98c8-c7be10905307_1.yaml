@@ -1,0 +1,59 @@
+id: web_en_mantenimiento-321bfc32-a08d-46ea-98c8-c7be10905307
+
+info:
+  name: >
+    Web en Mantenimiento <= 1.0.6 - Cross-Site Request Forgery to Settings Update
+  author: topscoder
+  severity: medium
+  description: >
+    The Web en Mantenimiento plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.0.6. This is due to missing nonce validation on the vista_configuracion() function. This makes it possible for unauthenticated attackers to modify the plugin's settings and enable maintenance mode via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/321bfc32-a08d-46ea-98c8-c7be10905307?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:H/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/web-en-mantenimiento/"
+    google-query: inurl:"/wp-content/plugins/web-en-mantenimiento/"
+    shodan-query: 'http.html:"wp-content/plugins/web-en-mantenimiento/"'
+  tags: cve,wordpress,wp-plugin,web-en-mantenimiento,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/web-en-mantenimiento/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "web-en-mantenimiento"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.6')

@@ -1,0 +1,68 @@
+# gap: istio-pilot-debug-anonymous
+id: istio-pilot-debug-anonymous
+
+info:
+  name: Istio Pilot Debug Endpoints Anonymous Access (/debug/syncz, /debug/configz)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an Istio Pilot (istiod) debug endpoint exposed without
+    authentication. The Pilot debug surface (/debug/syncz, /debug/configz,
+    /debug/registryz, /debug/endpointz, /debug/instancesz) is intended
+    for in-cluster debugging only and returns the full xDS state for
+    every sidecar in the mesh. Class signal: response is JSON whose
+    entries include the canonical Envoy node ID shape
+    `sidecar~<pod-ip>~<pod>.<ns>~<ns>.svc.cluster.local` or whose body
+    contains Envoy v3 protobuf type URLs (`type.googleapis.com/envoy.`).
+
+    Anonymous Pilot debug access leaks the entire mesh topology:
+    every sidecar's pod IP, pod name, namespace, service-account
+    identity, and cluster.local FQDN; per-sidecar xDS config dump
+    contains routes, listeners, clusters, and Secret Discovery Service
+    references that disclose in-memory secret bindings (TLS material
+    distribution map). Combined with /debug/configz the response is
+    materially equivalent to a cluster-wide service-mesh manifest
+    leak. Class detection — keys on Envoy protobuf-typed envelopes
+    and sidecar~ node-ID grammar, not Istio version banner.
+  reference:
+    - https://istio.io/latest/docs/ops/diagnostic-tools/controlz/
+    - https://istio.io/latest/docs/reference/commands/pilot-discovery/
+  tags: custom,exposures,istio,servicemesh,kubernetes,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/debug/syncz"
+      - "{{BaseURL}}/debug/configz"
+      - "{{BaseURL}}/debug/registryz"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      # Stable Istio/Envoy markers — sidecar node ID grammar OR Envoy
+      # protobuf typeURLs are both deterministic Pilot signals.
+      - type: regex
+        part: body
+        regex:
+          - 'sidecar~|router~|ingress~|"@type"\s*:\s*"type\.googleapis\.com/envoy\.'
+
+    extractors:
+      - type: regex
+        part: body
+        name: sidecar-nodes
+        regex:
+          - '(sidecar~[0-9a-f\.]+~[^"~]+~[a-zA-Z0-9-]+\.svc\.cluster\.local)'
+        group: 1
+      - type: regex
+        part: body
+        name: istio-namespaces
+        regex:
+          - '\.([a-z][a-z0-9-]+)\.svc\.cluster\.local'
+        group: 1

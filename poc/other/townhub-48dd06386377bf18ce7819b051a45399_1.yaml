@@ -1,0 +1,57 @@
+id: townhub-48dd06386377bf18ce7819b051a45399
+
+info:
+  name: "TownHub <= 1.2.9 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The TownHub theme for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 1.2.9 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://themeforest.net/item/townhub-directory-listing-wordpress-theme/25019571
+    - https://wpscan.com/vulnerability/007a1efd-86e4-491b-947a-d172c81621d5
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/townhub/"
+    google-query: inurl:"/wp-content/themes/townhub/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,townhub,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/townhub/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "townhub"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.9')

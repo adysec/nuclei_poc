@@ -1,0 +1,59 @@
+id: slideshow_jquery_image_gallery-25762427-8d31-4fef-8b93-1065d15cd918
+
+info:
+  name: >
+    Slideshow < 2.1.13 - Cross-Site Scripting and Sensitive Information Disclosure
+  author: topscoder
+  severity: high
+  description: >
+    The Slideshow plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via several parameters in versions up to, and including, 2.1.12 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link. The plugin is also vulnerable to Sensitive Data Exposure via several functions. This can allow unauthenticated attackers to extract sensitive data including the full file path of the WordPress installation.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/25762427-8d31-4fef-8b93-1065d15cd918?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/slideshow-jquery-image-gallery/"
+    google-query: inurl:"/wp-content/plugins/slideshow-jquery-image-gallery/"
+    shodan-query: 'http.html:"wp-content/plugins/slideshow-jquery-image-gallery/"'
+  tags: cve,wordpress,wp-plugin,slideshow-jquery-image-gallery,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/slideshow-jquery-image-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "slideshow-jquery-image-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.12')

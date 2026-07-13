@@ -1,0 +1,59 @@
+id: better_wp_security-88163d55-ab97-4697-a25b-d54615e2a843
+
+info:
+  name: >
+    Solid Security Basic <= 9.0.0 - Unauthenticated Login Page Disclosure
+  author: topscoder
+  severity: medium
+  description: >
+    The Solid Security – Password, Two Factor Authentication, and Brute Force Protection plugin for WordPress is vulnerable to protection mechanism bypass in all versions up to, and including, 9.0.0. This is due to the plugin disclosing the login path when comments are enabled and registration is required. This makes it possible for unauthenticated attackers to discover the login page path and bypass the intended functionality of the security mechanism.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/88163d55-ab97-4697-a25b-d54615e2a843?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/better-wp-security/"
+    google-query: inurl:"/wp-content/plugins/better-wp-security/"
+    shodan-query: 'http.html:"wp-content/plugins/better-wp-security/"'
+  tags: cve,wordpress,wp-plugin,better-wp-security,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/better-wp-security/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "better-wp-security"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 9.0.0')

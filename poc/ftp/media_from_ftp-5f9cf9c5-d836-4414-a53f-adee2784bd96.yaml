@@ -1,0 +1,59 @@
+id: media_from_ftp-5f9cf9c5-d836-4414-a53f-adee2784bd96
+
+info:
+  name: >
+    Media from FTP <= 11.15 - Improper Privilege Management
+  author: topscoder
+  severity: low
+  description: >
+    The Media from FTP plugin for WordPress is vulnerable to improper privilege management due to an insufficient capability check on the plugin's menu pages in versions up to, and including, 11.15. This makes it possible for authenticated attackers with author-level permissions to modify plugin settings.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5f9cf9c5-d836-4414-a53f-adee2784bd96?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 6.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/media-from-ftp/"
+    google-query: inurl:"/wp-content/plugins/media-from-ftp/"
+    shodan-query: 'http.html:"wp-content/plugins/media-from-ftp/"'
+  tags: cve,wordpress,wp-plugin,media-from-ftp,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/media-from-ftp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "media-from-ftp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 11.16')

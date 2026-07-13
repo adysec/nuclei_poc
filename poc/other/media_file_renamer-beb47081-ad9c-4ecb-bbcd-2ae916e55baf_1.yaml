@@ -1,0 +1,59 @@
+id: media_file_renamer-beb47081-ad9c-4ecb-bbcd-2ae916e55baf
+
+info:
+  name: >
+    Media File Renamer – Auto & Manual Rename <= 5.2.5 - Missing Authorization Checks
+  author: topscoder
+  severity: low
+  description: >
+    The Media File Renamer – Auto & Manual Rename plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the 'get_license' and 'set_license' API endpoints in versions up to, and including, 5.2.5. This makes it possible for authenticated Subscriber+ attackers to bypass otherwise restricted security protocols.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/beb47081-ad9c-4ecb-bbcd-2ae916e55baf?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/media-file-renamer/"
+    google-query: inurl:"/wp-content/plugins/media-file-renamer/"
+    shodan-query: 'http.html:"wp-content/plugins/media-file-renamer/"'
+  tags: cve,wordpress,wp-plugin,media-file-renamer,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/media-file-renamer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "media-file-renamer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.2.5')

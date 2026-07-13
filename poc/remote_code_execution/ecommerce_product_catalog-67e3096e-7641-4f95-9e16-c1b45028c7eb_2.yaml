@@ -1,0 +1,59 @@
+id: ecommerce_product_catalog-67e3096e-7641-4f95-9e16-c1b45028c7eb
+
+info:
+  name: >
+    eCommerce Product Catalog Plugin for WordPress <= 3.0.70 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The eCommerce Product Catalog plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘product_category’ parameter in versions up to, and including, 3.0.70 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/67e3096e-7641-4f95-9e16-c1b45028c7eb?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ecommerce-product-catalog/"
+    google-query: inurl:"/wp-content/plugins/ecommerce-product-catalog/"
+    shodan-query: 'http.html:"wp-content/plugins/ecommerce-product-catalog/"'
+  tags: cve,wordpress,wp-plugin,ecommerce-product-catalog,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ecommerce-product-catalog/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ecommerce-product-catalog"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.70')

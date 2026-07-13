@@ -1,0 +1,59 @@
+id: sb_uploader-4c9aabb6-d17c-4845-ae1b-6ee3d8b9bfb1
+
+info:
+  name: >
+    SB Uploader <= 4.8 - Arbitrary File Upload
+  author: topscoder
+  severity: low
+  description: >
+    The SB Uploader plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation via the sb_uploader.php file in versions up to, and including, 4.8. This makes it possible for authenticated attackers, with contributor-level permissions and above, to upload arbitrary files on the affected sites server which may make remote code execution possible.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4c9aabb6-d17c-4845-ae1b-6ee3d8b9bfb1?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sb-uploader/"
+    google-query: inurl:"/wp-content/plugins/sb-uploader/"
+    shodan-query: 'http.html:"wp-content/plugins/sb-uploader/"'
+  tags: cve,wordpress,wp-plugin,sb-uploader,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sb-uploader/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sb-uploader"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.8')

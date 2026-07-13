@@ -1,0 +1,60 @@
+id: email-newsletter
+
+info:
+  name: "Email Newsletter <= 8.0 - Sensitive Information Disclosure"
+  author: topscoder
+  severity: high
+  description: "The Email Newsletter for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 8.0. This made it possible for unauthenticated attackers to extract sensitive data such as user emails."
+  reference:
+    - https://packetstormsecurity.com/files/113322/
+    - http://web.archive.org/web/20140730211320/http%3A//www.opensyscom.fr/Actualites/wordpress-plugins-email-newsletter-information-disclosure-vulnerability.html
+    - https://wpscan.com/vulnerability/10dfee2d-dcb3-49c7-ad30-cdf4e6e43ed7
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-email-newsletter-option-parameter-information-disclosure-8-0/
+    - https://plugins.trac.wordpress.org/browser/email-newsletter/tags/13.0/readme.txt#L125
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/email-newsletter/"
+    google-query: inurl:"/wp-content/plugins/email-newsletter/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,email-newsletter,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/email-newsletter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "email-newsletter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 8.0')

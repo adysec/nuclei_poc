@@ -1,0 +1,59 @@
+id: store_locator-6bf743b1-5a59-4e22-8c59-3c17b2646ec8
+
+info:
+  name: >
+    Store Locator < 3.34 - SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Store Locator Plugin for WordPress is vulnerable to blind SQL Injection via the sl_vars[num_initial_displayed] parameter in versions before 3.34 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6bf743b1-5a59-4e22-8c59-3c17b2646ec8?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/store-locator/"
+    google-query: inurl:"/wp-content/plugins/store-locator/"
+    shodan-query: 'http.html:"wp-content/plugins/store-locator/"'
+  tags: cve,wordpress,wp-plugin,store-locator,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/store-locator/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "store-locator"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.34')

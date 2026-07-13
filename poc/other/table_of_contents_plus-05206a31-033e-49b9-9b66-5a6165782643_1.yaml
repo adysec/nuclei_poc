@@ -1,0 +1,59 @@
+id: table_of_contents_plus-05206a31-033e-49b9-9b66-5a6165782643
+
+info:
+  name: >
+    Table of Contents Plus <= 2302 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Table of Contents Plus plugin for WordPress is vulnerable to Stored Cross-Site Scripting via admin settings in versions up to, and including, 2302 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/05206a31-033e-49b9-9b66-5a6165782643?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 4.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/table-of-contents-plus/"
+    google-query: inurl:"/wp-content/plugins/table-of-contents-plus/"
+    shodan-query: 'http.html:"wp-content/plugins/table-of-contents-plus/"'
+  tags: cve,wordpress,wp-plugin,table-of-contents-plus,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/table-of-contents-plus/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "table-of-contents-plus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2309')

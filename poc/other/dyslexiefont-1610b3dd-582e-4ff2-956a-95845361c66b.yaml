@@ -1,0 +1,59 @@
+id: dyslexiefont-1610b3dd-582e-4ff2-956a-95845361c66b
+
+info:
+  name: >
+    Dyslexiefont Free <= 0.0.2 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Dyslexiefont Free plugin for WordPress is vulnerable to Stored Cross-Site Scripting via several parameters in versions up to, and including, 0.0.2 due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts in pages that execute whenever a victim accesses the injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1610b3dd-582e-4ff2-956a-95845361c66b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dyslexiefont/"
+    google-query: inurl:"/wp-content/plugins/dyslexiefont/"
+    shodan-query: 'http.html:"wp-content/plugins/dyslexiefont/"'
+  tags: cve,wordpress,wp-plugin,dyslexiefont,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dyslexiefont/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dyslexiefont"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.0.2')

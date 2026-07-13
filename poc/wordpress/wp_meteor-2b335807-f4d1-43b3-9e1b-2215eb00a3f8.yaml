@@ -1,0 +1,59 @@
+id: wp_meteor-2b335807-f4d1-43b3-9e1b-2215eb00a3f8
+
+info:
+  name: >
+    WP Meteor Page Speed Optimization Topping <= 3.1.4 -Missing Authorization to Notice Dismissal
+  author: topscoder
+  severity: low
+  description: >
+    The WP Meteor Page Speed Optimization Topping plugin for WordPress is vulnerable to unauthorized admin notice dismissal due to a missing capability check on the processAjaxNoticeDismiss function in versions up to, and including, 3.1.4. This makes it possible for authenticated attackers with subscriber level access to dismiss administrative notices.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2b335807-f4d1-43b3-9e1b-2215eb00a3f8?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-meteor/"
+    google-query: inurl:"/wp-content/plugins/wp-meteor/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-meteor/"'
+  tags: cve,wordpress,wp-plugin,wp-meteor,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-meteor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-meteor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1.4')

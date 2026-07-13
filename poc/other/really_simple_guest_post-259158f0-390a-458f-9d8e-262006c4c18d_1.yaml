@@ -1,0 +1,59 @@
+id: really_simple_guest_post-259158f0-390a-458f-9d8e-262006c4c18d
+
+info:
+  name: >
+    Really Simple Guest Post <= 1.0.6 - Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    The Really Simple Guest Post plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 1.0.6 via the 'rootpath' parameter passed to the require_once function. This allows unauthorized attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/259158f0-390a-458f-9d8e-262006c4c18d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/really-simple-guest-post/"
+    google-query: inurl:"/wp-content/plugins/really-simple-guest-post/"
+    shodan-query: 'http.html:"wp-content/plugins/really-simple-guest-post/"'
+  tags: cve,wordpress,wp-plugin,really-simple-guest-post,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/really-simple-guest-post/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "really-simple-guest-post"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.6')

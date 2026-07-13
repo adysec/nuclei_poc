@@ -1,0 +1,59 @@
+id: yet_another_stars_rating-bbd1e68f-1f84-40d6-9ecd-34280c3c5099
+
+info:
+  name: >
+    Yet Another Stars Rating <= 1.8.6 - Unauthenticated PHP Object Injection
+  author: topscoder
+  severity: critical
+  description: >
+    The Yet Another Stars Rating plugin for WordPress is vulnerable to PHP Object Injection in versions up to, and including, 1.8.6 via deserialization of untrusted input from the unserialize() function found in the yasr-shortcode-functions.php file. This allows unauthenticated attackers to inject a PHP Object. The additional presence of a POP chain allows attackers to remotely execute arbitrary code.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bbd1e68f-1f84-40d6-9ecd-34280c3c5099?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/yet-another-stars-rating/"
+    google-query: inurl:"/wp-content/plugins/yet-another-stars-rating/"
+    shodan-query: 'http.html:"wp-content/plugins/yet-another-stars-rating/"'
+  tags: cve,wordpress,wp-plugin,yet-another-stars-rating,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/yet-another-stars-rating/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "yet-another-stars-rating"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.6')

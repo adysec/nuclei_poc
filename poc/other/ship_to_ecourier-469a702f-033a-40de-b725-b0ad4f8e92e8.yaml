@@ -1,0 +1,59 @@
+id: ship_to_ecourier-469a702f-033a-40de-b725-b0ad4f8e92e8
+
+info:
+  name: >
+    Ship To eCourier <= 1.0.1 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    The Ship To eCourier plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.0.1. This is due to missing or incorrect nonce validation on the ste-ecourier-settings function. This makes it possible for unauthenticated attackers to change plugin settings via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/469a702f-033a-40de-b725-b0ad4f8e92e8?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/ship-to-ecourier/"
+    google-query: inurl:"/wp-content/plugins/ship-to-ecourier/"
+    shodan-query: 'http.html:"wp-content/plugins/ship-to-ecourier/"'
+  tags: cve,wordpress,wp-plugin,ship-to-ecourier,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ship-to-ecourier/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "ship-to-ecourier"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.1')

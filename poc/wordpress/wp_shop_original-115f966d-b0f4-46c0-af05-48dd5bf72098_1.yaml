@@ -1,0 +1,59 @@
+id: wp_shop_original-115f966d-b0f4-46c0-af05-48dd5bf72098
+
+info:
+  name: >
+    WP Shop <= 3.4.3.18 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The WP Shop plugin for WordPress is vulnerable to Cross-Site Request Forgery to Stored Cross-Site Scripting via the ‘wpshop_email’ parameter in versions up to, and including, 3.4.3.18 due to insufficient input sanitization and output escaping and missing nonce validation. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/115f966d-b0f4-46c0-af05-48dd5bf72098?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-shop-original/"
+    google-query: inurl:"/wp-content/plugins/wp-shop-original/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-shop-original/"'
+  tags: cve,wordpress,wp-plugin,wp-shop-original,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-shop-original/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-shop-original"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.4.3.19')

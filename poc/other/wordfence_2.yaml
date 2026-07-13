@@ -1,0 +1,49 @@
+id: wordpress-wordfence
+
+info:
+  name: Wordfence Security – Firewall, Malware Scan, and Login Security Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/wordfence/
+  metadata:
+    plugin_namespace: wordfence
+    wpscan: https://wpscan.com/plugin/wordfence
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordfence/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/wordfence.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502204acbe303558c66cfa6d2d2dbe5480c5957e0c8d3191cbd60e3e6d2f5d52fc829022100d2b21691d1e63bf92b6483ecf27a83951d1b0dbc0d51261557ba8009fa58dac3:922c64590222798bb761d5b6d8e72950

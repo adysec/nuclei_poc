@@ -1,0 +1,77 @@
+id: openclaw-origin-wildcard-check
+
+info:
+  name: OpenClaw Wildcard Origin Allowlist
+  author: LobsterGuard
+  severity: critical
+  description: |
+    Tests whether OpenClaw is configured with a wildcard ("*") in the
+    allowedOrigins list or reflects arbitrary origins in the
+    Access-Control-Allow-Origin header. A wildcard CORS policy combined
+    with credentials support allows any website to make authenticated
+    cross-origin requests, enabling full account takeover from a
+    malicious page.
+  reference:
+    - https://github.com/lobster-guard/openclaw-security
+  tags: openclaw,cors,wildcard,origin,critical
+  metadata:
+    chain_id: 43
+
+http:
+  - raw:
+      - |
+        OPTIONS /v1/chat/completions HTTP/1.1
+        Host: {{Hostname}}
+        Origin: https://evil-attacker.com
+        Access-Control-Request-Method: POST
+        Access-Control-Request-Headers: Content-Type, Authorization
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Access-Control-Allow-Origin: *"
+
+      - type: word
+        part: header
+        words:
+          - "Access-Control-Allow-Origin: https://evil-attacker.com"
+
+  - raw:
+      - |
+        OPTIONS /__openclaw/api/config HTTP/1.1
+        Host: {{Hostname}}
+        Origin: https://evil-attacker.com
+        Access-Control-Request-Method: GET
+
+      - |
+        OPTIONS /__openclaw__/api/config HTTP/1.1
+        Host: {{Hostname}}
+        Origin: https://evil-attacker.com
+        Access-Control-Request-Method: GET
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Access-Control-Allow-Origin: *"
+
+      - type: word
+        part: header
+        words:
+          - "Access-Control-Allow-Origin: https://evil-attacker.com"
+
+websocket:
+  - address: "{{scheme}}://{{Hostname}}/ws"
+    inputs:
+      - data: |
+          {"jsonrpc":"2.0","id":1,"method":"config.get","params":{"path":"server.allowedOrigins"}}
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "\"*\""
+          - "allowedOrigins"
+        condition: and

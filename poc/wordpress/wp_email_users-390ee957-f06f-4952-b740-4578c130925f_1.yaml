@@ -1,0 +1,59 @@
+id: wp_email_users-390ee957-f06f-4952-b740-4578c130925f
+
+info:
+  name: >
+    WP Email Users <= 1.4.4 - SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    The WP Email Users plugin for WordPress is vulnerable to  SQL Injection via the ‘filetitle’ parameter in versions up to, and including, 1.4.4 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers with subscriber-level permissions to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/390ee957-f06f-4952-b740-4578c130925f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-email-users/"
+    google-query: inurl:"/wp-content/plugins/wp-email-users/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-email-users/"'
+  tags: cve,wordpress,wp-plugin,wp-email-users,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-email-users/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-email-users"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.4')
