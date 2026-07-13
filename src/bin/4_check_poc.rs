@@ -262,7 +262,10 @@ async fn async_main(args: Args, jobs: usize) -> anyhow::Result<()> {
     // ══════════════════════════════════════════════════════════════
     // Phase 1: nuclei 批量结构校验
     // ══════════════════════════════════════════════════════════════
-    let validated: Vec<PathBuf> = if skip_nuclei || args.batch_size == 0 {
+    let validated: Vec<PathBuf> = if skip_nuclei {
+        println!("[Phase 1] nuclei 不可用，跳过结构校验，{} 个文件直接通过", survivors.len());
+        survivors
+    } else if args.batch_size == 0 {
         println!("[Phase 1] nuclei 逐文件结构校验 (并发={})…", jobs);
         phase1_individual(
             &survivors, nuclei_bin, jobs,
