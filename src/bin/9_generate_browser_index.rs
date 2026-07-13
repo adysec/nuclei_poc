@@ -216,11 +216,20 @@ fn main() -> anyhow::Result<()> {
     let root = Path::new(&args.repo_root);
     let out_dir = root.join(OUT_DIR);
 
-    // Clean and recreate output directory
-    if out_dir.exists() {
-        fs::remove_dir_all(&out_dir)?;
-    }
+    // Clean and recreate output directory — but preserve static files (HTML, config)
     ensure_dir(&out_dir)?;
+    // Only delete previously generated JSON index files, keep static frontend assets
+    if out_dir.exists() {
+        for entry in fs::read_dir(&out_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.extension().map_or(false, |ext| ext == "json") {
+                if let Err(e) = fs::remove_file(&path) {
+                    eprintln!("  warn: cannot remove {}: {e}", path.display());
+                }
+            }
+        }
+    }
 
     // We'll collect stats for _categories.json
     // Structure: BTreeMap<dir_name, BTreeMap<cat, count>>

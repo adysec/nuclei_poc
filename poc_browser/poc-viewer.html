@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POC 浏览器 — Nuclei POCs</title>
+  <meta name="description" content="浏览 Nuclei POC 聚合仓库中的所有 POC 文件">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth;font-size:16px}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#c9d1d9;line-height:1.6;display:flex;flex-direction:column;min-height:100vh}
+    a{color:#58a6ff;text-decoration:none;transition:color .2s}
+    a:hover{color:#79c0ff}
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:#0d1117}
+    ::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+
+    .navbar{position:sticky;top:0;z-index:100;background:rgba(13,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid #21262d;padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:space-between}
+    .navbar .logo{font-size:1.05rem;font-weight:700;color:#f0f6fc}
+    .navbar .logo span{background:linear-gradient(135deg,#58a6ff,#3fb950);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .navbar .nav-links{display:flex;gap:1rem;align-items:center;font-size:.85rem}
+    .navbar .nav-links a{color:#8b949e;font-weight:500}
+    .navbar .nav-links a:hover{color:#f0f6fc}
+    .navbar .shortcut-hint{font-size:.7rem;color:#484f58;background:#161b22;padding:.15rem .4rem;border-radius:4px}
+
+    .app{display:flex;flex:1;overflow:hidden}
+    .sidebar{width:300px;min-width:300px;border-right:1px solid #21262d;background:#0d1117;display:flex;flex-direction:column;overflow:hidden}
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+    .dir-selector{padding:.6rem .75rem;border-bottom:1px solid #21262d;display:flex;gap:.3rem;flex-wrap:wrap}
+    .dir-btn{flex:1;min-width:60px;padding:.35rem .4rem;border-radius:6px;border:1px solid #21262d;background:transparent;color:#8b949e;font-size:.73rem;font-weight:500;cursor:pointer;transition:all .2s;text-align:center;font-family:monospace;white-space:nowrap}
+    .dir-btn:hover{background:#161b22;color:#c9d1d9}
+    .dir-btn.active{background:#1f6feb1a;border-color:#1f6feb66;color:#58a6ff}
+    .dir-btn.gold{color:#d29922}
+    .dir-btn.gold.active{background:#d299221a;border-color:#d2992266;color:#d29922}
+
+    .cat-list{flex:1;overflow-y:auto;padding:.4rem 0}
+    .cat-item{display:flex;align-items:center;justify-content:space-between;padding:.4rem .75rem;cursor:pointer;transition:background .15s;font-size:.84rem;border-left:3px solid transparent}
+    .cat-item:hover{background:#161b22}
+    .cat-item.active{background:#1f6feb11;border-left-color:#58a6ff;color:#f0f6fc}
+    .cat-item .name{display:flex;align-items:center;gap:.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+    .cat-item .icon{font-size:.85rem;flex-shrink:0}
+    .cat-item .count{font-size:.72rem;color:#484f58;background:#161b22;padding:.1rem .45rem;border-radius:8px;flex-shrink:0}
+    .cat-item.active .count{background:#1f6feb1a;color:#58a6ff}
+
+    .stats-bar{padding:.4rem .75rem;border-top:1px solid #21262d;font-size:.7rem;color:#484f58;display:flex;justify-content:space-between}
+
+    .split-view{display:flex;flex:1;overflow:hidden}
+    .file-panel{width:40%;min-width:280px;border-right:1px solid #21262d;display:flex;flex-direction:column;overflow:hidden}
+    .viewer-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+    .breadcrumb{padding:.4rem .75rem;background:#0d1117;border-bottom:1px solid #21262d22;font-size:.75rem;color:#8b949e;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap;min-height:30px}
+    .breadcrumb span{color:#58a6ff;cursor:pointer;transition:color .15s}
+    .breadcrumb span:hover{color:#79c0ff}
+    .breadcrumb .sep{color:#30363d;cursor:default}
+    .breadcrumb .current{color:#c9d1d9;cursor:default;font-weight:500}
+
+    .file-list-header{padding:.35rem .75rem;background:#0d1117;border-bottom:1px solid #21262d22;font-size:.73rem;color:#8b949e;display:flex;justify-content:space-between;align-items:center}
+    .file-list-container{flex:1;overflow-y:auto}
+    .file-item{display:flex;align-items:center;gap:.45rem;padding:.32rem .75rem;cursor:pointer;border-bottom:1px solid #21262d11;font-size:.82rem;transition:all .12s;border-left:3px solid transparent}
+    .file-item:hover{background:#161b22}
+    .file-item.active{background:#1f6feb11;color:#f0f6fc;border-left-color:#58a6ff}
+    .file-item .file-icon{color:#8b949e;font-size:.8rem;flex-shrink:0}
+    .file-item .file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:.76rem}
+    .sentinel{height:1px}
+
+    .loading-indicator{text-align:center;padding:2rem;color:#8b949e}
+    .spinner{display:inline-block;width:20px;height:20px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .tab-bar{display:flex;background:#161b22;border-bottom:1px solid #21262d;overflow-x:auto;min-height:36px;align-items:flex-end}
+    .tab-bar::-webkit-scrollbar{height:3px}
+    .tab{display:flex;align-items:center;gap:.35rem;padding:.35rem .7rem;font-size:.78rem;color:#8b949e;cursor:pointer;border-right:1px solid #21262d22;white-space:nowrap;transition:all .15s;max-width:180px;flex-shrink:0}
+    .tab:hover{color:#c9d1d9;background:#21262d44}
+    .tab.active{color:#f0f6fc;background:#0d1117;border-bottom:2px solid #58a6ff;margin-bottom:-1px}
+    .tab .tab-name{overflow:hidden;text-overflow:ellipsis;font-family:monospace;font-size:.73rem}
+    .tab .tab-close{font-size:.9rem;line-height:1;opacity:.5;transition:opacity .15s;flex-shrink:0}
+    .tab .tab-close:hover{opacity:1;color:#f85149}
+
+    .viewer-body{flex:1;overflow-y:auto;background:#0d1117}
+    .viewer-body pre{margin:0;padding:.75rem 1rem;font-size:.8rem;line-height:1.5;overflow-x:auto}
+    .viewer-body pre code{font-family:'JetBrains Mono','Fira Code',monospace}
+
+    .viewer-header{padding:.4rem .75rem;background:#0d1117;border-bottom:1px solid #21262d;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+    .viewer-header .file-meta{font-size:.73rem;color:#8b949e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+    .viewer-header .actions{display:flex;gap:.25rem;flex-shrink:0}
+    .icon-btn{padding:.25rem .45rem;border-radius:5px;border:1px solid #30363d;background:transparent;color:#8b949e;cursor:pointer;font-size:.7rem;transition:all .15s;white-space:nowrap}
+    .icon-btn:hover{background:#21262d;color:#c9d1d9}
+
+    .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#484f58;gap:.8rem}
+    .placeholder .icon{font-size:3rem;opacity:.4}
+    .placeholder p{font-size:.85rem}
+    .placeholder .shortcuts{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;font-size:.7rem}
+    .placeholder .kbd{background:#161b22;border:1px solid #21262d;border-radius:4px;padding:.15rem .4rem;font-family:monospace}
+
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;color:#8b949e;gap:.4rem}
+    .empty-state .icon{font-size:2.5rem;opacity:.4;margin-bottom:.4rem}
+
+    .toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:200;padding:.6rem 1rem;border-radius:8px;font-size:.82rem;animation:fadeInUp .3s ease;max-width:350px}
+    .toast.error{background:#da363322;border:1px solid #da363344;color:#f85149}
+    .toast.info{background:#1f6feb22;border:1px solid #1f6feb44;color:#58a6ff}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+    @media(max-width:768px){
+      .app{flex-direction:column}
+      .sidebar{width:100%;min-width:100%;max-height:38vh;border-right:none;border-bottom:1px solid #21262d}
+      .split-view{flex-direction:column}
+      .file-panel{width:100%;min-width:100%;max-height:32vh;border-right:none;border-bottom:1px solid #21262d}
+      .viewer-panel{min-height:40vh}
+      .viewer-body pre{padding:.5rem .75rem;font-size:.73rem}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="logo">🎯 Nuclei <span>POC</span> 浏览器</a>
+  <div class="nav-links">
+    <span class="shortcut-hint">j/k 导航</span>
+    <span class="shortcut-hint">Enter 打开</span>
+    <span class="shortcut-hint">Esc 关闭</span>
+    <a href="index.html">← 首页</a>
+  </div>
+</nav>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="dir-selector" id="dirSelector"></div>
+    <div class="cat-list" id="catList"></div>
+    <div class="stats-bar" id="statsBar"></div>
+  </aside>
+
+  <main class="main">
+    <div class="split-view">
+      <div class="file-panel" id="filePanel">
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <div class="file-list-header" id="fileListHeader"></div>
+        <div class="file-list-container" id="fileList">
+          <div class="placeholder">
+            <div class="icon">📂</div>
+            <p>选择一个分类浏览 POC 文件</p>
+            <div class="shortcuts">
+              <span><span class="kbd">j</span><span class="kbd">k</span> 导航</span>
+              <span><span class="kbd">Enter</span> 打开</span>
+            </div>
+          </div>
+        </div>
+        <div class="sentinel" id="sentinel"></div>
+      </div>
+      <div class="viewer-panel" id="viewerPanel">
+        <div class="tab-bar" id="tabBar"></div>
+        <div class="viewer-header" id="viewerHeader" style="display:none"></div>
+        <div class="viewer-body" id="viewerBody">
+          <div class="placeholder">
+            <div class="icon">📄</div>
+            <p>点击文件或按 <span class="kbd">Enter</span> 查看 POC 内容</p>
+            <div class="shortcuts">
+              <span><span class="kbd">[</span><span class="kbd">]</span> 切换标签</span>
+              <span><span class="kbd">Esc</span> 关闭标签</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast" style="display:none"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+<script>
+const REPO = 'adysec/nuclei_poc';
+const BRANCH = 'main';
+const CHUNK_SIZE = 3000;
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+let DIRS = ['poc', 'poc_dedup'];
+let currentDir = 'poc';
+let currentCategory = null;
+let allCategories = {};
+let manifestCache = {};
+let chunkCache = {};
+let contentCache = {};
+let currentFileList = [];
+let currentFileIdx = -1;
+let openTabs = [];
+let activeTabIdx = -1;
+let isLoadingMore = false;
+let allChunksLoaded = false;
+
+async function init() {
+  renderDirSelector();
+  bindEvents();
+  bindKeyboard();
+  setupInfiniteScroll();
+  await loadAllCategories();
+}
+
+function setupInfiniteScroll() {
+  var observer = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting && !isLoadingMore && !allChunksLoaded && currentCategory) {
+      loadNextChunk();
+    }
+  }, { root: $('#fileList'), rootMargin: '300px' });
+  observer.observe($('#sentinel'));
+}
+
+function renderDirSelector() {
+  $('#dirSelector').innerHTML = DIRS.map(function(d) {
+    var label = d;
+    var cls = 'dir-btn';
+    if (d.startsWith('poc_gold_')) { label = '⭐' + d.replace('poc_gold_','Lv.'); cls += ' gold'; }
+    if (d === currentDir) cls += ' active';
+    return '<button class="' + cls + '" data-dir="' + escAttr(d) + '">' + escHtml(label) + '</button>';
+  }).join('');
+}
+
+function bindEvents() {
+  $('#dirSelector').addEventListener('click', function(e) {
+    var btn = e.target.closest('.dir-btn');
+    if (!btn) return;
+    switchDir(btn.dataset.dir);
+  });
+}
+
+function bindKeyboard() {
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      if (e.key === 'Escape') e.target.blur();
+      return;
+    }
+    switch(e.key) {
+      case 'j': case 'ArrowDown': e.preventDefault(); navigateFiles(1); break;
+      case 'k': case 'ArrowUp': e.preventDefault(); navigateFiles(-1); break;
+      case 'Enter': e.preventDefault(); openSelectedFile(); break;
+      case 'Escape': e.preventDefault(); closeActiveTab(); break;
+      case '[': e.preventDefault(); switchTab(-1); break;
+      case ']': e.preventDefault(); switchTab(1); break;
+    }
+  });
+}
+
+function navigateFiles(delta) {
+  if (!currentFileList.length) return;
+  var newIdx = currentFileIdx + delta;
+  if (newIdx < 0) newIdx = 0;
+  if (newIdx >= currentFileList.length) newIdx = currentFileList.length - 1;
+  if (newIdx === currentFileIdx) return;
+  currentFileIdx = newIdx;
+  highlightFileItem();
+  scrollToFileItem();
+}
+
+function highlightFileItem() {
+  $$('#fileList .file-item').forEach(function(el) { el.classList.remove('active'); });
+  var active = $('#fileList .file-item[data-idx="' + currentFileIdx + '"]');
+  if (active) active.classList.add('active');
+}
+
+function scrollToFileItem() {
+  var active = $('#fileList .file-item[data-idx="' + currentFileIdx + '"]');
+  if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function openSelectedFile() {
+  if (currentFileIdx < 0 || currentFileIdx >= currentFileList.length) return;
+  var f = currentFileList[currentFileIdx];
+  var path = f.dir + '/' + f.cat + '/' + f.name;
+  openFileTab(path, f.name, f.dir, f.cat);
+}
+
+async function loadAllCategories() {
+  try {
+    const res = await fetch('_categories.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    allCategories = await res.json();
+    var goldDirs = Object.keys(allCategories).filter(function(k) { return k.startsWith('poc_gold_'); }).sort();
+    DIRS = ['poc', 'poc_dedup'].concat(goldDirs);
+    renderDirSelector();
+    renderCategories();
+    updateStats();
+  } catch(err) {
+    showToast('加载分类失败: ' + err.message, 'error');
+    $('#catList').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>无法加载分类数据，请确认 _categories.json 已生成</p></div>';
+  }
+}
+
+function renderCategories() {
+  var el = $('#catList');
+  var cats = allCategories[currentDir] || {};
+  var entries = Object.entries(cats).sort(function(a, b) { return b[1] - a[1]; });
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📁</div><p>暂无分类数据</p></div>';
+    return;
+  }
+  el.innerHTML = entries.map(function(e) {
+    var name = e[0], count = e[1];
+    var active = currentCategory === name ? ' active' : '';
+    var icon = getCatIcon(name);
+    return '<div class="cat-item' + active + '" data-cat="' + escAttr(name) + '">'
+      + '<span class="name"><span class="icon">' + icon + '</span>' + escHtml(name) + '</span>'
+      + '<span class="count">' + formatNum(count) + '</span></div>';
+  }).join('');
+  el.querySelectorAll('.cat-item').forEach(function(item) {
+    item.addEventListener('click', function() { selectCategory(item.dataset.cat); });
+  });
+}
+
+function getCatIcon(cat) {
+  var m = {cve:'🔴',sql:'🗄️',xss:'💉',wordpress:'📝',exposed:'👁️',auth:'🔑',default:'📋',detect:'🔎',upload:'📤',ssrf:'🌐',config:'⚙️',microsoft:'🪟',apache:'🪶',php:'🐘',java:'☕',javascript:'📜',python:'🐍',ruby:'💎',docker:'🐳',aws:'☁️',nginx:'🟢',jenkins:'👷',git:'🔀',mongodb:'🍃',redis:'🔴',vmware:'💻',cisco:'🔵','local_file_inclusion':'📂','remote_code_execution':'💀','crlf_injection':'↩️','open_redirect':'↗️','template_injection':'📐','subdomain_takeover':'🌍','cross_site_request_forgery':'🛡️','xml_external_entity':'📋','directory_listing':'📁'};
+  return m[cat] || '📁';
+}
+
+function selectCategory(cat) {
+  currentCategory = cat;
+  currentFileList = [];
+  currentFileIdx = -1;
+  allChunksLoaded = false;
+  isLoadingMore = false;
+  renderCategories();
+  renderBreadcrumb();
+  showFileListLoading('加载中...');
+  loadNextChunk();
+}
+
+async function loadManifest(dir, cat) {
+  var key = dir + '_' + cat;
+  if (manifestCache[key]) return manifestCache[key];
+  var url = key + '_manifest.json';
+  try {
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    manifestCache[key] = data;
+    return data;
+  } catch(err) { return null; }
+}
+
+async function loadChunk(dir, cat, idx) {
+  var key = dir + '_' + cat + '_' + idx;
+  if (chunkCache[key]) return chunkCache[key];
+  var url = key + '.json';
+  try {
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    chunkCache[key] = data;
+    return data;
+  } catch(err) { return null; }
+}
+
+async function loadNextChunk() {
+  if (isLoadingMore || allChunksLoaded || !currentCategory) return;
+  isLoadingMore = true;
+  var cat = currentCategory;
+  var manifest = await loadManifest(currentDir, cat);
+  if (!manifest) {
+    $('#fileList').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>该分类暂无数据</p></div>';
+    isLoadingMore = false; allChunksLoaded = true;
+    return;
+  }
+  var nextChunk = currentFileList.length === 0 ? 0 : Math.floor(currentFileList.length / CHUNK_SIZE);
+  if (nextChunk >= manifest.chunks) { allChunksLoaded = true; isLoadingMore = false; return; }
+  var files = await loadChunk(currentDir, cat, nextChunk);
+  if (!files) {
+    if (currentFileList.length === 0) $('#fileList').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>加载失败</p></div>';
+    isLoadingMore = false; return;
+  }
+  for (var i = 0; i < files.length; i++) currentFileList.push({ name: files[i], dir: currentDir, cat: cat });
+  renderFileListAppend(files, nextChunk);
+  if (nextChunk + 1 >= manifest.chunks) allChunksLoaded = true;
+  isLoadingMore = false;
+  // Auto-load more if sentinel visible
+  setTimeout(function() {
+    if (!allChunksLoaded && currentCategory === cat) {
+      var r = $('#sentinel').getBoundingClientRect();
+      var rr = $('#fileList').getBoundingClientRect();
+      if (r.top < rr.bottom + 300) loadNextChunk();
+    }
+  }, 100);
+}
+
+function renderFileListAppend(files, chunkIdx) {
+  var listEl = $('#fileList');
+  var manifest = manifestCache[currentDir + '_' + currentCategory];
+  var total = manifest ? manifest.total : currentFileList.length;
+  var loaded = currentFileList.length;
+
+  if (chunkIdx === 0) {
+    $('#fileListHeader').innerHTML = '<span>📄 ' + escHtml(currentCategory) + '/ <span style="color:#8b949e">(' + formatNum(total) + ' 文件)</span></span>';
+    listEl.innerHTML = '';
+  }
+
+  var startIdx = chunkIdx * CHUNK_SIZE;
+  var frag = document.createDocumentFragment();
+  for (var i = 0; i < files.length; i++) {
+    var idx = startIdx + i;
+    (function(fn, cat, fileIdx) {
+      var div = document.createElement('div');
+      div.className = 'file-item';
+      div.dataset.idx = fileIdx;
+      div.dataset.fname = fn;
+      div.dataset.cat = cat;
+      div.innerHTML = '<span class="file-icon">📄</span><span class="file-name">' + escHtml(fn) + '</span>';
+      div.addEventListener('click', function() {
+        currentFileIdx = parseInt(this.dataset.idx);
+        highlightFileItem();
+        openFileTab(currentDir + '/' + cat + '/' + fn, fn, currentDir, cat);
+      });
+      frag.appendChild(div);
+    })(files[i], currentCategory, idx);
+  }
+  listEl.appendChild(frag);
+  $('#fileListHeader').innerHTML = '<span>📄 ' + escHtml(currentCategory) + '/ <span style="color:#8b949e">(' + formatNum(loaded) + ' / ' + formatNum(total) + ' 文件)</span></span>';
+}
+
+function showFileListLoading(msg) {
+  $('#fileListHeader').innerHTML = '<span>📄 ' + escHtml(currentCategory || '') + '</span>';
+  $('#fileList').innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>' + msg + '</p></div>';
+}
+
+function renderBreadcrumb() {
+  var html = '<span data-nav="home">🏠 首页</span>';
+  if (currentDir) {
+    var label = currentDir.startsWith('poc_gold_') ? '⭐' + currentDir.replace('poc_gold_','Lv.') : currentDir;
+    html += '<span class="sep">›</span><span data-nav="dir:' + escAttr(currentDir) + '">' + escHtml(label) + '</span>';
+  }
+  if (currentCategory) html += '<span class="sep">›</span><span class="current">' + escHtml(currentCategory) + '</span>';
+  $('#breadcrumb').innerHTML = html;
+  $('#breadcrumb').querySelectorAll('[data-nav]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var nav = el.dataset.nav;
+      if (nav === 'home') switchDir('poc');
+      else if (nav.startsWith('dir:')) switchDir(nav.slice(4));
+    });
+  });
+}
+
+function openFileTab(path, name, dir, cat) {
+  var existingIdx = -1;
+  for (var i = 0; i < openTabs.length; i++) { if (openTabs[i].path === path) { existingIdx = i; break; } }
+  if (existingIdx >= 0) { activateTab(existingIdx); return; }
+  var tab = { path: path, name: name, dir: dir, cat: cat, content: null };
+  openTabs.push(tab);
+  activeTabIdx = openTabs.length - 1;
+  renderTabs();
+  loadTabContent(activeTabIdx);
+}
+
+function activateTab(idx) {
+  if (idx < 0 || idx >= openTabs.length) return;
+  activeTabIdx = idx;
+  renderTabs();
+  var tab = openTabs[idx];
+  if (tab.content !== null) renderTabContent(tab);
+  else loadTabContent(idx);
+}
+
+function closeTab(idx) {
+  if (openTabs.length === 0) return;
+  if (idx === undefined || idx < 0 || idx >= openTabs.length) idx = activeTabIdx;
+  if (idx < 0) return;
+  openTabs.splice(idx, 1);
+  if (openTabs.length === 0) {
+    activeTabIdx = -1; showViewerPlaceholder(); renderTabs(); return;
+  }
+  if (activeTabIdx >= openTabs.length) activeTabIdx = openTabs.length - 1;
+  if (idx <= activeTabIdx && activeTabIdx > 0) activeTabIdx--;
+  if (activeTabIdx < 0) activeTabIdx = 0;
+  renderTabs();
+  var tab = openTabs[activeTabIdx];
+  if (tab.content !== null) renderTabContent(tab);
+  else loadTabContent(activeTabIdx);
+}
+
+function closeActiveTab() { if (openTabs.length) closeTab(activeTabIdx); }
+
+function switchTab(delta) {
+  if (openTabs.length <= 1) return;
+  var newIdx = activeTabIdx + delta;
+  if (newIdx < 0) newIdx = openTabs.length - 1;
+  if (newIdx >= openTabs.length) newIdx = 0;
+  activateTab(newIdx);
+}
+
+function renderTabs() {
+  var bar = $('#tabBar');
+  if (openTabs.length === 0) { bar.innerHTML = ''; $('#viewerHeader').style.display = 'none'; return; }
+  bar.innerHTML = openTabs.map(function(t, i) {
+    var cls = 'tab' + (i === activeTabIdx ? ' active' : '');
+    return '<div class="' + cls + '" data-tab="' + i + '">'
+      + '<span class="tab-name">' + escHtml(t.name) + '</span>'
+      + '<span class="tab-close" data-close="' + i + '">×</span></div>';
+  }).join('');
+  bar.querySelectorAll('.tab').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      if (e.target.dataset.close !== undefined) { e.stopPropagation(); closeTab(parseInt(e.target.dataset.close)); return; }
+      activateTab(parseInt(el.dataset.tab));
+    });
+  });
+  var activeTab = bar.querySelector('.tab.active');
+  if (activeTab) activeTab.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+async function loadTabContent(idx) {
+  var tab = openTabs[idx];
+  if (!tab) return;
+  if (contentCache[tab.path]) { tab.content = contentCache[tab.path]; if (idx === activeTabIdx) renderTabContent(tab); return; }
+  if (idx === activeTabIdx) {
+    $('#viewerHeader').style.display = 'flex';
+    $('#viewerHeader').innerHTML = '<span class="file-meta">📄 ' + escHtml(tab.name) + '</span><span style="font-size:.7rem;color:#8b949e">加载中...</span>';
+    $('#viewerBody').innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>加载中...</p></div>';
+  }
+  try {
+    var url = 'https://raw.githubusercontent.com/' + REPO + '/' + BRANCH + '/' + tab.path;
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var text = await res.text();
+    tab.content = text;
+    contentCache[tab.path] = text;
+    if (idx === activeTabIdx) renderTabContent(tab);
+  } catch(err) {
+    tab.content = '⚠️ 加载失败: ' + err.message;
+    if (idx === activeTabIdx) $('#viewerBody').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>加载失败: ' + escHtml(err.message) + '</p></div>';
+  }
+}
+
+function renderTabContent(tab) {
+  $('#viewerHeader').style.display = 'flex';
+  $('#viewerHeader').innerHTML = '<span class="file-meta">📄 ' + escHtml(tab.name) + '</span>'
+    + '<div class="actions">'
+    + '<a class="icon-btn" href="https://raw.githubusercontent.com/' + REPO + '/' + BRANCH + '/' + tab.path + '" target="_blank">↗ Raw</a>'
+    + '<a class="icon-btn" href="https://github.com/' + REPO + '/blob/' + BRANCH + '/' + tab.path + '" target="_blank">🐙 GitHub</a>'
+    + '<button class="icon-btn" onclick="copyRawUrl(\'' + escAttr(tab.path) + '\')">📋 复制</button>'
+    + '</div>';
+  if (tab.content && !tab.content.startsWith('⚠️')) {
+    $('#viewerBody').innerHTML = '<pre><code class="language-yaml">' + escHtml(tab.content) + '</code></pre>';
+    hljs.highlightElement($('#viewerBody').querySelector('code'));
+  } else if (tab.content) {
+    $('#viewerBody').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>' + escHtml(tab.content) + '</p></div>';
+  }
+}
+
+function showViewerPlaceholder() {
+  $('#tabBar').innerHTML = '';
+  $('#viewerHeader').style.display = 'none';
+  $('#viewerBody').innerHTML = '<div class="placeholder"><div class="icon">📄</div><p>点击文件或按 <span class="kbd">Enter</span> 查看 POC 内容</p><div class="shortcuts"><span><span class="kbd">[</span><span class="kbd">]</span> 切换标签</span><span><span class="kbd">Esc</span> 关闭标签</span></div></div>';
+}
+
+function switchDir(dir) {
+  currentDir = dir;
+  currentCategory = null;
+  currentFileList = [];
+  currentFileIdx = -1;
+  allChunksLoaded = false;
+  isLoadingMore = false;
+  renderDirSelector();
+  renderCategories();
+  updateStats();
+  renderBreadcrumb();
+  $('#fileList').innerHTML = '<div class="placeholder"><div class="icon">📂</div><p>选择一个分类浏览 POC 文件</p><div class="shortcuts"><span><span class="kbd">j</span><span class="kbd">k</span> 导航</span><span><span class="kbd">Enter</span> 打开</span></div></div>';
+  $('#fileListHeader').innerHTML = '';
+}
+
+function updateStats() {
+  var cats = allCategories[currentDir] || {};
+  var total = 0;
+  Object.values(cats).forEach(function(c) { total += c; });
+  $('#statsBar').innerHTML = '<span>' + Object.keys(cats).length + ' 分类</span><span>' + formatNum(total) + ' POC</span>';
+}
+
+function showToast(msg, type) {
+  var el = $('#toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || 'info');
+  el.style.display = 'block';
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(function() { el.style.display = 'none'; }, 3500);
+}
+
+function copyRawUrl(path) {
+  var url = 'https://raw.githubusercontent.com/' + REPO + '/' + BRANCH + '/' + path;
+  navigator.clipboard.writeText(url).then(
+    function() { showToast('已复制 Raw URL', 'info'); },
+    function() { showToast('复制失败', 'error'); }
+  );
+}
+
+function formatNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+
+function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+init();
+</script>
+</body>
+</html>

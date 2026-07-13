@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuclei POCs — 每日自动聚合、验证、去重</title>
+  <meta name="description" content="Nuclei POC 聚合仓库 — 每日自动采集、验证、去重、发布。120万+ POC，Rust 驱动，6 分钟完成全量流水线。">
+  <meta name="keywords" content="nuclei, poc, vulnerability, security, cve, exploit">
+  <meta property="og:title" content="Nuclei POCs">
+  <meta property="og:description" content="每日自动采集、验证、去重、发布的 Nuclei POC 聚合仓库">
+  <meta property="og:url" content="https://adysec.github.io/nuclei_poc">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth;font-size:16px}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#c9d1d9;line-height:1.7;overflow-x:hidden}
+    a{color:#58a6ff;text-decoration:none;transition:color .2s}
+    a:hover{color:#79c0ff}
+    code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:.875rem}
+
+    .navbar{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(13,17,23,.88);backdrop-filter:blur(12px);border-bottom:1px solid #21262d;padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+    .navbar .logo{font-size:1.15rem;font-weight:700;color:#f0f6fc;display:flex;align-items:center;gap:.5rem}
+    .navbar .logo .icon{font-size:1.35rem}
+    .navbar .links{display:flex;gap:1.5rem;align-items:center}
+    .navbar .links a{color:#8b949e;font-size:.875rem;font-weight:500}
+    .navbar .links a:hover{color:#f0f6fc}
+    .navbar .github-btn{display:inline-flex;align-items:center;gap:.4rem;background:#21262d;border:1px solid #30363d;border-radius:6px;padding:.35rem .75rem;font-size:.8rem;color:#c9d1d9;font-weight:500}
+    .navbar .github-btn:hover{background:#30363d;color:#f0f6fc}
+    .navbar .github-btn svg{width:16px;height:16px;fill:currentColor}
+
+    .hero{padding:8rem 2rem 5rem;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,#1f6feb22,transparent 70%);pointer-events:none}
+    .hero .badge{display:inline-flex;align-items:center;gap:.5rem;background:#1f6feb1a;border:1px solid #1f6feb33;border-radius:20px;padding:.3rem .9rem;font-size:.8rem;color:#58a6ff;margin-bottom:1.5rem}
+    .hero .badge .dot{width:7px;height:7px;background:#3fb950;border-radius:50%;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .hero h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:800;color:#f0f6fc;line-height:1.2;margin-bottom:1rem}
+    .hero h1 span{background:linear-gradient(135deg,#58a6ff,#3fb950);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero .subtitle{font-size:1.15rem;color:#8b949e;max-width:650px;margin:0 auto 2rem}
+    .hero .cta{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.4rem;border-radius:8px;font-weight:600;font-size:.9rem;transition:all .25s;cursor:pointer}
+    .btn-primary{background:#238636;color:#fff;border:1px solid #2ea043}
+    .btn-primary:hover{background:#2ea043}
+    .btn-outline{background:transparent;color:#c9d1d9;border:1px solid #30363d}
+    .btn-outline:hover{background:#21262d;color:#f0f6fc}
+
+    .stats-bar{display:flex;justify-content:center;gap:3rem;flex-wrap:wrap;padding:0 2rem 4rem}
+    .stat-item{text-align:center}
+    .stat-item .num{font-size:2rem;font-weight:800;color:#f0f6fc}
+    .stat-item .num.green{color:#3fb950}
+    .stat-item .num.blue{color:#58a6ff}
+    .stat-item .num.purple{color:#bc8cff}
+    .stat-item .num.orange{color:#d29922}
+    .stat-item .label{font-size:.8rem;color:#8b949e;margin-top:.25rem}
+
+    section{padding:4rem 2rem}
+    .section-header{text-align:center;margin-bottom:3rem}
+    .section-header h2{font-size:2rem;font-weight:700;color:#f0f6fc;margin-bottom:.5rem}
+    .section-header p{color:#8b949e;max-width:550px;margin:0 auto}
+    .container{max-width:1100px;margin:0 auto}
+
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem}
+    .card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:1.5rem;transition:border-color .25s,transform .25s;position:relative;overflow:hidden}
+    .card:hover{border-color:#30363d;transform:translateY(-2px)}
+    .card .tier-badge{position:absolute;top:0;right:0;padding:.2rem .7rem;font-size:.7rem;font-weight:700;border-radius:0 12px 0 8px}
+    .tier-badge.t1{background:#1f6feb22;color:#58a6ff}
+    .tier-badge.t2{background:#23863622;color:#3fb950}
+    .tier-badge.t3{background:#bc8cff22;color:#bc8cff}
+    .tier-badge.t4{background:#d2992222;color:#d29922}
+    .tier-badge.t5{background:#f8514922;color:#f85149}
+    .card .icon{font-size:1.5rem;margin-bottom:.5rem}
+    .card h3{font-size:1rem;color:#f0f6fc;margin-bottom:.3rem;font-weight:600}
+    .card .count{font-size:1.6rem;font-weight:700;color:#f0f6fc;margin-bottom:.3rem}
+    .card p{font-size:.82rem;color:#8b949e;line-height:1.5}
+
+    .code-block{background:#161b22;border:1px solid #21262d;border-radius:10px;overflow:hidden;margin:1rem 0}
+    .code-block .header{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;background:#21262d;font-size:.8rem;color:#8b949e}
+    .code-block pre{padding:1rem 1.25rem;margin:0;overflow-x:auto;font-size:.85rem;line-height:1.6}
+    .code-block pre code{color:#c9d1d9}
+    .comment{color:#8b949e}.cmd{color:#58a6ff}.arg{color:#3fb950}
+
+    .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem}
+    .feature{display:flex;gap:1rem;padding:1.5rem;background:#161b22;border:1px solid #21262d;border-radius:12px;transition:border-color .25s}
+    .feature:hover{border-color:#30363d}
+    .feature .icon-wrap{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+    .icon-wrap.blue{background:#1f6feb22;color:#58a6ff}
+    .icon-wrap.green{background:#23863622;color:#3fb950}
+    .icon-wrap.purple{background:#bc8cff22;color:#bc8cff}
+    .icon-wrap.orange{background:#d2992222;color:#d29922}
+    .feature h4{font-size:.95rem;color:#f0f6fc;margin-bottom:.3rem}
+    .feature p{font-size:.83rem;color:#8b949e;line-height:1.5}
+
+    footer{border-top:1px solid #21262d;padding:2.5rem 2rem;text-align:center;color:#484f58;font-size:.8rem}
+    footer a{color:#8b949e}
+    footer a:hover{color:#c9d1d9}
+    footer .divider{margin:0 .5rem;color:#21262d}
+
+    @media(max-width:768px){
+      .navbar{padding:0 1rem}.navbar .links{display:none}
+      .hero{padding:6rem 1rem 3rem}
+      .stats-bar{gap:1.5rem}
+      .stat-item .num{font-size:1.5rem}
+      section{padding:3rem 1rem}
+      .cards{grid-template-columns:1fr}
+      .features{grid-template-columns:1fr}
+    }
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .animate{animation:fadeInUp .6s ease both}
+    .delay-1{animation-delay:.1s}.delay-2{animation-delay:.2s}.delay-3{animation-delay:.3s}.delay-4{animation-delay:.4s}.delay-5{animation-delay:.5s}
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="#" class="logo"><span class="icon">🎯</span> Nuclei POCs</a>
+  <div class="links">
+    <a href="#outputs">产出</a>
+    <a href="#quickstart">快速开始</a>
+    <a href="poc-viewer.html" class="btn btn-primary" style="font-size:.78rem;padding:.35rem .75rem">🔍 浏览 POC</a>
+    <a class="github-btn" href="https://github.com/adysec/nuclei_poc" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="badge"><span class="dot"></span> 每 2 小时自动更新</div>
+  <h1>Nuclei <span>POC</span> 聚合仓库</h1>
+  <p class="subtitle">每日自动采集、验证、去重、发布。从 Python 到 Rust，全量流水线从 <strong>6 小时</strong> 压缩至 <strong>6 分钟</strong>。</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="https://github.com/adysec/nuclei_poc" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      Star on GitHub
+    </a>
+    <a class="btn btn-outline" href="poc-viewer.html">🔍 浏览 POC</a>
+    <a class="btn btn-outline" href="#quickstart">快速开始 →</a>
+  </div>
+</header>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat-item animate delay-1"><div class="num" id="statTotal">—</div><div class="label">验证通过 POC (poc/)</div></div>
+  <div class="stat-item animate delay-2"><div class="num green">~6 min</div><div class="label">全量流水线耗时</div></div>
+  <div class="stat-item animate delay-3"><div class="num blue" id="statDedup">—</div><div class="label">去重 POC (poc_dedup/)</div></div>
+  <div class="stat-item animate delay-4"><div class="num purple" id="statGold">—</div><div class="label">精品层级 (5 级梯度)</div></div>
+</div>
+
+<section id="outputs">
+  <div class="container">
+    <div class="section-header"><h2>📦 核心产出</h2><p>从「全量验证」到「五级精品精选」的分层覆盖，按需取用</p></div>
+    <div class="cards" id="outputCards"></div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <div class="section-header"><h2>✨ 为什么选择这个仓库？</h2><p>相比直接使用上游仓库，我们提供了完整的质量保障体系</p></div>
+    <div class="features">
+      <div class="feature"><div class="icon-wrap blue">🔄</div><div><h4>每日自动更新</h4><p>每 2 小时自动运行，持续集成最新 POC，无需手动维护。</p></div></div>
+      <div class="feature"><div class="icon-wrap green">✅</div><div><h4>Nuclei 真实验证</h4><p>所有 POC 经过 nuclei 验证，自动修复格式错误，确保可用性。</p></div></div>
+      <div class="feature"><div class="icon-wrap purple">🧹</div><div><h4>三层智能去重</h4><p>SHA256 精确 → 质量评分 → ID + 语义相似度，消除冗余。</p></div></div>
+      <div class="feature"><div class="icon-wrap orange">⚡</div><div><h4>Rust 极致性能</h4><p>从 Python 迁移至 Rust，全量处理从 6 小时缩短至 6 分钟。</p></div></div>
+      <div class="feature"><div class="icon-wrap blue">📂</div><div><h4>分类组织</h4><p>按 CVE、CMS、漏洞类型等 80+ 类别归档，直接 <code>-t poc/cve/</code> 使用。</p></div></div>
+      <div class="feature"><div class="icon-wrap green">🌐</div><div><h4>在线浏览器</h4><p>内置 GitHub Pages POC 浏览器，支持搜索、分类浏览、YAML 高亮预览。</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="quickstart" style="background:#0d1117">
+  <div class="container">
+    <div class="section-header"><h2>🚀 快速开始</h2><p>克隆即用，三行命令开始扫描</p></div>
+    <div class="code-block">
+      <div class="header"><span>克隆仓库</span><span style="color:#3fb950">bash</span></div>
+      <pre><code><span class="cmd">git clone</span> https://github.com/adysec/nuclei_poc
+<span class="cmd">cd</span> nuclei_poc</code></pre>
+    </div>
+    <div class="code-block">
+      <div class="header"><span>扫描目标站点</span><span style="color:#3fb950">bash</span></div>
+      <pre><code><span class="comment"># 全量扫描</span>
+<span class="cmd">nuclei</span> <span class="arg">-t</span> poc/ <span class="arg">-u</span> https://example.com
+
+<span class="comment"># 按类别扫描</span>
+<span class="cmd">nuclei</span> <span class="arg">-t</span> poc/cve/ <span class="arg">-u</span> https://example.com
+<span class="cmd">nuclei</span> <span class="arg">-t</span> poc/wordpress/ <span class="arg">-u</span> https://example.com
+
+<span class="comment"># 精品集（按梯度选择，数值越大质量越高）</span>
+<span class="cmd">nuclei</span> <span class="arg">-t</span> poc_gold_11/ <span class="arg">-u</span> https://example.com
+<span class="cmd">nuclei</span> <span class="arg">-t</span> poc_gold_13/ <span class="arg">-u</span> https://example.com
+<span class="cmd">nuclei</span> <span class="arg">-t</span> poc_gold_15/ <span class="arg">-u</span> https://example.com</code></pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-header"><h2>🛠️ 技术栈</h2><p>Rust 驱动的高性能流水线</p></div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+      <span style="background:#161b22;border:1px solid #21262d;border-radius:20px;padding:.35rem 1rem;font-size:.85rem">🦀 Rust 2024</span>
+      <span style="background:#161b22;border:1px solid #21262d;border-radius:20px;padding:.35rem 1rem;font-size:.85rem">⚡ Tokio + Rayon</span>
+      <span style="background:#161b22;border:1px solid #21262d;border-radius:20px;padding:.35rem 1rem;font-size:.85rem">🎯 Nuclei v3</span>
+      <span style="background:#161b22;border:1px solid #21262d;border-radius:20px;padding:.35rem 1rem;font-size:.85rem">🐙 GitHub Actions</span>
+      <span style="background:#161b22;border:1px solid #21262d;border-radius:20px;padding:.35rem 1rem;font-size:.85rem">📊 SHA256 / strsim</span>
+      <span style="background:#161b22;border:1px solid #21262d;border-radius:20px;padding:.35rem 1rem;font-size:.85rem">🌐 GitHub Pages</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><a href="https://github.com/adysec/nuclei_poc">GitHub</a><span class="divider">·</span><a href="https://github.com/adysec/nuclei_poc/blob/main/LICENSE">MIT License</a><span class="divider">·</span><a href="https://github.com/adysec/nuclei_poc/issues">Issues</a></p>
+  <p style="margin-top:.5rem">Made with ❤️ by <a href="https://github.com/adysec">AdySec</a> · Powered by Rust &amp; GitHub Actions</p>
+</footer>
+
+<script>
+(async function(){
+  function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toLocaleString()}
+  function shortNum(n){if(n>=1e4)return(n/1e4).toFixed(1)+'<span style="font-size:1.2rem">万</span>';return n.toLocaleString()}
+  try{
+    var res=await fetch('_categories.json');
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    var cats=await res.json();
+    var pocTotal=0,dedupTotal=0,goldTiers=0;
+    for(var d in cats){var t=0;for(var c in cats[d])t+=cats[d][c];if(d==='poc')pocTotal=t;else if(d==='poc_dedup')dedupTotal=t;else if(d.startsWith('poc_gold_'))goldTiers++}
+    document.getElementById('statTotal').innerHTML=shortNum(pocTotal);
+    document.getElementById('statDedup').innerHTML=shortNum(dedupTotal);
+    document.getElementById('statGold').innerHTML=goldTiers;
+    var cardsHtml='';
+    cardsHtml+='<div class="card animate delay-1"><div class="icon">📁</div><h3>全量验证集</h3><div class="count">'+fmt(pocTotal)+'</div><p>Step 5 nuclei 验证通过，按 80+ 类别组织。日常扫描首选，覆盖面最广。</p></div>';
+    var dedupPct=pocTotal>0?(dedupTotal/pocTotal*100).toFixed(1):'—';
+    cardsHtml+='<div class="card animate delay-2"><div class="icon">🔍</div><h3>全量去重集</h3><div class="count">'+fmt(dedupTotal)+'</div><p>ID 去重 + 语义相似度去重，保留全量的 '+dedupPct+'%，覆盖面广且无冗余。</p></div>';
+    var goldKeys=Object.keys(cats).filter(function(k){return k.startsWith('poc_gold_')}).sort();
+    var tierColors=['t1','t2','t3','t4','t5'],tierNames=['基准','标准','高品','极优','精选'],tierStars=['⭐','⭐','⭐⭐','⭐⭐','⭐⭐⭐'];
+    var tierDescs=['评分 ≥11，覆盖面最广的精品集（dedup 的 94%），适合日常扫描。','评分 ≥12，平衡质量与覆盖（dedup 的 62%），适合对外发布。','评分 ≥13，约 30% dedup，误报明显减少。','评分 ≥14，极致质量，适合安全基线基准。','评分 ≥15，最高质量，误报率趋近于零。'];
+    for(var i=0;i<goldKeys.length;i++){var k=goldKeys[i],total=0;for(var c in cats[k])total+=cats[k][c];var n=k.replace('poc_gold_','');cardsHtml+='<div class="card animate delay-'+(3+i)+'"><span class="tier-badge '+tierColors[i]+'">Lv.'+n+'</span><div class="icon">'+tierStars[i]+'</div><h3>精品 '+tierNames[i]+'</h3><div class="count">'+fmt(total)+'</div><p>'+tierDescs[i]+'</p></div>'}
+    cardsHtml+='<div class="card animate delay-5"><div class="icon">🗑️</div><h3>排除审计</h3><div class="count">~550</div><p>Step 3 拦截的非 nuclei 文件，保留审计，不进入管线。</p></div>';
+    document.getElementById('outputCards').innerHTML=cardsHtml;
+  }catch(err){console.error('Failed to load stats:',err)}
+})();
+</script>
+</body>
+</html>
