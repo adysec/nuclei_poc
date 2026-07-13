@@ -18,13 +18,13 @@ Four directories cover the full spectrum from raw validation to curated gold:
 
 | Directory | Count | Source | Use Case |
 |-----------|-------|--------|----------|
-| `poc/` | ~600k | Step 5 — nuclei-validated | Daily scanning, categorized, ready for `-t poc/` |
-| `poc_dedup/` | ~152k | Step 8 — ID dedup + semantic similarity dedup | **Dedup set**, broad coverage without redundancy |
-| `poc_gold_15/` | ~1.8k | Step 9 — score ≥15 | **Ultra-tight gold**, lowest false positive rate |
-| `poc_gold_14/` | ~2.9k | Step 9 — score ≥14 | Gold |
-| `poc_gold_13/` | ~45k | Step 9 — score ≥13 | **High-quality gold** |
-| `poc_gold_12/` | ~94k | Step 9 — score ≥12 | **Standard gold**, balanced quality/coverage |
-| `poc_gold_11/` | ~143k | Step 9 — score ≥11 | **Baseline gold**, wide coverage |
+| `poc/` | ~600k | Step 4 — nuclei-validated | Daily scanning, categorized, ready for `-t poc/` |
+| `poc_dedup/` | ~152k | Step 6 — ID dedup + semantic similarity dedup | **Dedup set**, broad coverage without redundancy |
+| `poc_gold_15/` | ~1.8k | Step 7 — score ≥15 | **Ultra-tight gold**, lowest false positive rate |
+| `poc_gold_14/` | ~2.9k | Step 7 — score ≥14 | Gold |
+| `poc_gold_13/` | ~45k | Step 7 — score ≥13 | **High-quality gold** |
+| `poc_gold_12/` | ~94k | Step 7 — score ≥12 | **Standard gold**, balanced quality/coverage |
+| `poc_gold_11/` | ~143k | Step 7 — score ≥11 | **Baseline gold**, wide coverage |
 | `poc_excluded/` | ~550 | Step 3 — intercepted non-nuclei files | Kept for audit, not fed into the pipeline |
 
 Containment: `poc_gold_15/ ⊂ poc_gold_14/ ⊂ poc_gold_13/ ⊂ poc_gold_12/ ⊂ poc_gold_11/ ⊂ poc_dedup/ ⊂ poc/`
@@ -53,20 +53,20 @@ nuclei -t poc/cve/ -u http://example.com          # By category
 
 ## Pipeline
 
-Runs every 2 hours. 10 stages total:
+Runs every 2 hours. 9 stages total:
 
 | # | Binary | Purpose |
 |---|--------|---------|
 | 1 | `1_clone_repos` | Clone upstream repos from `repo.csv`, then re-inject existing poc dirs for cyclic processing |
 | 2 | `2_delete_duplicated` | SHA256 exact dedup (first pass — removes byte-identical files) |
 | 3 | `3_move_file` | Filter non-nuclei files → `poc_excluded/`, categorize the rest into `tmp/` |
-| 5 | `5_check_poc` | `auto_fix_poc()` repair → nuclei validate → pass → `poc/`, fail → `poc_needs_review/` |
-| 6 | `6_get_pocname` | Generate `poc_index.json` + `poc_summary.json` + `poc.txt` |
-| 7 | `7_dedup_advanced` | ID dedup + cross-ID multi-factor semantic similarity dedup + format repair → `poc_dedup/` |
-| 8 | `8_dedup_high_quality` | Quality scoring by tiers (default 11/12/13/14/15) → `poc_gold_{N}/` directories |
-| 9 | `9_generate_browser_index` | Generate chunked JSON index files for GitHub Pages browser viewer |
+| 4 | `4_check_poc` | `auto_fix_poc()` repair → nuclei validate → pass → `poc/`, fail → `poc_needs_review/` |
+| 5 | `5_get_pocname` | Generate `poc_index.json` + `poc_summary.json` + `poc.txt` |
+| 6 | `6_dedup_advanced` | ID dedup + cross-ID multi-factor semantic similarity dedup + format repair → `poc_dedup/` |
+| 7 | `7_dedup_high_quality` | Quality scoring by tiers (default 11/12/13/14/15) → `poc_gold_{N}/` directories |
+| 8 | `8_generate_browser_index` | Generate chunked JSON index files for GitHub Pages browser viewer |
 
-> Note: Step 4 (download nuclei) has been merged into CI via `nuclei-action@v3`. Step 7: `--threshold` (similarity, default 70). Step 8: `--tiers` (gradient, default 11,12,13,14,15).
+> Note: Step 6: `--threshold` (similarity, default 70). Step 7: `--tiers` (gradient, default 11,12,13,14,15).
 
 ### Build & Run
 
@@ -76,11 +76,11 @@ cargo build --release
 
 # Run individual stages
 ./target/release/1_clone_repos --skip-clone          # Re-inject existing poc dirs, skip upstream clone
-./target/release/8_dedup_high_quality --tiers 10,13,16  # Custom tier thresholds
-./target/release/7_dedup_advanced --threshold 80         # Raise similarity threshold
+./target/release/7_dedup_high_quality --tiers 10,13,16  # Custom tier thresholds
+./target/release/6_dedup_advanced --threshold 80         # Raise similarity threshold
 
 # Dev / debug
-cargo run --bin 5_check_poc -- --nuclei-bin ./nuclei --jobs 8
+cargo run --bin 4_check_poc -- --nuclei-bin ./nuclei --jobs 8
 ```
 
 ---
@@ -95,10 +95,10 @@ nuclei_poc/
 │
 ├── src/
 │   ├── core/               # Shared lib: hash, yaml, category, naming, features, index
-│   └── bin/                # 9 standalone binaries, one per pipeline stage
+│   └── bin/                # 8 standalone binaries, one per pipeline stage
 │
 ├── poc/                    # ✅ Nuclei-validated PoCs (categorized)
-├── poc_dedup/              # 📦 Step 7 dedup: semantic dedup + format repair (~152k)
+├── poc_dedup/              # 📦 Step 6 dedup: semantic dedup + format repair (~152k)
 ├── poc_gold_11/       # ⭐ Gold (score ≥11, ~143k)
 ├── poc_gold_12/       # ⭐ Gold (score ≥12, ~94k)
 ├── poc_gold_13/       # ⭐⭐ Gold (score ≥13, ~45k)
@@ -120,13 +120,13 @@ nuclei_poc/
 The project uses a **dedup-first, then extract multi-tier gold** pipeline:
 
 ```
-poc/  ──Step 8──▶  poc_dedup/  ──Step 9──▶  poc_gold_11/ ──▶ poc_gold_12/ ──▶ poc_gold_13/ ──▶ poc_gold_14/ ──▶ poc_gold_15/
+poc/  ──Step 6──▶  poc_dedup/  ──Step 7──▶  poc_gold_11/ ──▶ poc_gold_12/ ──▶ poc_gold_13/ ──▶ poc_gold_14/ ──▶ poc_gold_15/
                    (~152k)        (~143k)     (~94k)      (~45k)      (~2.9k)    (~1.8k)
 ```
 
 Higher tiers are subsets of lower tiers: `gold_15 ⊂ gold_14 ⊂ gold_13 ⊂ gold_12 ⊂ gold_11 ⊂ dedup ⊂ poc`.
 
-### Stage 1: Step 8 → `poc_dedup/` (Full Dedup Set)
+### Stage 1: Step 6 → `poc_dedup/` (Full Dedup Set)
 
 | Strategy | Detail |
 |----------|--------|
@@ -137,7 +137,7 @@ Higher tiers are subsets of lower tiers: `gold_15 ⊂ gold_14 ⊂ gold_13 ⊂ go
 
 **Positioning**: Full-coverage dedup set, retaining ~24% of PoCs. Broad coverage, zero redundancy.
 
-### Stage 2: Step 9 → `poc_gold_{N}/` (Multi-Tier Gold)
+### Stage 2: Step 7 → `poc_gold_{N}/` (Multi-Tier Gold)
 
 Single pass over `poc_dedup/` produces multiple quality tiers. Each tier
 is independently SHA256-deduplicated.
@@ -159,7 +159,7 @@ is independently SHA256-deduplicated.
 
 **Positioning**: High-barrier gold set, retaining ~15.7% of PoCs (~62% of dedup). Suitable for publishing and security baseline benchmarking.
 
-### Step 8 Scoring Factors (0–80 points, 18 items)
+### Step 7 Scoring Factors (0–80 points, 18 items)
 
 | Category | Factors | Points |
 |----------|---------|--------|

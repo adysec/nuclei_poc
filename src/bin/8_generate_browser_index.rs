@@ -1,4 +1,4 @@
-//! Stage 9 — Generate browser-friendly chunked JSON indexes for GitHub Pages.
+//! Stage 8 — Generate browser-friendly chunked JSON indexes for GitHub Pages.
 //!
 //! Reads `poc.txt` for the main `poc/` directory and walks `poc_dedup/` and
 //! `poc_gold_*/` tier directories on disk.  Groups files by category, splits large categories into
@@ -51,7 +51,7 @@ fn discover_gold_dirs(repo_root: &Path) -> Vec<String> {
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "10_generate_browser_index",
+    name = "8_generate_browser_index",
     about = "Generate chunked browser index files for GitHub Pages POC viewer"
 )]
 struct Args {
