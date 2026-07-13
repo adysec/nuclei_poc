@@ -1,4 +1,5 @@
 id: hp-printer-default-login
+
 info:
   name: Hewlett Packard LaserJet Printer - Default Login
   author: JohnAsbjorn
@@ -8,42 +9,29 @@ info:
   reference:
     - https://h30434.www3.hp.com/t5/Printing-Errors-or-Lights-Stuck-Print-Jobs/What-is-the-user-name-and-password-in-Embedded-Web-Server/td-p/6165417
   metadata:
-    max-request: 2
-    shodan-query: html:"hp/device/SignIn/Index"
     verified: true
-  tags: default-login,hp,printer,vuln
+    shodan-query: html:"hp/device/SignIn/Index"
+    max-request: 2
+  tags: hp,printer,default-login,vuln
+
 http:
-  - extractors:
-      - group: 1
-        internal: true
-        name: token
-        part: body
-        regex:
-          - id="CSRFToken" name="CSRFToken" value="([^"]+)"
-        type: regex
-    raw:
+  - raw:
       - |
         GET /hp/device/SignIn/Index HTTP/1.1
         Host: {{Hostname}}
         Accept-Encoding: identity
         Accept-Language: en
-  - matchers:
-      - condition: and
+
+    extractors:
+      - type: regex
+        name: token
         part: body
-        type: word
-        words:
-          - 'User: Administrator'
-          - Sign out
-      - part: header
+        group: 1
         regex:
-          - 'Set-Cookie: .*session.*'
-        type: regex
-      - status:
-          - 200
-        type: status
-    matchers-condition: or
-    max-redirects: 2
-    raw:
+          - 'id="CSRFToken" name="CSRFToken" value="([^"]+)"'
+        internal: true
+
+  - raw:
       - |
         POST /hp/device/SignIn/Index HTTP/1.1
         Host: {{Hostname}}
@@ -53,4 +41,25 @@ http:
         Referer: {{RootURL}}/hp/device/SignIn/Index
 
         CSRFToken={{token}}&agentIdSelect=hp_EmbeddedPin_v1&PinDropDown=AdminItem&PasswordTextBox=&signInOk=Sign+In
+
     redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "User: Administrator"
+          - "Sign out"
+        condition: and
+
+      - type: regex
+        part: header
+        regex:
+          - 'Set-Cookie: .*session.*'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100e61bf1e629c1bd1c979fb1c0b8400f71d4ba803c8f05ea9a2802c388fdbeb59802201bfbb54af92230a44983d488b9af674195538fcefd65c02e71781a98ad2ae4b1:922c64590222798bb761d5b6d8e72950

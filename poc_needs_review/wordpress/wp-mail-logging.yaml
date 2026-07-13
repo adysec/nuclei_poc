@@ -1,58 +1,49 @@
-id: wp-mail-logging
+id: wordpress-wp-mail-logging
 
 info:
-  name: "WP Mail Logging < 1.10.0 - Unauthenticated Arbitrary Settings Change"
-  author: topscoder
-  severity: medium
-  description: "The WP Mail Logging plugin for WordPress is vulnerable to arbitrary settings change in versions before 1.10.0. This is due to the plugin using an outdated version of the Redux Framework. This makes it possible for unauthenticated attackers to arbitrarily change some plugin settings."
+  name: WP Mail Logging Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://wpscan.com/vulnerability/66616623-0c80-4b95-a8de-5d7f8c6a57b3
-    - https://wordpress.org/plugins/wp-mail-logging/#developers
-    - https://plugins.trac.wordpress.org/changeset/2634396
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
-    cvss-score: 5.3
-    cve-id:
+    - https://wordpress.org/plugins/wp-mail-logging/
   metadata:
-    fofa-query: "wp-content/plugins/wp-mail-logging/"
-    google-query: inurl:"/wp-content/plugins/wp-mail-logging/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,wp-mail-logging,medium
+    plugin_namespace: wp-mail-logging
+    wpscan: https://wpscan.com/plugin/wp-mail-logging
+  tags: tech,wordpress,wp-plugin,top-200,discovery
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/wp-mail-logging/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/wp-mail-logging.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "wp-mail-logging"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 1.10.0')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a004730450220204b28a93a57f55adf4f0ab819f775ea21916df22e7c9bdbe407d5aa2aa3731b0221009d1fcdfe3f4c79759f5a41704e02c5ec0e1d8897889493da6b9b66fe1f38da4d:922c64590222798bb761d5b6d8e72950

@@ -5,13 +5,14 @@ info:
   author: NullFuzz
   severity: info
   description: Searches Git Logs files and passed URLs.
+  metadata:
+    max-request: 1
   tags: logs,git,exposure
 
-requests:
+http:
   - method: GET
     path:
       - "{{BaseURL}}/.git/logs/HEAD"
-      - "{{BaseURL}}/.git/logs/refs"
 
     matchers-condition: and
     matchers:
@@ -19,12 +20,18 @@ requests:
         dsl:
           - "!contains(tolower(body), '<html')"
           - "!contains(tolower(body), '<body')"
+
       - type: word
         part: header
         words:
           - "application/octet-stream"
-        condition: and
+
+      - type: regex
+        regex:
+          - '^([a-z0-9]+) '
 
       - type: status
         status:
           - 200
+
+# digest: 4b0a0048304602210098beed8c54917599777fa169566d398c0edfb844dc6d6fd3dede2bdbdcda2c50022100a6e64ee0c7e9bc2c914477d4cab58bb7ee126c0c2a54f90f5811162ffd8e90ff:922c64590222798bb761d5b6d8e72950

@@ -56,28 +56,22 @@ http:
         :authority: {{Hostname}}
 
     unsafe: true
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "HTTP/2"
-          - "stream error"
-          - "protocol error"
-          - "SETTINGS_ENABLE_PUSH"
-        condition: or
-
-      - type: regex
-        part: header
-        regex:
-          - 'X-HTTP2-Stream-\w+:'
-          - 'X-Forwarded-Proto:\s*h2'
-
       - type: dsl
         dsl:
           - "contains(tolower(all_headers), 'http/2')"
           - "status_code == 400 || status_code == 421 || status_code == 505"
         condition: and
+      - type: word
+        part: body
+        words:
+          - "stream error"
+          - "protocol error"
+          - "request smuggling"
+          - "invalid pseudo-header"
+          - "http2"
+        condition: or
 
     extractors:
       - type: regex

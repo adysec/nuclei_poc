@@ -1,57 +1,48 @@
 id: user-registration
 
 info:
-  name: "User Registration <= 1.5.5 - Cross-Site Scripting"
-  author: topscoder
-  severity: medium
-  description: "The User Registration plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.5.5 due to insufficient input sanitization and output escaping via the 'edit-registration' parameter. This makes it possible for authenticated attackers to inject arbitrary web scripts that execute in a victim's browser."
+  name: WordPress User Registration & Membership Plugin Detection
+  author: omarkurt
+  severity: info
+  description: |
+    Detected WordPress User Registration & Membership plugin and its version information.
   reference:
-    - https://packetstormsecurity.com/files/151067/
-    - https://raw.githubusercontent.com/wpeverest/user-registration/master/CHANGELOG.txt
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
-    cvss-score: 6.4
-    cve-id:
+    - https://wordpress.org/plugins/user-registration/
   metadata:
-    fofa-query: "wp-content/plugins/user-registration/"
-    google-query: inurl:"/wp-content/plugins/user-registration/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,user-registration,medium
+    max-request: 1
+    verified: true
+    shodan-query: "/wp-content/plugins/user-registration/"
+  tags: wordpress,wp-plugin,user-registration,tech,wp
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/user-registration/readme.txt"
 
-    extractors:
-      - type: regex
-        name: version
-        part: body
-        group: 1
-        internal: true
-        regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
-
-      - type: regex
-        name: version
-        part: body
-        group: 1
-        regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
-
     matchers-condition: and
     matchers:
+      - type: word
+        words:
+          - "User Registration"
+        part: body
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable tag:\s*[\d.]+'
+
       - type: status
         status:
           - 200
 
-      - type: word
-        words:
-          - "user-registration"
-        part: body
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        regex:
+          - '(?i)Stable tag:\s*([\d.]+)'
 
       - type: dsl
         dsl:
-          - compare_versions(version, '<= 1.5.5')
+          - '"[User Registration] detected on " + host + " (version: " + version + ")"'
+# digest: 4a0a00473045022010476814bc9d15af92d7922e505f6a73181f56caf2da8aef8904fbb5de0bcfc9022100831fa63d909b336975982ac1544c44ccc47c547d670793b647be5fd429032f04:922c64590222798bb761d5b6d8e72950

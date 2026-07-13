@@ -1,12 +1,13 @@
-id: CRLFInjection
+id: crlf-injection-extended
+
 info:
-  name: CRLF Injection Detection
+  name: CRLF Injection Extended Detection
   author: coffin
   severity: high
-  description: Detects various CRLF injection vectors that can be exploited for attacks such as header injection, response splitting, and XSS.
+  description: Detects a wide range of CRLF injection vectors that can be exploited for header injection, response splitting, and XSS.
   reference:
     - https://book.hacktricks.xyz/pentesting-web/crlf-0d-0a
-  tags: crlf, crlf-ext, header-injection, response-splitting, xss
+  tags: crlf, header-injection, response-splitting, xss
   metadata:
     max-request: 5
 
@@ -39,18 +40,18 @@ http:
       - "{{BaseURL}}/%E5%98%8D%E5%98%8ALocation:www.evil.com"
       - "{{BaseURL}}/%E5%98%8D%E5%98%8ASet-Cookie:coffin=hi"
       - "{{BaseURL}}/%E5%98%8D%E5%98%8ASet-Cookie:coffin=hi;"
-      - "{{BaseURL}}/%E5%98%8D%E5%98%8ASet-Cookie:coffinxp=coffinxp"
       - "{{BaseURL}}/%u000ASet-Cookie:coffin=hi;"
-      - "{{BaseURL}}/www.evil.com/%2E%2E%2F%0D%0Acoffin-x:coffin-x"
-      - "{{BaseURL}}/www.evil.com/%2F..%0D%0Acoffin-x:coffin-x"
+      - "{{BaseURL}}/www.evil.com/%2E%2E%2F%0D%0ASet-Cookie:coffin=hi;"
+      - "{{BaseURL}}/www.evil.com/%2F..%0D%0ASet-Cookie:coffin=hi;"
     stop-at-first-match: false
     matchers-condition: and
     matchers:
       - type: regex
-        regex:
-          - '(?m)^(?:Location\s*?:\s*(?:https?:\/\/|\/\/|\/\\\\|\/\\)(?:[a-zA-Z0-9\-_\.@]*)www\.evil\.com\/?(\/|[^.].*)?$|(?:Set-Cookie\s*?:\s*(?:\s*?|.*?;\s*)?coffin=hi(?:\s*?)(?:$|;)))'
-          - '(?m)^(?:Location\s*?:\s*(?:https?:\/\/|\/\/|\/\\\\|\/\\)(?:[a-zA-Z0-9\-_\.@]*)www\.evil\.com\/?(\/|[^.].*)?$|(?:Set-Cookie\s*?:\s*(?:\s*?|.*?;\s*)?coffin=hi(?:\s*?)(?:$|;)|coffin-x))'
         part: header
+        regex:
+          - '(?i)(location\s*:\s*(http[s]?:)?//?www\.evil\.com)'
+          - '(?i)(set-cookie\s*:\s*coffin\s*=\s*hi)'
+          - '(?i)(coffin-x\s*:\s*coffin-x)'
       - type: status
         status:
           - 200

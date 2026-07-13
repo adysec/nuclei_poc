@@ -1,22 +1,22 @@
 id: http3-quic-smuggling
 
 info:
-  name: HTTP/3 QUIC Request Smuggling Detection
+  name: HTTP/2 Upgrade and Protocol Confusion Smuggling Detection
   author: geeknik
-  severity: critical
+  severity: medium
   description: |
-    Detects ACTUAL HTTP/3 request smuggling vulnerabilities by exploiting
-    differences in HTTP/3 to HTTP/2 translation at reverse proxies. Tests
-    for stream confusion, header injection, and protocol downgrade attacks
-    that lead to request smuggling.
+    Detects request smuggling vulnerabilities arising from HTTP protocol confusion
+    at reverse proxies: HTTP/2 upgrade via h2c, Alt-Svc header injection, and
+    pseudo-header injection that may be mishandled by intermediaries. Note: these
+    tests run over HTTP/1.1; true QUIC/HTTP3 testing requires native UDP support.
   reference:
     - https://portswigger.net/research/http3-connection-contamination
     - https://www.blackhat.com/us-23/briefings/schedule/#http3-quic-attacks
   classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:L
-    cvss-score: 9.0
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
     cwe-id: CWE-444
-  tags: http3,quic,smuggling,critical
+  tags: http2,protocol-confusion,smuggling,alt-svc
 
 variables:
   smuggle_id: "{{randstr}}"
@@ -78,10 +78,9 @@ http:
 
     matchers-condition: or
     matchers:
-      - type: word
-        part: interactsh_protocol
-        words:
-          - "http"
+      - type: dsl
+        dsl:
+          - '(interactsh_protocol == "http" || interactsh_protocol == "dns") && contains(interactsh_request, "http3-stream-{{smuggle_id}}")'
 
       - type: dsl
         dsl:
@@ -100,12 +99,17 @@ http:
         x-qpack-table-size: 4096
         x-qpack-blocked-streams: 100
 
+    matchers-condition: and
     matchers:
       - type: word
         part: interactsh_protocol
         words:
           - "http"
           - "dns"
+      - type: word
+        part: interactsh_request
+        words:
+          - "qpack-{{smuggle_id}}"
 
   # Test 4: Connection coalescing attack
   - raw:
@@ -113,14 +117,19 @@ http:
         GET / HTTP/3
         Host: {{Hostname}}
         :method: CONNECT
-        :authority: {{callback}}:443
+        :authority: {{smuggle_id}}.{{callback}}:443
         :scheme: https
         :protocol: websocket
         origin: https://{{Hostname}}
 
+    matchers-condition: and
     matchers:
       - type: word
         part: interactsh_protocol
         words:
           - "http"
           - "dns"
+      - type: word
+        part: interactsh_request
+        words:
+          - "{{smuggle_id}}."
