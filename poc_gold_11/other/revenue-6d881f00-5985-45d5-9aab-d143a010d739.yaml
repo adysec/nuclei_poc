@@ -1,0 +1,51 @@
+id: revenue-6d881f00-5985-45d5-9aab-d143a010d739
+
+info:
+  name: >
+    WowRevenue <= 2.1.3 - Missing Authorization to Authenticated (Subscriber+) Arbitrary Plugin Installation/Activation
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6d881f00-5985-45d5-9aab-d143a010d739?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/revenue/"
+    google-query: inurl:"/wp-content/plugins/revenue/"
+    shodan-query: 'http.html:"wp-content/plugins/revenue/"'
+  tags: cve,wordpress,wp-plugin,revenue,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/revenue/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "revenue"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.3')

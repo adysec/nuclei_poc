@@ -1,59 +1,49 @@
-id: forminator
+id: wordpress-forminator
 
 info:
-  name: >
-    Forminator <= 1.29.1 - HubSpot Developer API Key Sensitive Information Exposure
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Forminator – Contact Form, Payment Form & Custom Form Builder Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0d04b822-a48a-485e-b9b5-f5a213307c71?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/forminator/
   metadata:
-    fofa-query: "wp-content/plugins/forminator/"
-    google-query: inurl:"/wp-content/plugins/forminator/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,forminator,low
+    plugin_namespace: forminator
+    wpscan: https://wpscan.com/plugin/forminator
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/forminator/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/forminator.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "forminator"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.29.1')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

@@ -1,0 +1,51 @@
+id: linkedin_auto_publish-b680132a-f397-4636-98b2-bcd8c168e822
+
+info:
+  name: >
+    WP to LinkedIn Auto Publish <= 1.9.8 - Reflected Cross-Site Scripting via PostMessage
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b680132a-f397-4636-98b2-bcd8c168e822?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/linkedin-auto-publish/"
+    google-query: inurl:"/wp-content/plugins/linkedin-auto-publish/"
+    shodan-query: 'http.html:"wp-content/plugins/linkedin-auto-publish/"'
+  tags: cve,wordpress,wp-plugin,linkedin-auto-publish,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/linkedin-auto-publish/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "linkedin-auto-publish"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.8')

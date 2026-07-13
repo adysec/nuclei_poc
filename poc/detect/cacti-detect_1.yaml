@@ -1,35 +1,43 @@
-id: cacti-detect-981
+id: cacti-detect 1
 info:
-  name: Detect Cacti
   author: geeknik
   description: Cacti is a complete network graphing solution -- https://www.cacti.net/
+  name: Detect Cacti
   severity: info
-
 requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/cacti/"
+- attack: sniper
+  extractors:
+  - kval:
+    - Set-Cookie
+    part: header
+    type: kval
+  matchers:
+  - status:
+    - 200
+    type: status
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Login to Cacti
+    - The Cacti Group
+  - part: header
+    regex:
+    - Cacti+
+    type: regex
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET / HTTP/1.1
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
-      - type: word
-        part: body
-        words:
-          - "Login to Cacti"
-          - "The Cacti Group"
-        condition: and
+    Host: {{Subdomains}}
 
-      - type: regex
-        part: header
-        regex:
-          - Cacti+
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-    extractors:
-      - type: kval
-        part: header
-        kval:
-          - Set-Cookie
+    Accept-Encoding: gzip, deflate
+
+    Accept: */*
+
+    '
+  threads: 100

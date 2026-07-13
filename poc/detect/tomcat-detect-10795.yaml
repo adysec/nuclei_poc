@@ -1,0 +1,33 @@
+id: tomcat-version-detect
+info:
+  name: Detect Tomcat Version
+  author: philippedelteil
+  description: If an Tomcat instance is deployed on the target URL, when we send a request for a non existent resource we receive a Tomcat error page with version.
+  severity: info
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /something_not_existing_ HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Apache Tomcat"
+      - type: status
+        status:
+          - 404
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 2
+        regex:
+          - '(<h3>)(.*?)(</h3>)'

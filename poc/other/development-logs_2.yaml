@@ -1,49 +1,49 @@
-id: development-logs
-
+id: development-logs 2
 info:
-  name: Discover development log files
   author: geeknik
+  name: Discover development log files
   severity: info
-  description: Development log file was exposed.
-  metadata:
-    max-request: 3
   tags: logs,exposure,rails
+requests:
+- attack: sniper
+  extractors:
+  - name: last_modified
+    part: header
+    regex:
+    - Last-Modified:.*
+    type: regex
+  matchers:
+  - condition: or
+    type: word
+    words:
+    - Connecting to database specified by database.yml
+    - Started GET
+  - condition: or
+    type: word
+    words:
+    - DEPRECATION WARNING
+    - CREATE TABLE
+  - negative: true
+    part: header
+    type: word
+    words:
+    - text/html
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /logs/development.log HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/log/development.log"
-      - "{{BaseURL}}/logs/development.log"
-      - "{{BaseURL}}/development.log"
+    Host: {{Subdomains}}
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "Connecting to database specified by database.yml"
-          - "Started GET"
-        condition: or
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: word
-        words:
-          - "DEPRECATION WARNING"
-          - "CREATE TABLE"
-        condition: or
+    Accept-Encoding: gzip, deflate
 
-      - type: word
-        part: header
-        words:
-          - "text/html"
-        negative: true
+    Accept: */*
 
-      - type: status
-        status:
-          - 200
-
-    extractors:
-      - type: regex
-        name: last_modified
-        part: header
-        regex:
-          - 'Last-Modified:.*'
-# digest: 4b0a004830460221008713d353ce81783cb1e3062f886ed47b099fcfd1b6b046360a6815aa9ed5bcc1022100acba3af7f6457b3b8e16eadaae76ba8703560e6869723248bde3c163b7e11efb:922c64590222798bb761d5b6d8e72950
+    '
+  threads: 100

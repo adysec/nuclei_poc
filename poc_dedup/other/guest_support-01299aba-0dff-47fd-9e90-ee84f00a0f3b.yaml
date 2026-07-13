@@ -1,0 +1,51 @@
+id: guest_support-01299aba-0dff-47fd-9e90-ee84f00a0f3b
+
+info:
+  name: >
+    Guest Support <= 1.2.3 - Unauthenticated User Email Disclosure in guest_support_handler AJAX Endpoint
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/01299aba-0dff-47fd-9e90-ee84f00a0f3b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/guest-support/"
+    google-query: inurl:"/wp-content/plugins/guest-support/"
+    shodan-query: 'http.html:"wp-content/plugins/guest-support/"'
+  tags: cve,wordpress,wp-plugin,guest-support,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/guest-support/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "guest-support"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.3')

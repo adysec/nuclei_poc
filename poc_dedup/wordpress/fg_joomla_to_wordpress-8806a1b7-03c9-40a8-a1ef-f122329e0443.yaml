@@ -1,0 +1,59 @@
+id: fg_joomla_to_wordpress-8806a1b7-03c9-40a8-a1ef-f122329e0443
+
+info:
+  name: >
+    FG Joomla to WordPress < 3.31.0 - Authenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The FG Joomla to WordPress plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the ‘url’ parameter in versions before 3.31.0 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8806a1b7-03c9-40a8-a1ef-f122329e0443?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 7.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fg-joomla-to-wordpress/"
+    google-query: inurl:"/wp-content/plugins/fg-joomla-to-wordpress/"
+    shodan-query: 'http.html:"wp-content/plugins/fg-joomla-to-wordpress/"'
+  tags: cve,wordpress,wp-plugin,fg-joomla-to-wordpress,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fg-joomla-to-wordpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fg-joomla-to-wordpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.31.0')

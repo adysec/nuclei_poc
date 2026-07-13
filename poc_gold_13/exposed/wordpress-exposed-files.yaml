@@ -1,0 +1,84 @@
+id: wordpress-exposed-files
+
+info:
+  name: WordPress Exposed Sensitive Files Detection
+  author: Redflare-Cyber
+  severity: high
+  description: Detects potentially exposed sensitive WordPress files that may contain credentials, tokens, or PIIs, some are general and not Wordpress specific so may overlap with other similar templates.
+  tags: wordpress, exposure, creds,
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{file}}"
+
+    attack: clusterbomb
+
+    payloads:
+      file:
+        - /wp-config.php{{suffix}}
+        - /backup{{suffix}}
+        - /database{{suffix}}
+        - /dump{{suffix}}
+        - /wp-config.php{{archive_ext}}
+        - /backup{{archive_ext}}
+        - /database{{archive_ext}}
+        - /dump{{archive_ext}}
+        - /wp-config-sample.php
+        - /.env
+        - /.git/config
+        - /.svn/entries
+        - /.hg/requires
+        - /.bzr/branch-format
+        - /.DS_Store
+        - /debug.log
+        - /error_log
+        - /phpinfo.php
+        - /composer.lock
+        - /composer.json
+        - /id_rsa
+        - /id_rsa.pub
+        - /.htpasswd
+        - /.htaccess
+        - /logs/access.log
+        - /logs/error.log
+        - /wp-content/debug.log
+        - /wp-content/uploads/.htaccess
+        - /wp-includes/php.ini
+        - /php.ini
+        - /info.php
+      suffix:
+        - ''
+        - '~'
+        - '.bak'
+        - '.old'
+        - '.save'
+        - '.swp'
+        - '.swo'
+        - '.sql'
+      archive_ext:
+        - '.zip'
+        - '.tar.gz'
+        - '.tar.bz2'
+        - '.tar'
+        - '.gz'
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 206
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)(DB_(NAME|USER|PASSWORD|HOST))'
+          - '(?i)(AUTH_KEY|SECURE_AUTH_KEY|LOGGED_IN_KEY|NONCE_KEY)'
+          - '(?i)(FTP_(USER|PASS))'
+          - '(?i)(<title>phpinfo\(\)</title>)'
+          - '(?i)(repositoryformatversion|svn|openssl)'
+          - '(?i)(-----BEGIN [A-Z ]*PRIVATE KEY-----)'
+          - '(?i)(root:.*:(/bin/bash|/bin/sh))'
+          - '(?i)(\$cfg\["blowfish_secret"\])'
+        condition: or

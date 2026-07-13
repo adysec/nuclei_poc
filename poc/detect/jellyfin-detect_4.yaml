@@ -1,35 +1,34 @@
-id: jellyfin-detect
-
+id: jellyfin-detect 4
 info:
-  name: Jellyfin detected
   author: dwisiswant0
+  name: Jellyfin detected
   severity: info
-  metadata:
-    max-request: 5
-    verified: true
-    shodan-query: http.html:"Jellyfin"
-  tags: tech,jellyfin
+requests:
+- attack: sniper
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - name="application-name" content="Jellyfin"
+    - class="page homePage libraryPage allLibraryPage backdropPage pageWithAbsoluteTabs
+      withTabs"
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /web/index.html HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/home.html"
-      - "{{BaseURL}}/web/home.html"
-      - "{{BaseURL}}/index.html"
-      - "{{BaseURL}}/web/index.html"
-      - "{{BaseURL}}/web/manifest.json"
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "name=\"application-name\" content=\"Jellyfin\""
-          - "class=\"page homePage libraryPage allLibraryPage backdropPage pageWithAbsoluteTabs withTabs\""
-          - "The Free Software Media System"
-        condition: or
-        part: body
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: status
-        status:
-          - 200
+    Accept-Encoding: gzip, deflate
+
+    Accept: */*
+
+    '
+  threads: 100

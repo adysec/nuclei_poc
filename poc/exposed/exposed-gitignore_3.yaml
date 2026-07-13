@@ -1,51 +1,40 @@
-id: exposed-gitignore
-
+id: exposed-gitignore 3
 info:
-  name: Gitignore Config - Detect
-  author: TheZakMan,geeknik
-  severity: info
-  description: Gitignore configuration information was detected.
-  reference:
-    - https://twitter.com/pratiky9967/status/1230001391701086208
+  author: TheZakMan
+  name: Exposed Gitignore
+  reference: '- https://twitter.com/pratiky9967/status/1230001391701086208
+
     - https://www.tenable.com/plugins/was/98595
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cvss-score: 0
-    cwe-id: CWE-200
-  metadata:
-    max-request: 3
-  tags: exposure,tenable,config,git
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/.gitignore"
-      - "{{BaseURL}}/assets/.gitignore"
-      - "{{BaseURL}}/includes/.gitignore"
+    '
+  severity: info
+  tags: config,git,exposure
+requests:
+- attack: sniper
+  matchers:
+  - status:
+    - 200
+    type: status
+  - dsl:
+    - '!contains(tolower(body), "<html") && !contains(tolower(body), "<!doctype")
+      &&  !contains(tolower(body), "<script")'
+    type: dsl
+  - dsl:
+    - contains(tolower(all_headers), "binary/octet-stream")
+    type: dsl
+  - dsl:
+    - 'len(body) > 50 '
+    type: dsl
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /assets/.gitignore HTTP/1.1
 
-    matchers-condition: and
-    matchers:
-      - type: dsl
-        dsl:
-          - 'len(body) > 50'
-          - 'status_code == 200'
-        condition: and
+    Host: {{Subdomains}}
 
-      - type: word
-        words:
-          - "MongoDB over HTTP on the native"
-          - "application/javascript"
-          - "application/x-javascript"
-          - "application/json"
-          - "application/xml"
-          - "text/xml"
-          - "html"
-          - "<!doctype"
-          - "<script"
-          - "<meta"
-          - "image/"
-        part: response
-        negative: true
-        condition: or
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101
+    Firefox/55
 
-# digest: 4a0a00473045022047cee6846b95be1b913db1322c34847a71a6f11df568d7d832e064752963e87e0221009337b92788ead19c80adf441b8923484481edeed80e08fe513c5928135a3b09c:922c64590222798bb761d5b6d8e72950
+    '
+  threads: 100

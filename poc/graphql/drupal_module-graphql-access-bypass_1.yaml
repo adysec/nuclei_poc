@@ -2,13 +2,13 @@
 id: drupal_module-graphql-access-bypass
 info:
   name: drupal_module-graphql-access-bypass
-  author: Bishopfox
+  author: me
   severity: medium
-  description: "This advisory addresses a similar issue to Drupal core - Moderately critical - Access bypass - SA-CORE-2021-008. The GraphQL module allows file uploads through its HTTP API. The module does not correctly run all file validation, which causes an access bypass vulnerability. An attacker might be able to upload files that bypass the file validation process implemented by modules on the site. This vulnerability is mitigated by four factors:  The GraphQL module must be enabled on the site. The GraphQL schema must expose a file upload by using the helper src/GraphQL/Utility/FileUpload.php in the module. An attacker must have access to that file upload via the GraphQL API. The site must employ a file validation module."
+  description: "This module lets you craft and expose a GraphQL schema for Drupal 9 and 10. The module currently does not adequately verify whether a given user has the necessary permissions to access an entitys label creating an access bypass vulnerability. This vulnerability is mitigated by the fact that entity view and entity label access are usually handled by the same access check; developers have to opt-in for supporting different logic on entity types. Additionally your schema must make use of the EntityLabel DataProducer to be affected."
   reference:
-    - https://www.drupal.org/sa-contrib-2021-029
+    - https://www.drupal.org/sa-contrib-2023-050
   metadata:
-    security-risk: "Moderately critical 13∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    security-risk: "Moderately critical 11∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Uncommon"
     vulnerability: "access-bypass"
     fofa-query: "/sites/all/modules/graphql/"
     google-query: "inurl:'/sites/all/modules/graphql/"
@@ -30,6 +30,7 @@ http:
         part: body
         regex:
           - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
       - type: status
         status:
           - 200
@@ -37,6 +38,7 @@ http:
         words:
           - 'graphql'
         part: body
+        condition: and
 
     extractors:
       - type: regex
@@ -48,5 +50,4 @@ http:
 
       - type: dsl
         dsl:
-         - compare_versions(version, '8.x-4.1')
-         - compare_versions(version, '8.x-4.0')
+         - compare_versions(version, '<= 3.4.0 || >=4.0.0 <= 4.6.0')

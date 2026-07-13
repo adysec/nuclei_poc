@@ -1,24 +1,28 @@
 id: apache-druid-unauth
+
 info:
-  name: Apache Druid unauth
-  risk: High
+  name: Apache Druid Unauth
+  author: DhiyaneshDk
+  severity: low
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Apache Druid"
+  tags: misconfig,druid,unauth,apache
 
-params:
-  - root: '{{.BaseURL}}'
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/unified-console.html'
 
-requests:
-  - method: POST
-    redirect: false
-    url: >-
-      {{.root}}/druid/v2/sql
-    headers:
-      - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
-      - Content-Type: application/json
-    body: |
-      {"query":"SELECT 1337","context":{"timeout":2000}}
-    detections:
-      - >-
-        StatusCode() == 200 && StringSearch("response", '[{"EXPR$0":1337}]') && StringSearch("resHeaders", "application/json")
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '<title>Apache Druid</title>'
 
-references:
-  - repo: https://github.com/apache/druid/
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a004730450220669226e33c719877731393238fbcd432a9852c5423ec89bd5d89471e030dc619022100d038003c6542e846ad00954a2b2dece8d40190ff42bfeca6dec6c1a83b4ffffc:922c64590222798bb761d5b6d8e72950

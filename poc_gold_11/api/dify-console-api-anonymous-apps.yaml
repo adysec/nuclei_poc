@@ -1,0 +1,78 @@
+# gap: dify-console-api-anonymous-apps
+id: dify-console-api-anonymous-apps
+
+info:
+  name: Dify Console API Anonymous App Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Dify LLMOps platform where the console REST API
+    (/console/api/apps) is reachable without an Authorization
+    Bearer token, returning the application catalog as a JSON
+    `data` array. Class signal: response carries Dify's canonical
+    pagination envelope (`{"data":[…],"has_more":bool,"limit":N,
+    "total":N,"page":N}`) whose entries include Dify app fields
+    (`id` UUID, `name`, `mode:"chat|workflow|agent|completion"`,
+    `icon`, `model_config`, `created_at`).
+
+    Anonymous Dify console access leaks the entire prompt-
+    engineering surface: every app discloses its mode (chat /
+    workflow / agent), the underlying model provider and model
+    identifier (anthropic.claude / openai.gpt / azure.gpt /
+    bedrock.* — recon for the operator's cloud spend and provider
+    tenancy), and on /console/api/apps/{id}/model-config returns
+    the system prompt, conversation variables, dataset bindings
+    (RAG corpora), and tool integrations including their API
+    keys and webhook URLs — full source disclosure of the org's
+    prompt IP plus in-memory secret leak via embedded API
+    credentials. Class detection — keys on Dify pagination
+    envelope and mode enum, not vendor banner. Complements
+    upstream `dify-panel` (HTML fingerprint).
+  reference:
+    - https://docs.dify.ai/getting-started/install-self-hosted
+    - https://github.com/langgenius/dify
+  tags: custom,exposures,dify,ai,llm,llmops,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/console/api/apps?page=1&limit=1"
+      - "{{BaseURL}}/console/api/apps"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"data"\s*:\s*\[|"has_more"\s*:\s*(true|false)'
+      - type: word
+        part: body
+        words:
+          - '"mode":"chat"'
+          - '"mode":"workflow"'
+          - '"mode":"agent-chat"'
+          - '"mode":"completion"'
+          - '"model_config"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: app-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: model-providers
+        regex:
+          - '"provider"\s*:\s*"([^"]+)"'
+        group: 1

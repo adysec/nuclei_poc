@@ -1,0 +1,51 @@
+id: context_blog-25552fdb-c55b-4390-a614-7c007c5fe7b1
+
+info:
+  name: >
+    Context Blog <= 1.2.5 - Unauthenticated Private Post Disclosure
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/25552fdb-c55b-4390-a614-7c007c5fe7b1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/context-blog/"
+    google-query: inurl:"/wp-content/themes/context-blog/"
+    shodan-query: 'http.html:"wp-content/themes/context-blog/"'
+  tags: cve,wordpress,wp-theme,context-blog,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/context-blog/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "context-blog"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.5')

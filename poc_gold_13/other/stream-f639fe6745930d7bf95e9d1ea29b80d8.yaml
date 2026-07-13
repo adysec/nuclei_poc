@@ -1,0 +1,58 @@
+id: stream-f639fe6745930d7bf95e9d1ea29b80d8
+
+info:
+  name: "Stream <= 3.0.5 - Sensitive Data Exposure"
+  author: topscoder
+  severity: high
+  description: "The Stream plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 3.0.5. This can allow unauthenticated attackers to extract sensitive data including logged entries."
+  reference:
+    - https://wordpress.org/plugins/stream/changelog/
+    - https://wpscan.com/vulnerability/8fa150be-75c2-48b3-8d3b-bc623f25debd
+    - https://patchstack.com/database/vulnerability/stream/wordpress-stream-plugin-3-0-5-unauthenticated-events-export
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/stream/"
+    google-query: inurl:"/wp-content/plugins/stream/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,stream,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/stream/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "stream"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.5')

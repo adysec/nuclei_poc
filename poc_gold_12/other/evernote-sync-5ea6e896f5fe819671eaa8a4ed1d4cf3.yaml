@@ -1,0 +1,59 @@
+id: evernote-sync-5ea6e896f5fe819671eaa8a4ed1d4cf3
+
+info:
+  name: >
+    Evernote Sync <= 3.0.0 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d7d18db8-17f4-4513-86da-8c9228c85eca?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/evernote-sync/"
+    google-query: inurl:"/wp-content/plugins/evernote-sync/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,evernote-sync,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/evernote-sync/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "evernote-sync"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.0')

@@ -1,0 +1,51 @@
+id: user_counter-1a5ef5b3-2900-44f0-9e13-66fbdc937b38
+
+info:
+  name: >
+    Alex User Counter <= 6.0 - Cross-Site Request Forgery to Settings Update
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1a5ef5b3-2900-44f0-9e13-66fbdc937b38?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/user-counter/"
+    google-query: inurl:"/wp-content/plugins/user-counter/"
+    shodan-query: 'http.html:"wp-content/plugins/user-counter/"'
+  tags: cve,wordpress,wp-plugin,user-counter,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-counter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "user-counter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.0')

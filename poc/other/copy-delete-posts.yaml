@@ -1,59 +1,49 @@
-id: copy-delete-posts
+id: wordpress-copy-delete-posts
 
 info:
-  name: >
-    Duplicate Post WordPress Plugin <= 1.1.9 - SQL Injection
-  author: topscoder
-  severity: critical
-  description: >
-    
+  name: Duplicate Post Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e7a0b40b-560a-4f2a-ad6d-6b2284fd5f25?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/copy-delete-posts/
   metadata:
-    fofa-query: "wp-content/plugins/copy-delete-posts/"
-    google-query: inurl:"/wp-content/plugins/copy-delete-posts/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,copy-delete-posts,critical
+    plugin_namespace: copy-delete-posts
+    wpscan: https://wpscan.com/plugin/copy-delete-posts
+  tags: tech,wordpress,wp-plugin,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/copy-delete-posts/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/copy-delete-posts.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "copy-delete-posts"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 1.2.0')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

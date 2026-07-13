@@ -45,7 +45,7 @@ git sparse-checkout set poc_gold_13
 6. 6_get_pocname — 生成结构化索引：`poc_index.json`（含分类/质量分/CVE等元数据）、`poc_summary.json`（统计摘要）及 `poc.txt`（纯文本清单）。
 7. 7_dedup_advanced — 多因素评分去重+格式修复。（读取 poc/ → 输出 poc_dedup/）
 8. 8_dedup_high_quality — 多级评分梯度精选，产生 poc_gold_11 ~ poc_gold_15 目录。
-9. 9_generate_browser_index — 生成 GitHub Pages 前端所需的 JSON 索引文件到 poc_browser/。
+9. 9_generate_browser_index — 生成 GitHub Pages 前端所需的 JSON 索引文件到 docs/。
 
 ### 根目录（常见文件/目录）
 

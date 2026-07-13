@@ -1,0 +1,51 @@
+id: quick_testimonials-1907308f-a722-48ce-8da4-a6c21ee29575
+
+info:
+  name: >
+    Quick Testimonials <= 2.1 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1907308f-a722-48ce-8da4-a6c21ee29575?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/quick-testimonials/"
+    google-query: inurl:"/wp-content/plugins/quick-testimonials/"
+    shodan-query: 'http.html:"wp-content/plugins/quick-testimonials/"'
+  tags: cve,wordpress,wp-plugin,quick-testimonials,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/quick-testimonials/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "quick-testimonials"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1')

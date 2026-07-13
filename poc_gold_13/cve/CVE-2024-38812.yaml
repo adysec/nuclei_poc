@@ -1,0 +1,58 @@
+id: CVE-2024-38812
+
+info:
+  name: VMware vCenter Server Heap Overflow
+  author: Redflare-Cyber
+  severity: critical
+  description: VMware vCenter Server has a critical vulnerability identified as CVE-2024-38812. This flaw allows unauthenticated attackers to execute arbitrary code remotely on affected systems running versions prior to vCenter Server 8.0 U3b and 7.0 U3s.
+  reference:
+    - https://securityaffairs.com/168536/security/vmware-vcenter-server-cve-2024-38812.html
+    - https://github.com/advisories/GHSA-72q3-gvh6-6m6w
+    - https://nvd.nist.gov/vuln/detail/CVE-2024-38812
+  classification:
+    cwe-id: CWE-306
+  metadata:
+    shodan-query: 'product:"VMware vCenter Server"'
+  tags: overflow,vmware,vcenter
+
+http:
+  - method: POST
+    path:
+      - '{{BaseURL}}/sdk'
+    body: |
+      <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+          <RetrieveServiceContent xmlns="urn:vim25">
+            <_this type="ServiceInstance">ServiceInstance</_this>
+          </RetrieveServiceContent>
+        </soap:Body>
+      </soap:Envelope>
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - '<version>([^<]*)</version>'
+
+      - type: regex
+        part: body
+        name: build
+        group: 1
+        regex:
+          - '<build>([^<]*)</build>'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version, "\>=7.0", "\<8.0")
+          - compare_versions(build, "\<21477706")
+        condition: and
+        name: vCenter70x_vulnerable
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, "\>=8.0", "\<8.0.3")
+          - compare_versions(build, "\<21554577")
+        condition: and
+        name: vCenter80x_vulnerable

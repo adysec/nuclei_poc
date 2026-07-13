@@ -1,0 +1,51 @@
+id: weekly_planner-1cd2d269-5af2-40ab-b424-505c95c56688
+
+info:
+  name: >
+    Weekly Planner <= 1.0 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1cd2d269-5af2-40ab-b424-505c95c56688?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/weekly-planner/"
+    google-query: inurl:"/wp-content/plugins/weekly-planner/"
+    shodan-query: 'http.html:"wp-content/plugins/weekly-planner/"'
+  tags: cve,wordpress,wp-plugin,weekly-planner,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/weekly-planner/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "weekly-planner"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

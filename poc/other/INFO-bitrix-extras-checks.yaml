@@ -1,0 +1,83 @@
+id: bitrix-extras-checks
+
+info:
+  name: Bitrix Extended Exposure Checks (WebDAV, Admin, Upload, .bak/.php)
+  author: clevergod
+  severity: medium
+  description: |
+    Проверка нестандартных точек в Bitrix: .php в /upload/, .bak/.htaccess, php_command_line.php, calendar/ajax.
+  tags: bitrix,exposure,upload,webdav,bak,admin,calendar
+
+requests:
+
+  # Проверка доступа к PHP-файлам в upload
+  - method: GET
+    path:
+      - "{{BaseURL}}/upload/test.php"
+    matchers:
+      - type: word
+        name: upload-php
+        words:
+          - "<?php"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+  # Доступ к .bak файлам
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/.htaccess.bak"
+      - "{{BaseURL}}/.env.bak"
+    matchers:
+      - type: status
+        name: bak-files
+        status:
+          - 200
+
+  # Наличие php_command_line.php
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/admin/php_command_line.php"
+    matchers:
+      - type: word
+        name: php-cli
+        words:
+          - "PHP command line"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+  # Проверка на доступ к компоненту календаря
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/tools/calendar_plan/calendar_plan_ajax_loader.php"
+    matchers:
+      - type: status
+        name: calendar-ajax
+        status:
+          - 200
+
+  # WebDAV upload directory access
+  - method: GET
+    path:
+      - "{{BaseURL}}/upload/webdav/"
+    matchers:
+      - type: word
+        name: webdav-index
+        words:
+          - "Index of"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'

@@ -1,0 +1,59 @@
+id: latestcheckins-aa3d149d993debd321c83a4d81ef5a3c
+
+info:
+  name: >
+    LatestCheckins <= 1 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9b2b1500-04b6-40fb-8d1f-9c210f95788b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/latestcheckins/"
+    google-query: inurl:"/wp-content/plugins/latestcheckins/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,latestcheckins,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/latestcheckins/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "latestcheckins"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1')

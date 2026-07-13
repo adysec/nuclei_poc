@@ -1,49 +1,59 @@
-id: wordpress-so-widgets-bundle
+id: so-widgets-bundle
 
 info:
-  name: SiteOrigin Widgets Bundle Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    SiteOrigin Widgets Bundle <= 1.60.0 -  - Authenticated (Contributor+) Stored Cross-Site Scripting via 'siteorigin_widget' Shortcode
+  author: topscoder
+  severity: low
+  description: >
+    
   reference:
-    - https://wordpress.org/plugins/so-widgets-bundle/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b7926ec6-3441-4062-93b2-6c2120c9f406?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
   metadata:
-    plugin_namespace: so-widgets-bundle
-    wpscan: https://wpscan.com/plugin/so-widgets-bundle
-  tags: tech,wordpress,wp-plugin,top-200
+    fofa-query: "wp-content/plugins/so-widgets-bundle/"
+    google-query: inurl:"/wp-content/plugins/so-widgets-bundle/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,so-widgets-bundle,low
 
-requests:
+http:
   - method: GET
-
+    redirects: true
+    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/so-widgets-bundle/readme.txt"
 
-    payloads:
-      last_version: helpers/wordpress/plugins/so-widgets-bundle.txt
-
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "so-widgets-bundle"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.60.0')

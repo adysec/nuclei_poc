@@ -1,59 +1,49 @@
-id: stops-core-theme-and-plugin-updates
+id: wordpress-stops-core-theme-and-plugin-updates
 
 info:
-  name: >
-    Stops Core Theme And Plugin Updates <= 8.0.4 - Insufficient Restrictions on Option Changes
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Easy Updates Manager Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3a9feacb-ef9c-40d4-abdb-a3fcfd529901?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/stops-core-theme-and-plugin-updates/
   metadata:
-    fofa-query: "wp-content/plugins/stops-core-theme-and-plugin-updates/"
-    google-query: inurl:"/wp-content/plugins/stops-core-theme-and-plugin-updates/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,stops-core-theme-and-plugin-updates,low
+    plugin_namespace: stops-core-theme-and-plugin-updates
+    wpscan: https://wpscan.com/plugin/stops-core-theme-and-plugin-updates
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/stops-core-theme-and-plugin-updates/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/stops-core-theme-and-plugin-updates.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "stops-core-theme-and-plugin-updates"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 8.0.4')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

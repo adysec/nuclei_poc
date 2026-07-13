@@ -1,0 +1,51 @@
+id: sfwd_lms-29a560fa-03bf-435c-85da-68397deab2a6
+
+info:
+  name: >
+    LearnDash LMS <= 5.0.3 - Authenticated (Contributor+) SQL Injection via 'filters[orderby_order]' Parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/29a560fa-03bf-435c-85da-68397deab2a6?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sfwd-lms/"
+    google-query: inurl:"/wp-content/plugins/sfwd-lms/"
+    shodan-query: 'http.html:"wp-content/plugins/sfwd-lms/"'
+  tags: cve,wordpress,wp-plugin,sfwd-lms,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)learndash_quiz_front.min.css\\?ver=([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sfwd-lms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.0.3')

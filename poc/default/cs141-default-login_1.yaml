@@ -1,50 +1,40 @@
-id: cs141-default-login
-
+id: cs141-default-login 1
 info:
-  name: CS141 SNMP Module Default Login
   author: socketz
-  severity: medium
+  name: CS141 SNMP Module Default Credentials
   reference: https://www.generex.de/media/pages/packages/documents/manuals/f65348d5b6-1628841637/manual_CS141_en.pdf
+  severity: medium
   tags: hiawatha,iot,default-login
-  metadata:
-    shodan-query: https://www.shodan.io/search?query=html%3A%22CS141%22
-
 requests:
-  - raw:
-      - |
-        POST /api/login HTTP/1.1
-        Host: {{Hostname}}
-        Accept: application/json, text/plain, */*
-        Content-Type: application/json
+- attack: sniper
+  extractors:
+  - kval:
+    - accessToken
+    type: kval
+  matchers:
+  - condition: and
+    part: header
+    type: word
+    words:
+    - accessToken
+    - application/json
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'POST /api/login HTTP/1.1
 
-        {"userName":"{{user}}","password":"{{pass}}"}
+    Host: {{Subdomains}}
 
-    attack: pitchfork
-    payloads:
-      user:
-        - admin
-        - engineer
-        - guest
-      pass:
-        - cs141-snmp
-        - engineer
-        - guest
+    Accept: application/json, text/plain, */*
 
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - 'accessToken'
-          - 'application/json'
-        condition: and
-        part: header
+    Content-Type: application/json
 
-      - type: status
-        status:
-          - 200
 
-    extractors:
-      - type: kval
-        kval:
-          - accessToken
+    {"userName":"admin","password":"cs141-snmp"}
+
+    '
+  threads: 100

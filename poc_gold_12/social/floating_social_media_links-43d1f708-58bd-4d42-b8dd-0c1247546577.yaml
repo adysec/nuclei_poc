@@ -1,0 +1,59 @@
+id: floating_social_media_links-43d1f708-58bd-4d42-b8dd-0c1247546577
+
+info:
+  name: >
+    Floating Social Media Links < 1.4.3 - Remote File Inclusion via fsml-hideshow.js.php wpp parameter
+  author: topscoder
+  severity: critical
+  description: >
+    The Floating Social Media Links plugin for WordPress is vulnerable to Remote File Inclusion in versions before 1.4.3 via the 'wpp' parameter in fsml-hideshow.js.php. This allows unauthenticated attackers to include remote files on the server, resulting in code execution.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/43d1f708-58bd-4d42-b8dd-0c1247546577?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/floating-social-media-links/"
+    google-query: inurl:"/wp-content/plugins/floating-social-media-links/"
+    shodan-query: 'http.html:"wp-content/plugins/floating-social-media-links/"'
+  tags: cve,wordpress,wp-plugin,floating-social-media-links,critical,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/floating-social-media-links/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "floating-social-media-links"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.4.3')

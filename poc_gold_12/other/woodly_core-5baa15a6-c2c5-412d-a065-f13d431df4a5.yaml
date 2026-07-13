@@ -1,0 +1,51 @@
+id: woodly_core-5baa15a6-c2c5-412d-a065-f13d431df4a5
+
+info:
+  name: >
+    Woodly Core <= 1.4 - Unauthenticated SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5baa15a6-c2c5-412d-a065-f13d431df4a5?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/woodly-core/"
+    google-query: inurl:"/wp-content/plugins/woodly-core/"
+    shodan-query: 'http.html:"wp-content/plugins/woodly-core/"'
+  tags: cve,wordpress,wp-plugin,woodly-core,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woodly-core/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woodly-core"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4')

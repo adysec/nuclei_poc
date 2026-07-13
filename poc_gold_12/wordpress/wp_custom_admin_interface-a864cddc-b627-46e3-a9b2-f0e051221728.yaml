@@ -1,0 +1,51 @@
+id: wp_custom_admin_interface-a864cddc-b627-46e3-a9b2-f0e051221728
+
+info:
+  name: >
+    Custom Admin Interface <= 7.41 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a864cddc-b627-46e3-a9b2-f0e051221728?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-custom-admin-interface/"
+    google-query: inurl:"/wp-content/plugins/wp-custom-admin-interface/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-custom-admin-interface/"'
+  tags: cve,wordpress,wp-plugin,wp-custom-admin-interface,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-custom-admin-interface/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-custom-admin-interface"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.41')

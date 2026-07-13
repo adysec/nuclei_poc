@@ -4,9 +4,11 @@ info:
   name: Apple app site association for harvesting end points
   author: panch0r3d
   severity: info
-  tags: misc
+  metadata:
+    max-request: 3
+  tags: miscellaneous,misc,apple,vuln
 
-requests:
+http:
   - method: GET
     path:
       - "{{BaseURL}}/.well-known/apple-app-site-association"
@@ -14,21 +16,28 @@ requests:
       - "{{BaseURL}}/apple-app-site-association"
 
     stop-at-first-match: true
+
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - 'applinks'
           - 'appID'
           - 'paths'
-        part: body
         condition: and
 
       - type: word
+        part: header
         words:
           - 'application/json'
-        part: header
 
       - type: status
         status:
           - 200
+
+    extractors:
+      - type: json
+        json:
+          - .applinks.details[].appID
+# digest: 4a0a004730450220459630104687543dc2d52d6a5c2d0b1fe6b075101cc6e4412ce87614c1643c92022100949d42c7bee5900cac6f6e6d331656978ebcf2daecb6c6e4cbf8d7c57e8703dc:922c64590222798bb761d5b6d8e72950

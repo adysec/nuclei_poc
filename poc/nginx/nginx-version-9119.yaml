@@ -1,0 +1,32 @@
+id: nginx-version
+info:
+  name: nginx version detect
+  author: philippedelteil
+  description: Some nginx servers have the version on the response header. Useful when you need to find specific CVEs on your targets.
+  severity: info
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "nginx+"
+      - type: status
+        status:
+          - 200
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - Server

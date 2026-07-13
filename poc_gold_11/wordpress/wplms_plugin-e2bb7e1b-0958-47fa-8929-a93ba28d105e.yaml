@@ -1,0 +1,51 @@
+id: wplms_plugin-e2bb7e1b-0958-47fa-8929-a93ba28d105e
+
+info:
+  name: >
+    WPLMS <= 1.9.9.5.4 - Unauthenticated Arbitrary File Deletion
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e2bb7e1b-0958-47fa-8929-a93ba28d105e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wplms_plugin/"
+    google-query: inurl:"/wp-content/plugins/wplms_plugin/"
+    shodan-query: 'http.html:"wp-content/plugins/wplms_plugin/"'
+  tags: cve,wordpress,wp-plugin,wplms_plugin,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wplms_plugin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wplms_plugin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.9.5.4')

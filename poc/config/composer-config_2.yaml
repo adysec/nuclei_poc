@@ -1,25 +1,31 @@
-id: composer-config
-
+id: composer-config 2
 info:
-  name: composer-config-file
   author: Mahendra Purbia (Mah3Sec_)
+  name: composer-config-file
   severity: info
-
+  tags: config,exposure
 requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/composer.json"
-      - "{{BaseURL}}/composer.lock"
-      - "{{BaseURL}}/.composer/composer.json"
-      - "{{BaseURL}}/vendor/composer/installed.json"
+- attack: sniper
+  matchers:
+  - dsl:
+    - contains(body, 'packages') && contains(tolower(all_headers), 'application/octet-stream')
+      && status_code == 200
+    name: composer.lock
+    type: dsl
+  - dsl:
+    - contains(body, 'require') && contains(tolower(all_headers), 'application/json')
+      && status_code == 200
+    name: composer.json
+    type: dsl
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /composer.lock HTTP/1.1
 
-    matchers:
-      - type: dsl
-        name: composer.lock
-        dsl:
-          - "contains(body, 'packages') == true && contains(tolower(all_headers), 'application/octet-stream') == true && status_code == 200"
+    Host: {{Subdomains}}
 
-      - type: dsl
-        name: composer.json
-        dsl:
-          - "contains(body, 'require') == true && contains(tolower(all_headers), 'application/json') == true && status_code == 200"
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101
+    Firefox/55
+
+    '
+  threads: 100

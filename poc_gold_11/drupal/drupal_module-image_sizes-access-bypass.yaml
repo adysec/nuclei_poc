@@ -1,0 +1,53 @@
+
+id: drupal_module-image_sizes-access-bypass
+info:
+  name: drupal_module-image_sizes-access-bypass
+  author: me
+  severity: medium
+  description: "This module enables you to create responsive image styles that depend on the parent elements width.  The module doesnt sufficiently check access to rendered images, resulting in access bypass vulnerabilities in specific scenarios."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-023
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/image_sizes/"
+    google-query: "inurl:'/sites/all/modules/image_sizes/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/image_sizes/image_sizes.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'image_sizes'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 3.0.2')

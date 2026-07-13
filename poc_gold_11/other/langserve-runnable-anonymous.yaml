@@ -1,0 +1,68 @@
+# gap: langserve-runnable-anonymous
+id: langserve-runnable-anonymous
+
+info:
+  name: LangChain LangServe Runnable Endpoint Anonymous Exposure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a LangChain LangServe deployment exposing its Runnable
+    endpoints (`/invoke`, `/batch`, `/stream`, `/input_schema`,
+    `/output_schema`, `/config_schema`, `/playground`) without
+    authentication, by probing the auto-generated OpenAPI document
+    and matching the canonical LangServe path set alongside FastAPI
+    metadata. Class signal: OpenAPI JSON whose `paths` object lists
+    all six LangServe path templates simultaneously.
+
+    Anonymous LangServe exposure is critical for two distinct
+    reasons. First, the `/invoke` endpoint accepts a JSON body and
+    forwards it to the underlying chain — if the chain is wired up
+    to an LLM API key, every external invocation drains the
+    operator's API quota / billing balance (financial-cost
+    primitive), and the chain frequently has access to enterprise
+    retrievers, vector DBs, and tool integrations that the
+    operator did not intend to expose. Second, the `/input_schema`
+    endpoint discloses the chain's full Pydantic schema — recon
+    for prompt-injection and chain-of-thought extraction. Class
+    detection — keys on LangServe path set, not vendor banner.
+  reference:
+    - https://python.langchain.com/docs/langserve/
+    - https://github.com/langchain-ai/langserve
+  tags: custom,exposures,langserve,langchain,ai,llm,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/openapi.json"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"/invoke"'
+          - '"/batch"'
+          - '"/stream"'
+          - '"/input_schema"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: openapi-title
+        regex:
+          - '"title"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: model-name
+        regex:
+          - '"x-langchain-runnable"\s*:\s*"([^"]+)"'
+        group: 1

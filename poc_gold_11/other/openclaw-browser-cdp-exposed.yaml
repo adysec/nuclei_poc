@@ -1,0 +1,34 @@
+id: openclaw-browser-cdp-exposed
+
+info:
+  name: OpenClaw Browser CDP Exposed
+  author: lobster-guard
+  severity: high
+  description: Detects exposed Chrome DevTools Protocol endpoints from OpenClaw sandbox browser
+  tags: openclaw,browser,cdp,ssrf
+  remediation: Bind CDP debug port to localhost only. Never expose port 9222 to external networks.
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    max-request: 2
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: GET
+    path:
+      - "http://{{Hostname}}:9222/json/version"
+      - "http://{{Hostname}}:9222/json/list"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "webSocketDebuggerUrl"
+          - "Browser"
+          - "devtoolsFrontendUrl"
+        condition: or

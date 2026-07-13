@@ -1,59 +1,49 @@
-id: click-to-chat-for-whatsapp
+id: wordpress-click-to-chat-for-whatsapp
 
 info:
-  name: >
-    Click to Chat <= 3.18 - Authenticated (Contributor+) Stored Cross-Site Scripting via Shortcode
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Click to Chat – HoliThemes Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/19b7cadd-b1b9-4f1d-ab30-78e0b46ad21a?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/click-to-chat-for-whatsapp/
   metadata:
-    fofa-query: "wp-content/plugins/click-to-chat-for-whatsapp/"
-    google-query: inurl:"/wp-content/plugins/click-to-chat-for-whatsapp/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,click-to-chat-for-whatsapp,low
+    plugin_namespace: click-to-chat-for-whatsapp
+    wpscan: https://wpscan.com/plugin/click-to-chat-for-whatsapp
+  tags: tech,wordpress,wp-plugin,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/click-to-chat-for-whatsapp/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/click-to-chat-for-whatsapp.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "click-to-chat-for-whatsapp"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 3.18')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100b5ba390ebeea3cd4ef2b000eed0f2bdf6a032743385c5e3a46d9e61512fc01ae02210095f509094997366a0eb15f8cc353c4d4847717124e807ff81f472d19b9c1c23f:922c64590222798bb761d5b6d8e72950

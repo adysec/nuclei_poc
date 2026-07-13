@@ -1,0 +1,55 @@
+id: openclaw-full-rce
+
+info:
+  name: OpenClaw Full RCE Chain (Self-Approve + node.invoke)
+  author: lobster-guard
+  severity: critical
+  description: |
+    Tests the OpenClaw RCE attack surface via two independent checks:
+    1. nodes.list — verifies if node enumeration is accessible (prerequisite for RCE)
+    2. exec.approval.request — tests if command approval can be requested without auth
+    Note: Each check runs independently. For the full 4-step kill chain
+    (nodes.list → exec.approval.request → self-approve → node.invoke),
+    use the LobsterGuard CLI exploit module which maintains WS session state.
+  tags: openclaw,rce,exec,approval,critical
+  remediation: Enable sandbox mode (agents.defaults.sandbox.mode=all). Disable exec.approval self-approve. Restrict node.invoke to authenticated admin sessions.
+  classification:
+    cwe-id: CWE-78
+  metadata:
+    max-request: 2
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+websocket:
+  - address: "{{Host}}/gateway"
+    inputs:
+      - data: '{"jsonrpc":"2.0","id":1,"method":"nodes.list","params":null}'
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "nodeId"
+          - "platform"
+          - "commands"
+        condition: or
+      - type: word
+        negative: true
+        words:
+          - "unknown method"
+          - "unauthorized"
+
+  - address: "{{Host}}/gateway"
+    inputs:
+      - data: '{"jsonrpc":"2.0","id":2,"method":"exec.approval.request","params":{"command":"echo nuclei_rce_probe","nodeId":"*","host":"node","twoPhase":true}}'
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "id"
+          - "approval"
+        condition: or
+      - type: word
+        negative: true
+        words:
+          - "unknown method"

@@ -1,34 +1,37 @@
-id: gitea-detect
-
+id: gitea-detect 1
 info:
-  name: Gitea Detect
   author: pikpikcu
+  name: Gitea Detect
   severity: info
   tags: tech,gitea
-  metadata:
-    max-request: 2
+requests:
+- attack: sniper
+  extractors:
+  - part: body
+    regex:
+    - 'Powered by Gitea Version: ([0-9.]+)'
+    type: regex
+  matchers:
+  - part: body
+    type: word
+    words:
+    - Powered by Gitea
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /user/login HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/user/login"
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: word
-        part: body
-        words:
-          - "Powered by Gitea"
+    Accept-Encoding: gzip, deflate
 
-      - type: status
-        status:
-          - 200
+    Accept: */*
 
-    extractors:
-      - type: regex
-        part: body
-        regex:
-          - "Powered by Gitea Version: ([0-9.]+)"
+    '
+  threads: 100

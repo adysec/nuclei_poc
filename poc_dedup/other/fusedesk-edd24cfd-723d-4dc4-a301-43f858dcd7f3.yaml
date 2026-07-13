@@ -1,0 +1,51 @@
+id: fusedesk-edd24cfd-723d-4dc4-a301-43f858dcd7f3
+
+info:
+  name: >
+    FuseDesk <= 6.8 - Authenticated (Contributor+) Stored Cross-Site Scripting via 'emailtext' Shortcode Attribute
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/edd24cfd-723d-4dc4-a301-43f858dcd7f3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/fusedesk/"
+    google-query: inurl:"/wp-content/plugins/fusedesk/"
+    shodan-query: 'http.html:"wp-content/plugins/fusedesk/"'
+  tags: cve,wordpress,wp-plugin,fusedesk,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/fusedesk/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fusedesk"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.8')

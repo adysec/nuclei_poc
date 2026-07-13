@@ -1,0 +1,51 @@
+id: meals_wheels-351d1553-59a6-4173-97ef-d7ed2cf5f9cb
+
+info:
+  name: >
+    Meals & Wheels <= 1.1.12 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/351d1553-59a6-4173-97ef-d7ed2cf5f9cb?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/meals-wheels/"
+    google-query: inurl:"/wp-content/themes/meals-wheels/"
+    shodan-query: 'http.html:"wp-content/themes/meals-wheels/"'
+  tags: cve,wordpress,wp-theme,meals-wheels,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/meals-wheels/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "meals-wheels"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.12')

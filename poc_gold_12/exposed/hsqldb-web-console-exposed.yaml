@@ -1,0 +1,47 @@
+# gap: hsqldb-web-console-exposed
+id: hsqldb-web-console-exposed
+
+info:
+  name: HSQLDB Web Console Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed HyperSQL (HSQLDB) web console at /database on port
+    9001. The console exposes an unauthenticated interactive SQL prompt
+    against the embedded database, allowing arbitrary query execution and,
+    via SQL/Java stored procedure abuse, host command execution.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/9001-pentesting-hsqldb.html
+    - http://hsqldb.org/doc/guide/dbproperties-chapt.html
+  tags: custom,exposures,hsqldb,hypersql,database,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/database"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "HSQL Database Engine"
+          - "HyperSQL"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: hsqldb-version
+        regex:
+          - '(?i)HSQL(?:DB)?\s+(?:Database Engine|version)[^<\d]*([0-9]+\.[0-9]+(\.[0-9]+)?)'
+          - 'HyperSQL\s+(?:version|v)?\s*([0-9]+\.[0-9]+(\.[0-9]+)?)'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

@@ -1,0 +1,59 @@
+id: custom_twitter_feeds-28d47605-ecb8-42cc-901a-3cf07b946877
+
+info:
+  name: >
+    Custom Twitter Feeds <= 2.2.5 - Cross-Site Request Forgery to Cache Reset via ctf_clear_cache_admin Function
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/28d47605-ecb8-42cc-901a-3cf07b946877?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/custom-twitter-feeds/"
+    google-query: inurl:"/wp-content/plugins/custom-twitter-feeds/"
+    shodan-query: 'http.html:"wp-content/plugins/custom-twitter-feeds/"'
+  tags: cve,wordpress,wp-plugin,custom-twitter-feeds,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/custom-twitter-feeds/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "custom-twitter-feeds"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.2.5')

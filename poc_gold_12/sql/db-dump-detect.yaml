@@ -1,0 +1,210 @@
+id: db-dump-detect
+
+info:
+  name: exposed DB dumps detection
+  author: Redflare-Cyber,leadlife
+  severity: high
+  description: Detects potentially exposed backup and database files on targets performing a clusterbomb attack.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  tags: exposure,backup,database,clusterbomb
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{dir}}{{filename}}.{{extension}}"
+
+    attack: clusterbomb
+    payloads:
+      dir:
+        - "/"
+        - "/backup/"
+        - "/db/"
+        - "/database/"
+        - "/dump/"
+        - "/sql/"
+        - "/data/"
+        - "/temp/"
+        - "/tmp/"
+        - "/dumps/"
+        # Adding directories will slow down detection rate
+
+      filename:
+        - "backup"
+        - "database"
+        - "dump"
+        - "db"
+        - "data"
+        - "sql"
+        - "mysqldump"
+        - "backup_{{date_time('%Y%m%d')}}"
+        - "database_{{date_time('%Y%m%d')}}"
+        - "db_backup"
+        - "db_backup_{{date_time('%Y%m%d')}}"
+        - "dump_{{date_time('%Y%m%d')}}"
+        - "dumpfile"
+        - "export"
+        - "latest_backup"
+        - "site_backup"
+        - "website_backup"
+        - "wordpress_backup"
+        - "joomla_backup"
+        - "magento_backup"
+        - "wp_backup"
+        - "sql_backup"
+        - "mysql_backup"
+        - "user_data"
+        - "customer_data"
+        - "production_db"
+        - "prod_db"
+        - "test_db"
+        - "staging_db"
+        - "dev_db"
+        - "admin_db"
+        - "old_db"
+        - "new_db"
+        - "data_backup"
+        - "all_data"
+        - "full_backup"
+        - "complete_backup"
+        - "backupfile"
+        - "dbexport"
+        - "dbdumpfile"
+        - "index"
+        - "wwww"
+        - "root"
+        - "{{Hostname}}"
+        - "{{Hostname}}_db"
+        - "{{Hostname}}_backup"
+        - "{{Hostname}}_dump"
+        - "{{Hostname}}_{{date_time('%Y%m%d')}}"
+        - "backup{{date_time('%Y%m%d')}}"
+        - "db{{date_time('%Y%m%d')}}"
+        - "database{{date_time('%Y%m%d')}}"
+        - "backup{{date_time('%Y-%m-%d')}}"
+        - "db{{date_time('%Y-%m-%d')}}"
+        - "database{{date_time('%Y-%m-%d')}}"
+        - "backup_{{date_time('%Y-%m-%d')}}"
+        - "db_{{date_time('%Y-%m-%d')}}"
+        - "database_{{date_time('%Y-%m-%d')}}"
+
+      extension:
+        - "sql"
+        - "sql.gz"
+        - "sql.zip"
+        - "sql.bz2"
+        - "sql.xz"
+        - "db"
+        - "bak"
+        - "zip"
+        - "gz"
+        - "tar"
+        - "tar.gz"
+        - "tgz"
+        - "rar"
+        - "7z"
+        - "bak.gz"
+        - "bak.zip"
+        - "tar.bz2"
+        - "bz2"
+        - "xz"
+        - "dump"
+        - "backup"
+        - "sql.bak"
+        - "sql.tar"
+        - "db.gz"
+        - "db.zip"
+        - "db.bak"
+        - "db.tar"
+        - "mdb"
+        - "accdb"
+        - "sqlite"
+        - "sqlite3"
+        - "dbf"
+        - "ibd"
+        - "myd"
+        - "frm"
+        - "ldf"
+        - "mdf"
+        - "ndb"
+        - "bakx"
+        - "bak1"
+        - "bak2"
+        - "tmp"
+        - "temp"
+        - "old"
+        - "orig"
+        - "copy"
+        - "save"
+        - "swp"
+        - "swo"
+        - "bk"
+        - "old.bak"
+
+    headers:
+      Range: "bytes=0-5000"
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+
+    max-size: 7000
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 206
+
+      - type: word
+        part: body
+        words:
+          - "MySQL dump"
+          - "SQLite format 3"
+          - "PostgreSQL database dump"
+          - "INSERT INTO"
+          - "CREATE TABLE"
+          - "DROP TABLE"
+          - "Database dump"
+          - "SQL dump"
+          - "BEGIN TRANSACTION"
+          - "COMMIT;"
+          - "LOCK TABLES"
+          - "UNLOCK TABLES"
+          - "PRIMARY KEY"
+          - "FOREIGN KEY"
+          - "REFERENCES"
+          - "SET FOREIGN_KEY_CHECKS"
+          - "SET NAMES utf8"
+          - "-- Dump completed"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/octet-stream"
+          - "application/sql"
+          - "application/x-sql"
+          - "text/plain"
+          - "application/x-sqlite3"
+          - "application/zip"
+          - "application/x-gzip"
+          - "application/x-bzip2"
+          - "application/x-7z-compressed"
+          - "application/x-tar"
+          - "application/x-rar-compressed"
+          - "application/vnd.sqlite3"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "(?i)(DROP|CREATE|INSERT INTO|LOCK TABLES|UNLOCK TABLES)\\s+TABLE"
+          - "(?i)BEGIN\\s+TRANSACTION"
+          - "(?i)COMMIT;"
+          - "(?i)SET\\s+FOREIGN_KEY_CHECKS"
+          - "(?i)--\\s+Dump completed"
+          - "(?i)--\\s+Dumping data for table"
+          - "(?i)--\\s+Dump of table"
+          - "(?i)PGDMP"  # PostgreSQL dump
+        condition: or

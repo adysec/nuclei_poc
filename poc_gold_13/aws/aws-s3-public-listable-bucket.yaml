@@ -1,0 +1,51 @@
+# gap: aws-s3-public-listable-bucket
+id: aws-s3-public-listable-bucket
+
+info:
+  name: AWS S3 Bucket Public Listing Enabled
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects AWS S3 buckets that allow unauthenticated listing of their contents.
+    A GET request to the bucket endpoint without credentials returns HTTP 200
+    with an XML body containing ListBucketResult, exposing object keys publicly.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/aws-security/aws-unauthenticated-enum-access/aws-s3-unauthenticated-enum/README.md
+    - https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-overview.html
+  tags: custom,cloud,aws,s3,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/?list-type=2"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<ListBucketResult xmlns"
+
+    extractors:
+      - type: regex
+        part: body
+        name: bucket-name
+        regex:
+          - '<Name>([^<]+)</Name>'
+        group: 1
+      - type: regex
+        part: body
+        name: object-keys
+        regex:
+          - '<Key>([^<]+)</Key>'
+        group: 1
+      - type: regex
+        part: body
+        name: object-sizes
+        regex:
+          - '<Size>([0-9]+)</Size>'
+        group: 1

@@ -1,0 +1,39 @@
+http:
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - '>PHP Version <\/td><td class="v">([0-9.]+)'
+    type: regex
+  fuzzing:
+  - fuzz:
+    - '{{rce}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - PHP Extension
+    - PHP Version
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    rce:
+    - ;phpinfo();
+    - phpinfo()
+  stop-at-first-match: true
+id: phpinfo-rce
+info:
+  author: reewardius
+  name: Simple phpinfo() fuzzing,
+  reference: https://www.invicti.com/learn/remote-code-execution-rce/
+  severity: medium
+  tags: fuzzing-rce,fuzzing-req,dast

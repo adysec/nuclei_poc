@@ -1,45 +1,31 @@
-id: nextcloud-detect
-
+id: nextcloud-detect 3
 info:
-  name: Nextcloud Detect
   author: skeltavik
+  description: Detects Nextcloud
+  name: Nextcloud Detect
+  reference: https://nextcloud.com
   severity: info
-  description: |
-    Nextcloud is a suite of client-server software for creating and using file hosting services
-  reference:
-    - https://nextcloud.com
-  metadata:
-    max-request: 4
-    verified: true
-    shodan-query: http.title:"Nextcloud"
   tags: tech,nextcloud,storage
+requests:
+- attack: sniper
+  matchers:
+  - part: body
+    type: word
+    words:
+    - var nc_lastLogin
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /nextcloud/index.php/login HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - '{{BaseURL}}'
-      - '{{BaseURL}}/login'
-      - '{{BaseURL}}/nextcloud/login'
-      - '{{BaseURL}}/nextcloud/index.php/login'
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
-    host-redirects: true
-    max-redirects: 2
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - 'var nc_lastLogin'
-          - 'var nc_pageLoad'
-        condition: and
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: status
-        status:
-          - 200
+    Accept-Encoding: gzip, deflate
 
-    extractors:
-      - type: regex
-        group: 1
-        regex:
-          - '(?m)"version":"([0-9.]+)",'
+    Accept: */*
+
+    '
+  threads: 100

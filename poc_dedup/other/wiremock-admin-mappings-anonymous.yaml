@@ -1,0 +1,66 @@
+# gap: wiremock-admin-mappings-anonymous
+id: wiremock-admin-mappings-anonymous
+
+info:
+  name: WireMock Admin API - Anonymous Mappings Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects WireMock (`__admin/*` REST API) reachable anonymously
+    on a production / staging host. WireMock is intended as a
+    developer mocking tool; when deployed by mistake to
+    internet-reachable infra, an attacker can:
+    - read every configured stub mapping (request/response pairs)
+    - read recorded requests (PII / tokens passed through the mock)
+    - register a NEW mock that intercepts and tampers with traffic
+      to that endpoint (full MITM via stub injection)
+    - register a proxy mapping that forwards real requests to an
+      attacker URL — exfiltration primitive.
+
+    Wire-format keys on the `mappings` envelope: `/__admin/mappings`
+    returns JSON with the canonical pair `"mappings":[` AND
+    `"meta":{"total":N}`. The `meta.total` field is unique to the
+    WireMock admin envelope.
+  reference:
+    - https://wiremock.org/docs/standalone/administration-api/
+    - https://wiremock.org/docs/stubbing/
+    - https://docs.wiremock.io/api/
+  tags: custom,exposures,wiremock,mocking,anonymous,devtool,cwe-862
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/__admin/mappings"
+      - "{{BaseURL}}/__admin/"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+      - type: word
+        part: body
+        words:
+          - '"mappings"'
+          - '"meta"'
+        condition: and
+      - type: regex
+        part: body
+        regex:
+          - '"total"\s*:\s*\d+'
+
+    extractors:
+      - type: regex
+        part: body
+        name: stub-count
+        regex:
+          - '"total"\s*:\s*(\d+)'
+        group: 1
+      - type: regex
+        part: body
+        name: stub-urls
+        regex:
+          - '"urlPath(?:Pattern)?"\s*:\s*"([^"]{1,200})"'
+        group: 1

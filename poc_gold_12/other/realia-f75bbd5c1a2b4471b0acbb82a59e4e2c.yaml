@@ -1,0 +1,59 @@
+id: realia-f75bbd5c1a2b4471b0acbb82a59e4e2c
+
+info:
+  name: "Realia <= 0.9.1 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Realia plugin for WordPress is vulnerable to Cross-Site Scripting in versions before 0.9.2 via the 'filter-id' parameter due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - https://packetstormsecurity.com/files/137309/WordPress-Realia-0.8.5-Cross-Site-Scripting.html
+    - https://wordpress.org/plugins/realia/#developers
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=1460964%40realia&new=1460964%40realia&sfp_email=&sfph_mail=
+    - https://plugins.trac.wordpress.org/browser/realia/trunk/readme.txt#L220
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/realia/"
+    google-query: inurl:"/wp-content/plugins/realia/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,realia,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/realia/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "realia"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.9.2')

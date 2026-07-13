@@ -1,0 +1,76 @@
+http:
+- matchers:
+  - status:
+    - 200
+    type: status
+  - condition: or
+    part: body
+    type: word
+    words:
+    - choices
+    - message
+    - content
+  matchers-condition: and
+  raw:
+  - 'POST /v1/chat/completions HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"model":"default","messages":[{"role":"user","content":"csrf probe no-origin"}]}
+
+    '
+- matchers:
+  - status:
+    - 403
+    - 401
+    type: status
+  - condition: or
+    part: body
+    type: word
+    words:
+    - forbidden
+    - origin
+    - CSRF
+    - not allowed
+  matchers-condition: or
+  raw:
+  - 'POST /v1/chat/completions HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Origin: https://evil-attacker.com
+
+    Referer: https://evil-attacker.com/exploit
+
+    Content-Type: application/json
+
+
+    {"model":"default","messages":[{"role":"user","content":"csrf probe evil-origin"}]}
+
+    '
+id: openclaw-csrf-no-origin
+info:
+  author: LobsterGuard
+  description: 'Tests whether OpenClaw state-changing endpoints accept requests that
+
+    lack both Origin and Referer headers. Some CSRF protection middleware
+
+    only rejects requests with a mismatched Origin but allows requests
+
+    with no Origin at all. This enables cross-site attacks from contexts
+
+    that strip these headers (e.g. meta-redirect, bookmark JS, some
+
+    browser extensions).
+
+    '
+  metadata:
+    chain_id: 42
+  name: OpenClaw CSRF Bypass via Missing Origin/Referer
+  reference:
+  - https://github.com/lobster-guard/openclaw-security
+  severity: high
+  tags: openclaw,csrf,origin,bypass

@@ -1,0 +1,71 @@
+http:
+- extractors:
+  - name: admin_panel_info
+    part: body
+    regex:
+    - (?i)(admin|administrator|dashboard|control\s*panel|wp-admin|joomla|drupal|modx)\s*(dashboard|panel|login|console)
+    type: regex
+  matchers:
+  - status:
+    - 200
+    - 302
+    type: status
+  - condition: or
+    part: body
+    type: word
+    words:
+    - Admin Dashboard
+    - Administrator Panel
+    - Control Panel
+    - Welcome, Admin
+    - Admin Login
+    - wp-admin
+    - Joomla! Administration
+    - Drupal Administration
+    - MODX Manager
+    - Admin Console
+    - Site Administration
+  - dsl:
+    - '!contains(tolower(body), ''login required'') && !contains(tolower(body), ''unauthorized'')
+      && !contains(tolower(body), ''access denied'') && !contains(tolower(body), ''please
+      log in'')'
+    type: dsl
+  - negative: true
+    part: body
+    type: word
+    words:
+    - 403 Forbidden
+    - 401 Unauthorized
+    - Please login to continue
+    - Authentication required
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/admin'
+  - '{{BaseURL}}/administrator'
+  - '{{BaseURL}}/wp-admin'
+  - '{{BaseURL}}/admin/login'
+  - '{{BaseURL}}/admin/index.php'
+  - '{{BaseURL}}/dashboard'
+  - '{{BaseURL}}/manage'
+  - '{{BaseURL}}/controlpanel'
+  - '{{BaseURL}}/cpanel'
+  - '{{BaseURL}}/adminpanel'
+  - '{{BaseURL}}/admin_area'
+  - '{{BaseURL}}/backend'
+  - '{{BaseURL}}/wp-admin/admin.php'
+  - '{{BaseURL}}/user/admin'
+  - '{{BaseURL}}/adminconsole'
+  - '{{BaseURL}}/siteadmin'
+  - '{{BaseURL}}/admin_portal'
+  - '{{BaseURL}}/modx'
+  - '{{BaseURL}}/joomla/administrator'
+  - '{{BaseURL}}/drupal/admin'
+id: ai-global-admin-panel-unauthorized
+info:
+  author: xai
+  description: Identifies publicly accessible admin panels or dashboards without authentication
+    across common platforms and frameworks.
+  name: Detect Unauthorized Admin Panel Access
+  severity: critical
+  tags: admin, unauthorized, exposure, critical

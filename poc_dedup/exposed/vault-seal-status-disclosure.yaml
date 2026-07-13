@@ -1,0 +1,80 @@
+# gap: vault-seal-status-disclosure
+id: vault-seal-status-disclosure
+
+info:
+  name: HashiCorp Vault /sys/seal-status Discloses Version / Storage / Seal Type
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects exposed HashiCorp Vault instances by probing
+    /v1/sys/seal-status — the endpoint is officially documented as
+    unauthenticated and returns a stable JSON envelope with `version`,
+    `storage_type` (raft / consul / file / dynamodb / ...), seal `type`
+    (shamir / awskms / transit / pkcs11 / gcpckms / azurekeyvault),
+    `sealed` boolean, `t` / `n` (Shamir share threshold / total),
+    `build_date`, `cluster_name`, `cluster_id`, and `nonce`.
+
+    The exposure on its own is by-design info disclosure (Vault docs
+    explicitly mark the endpoint as unauthenticated), but the
+    combination of version + storage backend + seal mechanism is
+    actionable reconnaissance for targeting known-CVE versions, for
+    locating Consul / DynamoDB / GCS storage backends, and for
+    fingerprinting the Vault deployment ahead of seal-status / unseal
+    socket-exposure CVEs in the same family. Match keys on the stable
+    schema, not a vendor banner.
+  reference:
+    - https://developer.hashicorp.com/vault/api-docs/system/seal-status
+  tags: custom,exposures,vault,hashicorp,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/sys/seal-status"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"type"\s*:\s*"(shamir|awskms|transit|pkcs11|gcpckms|azurekeyvault)"'
+      - type: regex
+        part: body
+        regex:
+          - '"sealed"\s*:\s*(true|false)'
+      - type: regex
+        part: body
+        regex:
+          - '"version"\s*:\s*"'
+
+    extractors:
+      - type: regex
+        part: body
+        name: vault-version
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: storage-type
+        regex:
+          - '"storage_type"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: seal-type
+        regex:
+          - '"type"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: cluster-name
+        regex:
+          - '"cluster_name"\s*:\s*"([^"]+)"'
+        group: 1

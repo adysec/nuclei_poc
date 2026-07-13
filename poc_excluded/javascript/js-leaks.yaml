@@ -1,0 +1,50 @@
+id: js-file-endpoint-and-secret-collector
+
+info:
+  name: JavaScript File Endpoint and Secret Collector
+  author: Zahir
+  severity: medium
+  description: |
+    This template extracts endpoints, Firebase URLs, secrets, and other juicy information from JavaScript files.
+    It looks for URLs, API keys, Firebase endpoints, tokens, and other sensitive information within the contents of JavaScript files.
+  tags: js, endpoint, secrets, firebase, api
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/**/*.js"  # Collects all JavaScript files from the target site.
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: "endpoints"
+        group: 1
+        regex:
+          # Regular expressions to capture common endpoints, Firebase URLs, and API keys
+          - 'https?://[^\s"]+'  # General URLs (HTTP/HTTPS)
+          - '(?:[A-Za-z0-9-]+\.){1,}[A-Za-z0-9]{2,}(?::\d{1,5})?(?:\/[^\"\'\s]*)?'  # Domain patterns with or without ports
+          - '(firebaseio\.com|firestore\.googleapis\.com|firebase\.app|firebase\.io)'  # Firebase URLs
+          - 'AIza[0-9A-Za-z_-]{35}'  # Google API Key pattern
+          - '[a-f0-9]{32}'  # Generic 32-character hex secret (e.g., MD5 hashes, some API keys)
+          - 'eyJ[a-zA-Z0-9]{20,}\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+'  # JWT Tokens
+          - '(?i)api[_-]key["\']?\s*:\s*["\']([A-Za-z0-9-_]+)'  # API key assignment
+          - '(?i)(access[_-]token|auth[_-]token)["\']?\s*:\s*["\']([A-Za-z0-9-_]+)'  # Access or Auth Tokens
+          - '(?i)(client[_-]secret)["\']?\s*:\s*["\']([A-Za-z0-9-_]+)'  # Client Secret Patterns
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "api"
+          - "token"
+          - "firebase"
+          - "key"
+          - "auth"
+          - "secret"
+        part: body
+
+    # Save extracted endpoints to a separate output file for easy review
+    post-processors:
+      - type: save-extracted
+        name: js-endpoints-and-secrets
+        format: raw

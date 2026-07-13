@@ -1,0 +1,67 @@
+# gap: opa-policy-api-anonymous
+id: opa-policy-api-anonymous
+
+info:
+  name: Open Policy Agent (OPA) Policy API - Anonymous Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an Open Policy Agent server with anonymous access to
+    `/v1/policies`. OPA enforces authorization decisions across
+    Kubernetes admission, Envoy, Istio, Terraform, microservice
+    auth, and many SaaS platforms — leaking the policy source
+    discloses (a) the entire authorization rule-set, (b) which
+    paths are deny-listed (= attack surface map), and (c) the
+    naming of internal services and data partitions.
+
+    Wire-format: `/v1/policies` returns JSON with the unique
+    envelope `"result":[{` containing objects with `"id":` and
+    `"raw":"package ` — the `raw` field carries the literal Rego
+    source code, with `package` being the canonical Rego
+    namespace declaration. The combination of `result[]` array
+    of objects each containing `raw` with `package ` is unique
+    to OPA's policy API.
+
+    OPA's default bind is `0.0.0.0:8181` with NO auth — the
+    "secure config" requires explicit `--authentication=token`
+    plus `--authorization=basic`. Container deployments routinely
+    miss both, and a public-facing OPA is a textbook
+    misconfigured-control-plane exposure.
+  reference:
+    - https://www.openpolicyagent.org/docs/latest/rest-api/
+    - https://www.openpolicyagent.org/docs/latest/security/
+    - https://github.com/open-policy-agent/opa/security/advisories
+  tags: custom,exposures,opa,policy,anonymous,k8s,cwe-862
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/policies"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+      - type: word
+        part: body
+        words:
+          - '"result"'
+          - '"raw"'
+          - 'package '
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: rego-package-names
+        regex:
+          - 'package\s+([a-zA-Z_][\w.]{1,80})'
+        group: 1
+      - type: regex
+        part: body
+        name: policy-ids
+        regex:
+          - '"id"\s*:\s*"([^"]{1,120})"'
+        group: 1

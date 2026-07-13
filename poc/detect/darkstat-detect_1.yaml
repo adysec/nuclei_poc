@@ -1,43 +1,45 @@
-id: darkstat-detect
-
+id: darkstat-detect 1
 info:
-  name: Detect Darkstat Reports
   author: geeknik
+  description: Darkstat captures network traffic, calculates statistics about usage,
+    and serves reports over HTTP
+  name: Detect Darkstat Reports
+  reference: https://unix4lyfe.org/darkstat/
   severity: high
-  description: Darkstat captures network traffic, calculates statistics about usage, and serves reports over HTTP
-  reference:
-    - https://unix4lyfe.org/darkstat/
-  metadata:
-    max-request: 2
   tags: darkstat,logs,exposure
+requests:
+- attack: sniper
+  extractors:
+  - kval:
+    - server
+    part: header
+    type: kval
+  matchers:
+  - part: header
+    regex:
+    - '[Ss]erver: darkstat.*'
+    type: regex
+  - condition: and
+    part: body
+    type: word
+    words:
+    - darkstat
+    - <title>Graphs
+    - Measuring for
+    - hosts</a>
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /darkstat/ HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/darkstat/"
+    Host: {{Subdomains}}
 
-    # FYI, the default port for darkstat is 666
-    matchers-condition: and
-    matchers:
-      - type: regex
-        part: header
-        regex:
-          - "[Ss]erver: darkstat.*"
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: word
-        part: body
-        words:
-          - "darkstat"
-          - "<title>Graphs"
-          - "Measuring for"
-          - "hosts</a>"
-        condition: and
+    Accept-Encoding: gzip, deflate
 
-    extractors:
-      - type: kval
-        part: header
-        kval:
-          - server
+    Accept: */*
 
-# digest: 490a00463044022043dc3378018facc38ca1b0a3284a0d357da912f3fb9de6058ce4d7044d809c19022058bd852702d1684eeec06bb1fa7f100ac672e9414054ec519570c611f7329830:922c64590222798bb761d5b6d8e72950
+    '
+  threads: 100

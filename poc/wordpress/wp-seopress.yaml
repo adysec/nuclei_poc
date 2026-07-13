@@ -1,59 +1,49 @@
-id: wp-seopress
+id: wordpress-wp-seopress
 
 info:
-  name: >
-    SEOPress <= 8.1.1 - Missing Authorization
-  author: topscoder
-  severity: high
-  description: >
-    
+  name: SEOPress – On-site SEO Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/66e724a1-5d40-4ba0-a324-1b4f1e463f26?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/wp-seopress/
   metadata:
-    fofa-query: "wp-content/plugins/wp-seopress/"
-    google-query: inurl:"/wp-content/plugins/wp-seopress/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,wp-seopress,high
+    plugin_namespace: wp-seopress
+    wpscan: https://wpscan.com/plugin/wp-seopress
+  tags: tech,wordpress,wp-plugin,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/wp-seopress/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/wp-seopress.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "wp-seopress"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 8.1.1')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

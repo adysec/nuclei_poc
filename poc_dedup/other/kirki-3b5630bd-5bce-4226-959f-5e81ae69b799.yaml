@@ -1,0 +1,51 @@
+id: kirki-3b5630bd-5bce-4226-959f-5e81ae69b799
+
+info:
+  name: >
+    Kirki 6.0.0 - 6.0.6 - Unauthenticated Privilege Escalation via 'handle_forgot_password'
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3b5630bd-5bce-4226-959f-5e81ae69b799?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/kirki/"
+    google-query: inurl:"/wp-content/plugins/kirki/"
+    shodan-query: 'http.html:"wp-content/plugins/kirki/"'
+  tags: cve,wordpress,wp-plugin,kirki,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/kirki/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kirki"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 6.0.0', '<= 6.0.6')

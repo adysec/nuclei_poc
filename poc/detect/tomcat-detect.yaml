@@ -1,40 +1,37 @@
-id: tomcat-version-detect
+id: tomcat-detect
+
 info:
-  name: Detect Tomcat Version
-  author: philippedelteil
-  description: If an Tomcat instance is deployed on the target URL, when we send a request for
-    a non existent resource we receive a Tomcat error page with version.
+  name: Tomcat Detection
+  author: philippedelteil,dhiyaneshDk
   severity: info
+  description: If an Tomcat instance is deployed on the target URL, when we send a request for a non existent resource we receive a Tomcat error page with version.
+  metadata:
+    shodan-query: title:"Apache Tomcat"
+  tags: tech,tomcat,apache
+  mongoid: 0000
 
 requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/{{randstr}}"
 
-    raw:
-      - |
-        GET /something_not_existing_ HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
-        
-    matchers-condition: and
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
+      - type: dsl
+        dsl:
+          - 'contains(tolower(all_headers), "tomcat")'
 
-      - type: word
-        words:
-          - "Apache Tomcat"
-
-      - type: status
-        status:
-          - 404
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "apache tomcat")'
+          - 'contains(tolower(body), "/manager/html")'
+          - 'contains(tolower(body), "/manager/status")'
+        condition: or
 
     extractors:
       - type: regex
-        part: body
-        name: version
-        group: 2
+        group: 1
         regex:
-          - '(<h3>)(.*?)(</h3>)'
+          - '(?i)Apache Tomcat.*([0-9]\.[0-9]+\.[0-9]+)'

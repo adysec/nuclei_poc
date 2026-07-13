@@ -1,0 +1,77 @@
+# gap: flowise-api-anonymous-chatflows
+id: flowise-api-anonymous-chatflows
+
+info:
+  name: Flowise API Anonymous Chatflow Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Flowise no-code LLM-orchestration platform where
+    /api/v1/chatflows is reachable without an Authorization Bearer
+    token, returning the chatflow catalog. Class signal: response
+    is a JSON array of chatflow objects carrying Flowise-specific
+    fields (`id` UUID, `name`, `flowData` (stringified JSON of the
+    node graph), `apikeyid`, `chatbotConfig`, `isPublic`,
+    `deployed`).
+
+    Anonymous chatflow-API access leaks every prompt template,
+    LangChain node configuration, retriever / vector-DB binding,
+    LLM credential alias, and tool integration in the workspace.
+    The `flowData` field is the canvas-graph JSON that contains
+    inline system prompts, document loader configurations
+    (pointing at S3 / Google Drive / Notion / Confluence with
+    embedded access tokens), and chain composition — full source
+    disclosure of the chatbot logic. Combined with
+    /api/v1/credentials/{id} which returns the encrypted
+    credential record (anonymous-readable on default deployments)
+    the response chains into in-memory secret leak of OpenAI /
+    Anthropic / Pinecone / Weaviate / SerpAPI keys. Class
+    detection — keys on Flowise chatflow object shape and
+    `flowData` field, not vendor banner. Complements upstream
+    `flowise-panel` (HTML fingerprint).
+  reference:
+    - https://docs.flowiseai.com/api-reference/chatflows
+    - https://github.com/FlowiseAI/Flowise
+  tags: custom,exposures,flowise,ai,llm,langchain,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/chatflows"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '^\s*\['
+      - type: word
+        part: body
+        words:
+          - '"flowData"'
+          - '"chatbotConfig"'
+          - '"apikeyid"'
+          - '"isPublic"'
+          - '"deployed"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: chatflow-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: chatflow-ids
+        regex:
+          - '"id"\s*:\s*"([a-f0-9-]+)"'
+        group: 1

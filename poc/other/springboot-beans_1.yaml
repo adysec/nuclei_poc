@@ -1,42 +1,44 @@
-id: springboot-beans
-
+id: springboot-beans 1
 info:
-  name: Detect Springboot Beans Actuator
   author: ajaysenr
-  severity: low
   description: Displays a complete list of all the Spring beans in the application
-  metadata:
-    max-request: 2
-  tags: springboot,exposure,misconfig,vuln
+  name: Detect Springboot Beans Actuator
+  severity: medium
+  tags: springboot,disclosure
+requests:
+- attack: sniper
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"type"'
+    - '"beans"'
+    - '"dependencies"'
+    - '"scope"'
+  - status:
+    - 200
+    type: status
+  - condition: or
+    part: header
+    type: word
+    words:
+    - application/json
+    - application/vnd.spring-boot.actuator
+    - application/vnd.spring-boot.actuator.v1+json
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /beans HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/beans"
-      - "{{BaseURL}}/actuator/beans"
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '"type"'
-          - '"beans"'
-          - '"dependencies"'
-          - '"scope"'
-        condition: and
+    Accept-Encoding: gzip, deflate
 
-      - type: status
-        status:
-          - 200
+    Accept: */*
 
-      - type: word
-        words:
-          - "application/json"
-          - "application/vnd.spring-boot.actuator"
-          - "application/vnd.spring-boot.actuator.v1+json"
-        condition: or
-        part: header
-# digest: 4b0a00483046022100d5b8dee89c5f939296b8a34774cda4596fd131c805c7a44d3d723bf3eb5d9143022100a37d12e64e174320b5d3f3d23360d987d9949743ff063ea8bc7186a677d8be18:922c64590222798bb761d5b6d8e72950
+    '
+  threads: 100

@@ -1,0 +1,207 @@
+id: bitrix-info-disclosure-fixed
+
+info:
+  name: Bitrix Information Disclosure Vulnerabilities (Fixed)
+  author: clevergod
+  severity: medium
+  description: |
+    Проверка утечек информации в Bitrix CMS через различные эндпоинты (исправленная версия)
+  tags: bitrix,info-disclosure,information-leak,debug
+
+requests:
+  # Debug информация
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/tools/show_include_exec_time.php"
+    matchers:
+      - type: word
+        name: debug-exec-time
+        words:
+          - "Include Time"
+          - "execution time"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+
+  # Конфигурационные файлы
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/.settings.php"
+      - "{{BaseURL}}/bitrix/.settings.php.bak"
+      - "{{BaseURL}}/.env"
+      - "{{BaseURL}}/.env.bak"
+    matchers:
+      - type: word
+        name: config-files
+        words:
+          - "DBHost"
+          - "DBLogin"
+          - "DBPassword"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+
+  # Логи (только если это реальные лог файлы)
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/modules/updater.log"
+    matchers:
+      - type: word
+        name: updater-log
+        words:
+          - "UpdateSystem"
+          - "UpdateSystem::"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+          - '!contains(body, "form_auth")'
+
+  # Директории (только если это реальные директории)
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/logs/"
+      - "{{BaseURL}}/bitrix/backup/"
+    matchers:
+      - type: word
+        name: directory-listing
+        words:
+          - "Index of"
+          - "Directory listing"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+
+  # Временные файлы
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/cache/"
+      - "{{BaseURL}}/bitrix/tmp/"
+      - "{{BaseURL}}/bitrix/managed_cache/"
+    matchers:
+      - type: word
+        name: temp-files
+        words:
+          - "cache"
+          - "tmp"
+          - "managed_cache"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+
+  # Резервные копии
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/.htaccess.bak"
+      - "{{BaseURL}}/bitrix/.htaccess.backup"
+      - "{{BaseURL}}/.htaccess.bak"
+      - "{{BaseURL}}/.htaccess.backup"
+    matchers:
+      - type: word
+        name: backup-files
+        words:
+          - "RewriteEngine"
+          - "DirectoryIndex"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+
+  # Компоненты
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/vote.result.new/templates/.default/template.php"
+      - "{{BaseURL}}/bitrix/components/bitrix/forum.topic.list/templates/.default/template.php"
+      - "{{BaseURL}}/bitrix/components/bitrix/blog.post.list/templates/.default/template.php"
+    matchers:
+      - type: word
+        name: component-templates
+        words:
+          - "<?php"
+          - "template"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+
+  # Модули
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/modules/vote/install/index.php"
+      - "{{BaseURL}}/bitrix/modules/forum/install/index.php"
+      - "{{BaseURL}}/bitrix/modules/blog/install/index.php"
+    matchers:
+      - type: word
+        name: module-install
+        words:
+          - "install"
+          - "module"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+
+  # Админка
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/admin/"
+      - "{{BaseURL}}/bitrix/admin/index.php"
+    matchers:
+      - type: word
+        name: admin-panel
+        words:
+          - "admin"
+          - "Bitrix"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")' 

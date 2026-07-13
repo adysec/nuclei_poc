@@ -1,0 +1,53 @@
+
+id: drupal_module-examples-remote-code-execution
+info:
+  name: drupal_module-examples-remote-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "The File Example submodule within the Examples project does not properly sanitize certain filenames as described in SA-CORE-2020-012, along with other related vulnerabilities. Therefore, File Example so is being removed from Examples until a version demonstrating file security best practices can added back in the future."
+  reference:
+    - https://www.drupal.org/sa-contrib-2020-035
+  metadata:
+    security-risk: "Critical 17∕25 AC:Basic/A:User/CI:All/II:All/E:Theoretical/TD:Default"
+    vulnerability: "remote-code-execution"
+    fofa-query: "/sites/all/modules/examples/"
+    google-query: "inurl:'/sites/all/modules/examples/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/examples/examples.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'examples'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '3.0.1')
+         - compare_versions(version, '3.0.0')
+         - compare_versions(version, '8.x-1.0')

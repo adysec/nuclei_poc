@@ -1,0 +1,53 @@
+
+id: drupal_module-better_social_sharing_buttons-cross-site-scripting
+info:
+  name: drupal_module-better_social_sharing_buttons-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to add social sharing buttons to a site. The module doesnt sufficiently sanitize the weight and ratio values entered in the module or block configuration. This vulnerability is mitigated by the fact that an attacker must have a role with the permission administer blocks."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-006
+  metadata:
+    security-risk: "Less critical 8∕25 AC:Basic/A:User/CI:None/II:None/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/better_social_sharing_buttons/"
+    google-query: "inurl:'/sites/all/modules/better_social_sharing_buttons/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/better_social_sharing_buttons/better_social_sharing_buttons.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'better_social_sharing_buttons'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '4.0.2')
+         - compare_versions(version, '4.0.1')
+         - compare_versions(version, '4.0.0')

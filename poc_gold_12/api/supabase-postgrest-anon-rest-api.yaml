@@ -1,0 +1,72 @@
+# gap: supabase-postgrest-anon-rest-api
+id: supabase-postgrest-anon-rest-api
+
+info:
+  name: Supabase REST API Anonymous Schema Discovery (PostgREST OpenAPI)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Supabase project where the PostgREST endpoint at
+    `/rest/v1/` returns the OpenAPI schema document anonymously
+    (with no `apikey` header or with the publishable / anon key
+    leaked from the front-end bundle). The OpenAPI document lists
+    every table that the `anon` PostgREST role can `select` from —
+    a direct enumeration of which user tables have missing or
+    over-permissive Row Level Security.
+
+    Class signal: the OpenAPI envelope contains the PostgREST
+    fingerprint `"info":{"title":"standard public schema"`, which
+    is the literal title PostgREST emits for the public schema
+    OpenAPI. The combination of OpenAPI envelope + that title is
+    unique to PostgREST-fronted Supabase (vanilla PostgREST self-
+    hosted also matches, which is the intended detection surface).
+
+    Operator follow-up: extract each table from the response, then
+    GET `/rest/v1/{table}?select=*&limit=1` to confirm row return.
+  reference:
+    - https://supabase.com/docs/guides/getting-started/api-keys
+    - https://supabase.com/docs/guides/database/postgres/row-level-security
+    - https://postgrest.org/en/stable/references/api/openapi.html
+  tags: custom,exposures,supabase,postgrest,baas,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/rest/v1/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/openapi+json"
+          - "application/json"
+        condition: or
+      - type: word
+        part: body
+        # PostgREST's canonical OpenAPI envelope for the public schema.
+        words:
+          - '"swagger":"2.0"'
+          - '"standard public schema"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: postgrest-tables
+        regex:
+          - '"/([a-zA-Z_][a-zA-Z0-9_]*)"\s*:\s*\{\s*"get"'
+        group: 1
+      - type: regex
+        part: body
+        name: postgrest-rpc-functions
+        regex:
+          - '"/rpc/([a-zA-Z_][a-zA-Z0-9_]*)"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

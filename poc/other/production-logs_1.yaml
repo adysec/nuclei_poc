@@ -1,43 +1,44 @@
-id: production-logs
-
+id: production-logs 1
 info:
-  name: Discover production log files
   author: geeknik
+  name: Discover production log files
   severity: info
-  metadata:
-    max-request: 3
   tags: exposure,logs,rails
+requests:
+- attack: sniper
+  extractors:
+  - name: last_modified
+    part: header
+    regex:
+    - Last-Modified:.*
+    type: regex
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - Connecting to database specified by database.yml
+    - Started GET
+  - status:
+    - 200
+    type: status
+  - negative: true
+    part: header
+    type: word
+    words:
+    - text/html
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /log/production.log HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/log/production.log"
-      - "{{BaseURL}}/logs/production.log"
-      - "{{BaseURL}}/production.log"
+    Host: {{Subdomains}}
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "Connecting to database specified by database.yml"
-          - "Started GET"
-        condition: and
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: status
-        status:
-          - 200
+    Accept-Encoding: gzip, deflate
 
-      - type: word
-        part: header
-        words:
-          - "text/html"
-        negative: true
+    Accept: */*
 
-    extractors:
-      - type: regex
-        name: last_modified
-        part: header
-        regex:
-          - 'Last-Modified:.*'
-
-# digest: 4a0a00473045022100a38713583e2a55ad0343c4115da819838f3f4cd0ebcef23f58e7a5541c1e150302202cd2dd72c9f7bcc7dbbd00619a14637be21dfd8cc1950f1d7cd9b035ddca9d8f:922c64590222798bb761d5b6d8e72950
+    '
+  threads: 100

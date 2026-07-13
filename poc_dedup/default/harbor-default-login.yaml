@@ -1,0 +1,61 @@
+flow: http(1) && http(2)
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(content_type, "application/json")
+    - contains(body, "auth_mode")
+    internal: true
+    type: dsl
+  raw:
+  - 'GET /api/v2.0/systeminfo HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Accept: application/json
+
+    '
+- matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(content_type, "application/json")
+    - contains_all(body, "\"username\"", "\"admin\"", "\"sysadmin_flag\"")
+    type: dsl
+  raw:
+  - 'GET /api/v2.0/users/current HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Authorization: Basic {{base64(username + ":" + password)}}
+
+    Accept: application/json
+
+    '
+id: harbor-default-login
+info:
+  author: 0x_Akoko
+  description: 'Detected: The Harbor container registry was found to be using default
+    administrator credentials (admin:Harbor12345). An attacker could have gained full
+    administrative access to manage registries, projects, users, and stored container
+    images.
+
+    '
+  metadata:
+    fofa-query: title="Harbor"
+    max-request: 2
+    product: harbor
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)Harbor"})
+    shodan-query: http.title:"Harbor"
+    vendor: goharbor
+    verified: true
+  name: Harbor Registry - Default Admin Credentials
+  reference:
+  - https://goharbor.io/docs/1.10/install-config/run-installer-script/
+  - https://goharbor.io/docs/latest/administration/managing-users/
+  severity: high
+  tags: harbor,default-login,auth,registry,vuln
+variables:
+  password: Harbor12345
+  username: admin

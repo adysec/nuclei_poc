@@ -1,0 +1,51 @@
+id: dologin-16bce371-b524-48eb-8537-3f9df802abd3
+
+info:
+  name: >
+    DoLogin Security <= 4.3 - Unauthenticated Authentication Bypass via Insufficient Randomness via 'dologin' Parameter Weak PRNG Token
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/16bce371-b524-48eb-8537-3f9df802abd3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/dologin/"
+    google-query: inurl:"/wp-content/plugins/dologin/"
+    shodan-query: 'http.html:"wp-content/plugins/dologin/"'
+  tags: cve,wordpress,wp-plugin,dologin,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/dologin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "dologin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.3')

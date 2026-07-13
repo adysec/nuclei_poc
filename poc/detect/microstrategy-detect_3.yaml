@@ -1,58 +1,42 @@
-id: microstrategy-detect
-
+id: microstrategy-detect 3
 info:
-  name: MicroStrategy Instances Detection Template
   author: philippedelteil,Retr02332
-  severity: info
   description: Detect if MicroStrategy instances exist in your URLS
-  metadata:
-    max-request: 16
-  tags: microstrategy,panel,tech
+  name: MicroStrategy Instances Detection Template
+  severity: info
+  tags: microstrategy,panel
+requests:
+- attack: sniper
+  extractors:
+  - group: 1
+    part: body
+    regex:
+    - ProductHelp/([0-9.A-Z]+)
+    type: regex
+  - group: 1
+    part: body
+    regex:
+    - WELCOME. MicroStrategy ([0-9]+)
+    type: regex
+  matchers:
+  - condition: or
+    dsl:
+    - contains(body, "MicroStrategy, Incorporated.")
+    - contains(body, "microstrategy.servletName")
+    - contains(body, "mstrHiddenInput")
+    type: dsl
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /MicroStrategy/servlet/taskProc/ HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/{{path}}"
+    Host: {{Subdomains}}
 
-    payloads:
-      path:
-        - MicroStrategy/servlet/mstrWebAdmin/
-        - MicroStrategy/servlet/mstrWebAdmin
-        - MicroStrategy/servlet/taskProc/
-        - MicroStrategy/servlet/taskProc
-        - MicroStrategy/servlet/mstrWeb/
-        - MicroStrategy/servlet/mstrWeb
-        - MicroStrategy/
-        - MicroStrategy
-        - servlet/mstrWebAdmin/
-        - servlet/mstrWebAdmin
-        - servlet/taskProc/
-        - servlet/taskProc
-        - servlet/mstrWeb/
-        - servlet/mstrWeb
-        - asp/Main.aspx
-        - MicroStrategy/asp
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-    stop-at-first-match: true
-    matchers:
-      - type: dsl
-        condition: or
-        dsl:
-          - 'contains(body, "MicroStrategy, Incorporated.")'
-          - 'contains(body, "microstrategy.servletName")'
-          - 'contains(body, "mstrHiddenInput")'
+    Accept-Encoding: gzip, deflate
 
-    extractors:
-      - type: regex
-        part: body
-        group: 1
-        regex:
-          - 'ProductHelp/([0-9.A-Z]+)'
+    Accept: */*
 
-      - type: regex
-        part: body
-        group: 1
-        regex:
-          - 'WELCOME. MicroStrategy ([0-9]+)'
-
-# digest: 4b0a00483046022100bfea2298db5ce833db3230dd2b2c0a0287cc5b720cebd118c25578a1b658f6680221009da1b968a466fac0fe362e98d24738b89178daea8fde2789f0881b3f33d81717:922c64590222798bb761d5b6d8e72950
+    '
+  threads: 100

@@ -1,59 +1,49 @@
-id: woo-variation-swatches
+id: wordpress-woo-variation-swatches
 
 info:
-  name: >
-    Variation Swatches for WooCommerce <= 1.0.61 - Reflected Cross-Site Scripting
-  author: topscoder
-  severity: medium
-  description: >
-    
+  name: Variation Swatches for WooCommerce Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f9c3ab75-93fb-4c63-a430-61d02a031e46?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/woo-variation-swatches/
   metadata:
-    fofa-query: "wp-content/plugins/woo-variation-swatches/"
-    google-query: inurl:"/wp-content/plugins/woo-variation-swatches/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,woo-variation-swatches,medium
+    plugin_namespace: woo-variation-swatches
+    wpscan: https://wpscan.com/plugin/woo-variation-swatches
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/woo-variation-swatches/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/woo-variation-swatches.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "woo-variation-swatches"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 1.0.62')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

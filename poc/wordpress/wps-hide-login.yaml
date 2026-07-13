@@ -1,59 +1,49 @@
-id: wps-hide-login
+id: wordpress-wps-hide-login
 
 info:
-  name: >
-    WPS Hide Login <= 1.9.11 - Hidden Login Page Location Disclosure
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: WPS Hide Login Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bb81e90f-8da4-483c-9bc1-18b6c016df5e?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/wps-hide-login/
   metadata:
-    fofa-query: "wp-content/plugins/wps-hide-login/"
-    google-query: inurl:"/wp-content/plugins/wps-hide-login/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,wps-hide-login,low
+    plugin_namespace: wps-hide-login
+    wpscan: https://wpscan.com/plugin/wps-hide-login
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/wps-hide-login/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/wps-hide-login.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "wps-hide-login"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.9.11')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

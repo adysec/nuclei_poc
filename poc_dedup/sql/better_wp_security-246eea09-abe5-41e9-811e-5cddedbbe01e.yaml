@@ -1,0 +1,59 @@
+id: better_wp_security-246eea09-abe5-41e9-811e-5cddedbbe01e
+
+info:
+  name: >
+    iThemes Security <= 5.3.5 - Missing Capabilities Check
+  author: topscoder
+  severity: low
+  description: >
+    The iThemes Security plugin for WordPress is vulnerable to authorization bypass due to a missing capability check on the wp_ajax_itsec_file_change_warning_ajax function in versions up to, and including, 5.3.5. This makes it possible for authenticated attackers to perform administrative actions.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/246eea09-abe5-41e9-811e-5cddedbbe01e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 7.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/better-wp-security/"
+    google-query: inurl:"/wp-content/plugins/better-wp-security/"
+    shodan-query: 'http.html:"wp-content/plugins/better-wp-security/"'
+  tags: cve,wordpress,wp-plugin,better-wp-security,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/better-wp-security/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "better-wp-security"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.3.6')

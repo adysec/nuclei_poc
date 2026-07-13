@@ -1,0 +1,61 @@
+id: wordpress-ff4b47d8-28c1-4706-91d9-0285f419147e
+
+info:
+  name: >
+    WordPress Core < 6.0.3 - SQL Injection via WP_Date_Query
+  author: topscoder
+  severity: critical
+  description: >
+    WordPress Core is vulnerable to SQL Injection in versions up to 6.0.3. This is due to insufficient escaping on where “AND” and “OR” present in the query. This may make it possible for attackers to achieve SQL Injection when another plugin or theme is installed on the site that allows WP_Date_Query to be used insecurely.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ff4b47d8-28c1-4706-91d9-0285f419147e?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,critical,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_js, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_css, '>= 6.0', '<= 6.0.2')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

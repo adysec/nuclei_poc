@@ -1,0 +1,43 @@
+http:
+- extractors:
+  - group: 1
+    internal: true
+    name: version
+    part: body
+    regex:
+    - '"version"\s*:\s*"([0-9]+\.[0-9]+\.[0-9]+)'
+    type: regex
+  matchers:
+  - dsl:
+    - len(version) > 0
+    type: dsl
+  - condition: and
+    dsl:
+    - compare_versions(version, "< 11.0.0") || compare_versions(version, ">= 12.0.0",
+      "< 14.0.0")
+    - contains(tolower(body_1), "forgejo")
+    type: dsl
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  - '{{BaseURL}}/api/v1/version'
+id: forgejo-eol
+info:
+  author: Shivam Kamboj
+  description: 'Detected Forgejo versions that have reached End-of-Life (EOL) and
+    no longer receive security updates.
+
+    '
+  metadata:
+    fofa-query: title="Forgejo"
+    max-request: 1
+    shodan-query: http.title:"Forgejo"
+    verified: true
+  name: Forgejo End-of-Life - Detect
+  reference:
+  - https://endoflife.date/forgejo
+  - https://forgejo.org/docs/latest/admin/upgrade/#release-life-cycle
+  - https://forgejo.org/docs/next/user/versions/
+  severity: info
+  tags: eol,forgejo,tech

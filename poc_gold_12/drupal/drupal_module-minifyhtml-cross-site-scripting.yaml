@@ -1,0 +1,53 @@
+
+id: drupal_module-minifyhtml-cross-site-scripting
+info:
+  name: drupal_module-minifyhtml-cross-site-scripting
+  author: me
+  severity: medium
+  description: "Carefully crafted input by an attacker will not be sanitized by this module, which can result in a script injection."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-032
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Basic/A:None/CI:None/II:None/E:Proof/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/minifyhtml/"
+    google-query: "inurl:'/sites/all/modules/minifyhtml/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/minifyhtml/minifyhtml.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'minifyhtml'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 1.13.0 || >=2.0.0 <= 2.0.3')

@@ -1,57 +1,49 @@
-id: advanced-custom-fields
+id: wordpress-advanced-custom-fields
 
 info:
-  name: "Advanced Custom Fields <= 6.1.5 - Reflected Cross-Site Scripting via 'post_status'"
-  author: topscoder
-  severity: medium
-  description: "The Advanced Custom Fields plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'post_status' parameter in versions up to, and including, 6.1.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  name: Advanced Custom Fields Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://plugins.svn.wordpress.org/advanced-custom-fields/tags/6.1.6/readme.txt
-    - https://plugins.trac.wordpress.org/changeset/2908095/advanced-custom-fields/trunk/includes/admin/admin-internal-post-type-list.php
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
-    cvss-score: 6.1
-    cve-id:
+    - https://wordpress.org/plugins/advanced-custom-fields/
   metadata:
-    fofa-query: "wp-content/plugins/advanced-custom-fields/"
-    google-query: inurl:"/wp-content/plugins/advanced-custom-fields/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,advanced-custom-fields,medium
+    plugin_namespace: advanced-custom-fields
+    wpscan: https://wpscan.com/plugin/advanced-custom-fields
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/advanced-custom-fields/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/advanced-custom-fields.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "advanced-custom-fields"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 6.1.5')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

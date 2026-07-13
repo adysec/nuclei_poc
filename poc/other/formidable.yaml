@@ -1,59 +1,49 @@
-id: formidable
+id: wordpress-formidable
 
 info:
-  name: >
-    Formidable Form Builder < 2.05.03 - Unauthenticated Information Disclosure
-  author: topscoder
-  severity: medium
-  description: >
-    The Formidable Form Builder plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 2.05.03 via the frm_forms_preview AJAX action. This makes it possible for unauthenticated attackers to export all of the form entries for a given form.
+  name: Formidable Forms – Contact Form, Survey, Quiz, Calculator & Custom Form Builder Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c7600fe1-94e4-4e3e-a9a6-ff3589813715?source=api-prod
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
-    cvss-score: 5.3
-    cve-id: 
+    - https://wordpress.org/plugins/formidable/
   metadata:
-    fofa-query: "wp-content/plugins/formidable/"
-    google-query: inurl:"/wp-content/plugins/formidable/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,formidable,medium
+    plugin_namespace: formidable
+    wpscan: https://wpscan.com/plugin/formidable
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/formidable/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/formidable.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "formidable"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 2.05.03')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

@@ -1,0 +1,59 @@
+id: cloudflare-28e82f60f6b76d134f18ada9464fce6a
+
+info:
+  name: >
+    Cloudflare < 1.3.21 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b8d63789-16b3-443b-8dcb-67b1e5e25d20?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/cloudflare/"
+    google-query: inurl:"/wp-content/plugins/cloudflare/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,cloudflare,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/cloudflare/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "cloudflare"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.3.21')

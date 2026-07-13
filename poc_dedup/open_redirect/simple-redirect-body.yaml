@@ -1,0 +1,46 @@
+http:
+- fuzzing:
+  - fuzz:
+    - https://{{redirect}}
+    mode: single
+    part: body
+  - fuzz:
+    - https://{{redirect}}
+    mode: single
+    part: query
+    values:
+    - https?://
+  matchers:
+  - part: header
+    regex:
+    - (?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)evil\.com\/?(\/|[^.].*)?$
+    type: regex
+  - status:
+    - 301
+    - 302
+    - 303
+    - 304
+    - 306
+    - 307
+    - 308
+    type: status
+  matchers-condition: and
+  max-redirects: 3
+  payloads:
+    redirect:
+    - oast.me
+  pre-condition:
+  - dsl:
+    - method == "POST"
+    - method == "PUT"
+    - method == "PATCH"
+    - method == "DELETE"
+    type: dsl
+  redirects: true
+  stop-at-first-match: true
+id: simple-redirect-body
+info:
+  author: princechaddha,AmirHossein Raeisi
+  name: Open Redirect Detection
+  severity: medium
+  tags: fuzzing-req-body,fuzzing-req-redirect,redirect,dast

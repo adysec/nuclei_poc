@@ -1,58 +1,48 @@
-id: unlimited-elements-for-elementor
+id: wordpress-unlimited-elements-for-elementor
 
 info:
-  name: >
-    Unlimited Elements For Elementor (Free Widgets, Addons, Templates) <= 1.5.66 - Authenticated (Contributor+) Arbitrary File Upload
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Unlimited Elements For Elementor (Free Widgets, Addons, Templates) Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ce1ac711-6026-49ef-b66b-2cc199697942?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/unlimited-elements-for-elementor/
   metadata:
-    fofa-query: "wp-content/plugins/unlimited-elements-for-elementor/"
-    google-query: inurl:"/wp-content/plugins/unlimited-elements-for-elementor/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,unlimited-elements-for-elementor,low
+    plugin_namespace: unlimited-elements-for-elementor
+    wpscan: https://wpscan.com/plugin/unlimited-elements-for-elementor
+  tags: tech,wordpress,wp-plugin,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/unlimited-elements-for-elementor/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/unlimited-elements-for-elementor.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "unlimited-elements-for-elementor"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.5.66')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

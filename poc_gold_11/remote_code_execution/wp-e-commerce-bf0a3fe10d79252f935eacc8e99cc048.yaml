@@ -1,0 +1,59 @@
+id: wp-e-commerce-bf0a3fe10d79252f935eacc8e99cc048
+
+info:
+  name: "WP eCommerce <= 3.8.14.3 - Missing Authorization"
+  author: topscoder
+  severity: high
+  description: "The WP eCommerce plugin for WordPress is vulnerable to authorization bypass due to missing capability checks on various functions called via AJAX actions and admin_init hooks in versions up to, and including, 3.8.14.3. This makes it possible for unauthenticated attackers to perform a plethora of actions like exporting sensitive user information, modifying the plugin's settings, and more."
+  reference:
+    - https://blog.sucuri.net/2014/10/security-advisory-medium-severity-wp-ecommerce-wordpress-plugin.html
+    - https://github.com/wp-e-commerce/WP-e-Commerce/commit/390c2ecc68027fbf21fb5d99a556d88c7bd8c05b
+    - https://wpscan.com/vulnerability/648da865-5b7e-4ca8-8252-18ae54dab7e5
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-wp-ecommerce-security-bypass-3-8-14-3/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-e-commerce/"
+    google-query: inurl:"/wp-content/plugins/wp-e-commerce/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-e-commerce,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-e-commerce/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-e-commerce"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.8.14.3')

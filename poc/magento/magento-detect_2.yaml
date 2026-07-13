@@ -1,38 +1,38 @@
-id: magento-detect
-
+id: magento-detect 2
 info:
-  name: Magento Detect
   author: TechbrunchFR
-  severity: info
   description: Identify Magento
-  reference:
-    - https://devdocs.magento.com/guides/v2.4/graphql/
-  metadata:
-    max-request: 2
-    verified: true
-    shodan-query: http.component:"Magento"
-  tags: magento,tech
+  name: Magento Detect
+  severity: info
+  tags: magento
+requests:
+- attack: sniper
+  matchers:
+  - condition: and
+    dsl:
+    - contains(tolower(all_headers), "x-magento")
+    - status_code == 200
+    type: dsl
+  - condition: and
+    dsl:
+    - contains(body, "graphql-authorization")
+    - contains(body, "The current customer")
+    - status_code == 200
+    type: dsl
+  matchers-condition: or
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}
+    HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - '{{BaseURL}}'
-      - '{{BaseURL}}/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}'
+    Host: {{Subdomains}}
 
-      # There might be a better way to do that, the idea of this check is that Magento might be behind some kind of proxy when
-      # consumed by a SPA/PWA app, so we need a valid GraphQL query from Magento to check reference[1]
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-    matchers-condition: or
-    matchers:
-      - type: dsl
-        dsl:
-          - 'contains(tolower(header), "x-magento")'
-          - 'status_code == 200'
-        condition: and
+    Accept-Encoding: gzip, deflate
 
-      - type: dsl
-        dsl:
-          - 'contains(body, "graphql-authorization")'
-          - 'contains(body, "The current customer")'
-          - 'status_code == 200'
-        condition: and
+    Accept: */*
+
+    '
+  threads: 100

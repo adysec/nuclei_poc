@@ -1,0 +1,59 @@
+id: cyclone_slider-96bc0d9b-1f03-48d4-aa99-954e92e77c04
+
+info:
+  name: >
+    Cyclone Slider <= 3.2.0 - Authenticated (Admin+) Arbitrary File Upload
+  author: topscoder
+  severity: low
+  description: >
+    The Cyclone Slider Plugin is vulnerable to Remote Code Execution via the slider import functionality in versions up to, and including, 3.2.0, due to the use of the 'createfromimage' function as the sole method of validating file type. This allows authenticated users with administrative privileges to upload and extract zip files containing polyglot PHP webshells that are also valid images.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/96bc0d9b-1f03-48d4-aa99-954e92e77c04?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/cyclone-slider/"
+    google-query: inurl:"/wp-content/plugins/cyclone-slider/"
+    shodan-query: 'http.html:"wp-content/plugins/cyclone-slider/"'
+  tags: cve,wordpress,wp-plugin,cyclone-slider,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/cyclone-slider/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "cyclone-slider"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.0')

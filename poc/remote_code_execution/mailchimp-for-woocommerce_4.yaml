@@ -1,49 +1,59 @@
-id: wordpress-mailchimp-for-woocommerce
+id: mailchimp-for-woocommerce
 
 info:
-  name: Mailchimp for WooCommerce Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    Mailchimp for WooCommerce <= 2.7.1 - Authenticated (Admin+) Server-Side Request Forgery
+  author: topscoder
+  severity: low
+  description: >
+    
   reference:
-    - https://wordpress.org/plugins/mailchimp-for-woocommerce/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/109427de-3b8a-46cc-a888-6fea4f72a31a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
   metadata:
-    plugin_namespace: mailchimp-for-woocommerce
-    wpscan: https://wpscan.com/plugin/mailchimp-for-woocommerce
-  tags: tech,wordpress,wp-plugin,top-200
+    fofa-query: "wp-content/plugins/mailchimp-for-woocommerce/"
+    google-query: inurl:"/wp-content/plugins/mailchimp-for-woocommerce/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,mailchimp-for-woocommerce,low
 
 http:
   - method: GET
-
+    redirects: true
+    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/mailchimp-for-woocommerce/readme.txt"
 
-    payloads:
-      last_version: helpers/wordpress/plugins/mailchimp-for-woocommerce.txt
-
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "mailchimp-for-woocommerce"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.7.1')

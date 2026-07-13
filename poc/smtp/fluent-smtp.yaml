@@ -1,59 +1,49 @@
-id: fluent-smtp
+id: wordpress-fluent-smtp
 
 info:
-  name: >
-    FluentSMTP – WP SMTP Plugin with Amazon SES, SendGrid, MailGun, Postmark, Google and Any SMTP Provider <= 2.2.82 - Unauthenticated PHP Object Injection
-  author: topscoder
-  severity: critical
-  description: >
-    
+  name: FluentSMTP – WP SMTP Plugin with Amazon SES, SendGrid, MailGun, Postmark, Google and Any SMTP Provider Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a3deedc4-b939-4c54-8376-95d3728872d4?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/fluent-smtp/
   metadata:
-    fofa-query: "wp-content/plugins/fluent-smtp/"
-    google-query: inurl:"/wp-content/plugins/fluent-smtp/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,fluent-smtp,critical
+    plugin_namespace: fluent-smtp
+    wpscan: https://wpscan.com/plugin/fluent-smtp
+  tags: tech,wordpress,wp-plugin,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/fluent-smtp/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/fluent-smtp.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "fluent-smtp"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 2.2.82')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022100f1f543d798adc2ab303ceb820e2ae24a256276cbbb609e4dba2979bdbd98ec0402204cc2eb58427732e99527ad3f060c30b699e1bd3b181cedccd9aaf7764aa3acf8:922c64590222798bb761d5b6d8e72950

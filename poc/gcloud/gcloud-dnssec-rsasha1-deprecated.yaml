@@ -1,0 +1,68 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: managedZones
+    type: json
+  source: 'gcloud dns managed-zones list --project $projectId --format="json(name,visibility)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Deprecated RSASHA1 Algorithm used in DNSSEC for Managed Zone: " + managedZoneName
+      + " in Project: " + projectId'
+    type: dsl
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - rsasha1
+    - zoneSigning
+  source: 'gcloud dns managed-zones describe $managedZoneName --project $projectId
+    --format="json(dnssecConfig)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let managedZone of iterate(template.managedZones)){\n\
+  \    set(\"managedZoneName\", managedZone)\n    code(3)\n  }\n}\n"
+id: gcloud-dnssec-rsasha1-deprecated
+info:
+  author: princechaddha
+  description: 'Ensure that Domain Name System Security Extensions (DNSSEC) feature
+    is not using the deprecated RSASHA1 algorithm for the Zone-Signing Key (ZSK) associated
+    with your public DNS managed zone.
+
+    '
+  impact: 'Using RSASHA1 as the zone-signing algorithm in DNSSEC can expose DNS data
+    to increased risks of being compromised due to weaker cryptographic strength.
+
+    '
+  name: DNSSEC RSASHA1 Algorithm Deprecated
+  reference:
+  - https://cloud.google.com/dns/docs/dnssec-configuring
+  remediation: 'Update the DNSSEC configuration to use a stronger, more secure signing
+    algorithm like RSASHA256 or ECDSAP256SHA256 for your DNS managed zones.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,dns,dnssec,gcp-cloud-config,discovery
+self-contained: true

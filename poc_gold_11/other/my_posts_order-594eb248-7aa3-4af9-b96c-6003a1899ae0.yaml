@@ -1,0 +1,51 @@
+id: my_posts_order-594eb248-7aa3-4af9-b96c-6003a1899ae0
+
+info:
+  name: >
+    My Post Order <= 1.2.1.1 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/594eb248-7aa3-4af9-b96c-6003a1899ae0?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/my-posts-order/"
+    google-query: inurl:"/wp-content/plugins/my-posts-order/"
+    shodan-query: 'http.html:"wp-content/plugins/my-posts-order/"'
+  tags: cve,wordpress,wp-plugin,my-posts-order,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/my-posts-order/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "my-posts-order"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.1.1')

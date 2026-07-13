@@ -1,0 +1,51 @@
+id: sendmachine-7889e071-84a8-46ec-abe5-5c98980ce275
+
+info:
+  name: >
+    Sendmachine for WordPress <= 1.0.20 - Unauthenticated SMTP Hijack to Privilege Escalation via manage_admin_requests
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7889e071-84a8-46ec-abe5-5c98980ce275?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sendmachine/"
+    google-query: inurl:"/wp-content/plugins/sendmachine/"
+    shodan-query: 'http.html:"wp-content/plugins/sendmachine/"'
+  tags: cve,wordpress,wp-plugin,sendmachine,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sendmachine/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sendmachine"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.20')

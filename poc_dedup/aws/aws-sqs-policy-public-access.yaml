@@ -1,0 +1,64 @@
+# gap: aws-sqs-policy-public-access
+id: aws-sqs-policy-public-access
+
+info:
+  name: AWS SQS Queue Policy Grants Public Receive Access
+  author: TyrusRC
+  severity: high
+  description: |
+    Sends an unsigned POST ?Action=ReceiveMessage to an SQS queue URL
+    and matches the ReceiveMessageResponse XML envelope returned by
+    SQS. A successful (HTTP 200) response without SigV4 signing
+    proves the queue policy grants AWS Principal "*" public access,
+    allowing arbitrary parties to drain or read messages. The
+    template requires the operator to target the SQS queue URL
+    directly (https://sqs.{region}.amazonaws.com/{account}/{queue});
+    a DSL host gate enforces the canonical SQS hostname pattern so
+    this only fires against real SQS endpoints.
+  reference:
+    - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/aws-security/aws-unauthenticated-enum-access/aws-sqs-unauthenticated-enum/README.md
+  tags: custom,cloud,aws,sqs,misconfig
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/?Action=ReceiveMessage&Version=2012-11-05"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(host, "sqs.") && contains(host, ".amazonaws.com")'
+      - type: word
+        part: body
+        case-insensitive: true
+        condition: and
+        words:
+          - "<ReceiveMessageResponse"
+      - type: word
+        part: body
+        case-insensitive: true
+        condition: or
+        words:
+          - "<ReceiveMessageResult"
+          - "<RequestId"
+
+    extractors:
+      - type: regex
+        part: body
+        name: request-id
+        regex:
+          - '<RequestId>([a-f0-9-]+)</RequestId>'
+        group: 1
+      - type: regex
+        part: body
+        name: message-bodies
+        regex:
+          - '<Body>([^<]+)</Body>'
+        group: 1
+      - type: dsl
+        dsl:
+          - '"SQS queue URL: " + host + path'

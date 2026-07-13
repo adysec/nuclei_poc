@@ -1,0 +1,59 @@
+id: faq_wd-bd879bd9-d195-4146-b9dc-3ba7252645de
+
+info:
+  name: >
+    10WebFAQ <= 1.0.14 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The10WebFAQ plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.0.14 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bd879bd9-d195-4146-b9dc-3ba7252645de?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/faq-wd/"
+    google-query: inurl:"/wp-content/plugins/faq-wd/"
+    shodan-query: 'http.html:"wp-content/plugins/faq-wd/"'
+  tags: cve,wordpress,wp-plugin,faq-wd,high,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/faq-wd/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "faq-wd"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.14')

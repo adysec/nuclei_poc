@@ -1,0 +1,59 @@
+id: wp-memory-9f8d91fab8829b2f1c6b3f44fee68a1a
+
+info:
+  name: >
+    Memory Usage <= 3.98 - Cross-Site Request Forgery to Limited Plugin Installation via wpmemory_install_plugin Function
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cbaf06b2-9ac3-4882-9212-fdcecdc5fb8c?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-memory/"
+    google-query: inurl:"/wp-content/plugins/wp-memory/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-memory,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-memory/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-memory"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.98')

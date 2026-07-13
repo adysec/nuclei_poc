@@ -1,59 +1,49 @@
-id: duplicate-page
+id: wordpress-duplicate-page
 
 info:
-  name: >
-    Duplicate Page Plugins <= (Various Versions) - SQL Injection
-  author: topscoder
-  severity: critical
-  description: >
-    
+  name: Duplicate Page Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/76044985-477c-4d62-aec3-1905add0a9e2?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/duplicate-page/
   metadata:
-    fofa-query: "wp-content/plugins/duplicate-page/"
-    google-query: inurl:"/wp-content/plugins/duplicate-page/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,duplicate-page,critical
+    plugin_namespace: duplicate-page
+    wpscan: https://wpscan.com/plugin/duplicate-page
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/duplicate-page/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/duplicate-page.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "duplicate-page"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 3.4')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

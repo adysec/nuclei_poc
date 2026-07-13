@@ -1,0 +1,57 @@
+id: memcached-detect
+
+info:
+  name: Memcached Service - Detect
+  author: zan8in
+  severity: info
+  verified: true
+  description: |-
+    Memcached service was detected.
+  tags: network,memcached,fingerprint
+  created: 2026/01/09
+
+set:
+  host: request.url.host
+rules:
+  r0:
+    request:
+      type: tcp
+      host: "{{host}}"
+      steps:
+        - write:
+            data: "version\r\n"
+        - read:
+            read-size: 4096
+            read-timeout: 3
+            read-until: "\r\n"
+    expression: response.raw.bcontains(b"VERSION")
+    extractors:
+      - type: regex
+        extractor:
+          ext: '"VERSION[^0-9]{0,20}(?P<memcached>[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)".bsubmatch(response.raw)'
+          memcached: ext["memcached"]
+  r1:
+    request:
+      type: tcp
+      host: "{{host}}"
+      steps:
+        - write:
+            data: "stats\r\n"
+        - read:
+            read-size: 20480
+            read-timeout: 3
+            read-until: "END\r\n"
+    expression: response.raw.ibcontains(b"STAT version") || response.raw.ibcontains(b"STAT pid")
+  r2:
+    request:
+      type: tcp
+      host: "{{host}}"
+      steps:
+        - write:
+            data: "800b000000000000000000000000000000000000000000"
+            data-type: hex
+        - read:
+            read-size: 4096
+            read-timeout: 3
+    expression: response.raw.bstartsWith(b"\x81\x0b")
+expression: r0() || r1() || r2()

@@ -1,0 +1,59 @@
+id: better-wp-security-9544c21b8cfb436232b44d6dba55edff
+
+info:
+  name: >
+    iThemes Security <= 5.6.1 - Sensitive Information Exposure via Diff Response
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0a49c8df-0524-41af-b095-b5953e6f68d8?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/better-wp-security/"
+    google-query: inurl:"/wp-content/plugins/better-wp-security/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,better-wp-security,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/better-wp-security/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "better-wp-security"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.6.1')

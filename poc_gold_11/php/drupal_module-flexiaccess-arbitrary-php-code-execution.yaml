@@ -1,0 +1,56 @@
+
+id: drupal_module-flexiaccess-arbitrary-php-code-execution
+info:
+  name: drupal_module-flexiaccess-arbitrary-php-code-execution
+  author: me
+  severity: medium
+  description: "The Flexi Access module will provide a simple and flexible interface to the ACL (Access Control List) module. It will let you set up and mange ACLs naming individual users that are allowed access to a particular node. The module processes user input in a way that could be unsafe. This can lead to Remote Code Execution via Object Injection. This vulnerability is mitigated by the fact that known exploit paths require an attacker to have a combination of permissions provided by the module; for example access flexiaccess and flexiaccess view. See _flexiaccess_node_access() for details. The administer flexiaccess permission alone does not grant access to the vulnerable functionality. This Security Advisory is being released in coordination with SA-CONTRIB-2023-034 for the ACL module, on which Flexi Access depends."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-036
+  metadata:
+    security-risk: "Critical 17 ∕ 25 AC:Basic/A:Admin/CI:All/II:All/E:Theoretical/TD:All"
+    vulnerability: "arbitrary-php-code-execution"
+    fofa-query: "/sites/all/modules/flexiaccess/"
+    google-query: "inurl:'/sites/all/modules/flexiaccess/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/flexiaccess/flexiaccess.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'flexiaccess'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '9.x-99.99')

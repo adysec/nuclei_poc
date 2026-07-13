@@ -1,0 +1,52 @@
+id: aws-cognito-pool-id-exposure
+
+info:
+  name: AWS Cognito Exposed Pool IDs Detection
+  author: Your Name
+  severity: high
+  description: This template detects exposed AWS Cognito Identity Pool IDs, User Pool IDs, and Client IDs in HTTP responses, JavaScript files, HTML meta tags, and JWT tokens.
+  tags: aws,cognito
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/static/js/*.js"
+      - "{{BaseURL}}/config*.json"
+      - "{{BaseURL}}/token"
+      - "{{BaseURL}}/.well-known/openid-configuration"
+    
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'identityPoolId'
+          - 'userPoolId'
+          - 'clientId'
+      - type: regex
+        part: body
+        regex:
+          - '(us|ap|ca|eu|sa)-[a-z]+-\d:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
+      - type: word
+        part: header
+        words:
+          - 'Authorization'
+          - 'Bearer'
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '(us|ap|ca|eu|sa)-[a-z]+-\d:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+          - 'application/javascript'

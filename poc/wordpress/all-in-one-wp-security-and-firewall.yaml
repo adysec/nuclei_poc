@@ -1,57 +1,49 @@
-id: all-in-one-wp-security-and-firewall
+id: wordpress-all-in-one-wp-security-and-firewall
 
 info:
-  name: "All In One WP Security & Firewall <= 4.1.2 - Captcha Bypass"
-  author: topscoder
-  severity: medium
-  description: "The All In One WP Security & Firewall for WordPress is vulnerable to Captcha Bypass via multiple routes, allowing automated login attempts to proceed"
+  name: All-In-One Security (AIOS) – Security and Firewall Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://sumofpwn.nl/advisory/2016/multiple_vulnerabilities_in_all_in_one_wp_security___firewall_plugin_login_captcha.html
-    - https://seclists.org/fulldisclosure/2016/Jul/88
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
-    cvss-score: 5.3
-    cve-id:
+    - https://wordpress.org/plugins/all-in-one-wp-security-and-firewall/
   metadata:
-    fofa-query: "wp-content/plugins/all-in-one-wp-security-and-firewall/"
-    google-query: inurl:"/wp-content/plugins/all-in-one-wp-security-and-firewall/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,all-in-one-wp-security-and-firewall,medium
+    plugin_namespace: all-in-one-wp-security-and-firewall
+    wpscan: https://wpscan.com/plugin/all-in-one-wp-security-and-firewall
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/all-in-one-wp-security-and-firewall/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/all-in-one-wp-security-and-firewall.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "all-in-one-wp-security-and-firewall"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 4.1.2')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

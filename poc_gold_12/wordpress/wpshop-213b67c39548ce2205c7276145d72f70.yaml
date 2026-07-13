@@ -1,0 +1,59 @@
+id: wpshop-213b67c39548ce2205c7276145d72f70
+
+info:
+  name: >
+    WP shop <= 2.6.0 - Cross-Site Request Forgery to Arbitrary File Upload
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/19eec720-a223-422c-8e39-298a5c27b866?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpshop/"
+    google-query: inurl:"/wp-content/plugins/wpshop/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wpshop,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpshop/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpshop"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.6.0')

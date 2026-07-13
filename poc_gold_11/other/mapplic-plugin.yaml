@@ -1,0 +1,58 @@
+id: mapplic-plugin
+
+info:
+  name: >
+    Mapplic Lite and Mapplic <= (Various Versions) - Server Side Request Forgery to Cross-Site Scirpting
+  author: topscoder
+  severity: high
+  description: >
+    The Mapplic and Mapplic Lite plugins for WordPress are vulnerable to Server-Side Request Forgery in versions up to, and including 6.1, 1.0 respectively. This makes it possible for attackers to forgery requests coming from a vulnerable site's server and ultimately perform an XSS attack if requesting an SVG file.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5aacabb5-94af-485a-af24-e84db3e3726f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mapplic/"
+    google-query: inurl:"/wp-content/plugins/mapplic/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,mapplic,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mapplic/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mapplic"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.2')

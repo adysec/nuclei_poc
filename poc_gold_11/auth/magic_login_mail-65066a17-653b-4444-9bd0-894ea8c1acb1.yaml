@@ -1,0 +1,51 @@
+id: magic_login_mail-65066a17-653b-4444-9bd0-894ea8c1acb1
+
+info:
+  name: >
+    Magic Login Mail or QR Code <= 2.05 - Unauthenticated Privilege Escalation via Insecure QR Code File Storage
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/65066a17-653b-4444-9bd0-894ea8c1acb1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/magic-login-mail/"
+    google-query: inurl:"/wp-content/plugins/magic-login-mail/"
+    shodan-query: 'http.html:"wp-content/plugins/magic-login-mail/"'
+  tags: cve,wordpress,wp-plugin,magic-login-mail,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/magic-login-mail/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "magic-login-mail"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.05')

@@ -1,0 +1,51 @@
+id: wp_ticket-98f16e3a-4ef3-43f9-86b2-2cf8e26f9c80
+
+info:
+  name: >
+    WP Ticket <= 6.0.4 - Unauthenticated SQL Injection via WordPress Search 's' Parameter
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/98f16e3a-4ef3-43f9-86b2-2cf8e26f9c80?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-ticket/"
+    google-query: inurl:"/wp-content/plugins/wp-ticket/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-ticket/"'
+  tags: cve,wordpress,wp-plugin,wp-ticket,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-ticket/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-ticket"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.0.4')

@@ -1,0 +1,71 @@
+# gap: ldap-injection-error-disclosure
+id: ldap-injection-error-disclosure
+
+info:
+  name: LDAP Injection Error Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects LDAP injection by sending unbalanced-parenthesis and bad-
+    filter-syntax payloads through common authentication / lookup query
+    parameters and matching runtime-specific LDAP parser exception
+    markers in the response. The class signatures are stable across
+    LDAP libraries: `javax.naming.NamingException` /
+    `javax.naming.directory.InvalidSearchFilterException` /
+    `com.unboundid.ldap.sdk.LDAPException` for Java, `com.sun.jndi.ldap`,
+    `System.DirectoryServices.Protocols.LdapException` for .NET,
+    `ldap_search()` / `ldap_bind()` PHP warnings, and `Net::LDAP::Error`
+    for Perl / Ruby.
+
+    LDAP injection enables authentication bypass against directory-
+    backed login flows, arbitrary entry enumeration from the directory
+    store (which frequently contains user attributes, group
+    memberships, and embedded password-policy / service-account
+    metadata), and in some configurations modification of directory
+    entries. The error-disclosure variant proves the parameter reaches
+    an LDAP query builder — bypass / blind extraction follows. Class
+    detection — keys on parser exception class names, not vendor
+    banner.
+  reference:
+    - https://owasp.org/www-community/attacks/LDAP_Injection
+    - https://cwe.mitre.org/data/definitions/90.html
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/06-Testing_for_LDAP_Injection
+  tags: custom,vulnerabilities,ldap,injection,owasp,cwe-90
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?user=%2A%29%28uid%3D%2A"
+      - "{{BaseURL}}/?username=%2A%29%28uid%3D%2A"
+      - "{{BaseURL}}/?login=%2A%29%28uid%3D%2A"
+      - "{{BaseURL}}/?name=%2A%29%28%7C%28uid%3D%2A"
+      - "{{BaseURL}}/?search=%5C28%5C29"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'javax\.naming\.NamingException'
+          - 'javax\.naming\.directory\.InvalidSearchFilterException'
+          - 'com\.unboundid\.ldap\.sdk\.LDAPException'
+          - 'com\.sun\.jndi\.ldap'
+          - 'System\.DirectoryServices\.Protocols\.LdapException'
+          - 'LDAPException'
+          - 'ldap_search\(\):'
+          - 'ldap_bind\(\):'
+          - 'Net::LDAP::Error'
+          - 'Bad search filter'
+          - 'Invalid DN syntax'
+          - 'LDAPInvalidAttributeSyntaxException'
+          - 'operationsError'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: ldap-error
+        regex:
+          - '(javax\.naming\.[A-Z][a-zA-Z\.]+|com\.unboundid\.ldap\.sdk\.[A-Z][a-zA-Z]+|System\.DirectoryServices\.Protocols\.[A-Z][a-zA-Z]+|LDAPException)'
+        group: 1

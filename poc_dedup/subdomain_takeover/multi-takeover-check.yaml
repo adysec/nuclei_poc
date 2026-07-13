@@ -1,0 +1,79 @@
+id: multi-takeover-check
+info:
+  author: votre-nom
+  name: Instagram, LinkedIn, X, YouTube Takeover Check
+  severity: high
+requests:
+- extractors:
+  - group: 1
+    name: instagram-username
+    regex:
+    - https:\/\/(?:www\.)?instagram\.com\/([^"'/\s<]+)
+    type: regex
+  - group: 1
+    name: x-username
+    regex:
+    - https:\/\/(?:www\.)?x\.com\/([^"'/\s<]+)
+    type: regex
+  - group: 1
+    name: linkedin-company
+    regex:
+    - https:\/\/(?:www\.)?linkedin\.com\/company\/([^"'/\s<]+)
+    type: regex
+  - group: 1
+    name: youtube-user
+    regex:
+    - https:\/\/(?:www\.)?youtube\.com\/user\/([^"'/\s<]+)
+    type: regex
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  pipeline: true
+- matchers:
+  - status:
+    - 200
+    type: status
+  - name: instagram-takeover
+    type: word
+    words:
+    - Sorry, this page isn't available.
+  matchers-condition: and
+  method: GET
+  path:
+  - https://www.instagram.com/{{instagram-username}}
+  pipeline: true
+- matchers:
+  - status:
+    - 200
+    type: status
+  - name: x-takeover
+    type: word
+    words:
+    - Ce compte n'existe pas.
+  matchers-condition: and
+  method: GET
+  path:
+  - https://www.x.com/{{x-username}}
+  pipeline: true
+- matchers:
+  - status:
+    - 200
+    type: status
+  - name: linkedin-takeover
+    type: word
+    words:
+    - "Cette page LinkedIn n\u2019est pas disponible"
+  matchers-condition: and
+  method: GET
+  path:
+  - https://www.linkedin.com/company/{{linkedin-company}}
+  pipeline: true
+- matchers:
+  - name: youtube-takeover
+    status:
+    - 404
+    type: status
+  method: GET
+  path:
+  - https://www.youtube.com/user/{{youtube-user}}
+  pipeline: true

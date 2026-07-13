@@ -1,56 +1,49 @@
-id: health-check
+id: wordpress-health-check
 
 info:
-  name: "Health Check & Troubleshooting <= 1.5.1 - Cross-Site Request Forgery via health_check_troubleshoot_get_captures"
-  author: topscoder
-  severity: medium
-  description: "The Health Check & Troubleshooting plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.5.1. This is due to missing or incorrect nonce validation on the health_check_troubleshoot_get_captures function. This makes it possible for unauthenticated attackers to enable or disable plugins and themes, dismiss notices, or disable troubleshooting mode when the site is in troubleshooting mode via a forged request granted they can trick a site administrator into performing an action such as clicking on a link."
+  name: Health Check & Troubleshooting Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&new=2891303%40health-check%2Ftrunk&old=2809198%40health-check%2Ftrunk&sfp_email=&sfph_mail=
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:L
-    cvss-score: 6.3
-    cve-id:
+    - https://wordpress.org/plugins/health-check/
   metadata:
-    fofa-query: "wp-content/plugins/health-check/"
-    google-query: inurl:"/wp-content/plugins/health-check/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,health-check,medium
+    plugin_namespace: health-check
+    wpscan: https://wpscan.com/plugin/health-check
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/health-check/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/health-check.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "health-check"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.5.1')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

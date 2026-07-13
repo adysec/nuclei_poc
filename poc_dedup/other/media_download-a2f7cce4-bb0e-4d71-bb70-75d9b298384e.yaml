@@ -1,0 +1,51 @@
+id: media_download-a2f7cce4-bb0e-4d71-bb70-75d9b298384e
+
+info:
+  name: >
+    Media Library File Download <= 1.4 - Cross-Site Request Forgery
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a2f7cce4-bb0e-4d71-bb70-75d9b298384e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/media-download/"
+    google-query: inurl:"/wp-content/plugins/media-download/"
+    shodan-query: 'http.html:"wp-content/plugins/media-download/"'
+  tags: cve,wordpress,wp-plugin,media-download,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/media-download/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "media-download"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4')

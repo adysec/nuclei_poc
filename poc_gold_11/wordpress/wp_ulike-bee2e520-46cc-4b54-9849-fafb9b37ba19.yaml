@@ -1,0 +1,51 @@
+id: wp_ulike-bee2e520-46cc-4b54-9849-fafb9b37ba19
+
+info:
+  name: >
+    WP ULike <= 4.8.3.1 - Insecure Direct Object Reference to Authenticated (Subscriber+) Arbitrary Log Deletion via 'id' Parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bee2e520-46cc-4b54-9849-fafb9b37ba19?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-ulike/"
+    google-query: inurl:"/wp-content/plugins/wp-ulike/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-ulike/"'
+  tags: cve,wordpress,wp-plugin,wp-ulike,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-ulike/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-ulike"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.8.3.1')

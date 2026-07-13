@@ -1,35 +1,35 @@
-id: phpmyadmin-misconfiguration
-
+id: phpmyadmin-misconfiguration 2
 info:
-  name: phpmyadmin Data Exposure
   author: pussycat0x
-  severity: medium
-  description: An unauthenticated instance of phpmyadmin was discovered, which could be leveraged to access sensitive information.
-  reference:
-    - https://www.exploit-db.com/ghdb/6997
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
-    cvss-score: 5.3
-    cwe-id: CWE-200
-  tags: phpmyadmin,misconfig,edb
+  description: Unauthenticated phpmyadmin leads to exposure of sensitive information
+  name: Sensitive data exposure
+  reference: https://www.exploit-db.com/ghdb/6997
+  severity: high
+  tags: phpmyadmin,misconfig
+requests:
+- attack: sniper
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - var db    = 'information_schema';
+    - var opendb_url = 'db_structure.php';
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /phpMyAdmin/index.php?db=information_schema HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/phpmyadmin/index.php?db=information_schema"
-      - "{{BaseURL}}/phpMyAdmin/index.php?db=information_schema"
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "var db    = 'information_schema';"
-          - "var opendb_url = 'db_structure.php';"
-        condition: and
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: status
-        status:
-          - 200
+    Accept-Encoding: gzip, deflate
 
-# Enhanced by mp on 2022/04/06
+    Accept: */*
+
+    '
+  threads: 100

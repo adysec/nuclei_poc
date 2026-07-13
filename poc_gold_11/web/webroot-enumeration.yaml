@@ -1,0 +1,49 @@
+id: webroot-enumeration
+
+info:
+  name: Webroot Directory and Source Code File Enumeration
+  author: Betmen-N-Dgeng
+  severity: medium
+  description: |
+    This template enumerates directories and source code files on a web server.
+    It checks for directories that return a 403 status code and source code files that return a 200 status code with specific payloads.
+  reference:
+    - google
+  tags: enum, web, directory, source-code
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{dir}}/"
+    headers:
+      User-Agent: Nuclei
+    matchers:
+      - type: status
+        status:
+          - 403
+    extractors:
+      - type: regex
+        regex:
+          - "Found directory - (.*) in {{webroot}}"
+        part: body
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{webroot}}/{{file}}%3F"
+      - "{{BaseURL}}/{{webroot}}/{{file}}%3Faaaaaaaaaaaaaaaaaaaaaa.php"
+    headers:
+      User-Agent: Nuclei
+    matchers:
+      - type: status
+        status:
+          - 200
+    extractors:
+      - type: regex
+        regex:
+          - "Response code: 200 | Found File - Payload: (.*) in {{webroot}}"
+        part: body
+
+variables:
+  dir: "{{directory_wordlist}}"
+  file: "{{file_wordlist}}"
+  webroot: "{{webroot_file}}"

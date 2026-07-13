@@ -1,0 +1,51 @@
+id: sepay_gateway-73d188a5-97b4-4f54-8cb4-f26481ddcb56
+
+info:
+  name: >
+    SePay Gateway <= 1.1.20 - Unauthenticated Information Exposure
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/73d188a5-97b4-4f54-8cb4-f26481ddcb56?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sepay-gateway/"
+    google-query: inurl:"/wp-content/plugins/sepay-gateway/"
+    shodan-query: 'http.html:"wp-content/plugins/sepay-gateway/"'
+  tags: cve,wordpress,wp-plugin,sepay-gateway,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sepay-gateway/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sepay-gateway"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.20')

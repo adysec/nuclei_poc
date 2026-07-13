@@ -1,0 +1,67 @@
+id: http-put-delete-directory-scan
+
+info:
+  name: HTTP PUT & DELETE Method Detection (Directory Level)
+  author: iman,codex
+  severity: high
+  description: |
+    Detects writable HTTP directories by attempting PUT, validating the uploaded
+    content via GET, and then cleaning up with DELETE. Also flags practical
+    write-only behavior when PUT succeeds and DELETE works but GET is denied.
+  reference:
+    - https://portswigger.net/kb/issues/00100900_http-put-method-is-enabled
+  metadata:
+    max-request: 3
+    verified: true
+  tags: intrusive,misconfig,put,webdav,dir-scan
+
+variables:
+  filename: "{{rand_base(6)}}.txt"
+  content: "Checking-HTTP-Methods-{{rand_base(12)}}"
+
+http:
+  - raw:
+      - |
+        PUT {{BaseURL}}{{RequestsDirectory}}/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/plain
+        Connection: close
+
+        {{content}}
+
+      - |
+        GET {{BaseURL}}{{RequestsDirectory}}/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+      - |
+        DELETE {{BaseURL}}{{RequestsDirectory}}/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    req-condition: true
+    redirects: false
+    cookie-reuse: false
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: put-get-confirmed
+        condition: and
+        dsl:
+          - "status_code_1 == 200 || status_code_1 == 201 || status_code_1 == 204"
+          - "status_code_2 == 200"
+          - "contains(body_2, content)"
+
+      - type: dsl
+        name: put-write-only-confirmed
+        condition: and
+        dsl:
+          - "status_code_1 == 200 || status_code_1 == 201 || status_code_1 == 204"
+          - "status_code_2 == 401 || status_code_2 == 403"
+          - "status_code_3 == 200 || status_code_3 == 204"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - "concat(RequestsDirectory, '/', filename)"

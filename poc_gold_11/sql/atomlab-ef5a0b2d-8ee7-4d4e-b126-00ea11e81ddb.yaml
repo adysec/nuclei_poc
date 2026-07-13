@@ -1,0 +1,51 @@
+id: atomlab-ef5a0b2d-8ee7-4d4e-b126-00ea11e81ddb
+
+info:
+  name: >
+    Atomlab <= 2.4.5 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ef5a0b2d-8ee7-4d4e-b126-00ea11e81ddb?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/atomlab/"
+    google-query: inurl:"/wp-content/themes/atomlab/"
+    shodan-query: 'http.html:"wp-content/themes/atomlab/"'
+  tags: cve,wordpress,wp-theme,atomlab,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/atomlab/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "atomlab"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.4.5')

@@ -1,0 +1,39 @@
+http:
+- matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - <script>alert(1)</script>
+    - <img src=x onerror=alert(1)>
+    - <svg/onload=alert(1)>
+  - part: header
+    type: word
+    words:
+    - text/html
+  - status:
+    - 200
+    type: status
+  - condition: or
+    negative: true
+    part: body
+    type: word
+    words:
+    - <title>Access Denied</title>
+    - You don't have permission to access
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/{{xss_path}}'
+  payloads:
+    xss_path:
+    - '''>"><script>alert(1)</script>'
+    - '''>"><img src=x onerror=alert(1)>'
+    - '''>"><svg/onload=alert(1)>'
+  stop-at-first-match: true
+id: xss-path-basic
+info:
+  author: openai
+  name: Path-based Reflected XSS
+  severity: medium
+  tags: fuzzing-req,fuzzing-req-xss,dast

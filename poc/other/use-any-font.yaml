@@ -1,59 +1,49 @@
-id: use-any-font
+id: wordpress-use-any-font
 
 info:
-  name: >
-    Use Any Font <= 6.2.0 - Unauthenticated Arbitrary CSS Appending
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Use Any Font | Custom Font Uploader Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/cb6de4da-0d60-4332-be25-5521e430a4fa?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/use-any-font/
   metadata:
-    fofa-query: "wp-content/plugins/use-any-font/"
-    google-query: inurl:"/wp-content/plugins/use-any-font/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,use-any-font,low
+    plugin_namespace: use-any-font
+    wpscan: https://wpscan.com/plugin/use-any-font
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/use-any-font/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/use-any-font.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "use-any-font"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 6.2.1')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

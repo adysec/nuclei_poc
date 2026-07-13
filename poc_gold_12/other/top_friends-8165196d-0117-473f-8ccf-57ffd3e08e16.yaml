@@ -1,0 +1,51 @@
+id: top_friends-8165196d-0117-473f-8ccf-57ffd3e08e16
+
+info:
+  name: >
+    Top Friends <= 0.3 - Cross-Site Request Forgery to Settings Update
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8165196d-0117-473f-8ccf-57ffd3e08e16?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/top-friends/"
+    google-query: inurl:"/wp-content/plugins/top-friends/"
+    shodan-query: 'http.html:"wp-content/plugins/top-friends/"'
+  tags: cve,wordpress,wp-plugin,top-friends,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/top-friends/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "top-friends"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.3')

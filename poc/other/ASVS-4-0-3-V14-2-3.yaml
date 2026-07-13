@@ -1,0 +1,44 @@
+headless:
+- extractors:
+  - dsl:
+    - trim(split(assets_with_external_fqdn, '|'), '[]')
+    type: dsl
+  matchers:
+  - dsl:
+    - len(trim(split(assets_with_external_fqdn, '|'), '[]')) > 0
+    type: dsl
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitload
+  - action: script
+    args:
+      code: "() => {\n      var currentLocation = document.location.host;\n      var\
+        \ xpathExpression = \"//*[self::script or self::link]\" +\n          \"[not(contains(@src,\
+        \ '\" + currentLocation + \"') or contains(@href, '\" + currentLocation +\
+        \ \"'))\" +\n          \" and ((contains(@href,'//') or contains(@src,'//'))\
+        \ and not(contains(translate(@integrity,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'sha')))]\"\
+        ;\n\n      var matchingNodes = document.evaluate(xpathExpression, document,\
+        \ null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);\n\n      var matchingTagsAsString\
+        \ = [];\n      for (var i = 0; i < matchingNodes.snapshotLength; i++) {\n\
+        \          var node = matchingNodes.snapshotItem(i);\n          matchingTagsAsString.push(new\
+        \ XMLSerializer().serializeToString(node));\n      }\n      return matchingTagsAsString.join('|');\n\
+        }\n"
+    name: assets_with_external_fqdn
+id: ASVS-4-0-3-V14-2-3
+info:
+  author: Hamed Salimian
+  classification:
+    cwe-id: CWE-829
+  description: 'Verify that if application assets, such as JavaScript libraries, CSS
+    or web fonts, are hosted externally on a Content Delivery Network (CDN) or external
+    provider, Subresource Integrity (SRI) is used to validate the integrity of the
+    asset.
+
+    '
+  name: ASVS 14.2.3 Check
+  reference:
+  - https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html#subresource-integrity
+  severity: low
+  tags: asvs,14.2.3

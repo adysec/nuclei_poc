@@ -1,0 +1,59 @@
+id: travelpayouts
+
+info:
+  name: "Travelpayouts <= 1.0.16 - Cross-Site Request Forgery"
+  author: topscoder
+  severity: high
+  description: "The Travelpayouts plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 1.0.16. This is due to missing or incorrect nonce validation in the outdated Redux Framework. This makes it possible for unauthenticated attackers to gain restricted access to administrative actions via a forged request granted they can trick a site administrator into performing an action such as clicking on a link."
+  reference:
+    - https://ithemes.com/blog/wordpress-vulnerability-report-september-2021-part-4/#ib-toc-anchor-2
+    - https://wpscan.com/vulnerability/75758ec1-7b64-48f1-924c-cbc7b4984e6b
+    - https://wordpress.org/plugins/travelpayouts/#developers
+    - https://plugins.trac.wordpress.org/log/travelpayouts/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/travelpayouts/"
+    google-query: inurl:"/wp-content/plugins/travelpayouts/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,travelpayouts,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/travelpayouts/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "travelpayouts"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.16')

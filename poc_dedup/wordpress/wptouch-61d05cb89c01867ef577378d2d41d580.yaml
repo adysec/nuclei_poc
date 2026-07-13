@@ -1,0 +1,57 @@
+id: wptouch-61d05cb89c01867ef577378d2d41d580
+
+info:
+  name: "WPTouch < 3.7 - Open Redirect"
+  author: topscoder
+  severity: medium
+  description: "The WPTouch plugin for WordPress is vulnerable to an open redirect in versions before 3.7. This allows attackers to use a trusted site to trick victims into being redirected to an untrusted site."
+  reference:
+    - https://wordpress.org/plugins/wptouch/changelog/
+    - https://patchstack.com/database/vulnerability/wptouch/wordpress-wptouch-plugin-3-6-6-open-redirection
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 4.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wptouch/"
+    google-query: inurl:"/wp-content/plugins/wptouch/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wptouch,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wptouch/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wptouch"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.7')

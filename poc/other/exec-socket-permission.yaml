@@ -1,0 +1,99 @@
+id: openclaw-exec-socket-permission
+
+info:
+  name: OpenClaw Exec Socket Token Leak and Env Case Bypass
+  author: LobsterGuard
+  severity: high
+  description: |
+    Tests whether the exec approval and socket endpoints are accessible
+    without authentication. The approval endpoint may leak pending
+    approval tokens, and the exec socket endpoint may accept connections
+    without proper auth. Also tests environment variable case sensitivity
+    bypass where OPENCLAW_AUTH_TOKEN vs openclaw_auth_token may be handled
+    differently on case-insensitive systems.
+  reference:
+    - https://github.com/lobster-guard/openclaw-security
+  tags: openclaw,exec,socket,token-leak,auth
+  metadata:
+    chain_id: 47
+
+http:
+  - raw:
+      - |
+        GET /__openclaw/api/exec/approvals HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /__openclaw__/api/exec/approvals HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "approval"
+          - "token"
+          - "pending"
+          - "rules"
+          - "allowAll"
+        condition: or
+
+  - raw:
+      - |
+        GET /__openclaw/api/exec/socket HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /__openclaw__/api/exec/socket HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 101
+
+      - type: word
+        part: body
+        words:
+          - "socket"
+          - "websocket"
+          - "upgrade"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "Upgrade: websocket"
+          - "Connection: Upgrade"
+        condition: or
+
+  - raw:
+      - |
+        GET /__openclaw/a2ui/api/exec/approvals HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /__openclaw__/a2ui/api/exec/approvals HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "approval"
+          - "token"
+          - "socket"
+          - "pending"
+        condition: or

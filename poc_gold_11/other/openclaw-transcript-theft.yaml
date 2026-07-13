@@ -1,0 +1,60 @@
+id: openclaw-transcript-theft
+
+info:
+  name: OpenClaw Session Transcript Theft
+  author: lobster-guard
+  severity: high
+  description: |
+    Tests if session endpoints expose unredacted conversation history.
+    Step 1: sessions/list reveals session IDs without auth.
+    Step 2: sessions/get returns conversation transcripts including tool outputs,
+    secrets, file contents, and command results.
+    Note: These are independent checks — each request is self-contained.
+  tags: openclaw,sessions,transcript,theft
+  remediation: Require authentication for session API endpoints. Redact sensitive tool outputs (secrets, file contents) from stored transcripts.
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    max-request: 4
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/__openclaw/a2ui/api/sessions/list"
+      - "{{BaseURL}}/__openclaw__/a2ui/api/sessions/list"
+    headers:
+      Content-Type: "application/json"
+    body: '{}'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "sessionId"
+          - "sessionKey"
+        condition: or
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/__openclaw/a2ui/api/sessions/get"
+      - "{{BaseURL}}/__openclaw__/a2ui/api/sessions/get"
+    headers:
+      Content-Type: "application/json"
+    body: '{"limit":100}'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "messages"
+          - "transcript"
+        condition: or

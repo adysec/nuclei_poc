@@ -1,0 +1,51 @@
+id: kalium-0e65a794-1901-4e54-be4f-9422fe444057
+
+info:
+  name: >
+    Kalium <= 3.29 - Missing Authorization to Unauthenticated Mail Relay via kalium_vc_contact_form_request
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0e65a794-1901-4e54-be4f-9422fe444057?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/kalium/"
+    google-query: inurl:"/wp-content/themes/kalium/"
+    shodan-query: 'http.html:"wp-content/themes/kalium/"'
+  tags: cve,wordpress,wp-theme,kalium,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/kalium/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kalium"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.29')

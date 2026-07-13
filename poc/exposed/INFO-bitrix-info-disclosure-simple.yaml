@@ -1,0 +1,215 @@
+id: bitrix-info-disclosure-simple
+
+info:
+  name: Bitrix Information Disclosure Simple Check
+  author: clevergod
+  severity: medium
+  description: |
+    Простая и надежная проверка утечек информации в Bitrix CMS
+  tags: bitrix,info-disclosure,information-leak,debug
+
+requests:
+  # Debug информация - только если это не HTML
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/tools/show_include_exec_time.php"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: debug-exec-time
+        words:
+          - "Include Time"
+          - "execution time"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true
+
+  # Конфигурационные файлы - только если это не HTML
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/.settings.php"
+      - "{{BaseURL}}/bitrix/.settings.php.bak"
+      - "{{BaseURL}}/.env"
+      - "{{BaseURL}}/.env.bak"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: config-files
+        words:
+          - "DBHost"
+          - "DBLogin"
+          - "DBPassword"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true
+
+  # Логи - только если это реальные лог файлы
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/modules/updater.log"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: updater-log
+        words:
+          - "UpdateSystem"
+          - "UpdateSystem::"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true
+
+  # Директории - только если это реальные директории
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/logs/"
+      - "{{BaseURL}}/bitrix/backup/"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: directory-listing
+        words:
+          - "Index of"
+          - "Directory listing"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true
+
+  # Временные файлы - только если это не HTML
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/cache/"
+      - "{{BaseURL}}/bitrix/tmp/"
+      - "{{BaseURL}}/bitrix/managed_cache/"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: temp-files
+        words:
+          - "cache"
+          - "tmp"
+          - "managed_cache"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true
+
+  # Резервные копии - только если это не HTML
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/.htaccess.bak"
+      - "{{BaseURL}}/bitrix/.htaccess.backup"
+      - "{{BaseURL}}/.htaccess.bak"
+      - "{{BaseURL}}/.htaccess.backup"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: backup-files
+        words:
+          - "RewriteEngine"
+          - "DirectoryIndex"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true
+
+  # Компоненты - только если это не HTML
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/vote.result.new/templates/.default/template.php"
+      - "{{BaseURL}}/bitrix/components/bitrix/forum.topic.list/templates/.default/template.php"
+      - "{{BaseURL}}/bitrix/components/bitrix/blog.post.list/templates/.default/template.php"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: component-templates
+        words:
+          - "<?php"
+          - "template"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true
+
+  # Модули - только если это не HTML
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/modules/vote/install/index.php"
+      - "{{BaseURL}}/bitrix/modules/forum/install/index.php"
+      - "{{BaseURL}}/bitrix/modules/blog/install/index.php"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: module-install
+        words:
+          - "install"
+          - "module"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true
+
+  # Админка - только если это не HTML
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/admin/"
+      - "{{BaseURL}}/bitrix/admin/index.php"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: admin-panel
+        words:
+          - "admin"
+          - "Bitrix"
+      - type: status
+        status:
+          - 200
+      - type: regex
+        name: not-html
+        regex:
+          - "(?i)<html"
+          - "(?i)<!DOCTYPE"
+        negative: true 

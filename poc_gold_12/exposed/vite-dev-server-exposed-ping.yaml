@@ -1,0 +1,72 @@
+# gap: vite-dev-server-exposed-ping
+id: vite-dev-server-exposed-ping
+
+info:
+  name: Vite Dev Server Reachable on Public Network
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Vite development server (`vite dev` / `vite serve`)
+    reachable on the public internet. Two probes confirm: the
+    `/__vite_ping` middleware handler — which returns a 200 with
+    an empty body when sent with `Accept: text/x-vite-ping` —
+    and a follow-up against `/@vite/client`, the bundled HMR
+    client module. The client module contains the literal
+    `createHotContext` and `import.meta.hot` symbols that
+    fingerprint Vite's HMR runtime.
+
+    Class signal: the dual-marker handshake.
+    Once confirmed, the server is in dev mode — which has
+    historically been exploitable for arbitrary file read via
+    CVE-2025-30208 and HMR-channel abuse, and routinely exposes
+    `.env`, build configuration, and source-map equivalents.
+  reference:
+    - https://github.com/vitejs/vite/issues/13109
+    - https://github.com/advisories/GHSA-x574-m823-4x7w
+    - https://dev.to/sharon_42e16b8da44dabde6d/vite-file-read-vulnerability-exposed-cve-2025-30208-16nb
+  tags: custom,exposures,vite,dev-server,disclosure,cwe-200
+
+http:
+  - raw:
+      - |
+        GET /__vite_ping HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/x-vite-ping
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && len(body) < 4'
+    internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/@vite/client"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/javascript"
+          - "text/javascript"
+        condition: or
+      - type: word
+        part: body
+        # Vite HMR client module signature.
+        words:
+          - "createHotContext"
+          - "import.meta.hot"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: vite-ws-url
+        regex:
+          - 'const\s+socketProtocol\s*=\s*[^;]+|const\s+__HMR_BASE__\s*=\s*"([^"]+)"'
+        group: 1

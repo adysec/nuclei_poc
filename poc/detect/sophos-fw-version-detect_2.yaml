@@ -1,45 +1,29 @@
-id: sophos-fw-version-detect
-
+id: sophos-fw-version-detect 2
 info:
-  name: Sophos Firewall Login Panel - Detect
-  author: organiccrap,daffainfo
+  author: organiccrap
+  name: Sophos Firewall version detection
   severity: info
-  description: Sophos Firewall login panel was detected.
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cvss-score: 0.0
-    cwe-id: CWE-200
-  metadata:
-    verified: true
-    shodan-query: title:"Sophos"
-  tags: panel,sophos
-
+  tags: panel
 requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/webconsole/webpages/login.jsp"
-      - "{{BaseURL}}/userportal/webpages/myaccount/login.jsp"
+- attack: sniper
+  matchers:
+  - type: word
+    words:
+    - <title>Sophos</title>
+  - part: body
+    regex:
+    - (\d{2}.\d{1,2}.\d{1,2}.\d{2,3})
+    type: regex
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /userportal/webpages/myaccount/login.jsp HTTP/1.1
 
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
+    Host: {{Subdomains}}
 
-      - type: word
-        part: body
-        words:
-          - '<title>Sophos</title>'
-          - 'uiLangToHTMLLangAttributeValueMapping'
-        condition: or
+    User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36
+    (KHTML, like Gecko)
 
-      - type: status
-        status:
-          - 200
-
-    extractors:
-      - type: regex
-        part: body
-        group: 1
-        regex:
-          - 'href="\/themes\/lite1\/css\/typography\.css\?version=(([0-9a-z]+)([0-9.]+))'
-
-# Enhanced by md on 2023/01/15
+    '
+  threads: 100

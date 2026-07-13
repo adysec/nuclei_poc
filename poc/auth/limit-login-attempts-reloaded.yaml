@@ -1,59 +1,49 @@
-id: limit-login-attempts-reloaded
+id: wordpress-limit-login-attempts-reloaded
 
 info:
-  name: >
-    Limit Login Attempts Reloaded <= 2.17.3 - Login Rate Limiting Bypass
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Limit Login Attempts Reloaded Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/669c50b8-316c-4f63-8b78-361cfcfd4d5f?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/limit-login-attempts-reloaded/
   metadata:
-    fofa-query: "wp-content/plugins/limit-login-attempts-reloaded/"
-    google-query: inurl:"/wp-content/plugins/limit-login-attempts-reloaded/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,limit-login-attempts-reloaded,low
+    plugin_namespace: limit-login-attempts-reloaded
+    wpscan: https://wpscan.com/plugin/limit-login-attempts-reloaded
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/limit-login-attempts-reloaded/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/limit-login-attempts-reloaded.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "limit-login-attempts-reloaded"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 2.17.3')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

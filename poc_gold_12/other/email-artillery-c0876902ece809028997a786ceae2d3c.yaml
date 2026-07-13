@@ -1,0 +1,58 @@
+id: email-artillery-c0876902ece809028997a786ceae2d3c
+
+info:
+  name: "Email Artillery (MASS EMAIL) <= 4.1 - Cross-Site Request Forgery to Stored Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Email Artillery (MASS EMAIL) plugin for WordPress is vulnerable to Stored Cross-Site Scripting via Cross-Site Request Forgery in versions up to, and including, 4.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - https://ithemes.com/blog/wordpress-vulnerability-report-august-2021-part-4/#ib-toc-anchor-2
+    - https://wpscan.com/vulnerability/a4eff186-2308-491c-b82d-1d6b7be79727
+    - https://wordpress.org/plugins/email-artillery/#developers
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/email-artillery/"
+    google-query: inurl:"/wp-content/plugins/email-artillery/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,email-artillery,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/email-artillery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "email-artillery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.1')

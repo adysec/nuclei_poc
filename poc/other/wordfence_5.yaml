@@ -1,49 +1,59 @@
-id: wordpress-wordfence
+id: wordfence
 
 info:
-  name: Wordfence Security – Firewall, Malware Scan, and Login Security Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    Wordfence Security <= 5.2.3 - Stored Cross-Site Scripting via HTTP_HOST
+  author: topscoder
+  severity: high
+  description: >
+    
   reference:
-    - https://wordpress.org/plugins/wordfence/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/47938357-7d51-4d62-a08c-4b2bf3f3a062?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
   metadata:
-    plugin_namespace: wordfence
-    wpscan: https://wpscan.com/plugin/wordfence
-  tags: tech,wordpress,wp-plugin,top-100,top-200
+    fofa-query: "wp-content/plugins/wordfence/"
+    google-query: inurl:"/wp-content/plugins/wordfence/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wordfence,high
 
-requests:
+http:
   - method: GET
-
+    redirects: true
+    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/wordfence/readme.txt"
 
-    payloads:
-      last_version: helpers/wordpress/plugins/wordfence.txt
-
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "wordfence"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 5.2.3')

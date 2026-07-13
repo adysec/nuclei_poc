@@ -1,0 +1,33 @@
+id: openclaw-default-token
+info:
+  name: OpenClaw Gateway Default Token
+  author: LobsterGuard
+  severity: critical
+  description: OpenClaw Gateway uses the default token from .env.example
+  tags: openclaw,misconfig,default-creds
+  remediation: Replace the default token with a strong random value — openssl rand -hex 32.
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    max-request: 1
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/v1/chat/completions"
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer change-me-to-a-long-random-token"
+    body: '{"model":"probe","messages":[]}'
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: status
+        name: past-auth-bad-body
+        status:
+          - 400

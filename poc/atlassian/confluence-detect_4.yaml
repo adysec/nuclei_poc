@@ -1,50 +1,42 @@
-id: confluence-detect
-
+id: confluence-detect 4
 info:
-  name: Confluence Detection
-  author: philippedelteil,AdamCrosser,6mile
+  author: philippedelteil
+  description: Allows you to detect Atlassian Confluence instances
+  name: Confluence Detect
   severity: info
-  description: |
-    This nuclei template is used to detect the presence of Confluence, a popular collaboration software.
-  metadata:
-    max-request: 5
-    vendor: atlassian
-    product: confluence_server
-    shodan-query: http.component:"Atlassian Confluence"
-    category: productivity
-  tags: tech,confluence,atlassian,detect
+  tags: tech,confluence
+requests:
+- attack: sniper
+  extractors:
+  - group: 1
+    part: body
+    regex:
+    - Atlassian Confluence ([a-z0-9-._]+)
+    type: regex
+  matchers:
+  - condition: or
+    part: header
+    type: word
+    words:
+    - -Confluence-
+    - -confluence-
+  - part: body
+    type: word
+    words:
+    - confluence-base-url
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /wiki HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/dologin.action"
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/pages"
-      - "{{BaseURL}}/confluence"
-      - "{{BaseURL}}/wiki"
+    Host: {{Subdomains}}
 
-    redirects: true
-    stop-at-first-match: true
-    matchers:
-      - type: dsl
-        dsl:
-          - contains(to_lower(header), '-confluence-')
-          - contains(to_lower(body), 'confluence-base-url')
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-    extractors:
-      - type: regex
-        name: version
-        group: 1
-        regex:
-          - '<meta name="ajs-version-number" content="(.*)">'
-          - 'Atlassian Confluence ([a-z0-9-._]+)'
+    Accept-Encoding: gzip, deflate
 
-      - type: regex
-        name: hostname
-        group: 1
-        regex:
-          - '<meta id="confluence-base-url" name="confluence-base-url" content="https://(.*)">'
-          - '<meta name="ajs-base-url" content="https://(.*)">'
-          - '<meta name="ajs-server-name" content="(.*)">'
+    Accept: */*
 
-# digest: 4a0a004730450220271dbbb5a7d674a45a676cf7e096ebdc39df4d0bf69c17f074b37e57ad1740bb02210090824d340b9c0f83194a42d0cf41eb23683464e53595905d46da03b2653ad7c4:922c64590222798bb761d5b6d8e72950
+    '
+  threads: 100

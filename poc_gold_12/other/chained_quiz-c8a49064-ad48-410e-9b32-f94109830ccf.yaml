@@ -1,0 +1,59 @@
+id: chained_quiz-c8a49064-ad48-410e-9b32-f94109830ccf
+
+info:
+  name: >
+    Chained Quiz <= 1.3.2 - Reflected Cross-Site Scripting via dnf
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c8a49064-ad48-410e-9b32-f94109830ccf?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/chained-quiz/"
+    google-query: inurl:"/wp-content/plugins/chained-quiz/"
+    shodan-query: 'http.html:"wp-content/plugins/chained-quiz/"'
+  tags: cve,wordpress,wp-plugin,chained-quiz,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/chained-quiz/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "chained-quiz"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.2')

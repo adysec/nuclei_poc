@@ -1,0 +1,37 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{xss}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - part: body
+    type: word
+    words:
+    - '&''><script>print()</script>'
+  - part: header
+    type: word
+    words:
+    - text/html
+  - negative: true
+    part: body
+    type: word
+    words:
+    - <title>Access Denied</title>
+    - You don't have permission to access
+    - Roundcube Webmail
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    xss:
+    - '&''><script>print()</script>'
+  stop-at-first-match: true
+id: xss-print
+info:
+  author: reewardius
+  name: XSS Print
+  severity: medium
+  tags: fuzzing-xss,fuzzing-req,dast

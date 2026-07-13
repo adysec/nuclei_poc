@@ -1,0 +1,53 @@
+name: Docker Publish
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_call:
+  workflow_dispatch:
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Build and push nvd
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/scap-rs:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/scap-rs:latest
+          cache-to: type=inline
+      - name: Build and push helper
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: DockerfileHelper
+          platforms: linux/amd64
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/nvd-helper-rs:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nvd-helper-rs:latest
+          cache-to: type=inline
+      - name: Build and push scap-fly
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: DockerfileFly
+          platforms: linux/amd64
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/scap-fly:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/scap-fly:latest
+          cache-to: type=inline

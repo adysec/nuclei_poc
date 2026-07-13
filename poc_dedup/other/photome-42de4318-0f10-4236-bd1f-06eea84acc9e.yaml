@@ -1,0 +1,51 @@
+id: photome-42de4318-0f10-4236-bd1f-06eea84acc9e
+
+info:
+  name: >
+    PhotoMe < 5.7.2 - Unauthenticated Server-Side Request Forgery
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/42de4318-0f10-4236-bd1f-06eea84acc9e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/photome/"
+    google-query: inurl:"/wp-content/themes/photome/"
+    shodan-query: 'http.html:"wp-content/themes/photome/"'
+  tags: cve,wordpress,wp-theme,photome,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/photome/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "photome"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.7.2')

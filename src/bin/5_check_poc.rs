@@ -1,8 +1,7 @@
-//! POC 校验 — 三阶段流水线异步加速版
+//! POC 校验 — 二阶段流水线异步加速版
 //!
 //! Phase 0: Auto-fix + SHA256 去重（高 I/O 并发, Semaphore=jobs）
 //! Phase 1: nuclei 批量结构校验（每批 N 个文件共享一次进程启动）
-//! Phase 2: nuclei 单文件运行时校验（高进程并发, Semaphore=jobs*8）
 //!
 //! 相比旧版逐文件启动 nuclei 进程，批量校验可减少 99%+ 的进程创建开销。
 
@@ -173,7 +172,7 @@ async fn async_main(args: Args, jobs: usize) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    println!("共发现 {} 个 YAML 文件，开始三阶段校验…\n", total_input);
+    println!("共发现 {} 个 YAML 文件，开始二阶段校验…\n", total_input);
     let start = Instant::now();
 
     // ══════════════════════════════════════════════════════════════
@@ -283,73 +282,36 @@ async fn async_main(args: Args, jobs: usize) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // Phase 2: nuclei 单文件运行时校验（高并发 Semaphore=jobs*8）
-    // ══════════════════════════════════════════════════════════════
-    let nuclei_concurrency = if skip_nuclei { jobs } else { jobs * 8 };
-    println!("[Phase 2] nuclei 单文件运行时校验 (并发={})…", nuclei_concurrency);
-    let nuclei_sem = Arc::new(Semaphore::new(nuclei_concurrency));
-
+    // 直接将 Phase 1 通过的文件移入 poc/
+    println!("文件迁移 (并发={})…", jobs);
+    let io_sem2 = Arc::new(Semaphore::new(jobs));
     let passed = Arc::new(AtomicU64::new(0));
-    let failed_phase2 = Arc::new(AtomicU64::new(0));
 
     let stream = futures::stream::iter(validated.into_iter().map(|f| {
-        let nuclei_bin = nuclei_bin.to_string();
-        let nuclei_sem = nuclei_sem.clone();
+        let io_sem2 = io_sem2.clone();
         let passed = passed.clone();
-        let failed_phase2 = failed_phase2.clone();
-        let per_file_timeout = per_file_timeout;
         let poc_dir = poc_dir.clone();
         let tmp_dir_str = tmp_dir.to_string();
-        let skip_nuclei = skip_nuclei;
 
         async move {
-            let _permit = nuclei_sem.acquire_owned().await.unwrap();
-
-            let runtime_ok = if skip_nuclei {
-                true
-            } else {
-                let df = f.clone();
-                let nb = nuclei_bin.clone();
-                let rt_fut = async move {
-                    let output = tokio::process::Command::new(&nb)
-                        .arg("-duc").arg("-silent").arg("-t").arg(&df)
-                        .output().await?;
-                    let stdout = String::from_utf8_lossy(&output.stdout);
-                    let stderr = String::from_utf8_lossy(&output.stderr);
-                    Ok::<_, anyhow::Error>(!stdout.contains("FTL") && !stderr.contains("FTL"))
-                };
-                match tokio::time::timeout(per_file_timeout / 2, rt_fut).await {
-                    Ok(Ok(v)) => v,
-                    _ => false,
-                }
-            };
-
-            if runtime_ok {
-                let rel = f.strip_prefix(&tmp_dir_str).unwrap_or(&f).to_path_buf();
-                let dest = Path::new(&poc_dir).join(rel);
-                let f_mv = f.clone();
-                let _ = tokio::task::spawn_blocking(move || move_file_dedup(&f_mv, &dest)).await;
-                passed.fetch_add(1, Ordering::Relaxed);
-            } else {
-                let f_q = f.clone();
-                let review = REVIEW_DIR.to_string();
-                let _ = tokio::task::spawn_blocking(move || move_to_review(&f_q, &review)).await;
-                failed_phase2.fetch_add(1, Ordering::Relaxed);
-            }
+            let _permit = io_sem2.acquire_owned().await.unwrap();
+            let rel = f.strip_prefix(&tmp_dir_str).unwrap_or(&f).to_path_buf();
+            let dest = Path::new(&poc_dir).join(rel);
+            let f_mv = f.clone();
+            let _ = tokio::task::spawn_blocking(move || move_file_dedup(&f_mv, &dest)).await;
+            passed.fetch_add(1, Ordering::Relaxed);
             Ok::<_, anyhow::Error>(())
         }
-    })).buffer_unordered(nuclei_concurrency * 2);
+    })).buffer_unordered(jobs * 4);
 
     futures::pin_mut!(stream);
     while let Some(result) = stream.next().await {
-        if let Err(e) = result { error!("Phase 2 error: {}", e); }
-        if start.elapsed() >= total_timeout { println!("全局超时，中止 Phase 2。"); break; }
+        if let Err(e) = result { error!("文件迁移 error: {}", e); }
+        if start.elapsed() >= total_timeout { println!("全局超时，中止迁移。"); break; }
     }
 
     let pass = passed.load(Ordering::Relaxed);
-    let fail2 = failed_phase2.load(Ordering::Relaxed);
-    println!("  Phase 2 完成: 通过 {} 个, 运行时失败 {} 个", pass, fail2);
+    println!("  文件迁移完成: {} 个", pass);
 
     // 清理空 tmp/
     if Path::new(tmp_dir).exists() {

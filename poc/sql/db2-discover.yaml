@@ -1,59 +1,76 @@
 id: db2-discover
-
 info:
-  name: Broadcast DB2 Discover
   author: pussycat0x
-  severity: info
-  description: |
-    Attempts to discover DB2 servers on the network by sending a broadcast request to port 523/udp.
-  reference:
-    - https://nmap.org/nsedoc/scripts/broadcast-db2-discover.html
+  description: 'Attempts to discover DB2 servers on the network by sending a broadcast
+    request to port 523/udp.
+
+    '
   metadata:
+    max-request: 1
     shodan-query: port:523
     verified: true
-    max-request: 1
-  tags: ibm,network,js,udp
-
+  name: Broadcast DB2 Discover
+  reference:
+  - https://nmap.org/nsedoc/scripts/broadcast-db2-discover.html
+  severity: info
+  tags: ibm,network,js,udp,discovery
 javascript:
-  - pre-condition: |
-      isUDPPortOpen(Host,Port);
-    code: |
-      let packet = bytes.NewBuffer();
-      const c = require("nuclei/net");
-      const cmd = "DB2GETADDR\0SQL09010\0"
-      packet.WriteString(cmd)
-      let conn = c.Open('udp', `${Host}:${Port}`);
-      conn.SendHex(packet.Hex());
-      const result = conn.RecvString()
-      const cleanedString = result.replace(/\x00/g, '');
-      let combinedResult;
+- args:
+    Host: '{{Host}}'
+    Port: 523
+  code: 'let packet = bytes.NewBuffer();
 
-      if (cleanedString.includes("DB2RETADDRSQL")) {
+    const c = require("nuclei/net");
 
-      const regex = /^DB2RETADDRSQL(\d{2})(\d{2})(\d{1})(.*)$/;
-      const matches = cleanedString.match(regex);
+    const cmd = "DB2GETADDR\0SQL09010\0"
 
-      const formattedNumber = matches ? `${matches[1]}.${matches[2]}.${matches[3]}` : '';
-      const hostname = matches ? matches[4] : '';
+    packet.WriteString(cmd)
 
-      combinedResult = `Db2 Version: ${formattedNumber}, Hostname: ${hostname}`;
+    let conn = c.Open(''udp'', `${Host}:${Port}`);
 
-      } else {
-      conn.Close();
-      }
-      combinedResult;
+    conn.SendHex(packet.Hex());
 
-    args:
-      Host: "{{Host}}"
-      Port: 523
+    const result = conn.RecvString()
 
-    matchers:
-      - type: dsl
-        dsl:
-          - "success == true"
+    const cleanedString = result.replace(/\x00/g, '''');
 
-    extractors:
-      - type: dsl
-        dsl:
-          - response
-# digest: 490a0046304402200677d57a1569d0d0f52dcb633bc9a8e23baf606b9f8cbcd3a94599d1a42cfd0f022075363935f37f232d23b9ca4ea75ae9caad443a19f2f3f430180e3d9ca1531073:922c64590222798bb761d5b6d8e72950
+    let combinedResult;
+
+
+    if (cleanedString.includes("DB2RETADDRSQL")) {
+
+
+    const regex = /^DB2RETADDRSQL(\d{2})(\d{2})(\d{1})(.*)$/;
+
+    const matches = cleanedString.match(regex);
+
+
+    const formattedNumber = matches ? `${matches[1]}.${matches[2]}.${matches[3]}`
+    : '''';
+
+    const hostname = matches ? matches[4] : '''';
+
+
+    combinedResult = `Db2 Version: ${formattedNumber}, Hostname: ${hostname}`;
+
+
+    } else {
+
+    conn.Close();
+
+    }
+
+    combinedResult;
+
+    '
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+  matchers:
+  - dsl:
+    - success == true
+    type: dsl
+  pre-condition: 'isUDPPortOpen(Host,Port);
+
+    '

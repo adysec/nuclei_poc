@@ -1,0 +1,51 @@
+id: wabi_sabi-12d2f4fd-fa4d-4583-91fb-7a1f2708ad8a
+
+info:
+  name: >
+    Wabi-Sabi <= 1.2 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/12d2f4fd-fa4d-4583-91fb-7a1f2708ad8a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/wabi-sabi/"
+    google-query: inurl:"/wp-content/themes/wabi-sabi/"
+    shodan-query: 'http.html:"wp-content/themes/wabi-sabi/"'
+  tags: cve,wordpress,wp-theme,wabi-sabi,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/wabi-sabi/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wabi-sabi"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2')

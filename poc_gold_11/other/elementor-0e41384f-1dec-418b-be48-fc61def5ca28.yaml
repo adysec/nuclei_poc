@@ -1,0 +1,59 @@
+id: elementor-0e41384f-1dec-418b-be48-fc61def5ca28
+
+info:
+  name: >
+    Elementor Website Builder <= 2.7.5 - Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Elementor Website Builder  for WordPress is vulnerable to Stored Cross-Site Scripting in versions up to, and including, 2.7.5 that makes it possible for attackers to inject arbitrary web scripts via the elementor_js_log AJAX action. This requires low-level authenticated user access to exploit.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0e41384f-1dec-418b-be48-fc61def5ca28?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/elementor/"
+    google-query: inurl:"/wp-content/plugins/elementor/"
+    shodan-query: 'http.html:"wp-content/plugins/elementor/"'
+  tags: cve,wordpress,wp-plugin,elementor,low,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/elementor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "elementor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.7.5')

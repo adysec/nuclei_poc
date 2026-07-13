@@ -1,0 +1,51 @@
+id: http_headers-ce010c6f-16bd-4178-a621-31ba6378946a
+
+info:
+  name: >
+    HTTP Headers <= 1.19.2 - Authenticated (Administrator+) External Control of File Name or Path to RCE via 'hh_htpasswd_path' and 'hh_www_authenticate_user' Parameters
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ce010c6f-16bd-4178-a621-31ba6378946a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/http-headers/"
+    google-query: inurl:"/wp-content/plugins/http-headers/"
+    shodan-query: 'http.html:"wp-content/plugins/http-headers/"'
+  tags: cve,wordpress,wp-plugin,http-headers,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/http-headers/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "http-headers"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.19.2')

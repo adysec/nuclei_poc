@@ -1,0 +1,51 @@
+id: blabber-2a6ab858-ae08-4986-94b5-35d6d9c449ed
+
+info:
+  name: >
+    Blabber <= 1.7.0 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2a6ab858-ae08-4986-94b5-35d6d9c449ed?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/blabber/"
+    google-query: inurl:"/wp-content/themes/blabber/"
+    shodan-query: 'http.html:"wp-content/themes/blabber/"'
+  tags: cve,wordpress,wp-theme,blabber,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/blabber/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "blabber"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.7.0')

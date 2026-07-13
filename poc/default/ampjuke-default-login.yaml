@@ -1,62 +1,64 @@
-id: ampjuke-default-login
+http:
+- attack: pitchfork
+  extractors:
+  - group: 1
+    internal: true
+    name: token
+    part: body_1
+    regex:
+    - name="uuid" value="([./a-z0-9-]+)">
+    type: regex
+  matchers:
+  - case-insensitive: true
+    condition: and
+    part: body_3
+    type: word
+    words:
+    - AmpJuke
+    - Track
+    - Logout
+    - Random play
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    password:
+    - pass
+    username:
+    - admin
+  raw:
+  - 'GET /login.php HTTP/1.1
 
+    Host: {{Hostname}}
+
+    '
+  - 'POST /loginvalidate.php HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/x-www-form-urlencoded
+
+
+    uuid={{url_encode(token)}}&login={{username}}&password={{password}}&Submit=Submit
+
+    '
+  - 'GET /index.php?what=welcome HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+id: ampjuke-default-login
 info:
-  name: AmpJuke - Default Login
   author: ritikchaddha
-  severity: high
-  description: |
-    AmpJuke contains a default login vulnerability. Default admin login password 'pass' was found.
+  description: 'AmpJuke contains a default login vulnerability. Default admin login
+    password ''pass'' was found.
+
+    '
   metadata:
     max-request: 3
-    shodan-query: "http.favicon.hash:-121681558"
-  tags: default-login,ampjuke
-
-http:
-  - raw:
-      - |
-        GET /login.php HTTP/2
-        Host: {{Hostname}}
-
-      - |
-        POST /loginvalidate.php HTTP/2
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
-
-        uuid={{url_encode(token)}}&login={{username}}&password={{password}}&Submit=Submit
-
-      - |
-        GET /index.php?what=welcome HTTP/2
-        Host: {{Hostname}}
-
-    attack: pitchfork
-    payloads:
-      username:
-        - admin
-      password:
-        - pass
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body_3
-        words:
-          - 'AmpJuke'
-          - 'Track'
-          - 'Logout'
-          - 'Random play'
-        condition: and
-        case-insensitive: true
-
-      - type: status
-        status:
-          - 200
-
-    extractors:
-      - type: regex
-        part: body_1
-        name: token
-        group: 1
-        regex:
-          - 'name="uuid" value="([./a-z0-9-]+)">'
-        internal: true
-# digest: 490a0046304402207b1e02de5059976356f51b42622e46fa0ad55ac3ce96e3aeed6349c1ce4e0bc502201bc6392303aa6f3c8e0fe0fa6fbdbada2a7faf1f8491993a52f0ba7b0cdf47a3:922c64590222798bb761d5b6d8e72950
+    runzero-match: service["favicon.ico.image.mmh3"] == "-121681558"
+    shodan-query: http.favicon.hash:-121681558
+  name: AmpJuke - Default Login
+  severity: high
+  tags: ampjuke,default-login,vuln

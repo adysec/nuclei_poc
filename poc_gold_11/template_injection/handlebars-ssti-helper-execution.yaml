@@ -1,0 +1,69 @@
+# gap: handlebars-ssti-helper-execution
+id: handlebars-ssti-helper-execution
+
+info:
+  name: Handlebars Server-Side Template Injection via Built-In Helpers
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects server-side Handlebars template injection by sending
+    a payload that exercises Handlebars-specific built-in helpers
+    (`lookup`, `split`, `if`, `eq`). The probe injects
+    `{{#if (eq (lookup (split "a-b-c" "-") 0) "a")}}NUCLEIHB-FIRED{{/if}}`
+    via common reflective parameters. Only the Handlebars engine
+    evaluates the `lookup` and `split` helper chain to produce
+    the literal output `NUCLEIHB-FIRED` — Jinja, Twig, Mustache,
+    Liquid, EJS, and Pug either reflect the payload verbatim,
+    error, or produce a different output.
+
+    Handlebars SSTI is the precondition for sandbox escape via
+    the well-documented `{{#with "constructor"}}...{{/with}}`
+    chain (Mahmoud Sec 2019; Shopify Return Magic) which yields
+    arbitrary JS evaluation in Node.js processes — i.e.,
+    server-side RCE. The active marker `NUCLEIHB-FIRED` proves
+    helper execution, which is a one-step distance from RCE.
+
+    Class detection — keys on the unique combination of
+    Handlebars helpers that other Node template engines do not
+    implement.
+  reference:
+    - https://mahmoudsec.blogspot.com/2019/04/handlebars-template-injection-and-rce.html
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/JavaScript.md
+    - https://handlebarsjs.com/guide/builtin-helpers.html
+  tags: custom,vulnerabilities,ssti,handlebars,nodejs,rce,owasp,cwe-94
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/?q={{%23if+(eq+(lookup+(split+"a-b-c"+"-")+0)+"a")}}NUCLEIHB-FIRED{{/if}}'
+      - '{{BaseURL}}/?name={{%23if+(eq+(lookup+(split+"a-b-c"+"-")+0)+"a")}}NUCLEIHB-FIRED{{/if}}'
+      - '{{BaseURL}}/?search={{%23if+(eq+(lookup+(split+"a-b-c"+"-")+0)+"a")}}NUCLEIHB-FIRED{{/if}}'
+      - '{{BaseURL}}/?user={{%23if+(eq+(lookup+(split+"a-b-c"+"-")+0)+"a")}}NUCLEIHB-FIRED{{/if}}'
+      - '{{BaseURL}}/?id={{%23if+(eq+(lookup+(split+"a-b-c"+"-")+0)+"a")}}NUCLEIHB-FIRED{{/if}}'
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        # Literal output proves Handlebars helper chain executed —
+        # the raw payload (with {{ }}) was NOT just reflected.
+        words:
+          - "NUCLEIHB-FIRED"
+      - type: word
+        part: body
+        # FP guard: if the raw payload braces are still present,
+        # the engine reflected literally and did not evaluate.
+        negative: true
+        words:
+          - '{{#if'
+          - '{{/if}}'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: ssti-evidence
+        regex:
+          - '(NUCLEIHB-FIRED[^<\r\n]{0,40})'
+        group: 1

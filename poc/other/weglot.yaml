@@ -1,59 +1,20 @@
-id: weglot
-
+id: api-weglot
 info:
-  name: >
-    Translate WordPress and go Multilingual – Weglot <= 4.2.5 - Authenticated (Contributor+) Stored Cross-Site Scripting via Block Attributes
-  author: topscoder
-  severity: low
-  description: >
-    
-  reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d87134e8-9d73-4a39-b071-37a5dac033b4?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
-  metadata:
-    fofa-query: "wp-content/plugins/weglot/"
-    google-query: inurl:"/wp-content/plugins/weglot/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,weglot,low
-
-http:
-  - method: GET
-    redirects: true
-    max-redirects: 3
+  name: WeGlot API Test
+  author: zzeitlin
+  reference: https://developers.weglot.com/api/reference
+  severity: info
+  tags: token-spray,weglot
+requests:
+  - method: POST
     path:
-      - "{{BaseURL}}/wp-content/plugins/weglot/readme.txt"
-
-    extractors:
-      - type: regex
-        name: version
-        part: body
-        group: 1
-        internal: true
-        regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
-
-      - type: regex
-        name: version
-        part: body
-        group: 1
-        regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
-
-    matchers-condition: and
+      - "https://api.weglot.com/translate?api_key={{token}}"
+    headers:
+      Content-Type: application/json
+    body: "{\"l_from\":\"en\",\"l_to\":\"fr\",\"request_url\":\"https://www.website.com/\",\"words\":[{\"w\":\"This is a blue car\",\"t\":1},{\"w\":\"This is a black car\",\"t\":1}]}"
     matchers:
-      - type: status
-        status:
-          - 200
-
       - type: word
-        words:
-          - "weglot"
         part: body
-
-      - type: dsl
-        dsl:
-          - compare_versions(version, '<= 4.2.5')
+        negative: true
+        words:
+          - 'does not exist'

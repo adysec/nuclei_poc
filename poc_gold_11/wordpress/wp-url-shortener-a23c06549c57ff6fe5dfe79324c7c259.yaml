@@ -1,0 +1,59 @@
+id: wp-url-shortener-a23c06549c57ff6fe5dfe79324c7c259
+
+info:
+  name: >
+    WP URL Shortener <= 1.2 - Cross-Site Request Forgery to Stored Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/154b3a1a-7246-42de-a555-2c655778d59e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-url-shortener/"
+    google-query: inurl:"/wp-content/plugins/wp-url-shortener/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-url-shortener,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-url-shortener/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-url-shortener"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2')

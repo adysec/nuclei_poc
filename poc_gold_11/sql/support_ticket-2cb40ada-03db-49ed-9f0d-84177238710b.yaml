@@ -1,0 +1,51 @@
+id: support_ticket-2cb40ada-03db-49ed-9f0d-84177238710b
+
+info:
+  name: >
+    Support Ticket Management System <= 1.9 - Unauthenticated Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2cb40ada-03db-49ed-9f0d-84177238710b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/support_ticket/"
+    google-query: inurl:"/wp-content/plugins/support_ticket/"
+    shodan-query: 'http.html:"wp-content/plugins/support_ticket/"'
+  tags: cve,wordpress,wp-plugin,support_ticket,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/support_ticket/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "support_ticket"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9')

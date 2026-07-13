@@ -1,0 +1,39 @@
+http:
+- extractors:
+  - group: 0
+    part: body
+    regex:
+    - rwtest[a-z0-9]+
+    type: regex
+  fuzzing:
+  - fuzz:
+    - '{{reflection}}'
+    mode: single
+    part: request
+    type: postfix
+  matchers:
+  - part: body
+    type: word
+    words:
+    - rwtest
+  - condition: and
+    dsl:
+    - '!contains(body, "<!--rwtest")'
+    - '!contains(body, "//rwtest")'
+    type: dsl
+  matchers-condition: and
+  payloads:
+    reflection:
+    - rwtest{{randstr_1}}
+  pre-condition:
+  - dsl:
+    - method != "OPTIONS"
+    type: dsl
+  stop-at-first-match: true
+id: reflected-detection
+info:
+  author: reewardius
+  description: Detects if user input is reflected in the response
+  name: Reflected Input Detection
+  severity: info
+  tags: fuzzing-req,reflected,dast

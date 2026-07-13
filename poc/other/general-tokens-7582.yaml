@@ -1,0 +1,51 @@
+id: generic-tokens
+
+info:
+  name: Generic Tokens
+  author: nadino,geeknik
+  severity: info
+  tags: exposure,token
+
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - regex("TOKEN[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
+          - regex("API[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
+          - regex("KEY[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
+          - regex("SECRET[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
+          - regex("AUTHORIZATION[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
+          - regex("PASSWORD[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)key(up|down|press|boardnavigation)'
+          - '(?i)password(lessauth|requirementsashtmllist|emailnotfoundmessage|label|errormessage|message)'
+          - '(?i)keys_(close|previous|next|zoom|play_pause)'
+        condition: or
+        negative: true
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - (T|t)(O|o)(K|k)(E|e)(N|n)[\-|_|A-Za-z0-9]*(\''|")?( )*(:|=)+()*(\''|")?[ 0-9A-Za-z\-_]+(\''|")?
+          - (A|a)(P|p)(Ii)[\-|_|A-Za-z0-9]*(\''|")?( )*(:|=)( )*(\''|")?[0-9A-Za-z\-_]+(\''|")?
+          - (K|k)(E|e)(Y|y)[\-|_|A-Za-z0-9]*(\''|")?( )*(:|=)( )*(\''|")?[0-9A-Za-z\-_]+(\''|")?
+          - (S|s)(E|e)(C|c)(R|r)(E|e)(T|t)[\-|_|A-Za-z0-9]*(\''|")?( )*(:|=)()*(\''|")?[ 0-9A-Za-z\-_]+(\''|")?
+          - (A|a)(U|u)(T|t)(H|h)(O|o)(R|r)(I|i)(Z|z)(A|a)(T|t)(I|i)(O|o)(N|n)[\-|_|A-Za-z0-9]*(\''|")?()*(:|=)( )*(\''|")?[ 0-9A-Za-z\-_]+(\''|")?
+          - (P|p)(A|a)(S|s)(S|s)(W|w)(O|o)(R|r)(D|d)[\-|_|A-Za-z0-9]*(\''|")?()*(:|=)( )*(\''|")?[ 0-9A-Za-z\-_]+(\''|")?

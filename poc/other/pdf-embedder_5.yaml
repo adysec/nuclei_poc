@@ -1,49 +1,59 @@
-id: wordpress-pdf-embedder
+id: pdf-embedder
 
 info:
-  name: PDF Embedder Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    PDF Embedder <= 4.6.4 - Authenticated (Contributor+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
   reference:
-    - https://wordpress.org/plugins/pdf-embedder/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b63f0862-d817-49c6-8ac2-6143d21abc32?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
   metadata:
-    plugin_namespace: pdf-embedder
-    wpscan: https://wpscan.com/plugin/pdf-embedder
-  tags: tech,wordpress,wp-plugin,top-200
+    fofa-query: "wp-content/plugins/pdf-embedder/"
+    google-query: inurl:"/wp-content/plugins/pdf-embedder/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,pdf-embedder,low
 
 http:
   - method: GET
-
+    redirects: true
+    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/pdf-embedder/readme.txt"
 
-    payloads:
-      last_version: helpers/wordpress/plugins/pdf-embedder.txt
-
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "pdf-embedder"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.6.4')

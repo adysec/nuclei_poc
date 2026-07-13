@@ -1,0 +1,59 @@
+id: activitypub-76e35dc6-a4d2-4dca-a186-395f0dd954aa
+
+info:
+  name: >
+    ActivityPub <= 0.17.0 - Authenticated (Contributor+) Stored Cross-Site Scripting via User Metadata
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/76e35dc6-a4d2-4dca-a186-395f0dd954aa?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/activitypub/"
+    google-query: inurl:"/wp-content/plugins/activitypub/"
+    shodan-query: 'http.html:"wp-content/plugins/activitypub/"'
+  tags: cve,wordpress,wp-plugin,activitypub,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/activitypub/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "activitypub"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.17.0')

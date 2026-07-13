@@ -1,49 +1,59 @@
-id: wordpress-contact-form-7
+id: contact-form-7
 
 info:
-  name: Contact Form 7 Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    Contact Form 7 <= 3.5.2 - Arbitrary File Upload
+  author: topscoder
+  severity: critical
+  description: >
+    The Contact Form 7 plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation on contact form uploads in versions up to, and including, 3.5.2. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected sites server which may make remote code execution possible.
   reference:
-    - https://wordpress.org/plugins/contact-form-7/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/92298f2d-aced-4177-b6e8-36e153e9c930?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: 
   metadata:
-    plugin_namespace: contact-form-7
-    wpscan: https://wpscan.com/plugin/contact-form-7
-  tags: tech,wordpress,wp-plugin,top-100,top-200
+    fofa-query: "wp-content/plugins/contact-form-7/"
+    google-query: inurl:"/wp-content/plugins/contact-form-7/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,contact-form-7,critical
 
 http:
   - method: GET
-
+    redirects: true
+    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/contact-form-7/readme.txt"
 
-    payloads:
-      last_version: helpers/wordpress/plugins/contact-form-7.txt
-
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "contact-form-7"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.5.2')

@@ -1,49 +1,59 @@
-id: wordpress-ocean-extra
+id: ocean-extra
 
 info:
-  name: Ocean Extra Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    Ocean Extra <= 2.2.6 - Authenticated (Contributor+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
   reference:
-    - https://wordpress.org/plugins/ocean-extra/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a292579c-9755-4bd4-996c-23d19ca1c197?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
   metadata:
-    plugin_namespace: ocean-extra
-    wpscan: https://wpscan.com/plugin/ocean-extra
-  tags: tech,wordpress,wp-plugin,top-100,top-200
+    fofa-query: "wp-content/plugins/ocean-extra/"
+    google-query: inurl:"/wp-content/plugins/ocean-extra/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,ocean-extra,low
 
 http:
   - method: GET
-
+    redirects: true
+    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/ocean-extra/readme.txt"
 
-    payloads:
-      last_version: helpers/wordpress/plugins/ocean-extra.txt
-
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "ocean-extra"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.2.6')

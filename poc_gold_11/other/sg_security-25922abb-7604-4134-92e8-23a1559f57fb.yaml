@@ -1,0 +1,51 @@
+id: sg_security-25922abb-7604-4134-92e8-23a1559f57fb
+
+info:
+  name: >
+    SiteGround Security <= 1.5.8 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/25922abb-7604-4134-92e8-23a1559f57fb?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/sg-security/"
+    google-query: inurl:"/wp-content/plugins/sg-security/"
+    shodan-query: 'http.html:"wp-content/plugins/sg-security/"'
+  tags: cve,wordpress,wp-plugin,sg-security,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sg-security/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "sg-security"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5.8')

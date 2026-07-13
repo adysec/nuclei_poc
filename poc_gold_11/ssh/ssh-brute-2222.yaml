@@ -1,0 +1,45 @@
+id: ssh-brute-2222
+info:
+  author: tarunKoyalwar
+  metadata:
+    max-request: 223
+    shodan-query: port:22
+  name: SSH - Default Logins
+  severity: critical
+  tags: js,ssh,default-login,network
+javascript:
+- args:
+    Host: '{{Host}}'
+    Password: '{{passwords}}'
+    Port: '2222'
+    Username: '{{usernames}}'
+  attack: pitchfork
+  code: 'var m = require("nuclei/ssh");
+
+    var c = m.SSHClient();
+
+    c.Connect(Host,Port,Username,Password);
+
+    '
+  matchers:
+  - condition: and
+    dsl:
+    - response == true
+    - success == true
+    type: dsl
+  payloads:
+    passwords: helpers/wordlists/ssh-passwords.txt
+    usernames: helpers/wordlists/ssh-users.txt
+  pre-condition: 'var m = require("nuclei/ssh");
+
+    var c = m.SSHClient();
+
+    var response = c.ConnectSSHInfoMode(Host, Port);
+
+    // only bruteforce if ssh allows password based authentication
+
+    response["UserAuth"].includes("password")
+
+    '
+  stop-at-first-match: true
+  threads: 10

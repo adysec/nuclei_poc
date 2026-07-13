@@ -1,0 +1,68 @@
+
+# Template 4: Combined Aadhar and PAN Detection
+id: aadhar-pan-scanner-combined
+
+info:
+  name: Indian Identity Cards Detection (Aadhar & PAN)
+  author: gigachad80
+  severity: high
+  description: Comprehensive detection of exposed Indian identity documents (Aadhar and PAN cards)
+  classification:
+    cve-id: N/A
+    cwe-id: CWE-200
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: N/A
+  tags: exposure,aadhar,pan,pii,india,sensitive-data,identity
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/admin"
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/profile"
+      - "{{BaseURL}}/user"
+      - "{{BaseURL}}/api"
+      - "{{BaseURL}}/dashboard"
+      - "{{BaseURL}}/documents"
+      - "{{BaseURL}}/kyc"
+      - "{{BaseURL}}/verification"
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: aadhar-with-spaces
+        regex:
+          - "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}"
+        part: body
+
+      - type: regex
+        name: aadhar-no-spaces
+        regex:
+          - "[2-9]{1}[0-9]{11}"
+        part: body
+
+      - type: regex
+        name: pan-card
+        regex:
+          - "[A-Z]{5}[0-9]{4}[A-Z]{1}"
+        part: body
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: identity-documents
+        regex:
+          - "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}"  # Aadhar with spaces
+          - "[2-9]{1}[0-9]{11}"                        # Aadhar without spaces
+          - "[A-Z]{5}[0-9]{4}[A-Z]{1}"                 # PAN card
+        part: body

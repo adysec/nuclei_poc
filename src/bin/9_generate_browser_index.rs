@@ -2,10 +2,10 @@
 //!
 //! Reads `poc.txt` for the main `poc/` directory and walks `poc_dedup/` and
 //! `poc_gold_*/` tier directories on disk.  Groups files by category, splits large categories into
-//! chunks of `CHUNK_SIZE`, and writes everything under `poc_browser/`.
+//! chunks of `CHUNK_SIZE`, and writes everything under `docs/`.
 //!
 //! Output structure:
-//!   poc_browser/
+//!   docs/
 //!     _categories.json         — summary { dir: { cat: count } }
 //!     poc_cve_0.json           — chunk 0  (3000 filenames)
 //!     poc_cve_1.json           — chunk 1
@@ -32,7 +32,7 @@ use walkdir::WalkDir;
 const CHUNK_SIZE: usize = 3000;
 
 /// Output directory relative to the repo root.
-const OUT_DIR: &str = "poc_browser";
+const OUT_DIR: &str = "docs";
 
 /// Discover poc_gold_* tier directories (poc_gold_11, poc_gold_12, poc_gold_13, poc_gold_14, poc_gold_15, etc.)
 fn discover_gold_dirs(repo_root: &Path) -> Vec<String> {

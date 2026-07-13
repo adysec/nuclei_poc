@@ -1,0 +1,63 @@
+id: BDU-2026-01517
+
+info:
+  name: MFlash < 8.6 - Remote Code Execution (version detection)
+  author: metascan
+  severity: critical
+  description: |
+    A vulnerable version of MFlash was detected which allows to remotely execute
+    arbitrary code. Versions prior to 8.6 are affected.
+  reference:
+    - https://bdu.fstec.ru/vul/2026-01517
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cve-id: BDU-2026-01517
+    cwe-id: CWE-78
+  metadata:
+    verified: true
+    max-request: 1
+  tags: mflash,rce,version,bdu
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/version"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '\{version:\s*[\d.]+,\s*release:\s*\d+'
+
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        dsl:
+          - 'compare_versions(version_extracted, "< 8.6")'
+
+    extractors:
+      - type: regex
+        name: version_extracted
+        part: body
+        regex:
+          - '\{version:\s*([\d.]+)'
+        group: 1
+        internal: true
+
+      - type: regex
+        name: version
+        part: body
+        regex:
+          - '\{version:\s*([\d.]+)'
+        group: 1
+
+      - type: regex
+        name: release
+        part: body
+        regex:
+          - 'release:\s*(\d+)'
+        group: 1

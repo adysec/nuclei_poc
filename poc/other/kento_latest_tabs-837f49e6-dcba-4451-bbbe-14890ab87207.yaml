@@ -1,0 +1,51 @@
+id: kento_latest_tabs-837f49e6-dcba-4451-bbbe-14890ab87207
+
+info:
+  name: >
+    Latest Tabs <= 1.5 - Cross-Site Request Forgery to Plugin's Settings Update
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/837f49e6-dcba-4451-bbbe-14890ab87207?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/kento-latest-tabs/"
+    google-query: inurl:"/wp-content/plugins/kento-latest-tabs/"
+    shodan-query: 'http.html:"wp-content/plugins/kento-latest-tabs/"'
+  tags: cve,wordpress,wp-plugin,kento-latest-tabs,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/kento-latest-tabs/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kento-latest-tabs"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5')

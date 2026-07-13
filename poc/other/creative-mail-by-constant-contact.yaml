@@ -1,59 +1,49 @@
-id: creative-mail-by-constant-contact
+id: wordpress-creative-mail-by-constant-contact
 
 info:
-  name: >
-    Creative Mail <= 1.5.4 - Cross-Site Request Forgery to Settings Disconnect
-  author: topscoder
-  severity: medium
-  description: >
-    
+  name: Creative Mail – Easier WordPress & WooCommerce Email Marketing Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d143cefc-e387-47bd-aff6-a2099f704d20?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/creative-mail-by-constant-contact/
   metadata:
-    fofa-query: "wp-content/plugins/creative-mail-by-constant-contact/"
-    google-query: inurl:"/wp-content/plugins/creative-mail-by-constant-contact/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,creative-mail-by-constant-contact,medium
+    plugin_namespace: creative-mail-by-constant-contact
+    wpscan: https://wpscan.com/plugin/creative-mail-by-constant-contact
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/creative-mail-by-constant-contact/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/creative-mail-by-constant-contact.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "creative-mail-by-constant-contact"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.5.4')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

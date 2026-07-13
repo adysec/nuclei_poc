@@ -1,33 +1,43 @@
-id: gitlab-public-snippets
-
+id: gitlab-public-snippets 2
 info:
-  name: GitLab public snippets
   author: pdteam
-  severity: info
-  tags: gitlab,exposure,misconfig
-  reference:
-    - https://gist.github.com/vysecurity/20311c29d879e0aba9dcffbe72a88b10
+  name: GitLab public snippets
+  reference: '- https://gist.github.com/vysecurity/20311c29d879e0aba9dcffbe72a88b10
+
     - https://twitter.com/intigriti/status/1375078783338876929
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/explore/snippets"
-      - "{{BaseURL}}/-/snippets"
+    '
+  severity: info
+  tags: gitlab
+requests:
+- attack: sniper
+  matchers:
+  - type: word
+    words:
+    - "<title>Snippets \xB7 Explore \xB7 GitLab</title>"
+  - status:
+    - 200
+    type: status
+  - condition: or
+    negative: true
+    part: body
+    type: word
+    words:
+    - No snippets found
+    - Nothing here.
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /-/snippets HTTP/1.1
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - '<title>Snippets · Explore · GitLab</title>'
+    Host: {{Subdomains}}
 
-      - type: status
-        status:
-          - 200
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: word
-        negative: true
-        condition: or
-        words:
-          - "No snippets found"
-          - "Nothing here."
+    Accept-Encoding: gzip, deflate
+
+    Accept: */*
+
+    '
+  threads: 100

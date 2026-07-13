@@ -1,0 +1,58 @@
+id: wpbook
+
+info:
+  name: "WPBook <= 2.7 - Unauthenticated Cross-Site Request Forgery"
+  author: topscoder
+  severity: high
+  description: "The WPBook plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.7. This is due to missing nonce validation on the wpbook_subpanel() function. This makes it possible for unauthenticated attackers to modify a vulnerable sites Facebook connection via a forged request granted they can trick a site administrator into performing an action such as clicking on a link."
+  reference:
+    - http://planetzuda.tumblr.com/post/124391905794/wpbook-37-wordpress-plugin-csrf-to-malicious
+    - https://wpscan.com/vulnerability/75fb9ea8-64bc-4eb3-8214-97144899bed0
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=1087142%40wpbook&new=1087142%40wpbook&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wpbook/"
+    google-query: inurl:"/wp-content/plugins/wpbook/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wpbook,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpbook/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpbook"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.7')

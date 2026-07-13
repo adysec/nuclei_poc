@@ -1,0 +1,51 @@
+id: forumwp-c0915660-fcc9-451f-a6bc-60b6fd86ec63
+
+info:
+  name: >
+    ForumWP <= 2.1.4 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c0915660-fcc9-451f-a6bc-60b6fd86ec63?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/forumwp/"
+    google-query: inurl:"/wp-content/plugins/forumwp/"
+    shodan-query: 'http.html:"wp-content/plugins/forumwp/"'
+  tags: cve,wordpress,wp-plugin,forumwp,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/forumwp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "forumwp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.4')

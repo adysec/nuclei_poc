@@ -1,117 +1,44 @@
-id: php-backup-files
-
+id: php-backup-files 1
 info:
-  name: PHP Source - Backup File Information Disclosure
-  author: StreetOfHackerR007,pwnhxl
+  author: StreetOfHackerR007 (Rohit Soni)
+  name: PHP source disclosure through backup files
   severity: medium
-  tags: exposure,backup,php,disclosure,fuzz
-  metadata:
-    max-request: 1025
+  tags: exposure,backup,php
+requests:
+- attack: sniper
+  matchers:
+  - status:
+    - 200
+    type: status
+  - condition: or
+    part: body
+    type: word
+    words:
+    - <?php
+    - <?=
+  - part: body
+    type: word
+    words:
+    - ?>
+  - condition: or
+    part: header
+    type: word
+    words:
+    - text/plain
+    - bytes
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /index.php.bak HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}{{filepath}}{{bakext}}"
+    Host: {{Subdomains}}
 
-    attack: clusterbomb
-    payloads:
-      filepath:
-        - /wp-config.php   # wordpress
-        - /site/default/settings.php   # drupal
-        - /installation/configuration.php   # joomla
-        - /app/etc/env.php   # magento
-        - /Application/Common/Conf/config.php   # thinkphp
-        - /environments/dev/common/config/main-local.php   # yii
-        - /environments/prod/common/config/main-local.php   # yii
-        - /common/config/main-local.php   # yii
-        - /system/config/default.php   # opencart
-        - /typo3conf/localconf.php   # typo3
-        - /config/config_global.php   # discuz
-        - /config/config_ucenter.php   # discuz
-        - /textpattern/config.php   # textpattern
-        - /data/common.inc.php   # dedecms
-        - /caches/configs/database.php   # phpcms
-        - /caches/configs/system.php   # phpcms
-        - /include/config.inc.php   # phpcms
-        - /phpsso_server/caches/configs/database.php   # phpcms
-        - /phpsso_server/caches/configs/system.php   # phpcms
-        - /zb_users/c_option.php   # zblog
-        - /e/class/config.php   # empirecms
-        - /e/config/config.php   # empirecms
-        - /data/sql_config.php   # phpwind
-        - /data/bbscache/config.php   # phpwind
-        - /db.php
-        - /conn.php
-        - /database.php
-        - /db_config.php
-        - /config.inc.php
-        - /data/config.php
-        - /config/config.php
-        - /index.php
-        - /default.php
-        - /main.php
-        - /settings.php
-        - /header.php
-        - /footer.php
-        - /login.php
-        - /404.php
-        - /wp-login.php
-        - /config.php
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      bakext:
-        - ".~"
-        - ".bk"
-        - ".bak"
-        - ".BAK"
-        - ".swp"
-        - ".swo"
-        - ".swn"
-        - ".tmp"
-        - ".save"
-        - ".old"
-        - ".new"
-        - ".orig"
-        - ".dist"
-        - ".txt"
-        - ".disabled"
-        - ".original"
-        - ".backup"
-        - "_bak"
-        - "_1.bak"
-        - "~"
-        - "!"
-        - ".0"
-        - ".1"
-        - ".2"
-        - ".3"
+    Accept-Encoding: gzip, deflate
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
+    Accept: */*
 
-      - type: word
-        part: body
-        words:
-          - "<?php"
-          - "<?="
-        condition: or
-
-      - type: word
-        part: body
-        words:
-          - "?>"
-          - "($"
-          - "$_GET["
-          - "$_POST["
-          - "$_REQUEST["
-          - "$_SERVER["
-        condition: or
-
-      - type: word
-        part: header
-        words:
-          - "text/plain"
-          - "bytes"
-        condition: or
+    '
+  threads: 100

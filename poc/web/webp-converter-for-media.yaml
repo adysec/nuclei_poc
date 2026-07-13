@@ -1,59 +1,49 @@
-id: webp-converter-for-media
+id: wordpress-webp-converter-for-media
 
 info:
-  name: >
-    WebP Converter for Media – Convert WebP and AVIF & Optimize Images <= 1.0.2 - Cross-Site Request Forgery
-  author: topscoder
-  severity: medium
-  description: >
-    
+  name: Converter for Media – Optimize images | Convert WebP & AVIF Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5cbb8495-70e0-48cc-84d9-6d3cf3ec5355?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/webp-converter-for-media/
   metadata:
-    fofa-query: "wp-content/plugins/webp-converter-for-media/"
-    google-query: inurl:"/wp-content/plugins/webp-converter-for-media/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,webp-converter-for-media,medium
+    plugin_namespace: webp-converter-for-media
+    wpscan: https://wpscan.com/plugin/webp-converter-for-media
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/webp-converter-for-media/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/webp-converter-for-media.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "webp-converter-for-media"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.0.2')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

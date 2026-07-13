@@ -1,0 +1,51 @@
+id: blueprint-aaab0d67-1cb4-426b-b6d9-c1b54fc1779f
+
+info:
+  name: >
+    Blueprint < 1.1.5 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/aaab0d67-1cb4-426b-b6d9-c1b54fc1779f?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/blueprint/"
+    google-query: inurl:"/wp-content/themes/blueprint/"
+    shodan-query: 'http.html:"wp-content/themes/blueprint/"'
+  tags: cve,wordpress,wp-theme,blueprint,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/blueprint/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "blueprint"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.1.5')

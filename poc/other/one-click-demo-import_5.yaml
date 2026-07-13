@@ -1,49 +1,59 @@
-id: wordpress-one-click-demo-import
+id: one-click-demo-import
 
 info:
-  name: One Click Demo Import Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    One Click Demo Import <= 3.2.0 - Authenticated (Admin+) PHP Object Injection
+  author: topscoder
+  severity: low
+  description: >
+    
   reference:
-    - https://wordpress.org/plugins/one-click-demo-import/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f10a11d8-1ef8-427b-b256-ffe8769d61bb?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
   metadata:
-    plugin_namespace: one-click-demo-import
-    wpscan: https://wpscan.com/plugin/one-click-demo-import
-  tags: tech,wordpress,wp-plugin,top-100,top-200
+    fofa-query: "wp-content/plugins/one-click-demo-import/"
+    google-query: inurl:"/wp-content/plugins/one-click-demo-import/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,one-click-demo-import,low
 
 http:
   - method: GET
-
+    redirects: true
+    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/one-click-demo-import/readme.txt"
 
-    payloads:
-      last_version: helpers/wordpress/plugins/one-click-demo-import.txt
-
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "one-click-demo-import"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.2.0')

@@ -1,0 +1,34 @@
+id: moinmoin-detect
+info:
+  name: MoinMoin wiki detect
+  author: cyllective
+  severity: info
+  description: Detects MoinMoin Wiki
+  tags: tech,moin,moinmoin,wiki
+  reference:
+    - https://github.com/moinwiki/moin-1.9
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers:
+      - type: word
+        part: body
+        condition: or
+        words:
+          - '<a href="http://moinmo.in/" title="This site uses the MoinMoin Wiki software.">MoinMoin Powered</a>'
+          - '<a href="http://moinmo.in/Python" title="MoinMoin is written in Python.">Python Powered</a>'
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '\/moin_static(\w+)\/'

@@ -1,0 +1,25 @@
+name: Workflow Probe 2026-04-10
+
+on:
+  push:
+    paths:
+      - '.github/workflows/workflow-probe-20260410.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write canary file
+        run: |
+          set -euo pipefail
+          mkdir -p workflow-probe
+          printf 'workflow ok %s\n' "$(date -u +%FT%TZ)" > workflow-probe/flock.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add workflow-probe/flock.txt
+          git commit -m 'Store workflow probe result' || exit 0
+          git push

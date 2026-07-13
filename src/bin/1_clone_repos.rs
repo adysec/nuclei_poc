@@ -10,8 +10,11 @@ use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tokio::time::timeout;
 use tracing::{error, info, warn};
+use walkdir::WalkDir;
 
 /// 并发克隆或更新仓库，并限制并发数。
+/// 克隆完成后会将已有的 poc/ 目录移入 clone-templates/，
+/// 保证循环运行时所有文件都参与后续去重流程。
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 struct Args {
@@ -23,9 +26,18 @@ struct Args {
     #[clap(short, long, default_value = "clone-templates")]
     clone_dir: String,
 
+    /// 已有的 poc 目录（支持多个，会移入 clone-templates 参与重处理）。
+    /// 默认：poc poc_gold_11 poc_gold_12 poc_gold_13 poc_gold_14 poc_gold_15 poc_dedup poc_excluded
+    #[clap(long, default_values = &["poc", "poc_gold_11", "poc_gold_12", "poc_gold_13", "poc_gold_14", "poc_gold_15", "poc_dedup", "poc_excluded"])]
+    poc_dirs: Vec<String>,
+
     /// 最大并发的git操作（0表示自动检测）
     #[clap(short, long, default_value_t = 0)]
     jobs: usize,
+
+    /// 跳过 git clone/pull，仅将 poc/ 复制到 clone-templates/
+    #[clap(long)]
+    skip_clone: bool,
 }
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -53,7 +65,10 @@ async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
 
     fs::create_dir_all(&clone_dir)?;
 
-    // 读取并去重
+    if args.skip_clone {
+        info!("跳过 git clone/pull (--skip-clone)");
+    } else {
+        // 读取并去重
     let file = fs::File::open(&repo_file).map_err(|e| anyhow::anyhow!("open {}: {}", repo_file, e))?;
     let reader = io::BufReader::new(file);
     let mut urls: HashSet<String> = HashSet::new();
@@ -137,6 +152,36 @@ async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
     }
 
     info!("所有克隆任务已完成");
+
+    } // end of clone block
+
+    // ── 将所有已有的 poc* 目录移入 clone-templates/ ──
+    // 先复制再删除，避免流水线中途失败导致数据丢失。
+    for poc_dir in &args.poc_dirs {
+        let poc_src = Path::new(poc_dir);
+        if !poc_src.is_dir() {
+            info!("{} 目录不存在，跳过", poc_dir);
+            continue;
+        }
+        let dir_name = poc_src.file_name().unwrap_or_default();
+        let poc_dest = Path::new(&clone_dir).join(dir_name);
+        if poc_dest.exists() {
+            if let Err(e) = fs::remove_dir_all(&poc_dest) {
+                warn!("无法清理旧目录 {:?}: {}", poc_dest, e);
+            }
+        }
+        info!("复制已有 POC: {:?} -> {:?}", poc_src, poc_dest);
+        match copy_dir_recursive(poc_src, &poc_dest) {
+            Ok(n) => {
+                info!("已复制 {} 个文件到 {:?}", n, poc_dest);
+                if let Err(e) = fs::remove_dir_all(poc_src) {
+                    warn!("无法删除原目录 {}: {} (不影响后续流程)", poc_dir, e);
+                }
+            }
+            Err(e) => warn!("复制 {} 失败: {} (原目录保留)", poc_dir, e),
+        }
+    }
+
     Ok(())
 }
 
@@ -154,3 +199,21 @@ fn parse_owner_repo(url: &str) -> Option<(String, String)> {
     None
 }
 
+/// 递归复制目录，返回复制的文件数。
+fn copy_dir_recursive(src: &Path, dest: &Path) -> anyhow::Result<u64> {
+    let mut count = 0u64;
+    for entry in WalkDir::new(src).into_iter().filter_map(|e| e.ok()) {
+        let rel = entry.path().strip_prefix(src)?;
+        let target = dest.join(rel);
+        if entry.file_type().is_dir() {
+            fs::create_dir_all(&target)?;
+        } else {
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::copy(entry.path(), &target)?;
+            count += 1;
+        }
+    }
+    Ok(count)
+}

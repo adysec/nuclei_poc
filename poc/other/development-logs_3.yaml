@@ -1,47 +1,49 @@
-id: development-logs
-
+id: development-logs 3
 info:
-  name: Discover development log files
   author: geeknik
+  name: Discover development log files
   severity: info
   tags: logs,exposure,rails
-  metadata:
-    max-request: 3
+requests:
+- attack: sniper
+  extractors:
+  - name: last_modified
+    part: header
+    regex:
+    - Last-Modified:.*
+    type: regex
+  matchers:
+  - condition: or
+    type: word
+    words:
+    - Connecting to database specified by database.yml
+    - Started GET
+  - condition: or
+    type: word
+    words:
+    - DEPRECATION WARNING
+    - CREATE TABLE
+  - negative: true
+    part: header
+    type: word
+    words:
+    - text/html
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /development.log HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/log/development.log"
-      - "{{BaseURL}}/logs/development.log"
-      - "{{BaseURL}}/development.log"
+    Host: {{Subdomains}}
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "Connecting to database specified by database.yml"
-          - "Started GET"
-        condition: or
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: word
-        words:
-          - "DEPRECATION WARNING"
-          - "CREATE TABLE"
-        condition: or
+    Accept-Encoding: gzip, deflate
 
-      - type: word
-        part: header
-        words:
-          - "text/html"
-        negative: true
+    Accept: */*
 
-      - type: status
-        status:
-          - 200
-
-    extractors:
-      - type: regex
-        name: last_modified
-        part: header
-        regex:
-          - 'Last-Modified:.*'
+    '
+  threads: 100

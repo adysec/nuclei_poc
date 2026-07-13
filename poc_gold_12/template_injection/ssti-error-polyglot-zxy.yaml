@@ -1,0 +1,71 @@
+# gap: ssti-error-polyglot-zxy
+id: ssti-error-polyglot-zxy
+
+info:
+  name: SSTI Error Polyglot — (1/0).zxy.zxy Universal Property-Access Probe
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects server-side template injection via the `.zxy.zxy` polyglot
+    primitive from Vladko312 (`Research_Successful_Errors` v1.1,
+    Feb 2026). The payload `(1/0).zxy.zxy` is constructed to FAIL in
+    every template engine the research surveyed, by chaining two
+    distinct error vectors:
+
+      * `(1/0)`           — division-by-zero in strongly-typed engines
+                            (Python, Java, Ruby, Elixir) — raises
+                            `ZeroDivisionError`, `ArithmeticException`.
+      * `.zxy.zxy`        — chained property access on the result —
+                            raises `TypeError` / `cannot read property`
+                            in weakly-typed engines (JavaScript / Node)
+                            where `1/0` silently evaluates to `Infinity`
+                            and `Infinity.zxy.zxy` therefore reads
+                            `undefined.zxy` → throw.
+
+    The dual-vector design means a single request fires across engines
+    that the simpler `1/0` or `7*7` probes would miss. Class signal:
+    response body contains either a division-by-zero / arithmetic
+    error keyword OR an undefined-property / TypeError marker, AND
+    the literal `zxy` substring (proving the polyglot reached the
+    renderer rather than appearing in unrelated error text).
+
+    Class detection — universal property-access invariant + arithmetic
+    invariant. Complements `ssti-arithmetic-active-probe` (positive-
+    evaluation detection) and `ssti-boolean-error-differential` (paired-
+    request detection).
+  reference:
+    - https://github.com/vladko312/Research_Successful_Errors
+    - https://portswigger.net/research/top-10-web-hacking-techniques-of-2025
+    - https://cwe.mitre.org/data/definitions/1336.html
+  tags: custom,vulnerabilities,ssti,injection,rce,owasp,cwe-1336
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?q=%281%2F0%29.zxy.zxy"
+      - "{{BaseURL}}/?search=%281%2F0%29.zxy.zxy"
+      - "{{BaseURL}}/?name=%281%2F0%29.zxy.zxy"
+      - "{{BaseURL}}/?template=%281%2F0%29.zxy.zxy"
+      - "{{BaseURL}}/?id=%281%2F0%29.zxy.zxy"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '(?i)(undefined property|cannot read prop(erty|erties) of (undefined|null|Infinity)|TypeError|NoneType|NoMethodError|ZeroDivisionError|ArithmeticException|FunctionClauseError|division by zero|float division by zero|integer division or modulo by zero)'
+      # FP guard: zxy substring must appear in response (proves the polyglot
+      # reached the renderer rather than a generic unrelated error page).
+      - type: word
+        part: body
+        words:
+          - "zxy"
+
+    extractors:
+      - type: regex
+        part: body
+        name: ssti-engine-hint
+        regex:
+          - '((?i)(undefined property|cannot read property|TypeError|NoneType|NoMethodError|ZeroDivisionError|ArithmeticException|FunctionClauseError|division by zero)[^<\r\n]{0,160})'
+        group: 1

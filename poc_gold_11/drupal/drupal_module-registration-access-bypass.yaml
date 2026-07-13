@@ -1,0 +1,56 @@
+
+id: drupal_module-registration-access-bypass
+info:
+  name: drupal_module-registration-access-bypass
+  author: me
+  severity: medium
+  description: "This module enables you to create registration entities related to nodes. The module doesnt sufficiently restrict update access to a users own registrations. This vulnerability is mitigated by the fact that an attacker must have the update own [registration type] permission."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-063
+  metadata:
+    security-risk: "Moderately critical 13 ∕ 25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/registration/"
+    google-query: "inurl:'/sites/all/modules/registration/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/registration/registration.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'registration'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '9.x-99.99')

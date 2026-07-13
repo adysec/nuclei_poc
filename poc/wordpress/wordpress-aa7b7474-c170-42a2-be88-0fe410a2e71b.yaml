@@ -1,0 +1,61 @@
+id: wordpress-aa7b7474-c170-42a2-be88-0fe410a2e71b
+
+info:
+  name: >
+    WordPress <= 6.9.1 - Authenticated (Author+) XML External Entity Injection via getID3 Library Media Upload
+  author: topscoder
+  severity: low
+  description: >
+    WordPress core is vulnerable to XML External Entity (XXE) Injection via the bundled getID3 library in all versions up to and including 6.9.1. This is due to the `GETID3_LIBXML_OPTIONS` constant including the `LIBXML_NOENT` flag, which enables XML entity substitution during parsing. When WordPress processes media files containing XML metadata (specifically iXML chunks in WAV/RIFF/AVI files), the getID3 library parses the XML with entity substitution enabled, allowing local file disclosure via `file://` protocol URIs. This may make it possible for authenticated attackers with Author-level access to read arbitrary files from the server.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/aa7b7474-c170-42a2-be88-0fe410a2e71b?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 6.5
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,low,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.9', '<= 6.9.1')
+          - compare_versions(version_by_js, '>= 6.9', '<= 6.9.1')
+          - compare_versions(version_by_css, '>= 6.9', '<= 6.9.1')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

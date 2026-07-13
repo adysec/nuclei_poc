@@ -1,0 +1,51 @@
+id: game_catalog-0888cda8-63ca-44f6-a3eb-765c14a7e6c7
+
+info:
+  name: >
+    Games Catalog <= 1.2.0 - Cross-Site Request Forgery to Arbitrary Game/Post Deletion
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0888cda8-63ca-44f6-a3eb-765c14a7e6c7?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/game-catalog/"
+    google-query: inurl:"/wp-content/plugins/game-catalog/"
+    shodan-query: 'http.html:"wp-content/plugins/game-catalog/"'
+  tags: cve,wordpress,wp-plugin,game-catalog,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/game-catalog/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "game-catalog"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.0')

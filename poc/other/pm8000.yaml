@@ -1,0 +1,78 @@
+id: schneider-pm8000-default-login
+
+info:
+  name: Schneider Electric PowerLogic PM8000 Default Login
+  author: Vincent Bouvier
+  severity: high
+  description: |
+    Schneider Electric PowerLogic PM8000 Power Quality Meter with default User1/0 credentials discovered.
+  reference:
+    - https://www.se.com/us/en/faqs/FA243275/
+    - https://www.se.com/ww/en/product-range/61102-powerlogic-pm8000/
+    - https://www.productinfo.schneider-electric.com/nadigest/5c51d645347bdf0001f1f280/Master/17704_MAIN%20(bookmap)_0000041932.xml/$/PowerQualityMeters-PM8000CPT_0000083065
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    max-request: 2
+    vendor: Schneider Electric
+    product: PowerLogic PM8000
+    runzero-match: any(each(service["tls.cn"]), {# matches `(?i)PM8000-`}) || any(each(service["tls.names"]), {# matches `(?i)pm8000-`}) || any(each(service["service.vhost"]), {# matches `(?i)PM8000-`}) || (asset["hw"] matches `Schneider\s+Electric\s+PowerLogic\s+Power\s+Meter` && any(each(service["http.head.location"]), {# matches `/web/resources/monitoring.html`}))
+  tags: default-login,schneider-electric,powerlogic,pm8000,ics,scada,iot,runzero
+
+http:
+  - raw:
+      - |
+        GET /web/resources/monitoring.html HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+
+      - |
+        POST /web/resources/monitoring.html HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/web/resources/monitoring.html
+
+        credentials={{username}}%3A{{password}}&language=English&nonce={{nonce}}&URL=resources%2Fmonitoring.html
+
+    attack: pitchfork
+    payloads:
+      username:
+        - User1
+      password:
+        - "0"
+    cookie-reuse: true
+    host-redirects: true
+    max-redirects: 3
+    stop-at-first-match: true
+
+    extractors:
+      - type: regex
+        name: nonce
+        internal: true
+        part: header
+        group: 1
+        regex:
+          - "COOKIE=([a-f0-9]{24})"
+      - type: regex
+        name: nonce
+        internal: true
+        part: body
+        group: 1
+        regex:
+          - 'name=["\x27]nonce["\x27][^>]+value=["\x27]([a-f0-9]{24})["\x27]'
+          - 'value=["\x27]([a-f0-9]{24})["\x27][^>]+name=["\x27]nonce["\x27]'
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "customUserPages.populateCustomUserPagesForSection"
+          - "powerQualitySummary"
+          - "instReadings.html"
+          - "waveforms.html"
+        condition: or

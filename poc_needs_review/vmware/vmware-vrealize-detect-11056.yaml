@@ -1,0 +1,38 @@
+id: vmware-vrealize
+info:
+  name: VMware vRealize
+  author: milo2012
+  severity: info
+  description: Version of VMware vRealize Operations Manager
+  tags: vmware,vrealize
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /ui/login.action HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - text/html
+        part: header
+      - type: word
+        words:
+          - '<title>vRealize Operations Manager</title>'
+        part: body
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "SessionProvider.js\\?version=([0-9.]+)"

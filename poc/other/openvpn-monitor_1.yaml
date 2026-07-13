@@ -1,42 +1,43 @@
-id: openvpn-monitor
-
+id: openvpn-monitor 1
 info:
-  name: OpenVPN Monitor - Detect
   author: geeknik
-  severity: info
-  description: openvpn-monitor was discovered. OpenVPN Monitor is a simple python program to generate html that displays the status of an OpenVPN server, including all its current connections.
-  reference:
-    - https://openvpn-monitor.openbytes.ie/
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cvss-score: 0.0
-    cwe-id: CWE-200
+  description: openvpn-monitor is a simple python program to generate html that displays
+    the status of an OpenVPN server, including all current connections.
+  name: OpenVPN Monitor Disclosure
+  reference: https://openvpn-monitor.openbytes.ie/
+  severity: high
   tags: openvpn,disclosure,panel
-
 requests:
-  - method: GET
-    path:
-      - '{{BaseURL}}'
-      - '{{BaseURL}}/openvpn-monitor/'
+- attack: sniper
+  matchers:
+  - status:
+    - 200
+    type: status
+  - condition: and
+    part: body
+    type: word
+    words:
+    - OpenVPN Status Monitor
+    - Username
+    - VPN IP
+    - Remote IP
+  - part: header
+    type: word
+    words:
+    - text/html
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /openvpn-monitor HTTP/1.1
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
+    Host: {{Subdomains}}
 
-      - type: word
-        part: body
-        words:
-          - 'OpenVPN Status Monitor'
-          - 'Username'
-          - 'VPN IP'
-          - 'Remote IP'
-        condition: and
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: word
-        part: header
-        words:
-          - "text/html"
+    Accept-Encoding: gzip, deflate
 
-# Enhanced by mp on 2022/04/08
+    Accept: */*
+
+    '
+  threads: 100

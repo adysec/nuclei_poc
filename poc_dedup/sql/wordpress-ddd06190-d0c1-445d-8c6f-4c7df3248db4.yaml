@@ -1,0 +1,61 @@
+id: wordpress-ddd06190-d0c1-445d-8c6f-4c7df3248db4
+
+info:
+  name: >
+    WordPress Core < 6.0.3 - Cross-Site Request Forgery via wp-trackback.php
+  author: topscoder
+  severity: medium
+  description: >
+    WordPress Core is vulnerable to Cross-Site Request Forgery via wp-trackback.php in versions up to 6.0.3. This is due to the fact that the any request to wp-trackback.php would assume the identity of the user whose cookies are sent with the request. This would make it possible for an unauthenticated user to trigger a trackback assuming the identity of another user, granted they could trick that other user into performing the action. In new versions of WordPress, the identity will always be a non-existent user with the ID of 0, which represents an unauthenticated user.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ddd06190-d0c1-445d-8c6f-4c7df3248db4?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,medium,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_js, '>= 6.0', '<= 6.0.2')
+          - compare_versions(version_by_css, '>= 6.0', '<= 6.0.2')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

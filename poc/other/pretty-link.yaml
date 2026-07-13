@@ -1,59 +1,49 @@
-id: pretty-link
+id: wordpress-pretty-link
 
 info:
-  name: >
-    Shortlinks by Pretty Links <= 3.4.0 - Cross-Site Request Forgery via route
-  author: topscoder
-  severity: medium
-  description: >
-    
+  name: Pretty Links – Affiliate Links, Link Branding, Link Tracking & Marketing Plugin Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5304da48-5d42-47ce-b1b1-dc04b8fa9dff?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/pretty-link/
   metadata:
-    fofa-query: "wp-content/plugins/pretty-link/"
-    google-query: inurl:"/wp-content/plugins/pretty-link/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,pretty-link,medium
+    plugin_namespace: pretty-link
+    wpscan: https://wpscan.com/plugin/pretty-link
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/pretty-link/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/pretty-link.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "pretty-link"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 3.4.0')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

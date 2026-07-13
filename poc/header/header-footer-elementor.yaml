@@ -1,59 +1,49 @@
-id: header-footer-elementor
+id: wordpress-header-footer-elementor
 
 info:
-  name: >
-    Elementor Header & Footer Builder <= 1.6.45 - Authenticated (Author+) Stored Cross-Site Scripting via SVG File Upload
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Elementor Header & Footer Builder Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7773fd3a-2417-415e-97b0-735e99e62097?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/header-footer-elementor/
   metadata:
-    fofa-query: "wp-content/plugins/header-footer-elementor/"
-    google-query: inurl:"/wp-content/plugins/header-footer-elementor/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,header-footer-elementor,low
+    plugin_namespace: header-footer-elementor
+    wpscan: https://wpscan.com/plugin/header-footer-elementor
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/header-footer-elementor/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/header-footer-elementor.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "header-footer-elementor"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.6.45')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

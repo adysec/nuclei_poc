@@ -1,56 +1,49 @@
-id: unyson
+id: wordpress-unyson
 
 info:
-  name: "Unyson <= 2.7.18 -  Sensitive Information Exposure"
-  author: topscoder
-  severity: low
-  description: "The Unyson plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 2.7.18 via improperly implemented font file unpacking/downloading. This can allow unauthenticated attackers to extract sensitive data that can be utilized to perform subsequent attacks."
+  name: Unyson Detection
+  author: ricardomaia
+  severity: info
   reference:
-
-  classification:
-    cvss-metrics:
-    cvss-score:
-    cve-id:
+    - https://wordpress.org/plugins/unyson/
   metadata:
-    fofa-query: "wp-content/plugins/unyson/"
-    google-query: inurl:"/wp-content/plugins/unyson/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,unyson,low
+    plugin_namespace: unyson
+    wpscan: https://wpscan.com/plugin/unyson
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/unyson/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/unyson.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "unyson"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<=  2.7.18')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

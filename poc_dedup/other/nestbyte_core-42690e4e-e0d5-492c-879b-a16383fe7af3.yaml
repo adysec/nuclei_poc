@@ -1,0 +1,51 @@
+id: nestbyte_core-42690e4e-e0d5-492c-879b-a16383fe7af3
+
+info:
+  name: >
+    Nestbyte Core <= 1.2 - Unauthenticated SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/42690e4e-e0d5-492c-879b-a16383fe7af3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/nestbyte-core/"
+    google-query: inurl:"/wp-content/plugins/nestbyte-core/"
+    shodan-query: 'http.html:"wp-content/plugins/nestbyte-core/"'
+  tags: cve,wordpress,wp-plugin,nestbyte-core,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/nestbyte-core/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "nestbyte-core"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2')

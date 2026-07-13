@@ -1,59 +1,49 @@
-id: elementor
+id: wordpress-elementor
 
 info:
-  name: "Elementor <= 3.13.3 Authenticated(Contributor+) Arbitrary Post Type Creation via save_item"
-  author: topscoder
-  severity: medium
-  description: "The Elementor plugin for WordPress is vulnerable to the creation of emergent resources due to insufficient input validation in the template 'save_item' function in versions up to, and including, 3.13.3. This allows authenticated attackers, with contributor-level permissions or above, to create templates with an arbitrary post type, potentially allowing the exploitation of other plugins that depend on custom post types."
+  name: Elementor Website Builder Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://plugins.svn.wordpress.org/elementor/tags/3.13.3/readme.txt
-    - https://plugins.svn.wordpress.org/elementor/tags/3.13.3/readme.md
-    - https://elementor.com/?utm_source=wp-plugins&utm_campaign=plugin-uri&utm_medium=wp-dash
-    - https://plugins.trac.wordpress.org/changeset?old_path=%2Felementor%2Ftags%2F3.13.2&old=2916405&new_path=%2Felementor%2Ftags%2F3.13.3&new=2916405&sfp_email=&sfph_mail=
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
-    cvss-score: 5.4
-    cve-id:
+    - https://wordpress.org/plugins/elementor/
   metadata:
-    fofa-query: "wp-content/plugins/elementor/"
-    google-query: inurl:"/wp-content/plugins/elementor/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,elementor,medium
+    plugin_namespace: elementor
+    wpscan: https://wpscan.com/plugin/elementor
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/elementor/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/elementor.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "elementor"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 3.13.3')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

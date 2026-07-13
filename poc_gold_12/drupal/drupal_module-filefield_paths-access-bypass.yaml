@@ -1,0 +1,51 @@
+
+id: drupal_module-filefield_paths-access-bypass
+info:
+  name: drupal_module-filefield_paths-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "The File (Field) Paths module extends the default functionality of Drupals core File module, by adding the ability to use entity-based tokens in destination paths and file names. The modules default configuration could temporarily expose private files to anonymous visitors. Important note:  to fix the problem, database updates must be run in addition to updating the module. Its possible to make a configuration change to mitigate this problem in the admin UI at /admin/config/media/file-system/filefield-paths - the temp file location should use either the temporary:// or private:// stream wrapper if uploaded files should not be exposed publicly. This vulnerability is mitigated by the fact that an attacker must be able to guess the temporary path used for file upload."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-065
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/filefield_paths/"
+    google-query: "inurl:'/sites/all/modules/filefield_paths/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/filefield_paths/filefield_paths.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'filefield_paths'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

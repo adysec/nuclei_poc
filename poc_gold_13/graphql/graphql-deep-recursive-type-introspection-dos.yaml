@@ -1,0 +1,83 @@
+# gap: graphql-deep-recursive-type-introspection-dos
+id: graphql-deep-recursive-type-introspection-dos
+
+info:
+  name: GraphQL Endpoint Accepts Deep Recursive __type Introspection
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects GraphQL endpoints that accept a 12-level-deep
+    recursive `__type` introspection query and walk all of it.
+    Confirms two facts simultaneously: introspection is enabled
+    in production, AND no query-depth / complexity limit is
+    enforced. The depth-walk artefact is high-fidelity because
+    a properly-hardened server returns either a query-rejection
+    error OR truncates the response.
+
+    Probe sends a baseline `{__typename}` followed by the deep
+    recursive query. The matcher fires when:
+    - the baseline confirms a GraphQL endpoint exists,
+    - the deep query returns 200,
+    - the response body contains the `ofType` token repeated
+      at least 6 times (proving the server actually walked the
+      recursion) AND a meaningful response size or duration.
+
+    Beyond schema disclosure, this primitive provides a DoS
+    amplification surface that has been documented as the root
+    cause of multiple GraphQL-server outages in 2024-2026.
+  reference:
+    - https://www.howtographql.com/advanced/4-security/
+    - https://github.com/dolevf/Damn-Vulnerable-GraphQL-Application
+    - https://owasp.org/www-project-graphql-cheat-sheet/
+  tags: custom,vulnerabilities,graphql,introspection,dos,disclosure,cwe-400
+
+http:
+  - raw:
+      # Baseline: confirm a GraphQL endpoint is reachable.
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"query":"{__typename}"}
+
+      # Deep recursive __type introspection.
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"query":"query{__schema{types{fields{type{ofType{ofType{ofType{ofType{ofType{ofType{ofType{ofType{ofType{ofType{name}}}}}}}}}}}}}}"}
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      # Baseline GraphQL endpoint signal.
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, "__typename") || contains(body_1, "data") || contains(body_1, "errors")'
+      # Deep query returned a substantive response.
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'len(body_2) > 5000'
+      # Recursion was actually walked — the `ofType` token must
+      # appear many times in the response.
+      - type: regex
+        part: body_2
+        regex:
+          - '"ofType"[\s\S]{1,500}"ofType"[\s\S]{1,500}"ofType"[\s\S]{1,500}"ofType"[\s\S]{1,500}"ofType"[\s\S]{1,500}"ofType"'
+
+    extractors:
+      - type: regex
+        part: body_2
+        name: leaked-type-names
+        regex:
+          - '"name"\s*:\s*"([A-Z][a-zA-Z0-9_]+)"'
+        group: 1
+      - type: dsl
+        dsl:
+          - '"baseline_size=" + len(body_1) + " deep_size=" + len(body_2) + " duration_s=" + duration_2'

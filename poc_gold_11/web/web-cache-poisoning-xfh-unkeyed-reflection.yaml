@@ -1,0 +1,96 @@
+# gap: web-cache-poisoning-xfh-unkeyed-reflection
+id: web-cache-poisoning-xfh-unkeyed-reflection
+
+info:
+  name: Web Cache Poisoning via Unkeyed X-Forwarded-Host Reflection
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects web cache poisoning where `X-Forwarded-Host` (and
+    sibling headers like `X-Forwarded-Scheme`, `X-Original-URL`)
+    is reflected into the response body (canonical URL, og:url
+    meta tag, JS imports, absolute redirects) but is NOT keyed
+    by the cache. An attacker controls the response served from
+    cache to anonymous visitors.
+
+    Probe is a 3-step raw block:
+    (1) GET with a unique cache-buster query AND a poison
+        `X-Forwarded-Host: nuclei{rand}.example.invalid` —
+        must succeed AND reflect the poison host in the body
+        AND show `X-Cache: MISS` or no cache hit.
+    (2) GET the same cache-busted URL WITHOUT the poison header.
+        The matcher fires only when this second response STILL
+        contains the poison host AND carries `X-Cache: HIT` or
+        `Age: > 0`. That is direct evidence the poisoned
+        response was served to a second client.
+
+    Class detection — keys on the cache-hit-on-cold-key
+    differential and discriminates from mere header reflection
+    (which is non-exploitable when the header IS keyed).
+  reference:
+    - https://portswigger.net/research/practical-web-cache-poisoning
+    - https://portswigger.net/research/web-cache-entanglement
+    - https://owasp.org/www-community/attacks/Cache_Poisoning
+  tags: custom,vulnerabilities,cache,poisoning,owasp,cwe-444
+
+variables:
+  cb: "{{rand_text_alpha(10)}}"
+  poison: "nucleicanary{{rand_text_alpha(8)}}.example.invalid"
+
+http:
+  - raw:
+      # Request 1: poison the cache key
+      - |
+        GET /?cb={{cb}} HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Host: {{poison}}
+        X-Forwarded-Scheme: https
+        Accept: text/html,*/*
+
+      # Request 2: confirm the poisoned body is served on the
+      # same cache key without the header (proves header was
+      # unkeyed AND cache stored the poisoned response).
+      - |
+        GET /?cb={{cb}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,*/*
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      # Request 1 must succeed AND reflect the poison host.
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, poison)'
+      # Request 2 must STILL contain the poison host (cache HIT)
+      # AND must NOT have been sent the header — so any reflection
+      # in body_2 came from cache.
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(body_2, poison)'
+      # Cache-confirmation: prefer X-Cache: HIT or Age > 0 on req 2.
+      - type: regex
+        part: header_2
+        regex:
+          - '(?i)x-cache:\s*hit'
+          - '(?i)cf-cache-status:\s*hit'
+          - '(?i)age:\s*[1-9]'
+          - '(?i)x-served-by:.+,'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body_2
+        name: poisoned-reflection-context
+        regex:
+          - '([a-zA-Z0-9_\-=:"/\.]{0,60}nucleicanary[a-z]{8}\.example\.invalid[a-zA-Z0-9_\-=:"/\.]{0,60})'
+        group: 1
+      - type: kval
+        part: header_2
+        kval:
+          - "X-Cache"
+          - "Cf-Cache-Status"
+          - "Age"
+          - "X-Served-By"

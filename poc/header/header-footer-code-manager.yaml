@@ -1,59 +1,49 @@
-id: header-footer-code-manager
+id: wordpress-header-footer-code-manager
 
 info:
-  name: >
-    Header Footer Code Manager <= 1.1.23 - Cross-Site Scripting
-  author: topscoder
-  severity: high
-  description: >
-    
+  name: Header Footer Code Manager Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6ca0681a-59ca-42e6-8ee2-574590fc3ae2?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/header-footer-code-manager/
   metadata:
-    fofa-query: "wp-content/plugins/header-footer-code-manager/"
-    google-query: inurl:"/wp-content/plugins/header-footer-code-manager/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,header-footer-code-manager,high
+    plugin_namespace: header-footer-code-manager
+    wpscan: https://wpscan.com/plugin/header-footer-code-manager
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/header-footer-code-manager/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/header-footer-code-manager.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "header-footer-code-manager"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.1.23')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

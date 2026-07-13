@@ -1,0 +1,59 @@
+id: wpgform-f76ce5d29f3dfe8d4ec519fe3da1f6cb
+
+info:
+  name: >
+    Google Forms < 0.85 - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5394623b-e9ee-4047-bfe3-d7f6374993cd?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpgform/"
+    google-query: inurl:"/wp-content/plugins/wpgform/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wpgform,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpgform/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpgform"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.85')

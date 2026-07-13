@@ -1,0 +1,51 @@
+id: saveo-b19c81c9-d4ea-4a62-ba37-7904cc3ca95a
+
+info:
+  name: >
+    Saveo <= 1.1.2 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b19c81c9-d4ea-4a62-ba37-7904cc3ca95a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/saveo/"
+    google-query: inurl:"/wp-content/themes/saveo/"
+    shodan-query: 'http.html:"wp-content/themes/saveo/"'
+  tags: cve,wordpress,wp-theme,saveo,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/saveo/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "saveo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.2')

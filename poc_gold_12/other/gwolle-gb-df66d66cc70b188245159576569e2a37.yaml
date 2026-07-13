@@ -1,0 +1,58 @@
+id: gwolle-gb-df66d66cc70b188245159576569e2a37
+
+info:
+  name: "Gwolle Guestbook <= 2.1.0 - Cross-Site Request Forgery"
+  author: topscoder
+  severity: high
+  description: "The Gwolle Guestbook plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.1.0. This is due to missing or incorrect nonce validation on the wp-nonces. This makes it possible for unauthenticated attackers to mass approve denied entries via a forged request granted they can trick a site administrator into performing an action such as clicking on a link."
+  reference:
+    - https://sumofpwn.nl/advisory/2016/gwolle_guestbook_mass_action_vulnerable_for_cross_site_request_forgery.html
+    - https://seclists.org/bugtraq/2017/Mar/4
+    - https://wpscan.com/vulnerability/ee803a4d-d52b-42c2-9a59-29e4f1aee828
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/gwolle-gb/"
+    google-query: inurl:"/wp-content/plugins/gwolle-gb/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,gwolle-gb,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gwolle-gb/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "gwolle-gb"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1.0')

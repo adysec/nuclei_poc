@@ -1,0 +1,51 @@
+id: winterlock-5cec4c17-24c1-4ed3-a3d3-9404ad7af420
+
+info:
+  name: >
+    Activity Log for WordPress <= 1.2.8 - Missing Authorization to Sensitive Information Exposure via Log File
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5cec4c17-24c1-4ed3-a3d3-9404ad7af420?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/winterlock/"
+    google-query: inurl:"/wp-content/plugins/winterlock/"
+    shodan-query: 'http.html:"wp-content/plugins/winterlock/"'
+  tags: cve,wordpress,wp-plugin,winterlock,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/winterlock/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "winterlock"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.8')

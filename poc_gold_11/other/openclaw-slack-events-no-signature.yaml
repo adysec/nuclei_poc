@@ -1,0 +1,37 @@
+id: openclaw-slack-events-no-signature
+
+info:
+  name: OpenClaw Slack Events No Signature Validation
+  author: lobster-guard
+  severity: high
+  description: Tests if Slack events endpoint accepts requests without X-Slack-Signature
+  tags: openclaw,slack,channel,injection
+  remediation: Enable Slack signature verification — set slack.signing_secret in OpenClaw channel config.
+  classification:
+    cwe-id: CWE-345
+  metadata:
+    max-request: 1
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/slack/events"
+    headers:
+      Content-Type: "application/json"
+    body: '{"type":"event_callback","event":{"type":"message","text":"nuclei_probe","user":"U123","channel":"C123"}}'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+          - 202
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "invalid signature"
+          - "unauthorized"

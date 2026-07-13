@@ -1,0 +1,52 @@
+# gap: owasp-wstg-conf-03-sensitive-file-extensions
+id: owasp-wstg-conf-03-sensitive-file-extensions
+
+info:
+  name: Sensitive File Extension Exposure (Backup / Swap Files)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects backup, swap, and temporary copies of common configuration or
+    bootstrap files served directly over HTTP (e.g. index.php.bak,
+    wp-config.php.bak, .env.bak, web.config.bak). The template requires a
+    non-HTML, non-empty response containing configuration-style keywords
+    such as database, password, secret, api_key, connection_string or a
+    PHP opening tag, which suppresses generic 200 SPA-shell responses and
+    surfaces only files that genuinely leak source or secrets.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/03-Test_File_Extensions_Handling_for_Sensitive_Information
+  tags: custom,misconfig,exposure,backup,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php.bak"
+      - "{{BaseURL}}/index.php~"
+      - "{{BaseURL}}/index.php.swp"
+      - "{{BaseURL}}/index.html.bak"
+      - "{{BaseURL}}/wp-config.php.bak"
+      - "{{BaseURL}}/config.php.bak"
+      - "{{BaseURL}}/.env.bak"
+      - "{{BaseURL}}/.env.swp"
+      - "{{BaseURL}}/web.config.bak"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        negative: true
+        words:
+          - "content-type: text/html"
+      - type: regex
+        part: body
+        regex:
+          - '<\?php'
+          - '(?im)^\s*[A-Z_][A-Z0-9_]*\s*=\s*[''"\w./@:!\-]+'
+          - '(?i)(DB_PASSWORD|DB_USERNAME|DB_HOST|DATABASE_URL|MYSQL_PWD|POSTGRES_PASSWORD|SECRET_KEY|AWS_SECRET|API_KEY|JWT_SECRET)\s*[:=]'
+          - '(?is)<connectionStrings>.*?</connectionStrings>'
+          - '\[(database|client|mysql|postgres|redis)\]'
+        condition: or

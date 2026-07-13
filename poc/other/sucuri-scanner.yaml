@@ -1,59 +1,49 @@
-id: sucuri-scanner
+id: wordpress-sucuri-scanner
 
 info:
-  name: >
-    Sucuri Security <= 1.8.33 - Cross-Site Request Forgery
-  author: topscoder
-  severity: medium
-  description: >
-    
+  name: Sucuri Security – Auditing, Malware Scanner and Security Hardening Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a6298192-2afa-4468-86d5-8487321a0ff6?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/sucuri-scanner/
   metadata:
-    fofa-query: "wp-content/plugins/sucuri-scanner/"
-    google-query: inurl:"/wp-content/plugins/sucuri-scanner/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,sucuri-scanner,medium
+    plugin_namespace: sucuri-scanner
+    wpscan: https://wpscan.com/plugin/sucuri-scanner
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/sucuri-scanner/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/sucuri-scanner.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "sucuri-scanner"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.8.33')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

@@ -1,0 +1,56 @@
+id: woocommerce-payments-571ab5baea2401b3c91aafe383a254d0
+
+info:
+  name: "WooCommerce Payments 4.8.0 - 5.6.1 Authentication Bypass and Privilege Escalation"
+  author: topscoder
+  severity: critical
+  description: "The WooCommerce Payments plugin is vulnerable to authentication bypass via the determine_current_user_for_platform_checkout function. This allows unauthenticated attackers to impersonate arbitrary users and perform some actions as the impersonated user, which can lead to site takeover."
+  reference:
+    - https://plugins.trac.wordpress.org/browser/woocommerce-payments/trunk/includes/platform-checkout/class-platform-checkout-session.php?rev=2791988#L36
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/woocommerce-payments/"
+    google-query: inurl:"/wp-content/plugins/woocommerce-payments/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,woocommerce-payments,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-payments/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woocommerce-payments"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>= 4.8.0', '<= 5.6.1')

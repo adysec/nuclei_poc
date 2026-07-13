@@ -1,59 +1,49 @@
-id: google-site-kit
+id: wordpress-google-site-kit
 
 info:
-  name: >
-    Site Kit by Google <= 1.7.1 - Sensitive Information Disclosure
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Site Kit by Google – Analytics, Search Console, AdSense, Speed Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e358c32d-6d0b-421d-9746-aafa1252dcea?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/google-site-kit/
   metadata:
-    fofa-query: "wp-content/plugins/google-site-kit/"
-    google-query: inurl:"/wp-content/plugins/google-site-kit/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,google-site-kit,low
+    plugin_namespace: google-site-kit
+    wpscan: https://wpscan.com/plugin/google-site-kit
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/google-site-kit/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/google-site-kit.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "google-site-kit"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.7.1')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

@@ -1,0 +1,59 @@
+id: wp-donate-d44971c56bee6189e469059c9d97dedd
+
+info:
+  name: >
+    WP Donate <= 2.0 - Unauthenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/587eff5c-e551-4660-a1d4-11b9f1788f7d?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-donate/"
+    google-query: inurl:"/wp-content/plugins/wp-donate/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-donate,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-donate/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-donate"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0')

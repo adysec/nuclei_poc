@@ -1,0 +1,168 @@
+# The way this works is the following:
+#
+# The create-release job runs purely to initialize the GitHub release itself
+# and to output upload_url for the following job.
+#
+# The build-release job runs only once create-release is finished. It gets the
+# release upload URL from create-release job outputs, then builds the release
+# executables for each supported platform and attaches them as release assets
+# to the previously created release.
+#
+# The key here is that we create the release only once.
+#
+# Reference:
+# https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
+
+name: post-release
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  BIN_NAME: observer_ward
+jobs:
+  create-release:
+    name: observer_ward
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.release.outputs.upload_url }}
+      release_version: ${{ env.RELEASE_VERSION }}
+    steps:
+      - name: Get the release version from the tag
+        shell: bash
+        if: env.RELEASE_VERSION == ''
+        run: |
+          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "version is: ${{ env.RELEASE_VERSION }}"
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Generate Release Notes
+        run: |
+          python3 .github/workflows/release-notes.py --tag ${{ env.RELEASE_VERSION }} --output notes-${{ env.RELEASE_VERSION }}.md
+          cat notes-${{ env.RELEASE_VERSION }}.md
+      - name: Create GitHub release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          release_name: ${{ env.RELEASE_VERSION }}
+          body_path: notes-${{ env.RELEASE_VERSION }}.md
+  build-release:
+    name: build-release
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [ linux, macos, macos_m1, win-msvc ]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            rust: stable
+            target: x86_64-unknown-linux-musl
+            file: observer_ward_amd64
+          - build: macos
+            os: macos-latest
+            rust: stable
+            target: x86_64-apple-darwin
+            file: observer_ward_darwin
+          - build: macos_m1
+            os: macos-latest
+            rust: stable
+            target: aarch64-apple-darwin
+            file: observer_ward_aarch64_darwin
+          - build: win-msvc
+            os: windows-latest
+            rust: stable
+            target: i686-pc-windows-msvc
+            file: observer_ward.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+      - name: Install packages (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xz-utils liblz4-tool libssl-dev musl-tools pkg-config
+          sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" Cargo.toml
+      - name: Install packages (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          choco install llvm openssl
+          export CARGO_PKG_VERSION=`date +'%-Y.%-m.%-d'`
+          sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" Cargo.toml
+          echo "CARGO_PKG_VERSION=`date +'%Y.%m.%d'`" >>$GITHUB_ENV
+          echo "OPENSSL_DIR=C:\Program Files\OpenSSL-Win64" >>$GITHUB_ENV
+          echo "RUSTFLAGS=-C target-feature=+crt-static" >>$GITHUB_ENV
+      - name: Install packages (Macos)
+        if: matrix.os == 'macos-latest'
+        run: |
+          sed -i -e "s/^version = .*/version = \"`date +'%-Y.%-m.%-d'`\"/" Cargo.toml
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+          target: ${{ matrix.target }}
+      - name: Build release binary
+        run: cargo build --target ${{ matrix.target }} --verbose --release
+      - name: Build archive
+        shell: bash
+        run: |
+          staging="${{ env.BIN_NAME }}_${{ needs.create-release.outputs.release_version }}_${{ matrix.target }}"
+          mkdir -p "$staging"
+          cp {README.md,LICENSE} "$staging/"
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            bin_file="target/${{ matrix.target }}/release/${{ env.BIN_NAME }}.exe"
+            cp "$bin_file" "$staging/"
+            cd "$staging"
+            7z a "../$staging.zip" .
+            echo "ASSET=$staging.zip" >> $GITHUB_ENV
+            echo "BIN_FILE=$bin_file" >> $GITHUB_ENV
+          else
+            bin_file="target/${{ matrix.target }}/release/${{ env.BIN_NAME }}"
+            strip "$bin_file"
+            cp "$bin_file" "$staging/"
+            tar czf "$staging.tar.gz" -C "$staging" ${{ env.BIN_NAME }} README.md LICENSE
+            echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
+            echo "BIN_FILE=$bin_file" >> $GITHUB_ENV
+          fi
+      - name: Upload release archive
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.ASSET }}
+          asset_name: ${{ env.ASSET }}
+          asset_content_type: application/octet-stream
+      - name: Upload binary to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.BIN_FILE }}
+          asset_name: ${{ matrix.file }}
+          tag: default
+          overwrite: true
+  homebrew:
+    runs-on: ubuntu-latest
+    needs:
+      - build-release
+    steps:
+      - name: Bump Homebrew formula
+        uses: dawidd6/action-homebrew-bump-formula@v3
+        with:
+          token: ${{secrets.BUMP_API_TOKEN}}
+          formula: observer_ward

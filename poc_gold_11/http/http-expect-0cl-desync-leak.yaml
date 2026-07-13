@@ -1,0 +1,80 @@
+# gap: http-expect-0cl-desync-leak
+id: http-expect-0cl-desync-leak
+
+info:
+  name: HTTP/1.1 Expect-Header 0.CL Desync — Double-Response Header Leak
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects the Expect-header 0.CL desync primitive from PortSwigger's
+    "HTTP/1.1 must die" research (James Kettle, Aug 2025). The probe
+    sends a single POST request with an obfuscated Expect header value
+    (`Expect: y 100-continue`) and an empty body. Front-ends that
+    forward the malformed Expect upstream while continuing to honor
+    the original request boundary cause the back-end to emit TWO
+    HTTP/1.1 response blocks on the same TCP stream — first a
+    `100 Continue` interim response, then the actual 2xx/3xx response.
+
+    The class signal is the presence of two distinct `HTTP/1.1 <status>`
+    status lines in the response buffer captured by Nuclei's
+    `unsafe: true` raw mode. The second block frequently leaks
+    headers that the front-end normally strips (per Kettle's
+    documented Netlify exploitation, `X-Nf-Request-Id` and
+    `X-Bb-Account-Id` were observed) — an internal-header
+    disclosure primitive that confirms 0.CL desync without an
+    explicit smuggled-request follow-up. Distinct from existing
+    CL.0 / CSD / V-H/H-V templates because the trigger is the
+    Expect header itself rather than a body-length disagreement
+    or Host-header obfuscation.
+
+    Affected by class: any FE/BE pair where the FE forwards a
+    syntactically malformed Expect upstream — confirmed against
+    Netlify edge per Kettle's PoC; the matcher survives until
+    HTTP/1.1 is sunset.
+  reference:
+    - https://portswigger.net/research/http1-must-die
+    - https://portswigger.net/kb/papers/dzmxreq/http1-must-die.pdf
+  tags: custom,vulnerabilities,smuggling,desync,http,expect,parser-diff,cwe-444
+
+http:
+  - raw:
+      - |+
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Expect: y 100-continue
+        Content-Length: 0
+        Connection: close
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      # Two HTTP/1.1 status lines present in the response body indicate
+      # the 100 Continue prelude and a subsequent 2xx/3xx/4xx/5xx block
+      # were emitted on the same stream.
+      - type: word
+        part: body
+        words:
+          - "HTTP/1.1 100"
+          - "HTTP/1.1 2"
+        condition: and
+      # The 100 Continue prelude must precede the second block in the body
+      # (regex on the raw buffer confirms ordering).
+      - type: regex
+        part: body
+        regex:
+          - '(?s)HTTP/1\.1\s+100.{0,1000}HTTP/1\.1\s+\d{3}'
+
+    extractors:
+      - type: regex
+        part: body
+        name: leaked-internal-headers
+        regex:
+          - '(?im)^(X-[A-Za-z][A-Za-z0-9-]*-(Id|Request|Account|Trace|Backend|Edge|Worker)):\s*([^\r\n]+)'
+        group: 0
+      - type: regex
+        part: body
+        name: second-response-status
+        regex:
+          - 'HTTP/1\.1\s+(\d{3})[^\r\n]*\r?\n(?:(?:Server|Date|Content):)'
+        group: 1

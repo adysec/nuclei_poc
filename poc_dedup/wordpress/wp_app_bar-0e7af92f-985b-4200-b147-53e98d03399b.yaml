@@ -1,0 +1,51 @@
+id: wp_app_bar-0e7af92f-985b-4200-b147-53e98d03399b
+
+info:
+  name: >
+    App Bar <= 1.5 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0e7af92f-985b-4200-b147-53e98d03399b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-app-bar/"
+    google-query: inurl:"/wp-content/plugins/wp-app-bar/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-app-bar/"'
+  tags: cve,wordpress,wp-plugin,wp-app-bar,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-app-bar/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-app-bar"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.5')

@@ -1,0 +1,79 @@
+# gap: prototype-pollution-server-side
+id: prototype-pollution-server-side
+
+info:
+  name: Server-Side Prototype Pollution — Canary Reflected via Polluted Property
+  author: TyrusRC
+  severity: high
+  description: |
+    Sends __proto__[nucleiPollute]=injected and
+    constructor[prototype][nucleiPollute]=injected query parameters to common
+    JSON API endpoints (/, /api, /api/health, /api/config, /api/status,
+    /api/users, /api/me). Frameworks that recursively merge nested query
+    syntax (Express qs, lodash.merge, hoek, jQuery.extend) into objects
+    without rejecting __proto__ / constructor keys will pollute
+    Object.prototype; a subsequent property read in the handler can then
+    reflect the canary value back in the JSON response body or as an
+    unexpected response header. Match requires the literal pair
+    "nucleiPollute" adjacent to "injected" in the response and explicitly
+    rejects bare echoes of the request URI to avoid false positives on
+    servers that simply mirror the query string. This is family detection
+    for the long-running prototype-pollution bug class and replays on future
+    variants rather than a single CVE.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/11-Client-side_Testing/13-Testing_for_JavaScript_Prototype_Pollution
+    - https://cwe.mitre.org/data/definitions/1321.html
+    - https://portswigger.net/research/server-side-prototype-pollution
+  tags: custom,vulnerabilities,prototype-pollution,injection,nodejs,express,owasp
+
+http:
+  - raw:
+      - |
+        GET {{path}}?__proto__[nucleiPollute]=injected&dummy=1 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+      - |
+        GET {{path}}?constructor[prototype][nucleiPollute]=injected&dummy=1 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+    payloads:
+      path:
+        - "/"
+        - "/api"
+        - "/api/health"
+        - "/api/config"
+        - "/api/status"
+        - "/api/users"
+        - "/api/me"
+        - "/health"
+        - "/healthz"
+        - "/healthcheck"
+        - "/status"
+        - "/ping"
+        - "/api/v1/status"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 500
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "__proto__[nucleiPollute]"
+          - "constructor[prototype][nucleiPollute]"
+      - type: dsl
+        dsl:
+          - 'regex("nucleiPollute[\"\\s:=]+[\"\\s]*injected", body) || regex("(?i)X-Nuclei-Polluted:\\s*injected", header)'
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'nucleiPollute["\s:=]+[\s"]*injected'
+      - type: regex
+        part: header
+        regex:
+          - '(?i)X-Nuclei-Polluted:\s*injected'

@@ -1,0 +1,34 @@
+id: grafana-public-signup
+info:
+  name: Grafana Public Signup
+  author: pdteam
+  severity: medium
+  tags: grafana,intrusive
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        POST /api/user/signup/step2 HTTP/1.1
+        Host: {{Subdomains}}
+        content-type: application/json
+        Origin: {{Scheme}}://{{Subdomains}}
+        Referer: {{Scheme}}://{{Subdomains}}
+
+        {"username":"nuclei_{{randstr}}","password":"{{randstr_1}}"}
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "User sign up completed successfully"
+      - type: word
+        words:
+          - "grafana_sess"
+          - "grafana_user"
+        condition: and
+        part: header
+      - type: status
+        status:
+          - 200

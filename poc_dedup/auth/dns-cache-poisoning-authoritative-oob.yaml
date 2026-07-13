@@ -1,0 +1,176 @@
+id: dns-cache-poisoning-authoritative-oob
+
+info:
+  name: DNS Cache Poisoning with Authoritative Server Response OOB
+  author: geeknik
+  severity: critical
+  description: |
+    Detects DNS cache poisoning vulnerabilities through authoritative server response
+    manipulation and validation. Tests DNS resolvers for cache poisoning susceptibility
+    using controlled authoritative responses, subdomain takeover scenarios, and
+    time-based correlation with OOB confirmation of successful cache manipulation.
+  reference:
+    - https://en.wikipedia.org/wiki/DNS_spoofing
+    - https://blog.cloudflare.com/dns-cache-poisoning-the-internet-scale/
+    - https://www.blackhat.com/presentations/bh-jp-08/bh-jp-08-Kaminsky/BlackHat-Japan-08-Kaminsky-DNS08-BlackOps.pdf
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-1447
+    - https://attack.mitre.org/techniques/T1584/002/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 8.1
+    cwe-id: CWE-350,CWE-345
+  tags: dns,cache-poisoning,authoritative,resolver,oob,subdomain-takeover,dns-rebinding
+
+variables:
+  callback_url: "{{interactsh-url}}"
+  poison_id: "{{randstr}}"
+  target_domain: "{{Hostname}}"
+  poison_subdomain: "poison-{{poison_id}}"
+  validation_subdomain: "validate-{{poison_id}}"
+
+dns:
+  # Primary cache poisoning test with A record
+  - name: "poison-{{poison_id}}.{{callback_url}}"
+    type: A
+    class: IN
+    recursion: true
+    retries: 3
+
+  # CNAME chain poisoning test
+  - name: "cname-chain-{{poison_id}}.{{callback_url}}"
+    type: CNAME
+    class: IN
+    recursion: true
+    retries: 3
+
+  # NS record poisoning for subdomain takeover
+  - name: "subdomain-takeover-{{poison_id}}.{{callback_url}}"
+    type: NS
+    class: IN
+    recursion: true
+    retries: 3
+
+  # Authority section poisoning
+  - name: "auth-poison-{{poison_id}}.{{callback_url}}"
+    type: A
+    class: IN
+    recursion: false
+    retries: 3
+
+  # Additional section poisoning
+  - name: "additional-{{poison_id}}.{{callback_url}}"
+    type: A
+    class: IN
+    recursion: true
+    retries: 2
+
+  # Wildcard subdomain test
+  - name: "wildcard-{{poison_id}}.{{callback_url}}"
+    type: A
+    class: IN
+    recursion: true
+    retries: 3
+
+  # TTL manipulation test
+  - name: "ttl-test-{{poison_id}}.{{callback_url}}"
+    type: A
+    class: IN
+    recursion: true
+    retries: 1
+
+  # DNS rebinding test
+  - name: "rebind-{{poison_id}}.{{callback_url}}"
+    type: A
+    class: IN
+    recursion: true
+    retries: 3
+
+  # Validation query for cache state
+  - name: "validate-{{poison_id}}.{{callback_url}}"
+    type: TXT
+    class: IN
+    recursion: true
+    retries: 2
+
+    matchers-condition: and
+    matchers:
+      # Check for successful DNS resolution
+      - type: word
+        part: answer
+        words:
+          - "{{callback_url}}"
+        condition: or
+
+      # Check response code for successful queries
+      - type: word
+        part: rcode
+        words:
+          - "NOERROR"
+          - "NXDOMAIN"
+        condition: or
+
+      # Validate OOB interaction occurred
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+    extractors:
+      # Extract the queried domain for verification
+      - type: regex
+        part: question
+        regex:
+          - "([a-z0-9-]+)\\.([a-z0-9.-]+)"
+        group: 1
+        internal: true
+
+      # Extract response data for analysis
+      - type: regex
+        part: answer
+        regex:
+          - "IN\\s+A\\s+([0-9.]+)"
+        group: 1
+        internal: true
+
+      # Extract authoritative section for poisoning detection
+      - type: regex
+        part: ns
+        regex:
+          - "([a-z0-9.-]+)\\s+IN\\s+NS\\s+([a-z0-9.-]+)"
+        group: 2
+        internal: true
+
+      # Extract additional records
+      - type: regex
+        part: extra
+        regex:
+          - "([a-z0-9.-]+)\\s+IN\\s+A\\s+([0-9.]+)"
+        group: 2
+        internal: true
+
+      # Extract interaction details
+      - type: kval
+        part: interactsh_request
+        kval:
+          - interactsh_request
+        internal: true
+
+      # Extract poison attempt identifier
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "(poison|subdomain-takeover|rebind|auth-poison|additional|cname-chain|wildcard|ttl-test|validate)-([a-z0-9]+)"
+        group: 1
+
+      # Extract full subdomain for verification
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "^([^.]+)\\.([^.]+)\\.([a-z0-9.-]+)"
+        group: 1
+
+      # Extract protocol used for interaction
+      - type: dsl
+        dsl:
+          - "interactsh_protocol"
+        internal: true

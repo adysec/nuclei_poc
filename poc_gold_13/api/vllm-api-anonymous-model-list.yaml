@@ -1,0 +1,79 @@
+# gap: vllm-api-anonymous-model-list
+id: vllm-api-anonymous-model-list
+
+info:
+  name: vLLM OpenAI-Compatible API Anonymous Model Listing
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a vLLM OpenAI-compatible inference server where /v1/models
+    is reachable without an Authorization Bearer token, returning the
+    loaded model catalog as a JSON list. Class signal: response is
+    `{"object":"list","data":[…]}` where each entry carries the
+    OpenAI-API-shaped model object (`id`, `object:"model"`,
+    `owned_by:"vllm"` or `"organization-owner"`, plus the vLLM-specific
+    `root` / `max_model_len` / `permission` fields).
+
+    Anonymous /v1/models exposure leaks the deployed model inventory
+    and chains directly to anonymous inference: the same default
+    deployment also accepts /v1/chat/completions and /v1/completions
+    POSTs against the listed model names without auth. Every external
+    invocation consumes GPU minutes the operator did not authorize
+    (cost-amplification primitive), the model itself frequently is a
+    fine-tuned proprietary checkpoint (intellectual property leak via
+    prompt-extraction attacks), and chained with the vLLM tool /
+    embedded function-calling configuration the attacker reaches
+    upstream RAG retrievers and vector stores. Class detection — keys
+    on OpenAI-API list-of-models shape, not vendor banner.
+    Complements upstream `vllm-api-detect` (root-path fingerprint).
+  reference:
+    - https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
+    - https://platform.openai.com/docs/api-reference/models/list
+  tags: custom,exposures,vllm,llm,ai,openai,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/models"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"object":"list"'
+      - type: word
+        part: body
+        words:
+          - '"object":"model"'
+      # vLLM-specific markers to differentiate from a hypothetical
+      # auth-bearing OpenAI proxy — vLLM's response carries one of
+      # these fields per entry.
+      - type: word
+        part: body
+        words:
+          - '"owned_by":"vllm"'
+          - '"max_model_len"'
+          - '"root":'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: model-ids
+        regex:
+          - '"id"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: max-model-len
+        regex:
+          - '"max_model_len"\s*:\s*([0-9]+)'
+        group: 1

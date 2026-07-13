@@ -1,59 +1,49 @@
-id: wp-statistics
+id: wordpress-wp-statistics
 
 info:
-  name: >
-    WP Statistics <= 12.6.6.1 - Unauthenticated Stored Cross-Site Scripting via IP Manipulation
-  author: topscoder
-  severity: high
-  description: >
-    The WP Statistics plugin for WordPress is vulnerable to Stored Cross-Site Scripting via IP spoofing in versions up to, and including, [up to affected version] due to insufficient input sanitization and output escaping. This makes it possible for [authentication-level] attackers [inject user-level requirements if available and authentication is required] to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  name: WP Statistics Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/69f861bf-933f-4413-a5c0-fd39ee78e594?source=api-prod
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
-    cvss-score: 7.2
-    cve-id: 
+    - https://wordpress.org/plugins/wp-statistics/
   metadata:
-    fofa-query: "wp-content/plugins/wp-statistics/"
-    google-query: inurl:"/wp-content/plugins/wp-statistics/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,wp-statistics,high
+    plugin_namespace: wp-statistics
+    wpscan: https://wpscan.com/plugin/wp-statistics
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/wp-statistics/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/wp-statistics.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "wp-statistics"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 12.6.7')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

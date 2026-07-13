@@ -1,59 +1,49 @@
-id: polylang
+id: wordpress-polylang
 
 info:
-  name: >
-    Polylang <= 2.5 - Cross-Site Request Forgery
-  author: topscoder
-  severity: medium
-  description: >
-    The Polylang plugin for WordPress is vulnerable to Cross-Site Request Forgery in versions up to, and including, 2.5. This is due to missing or incorrect nonce validation on the wp_insert_post_data() function. This makes it possible for unauthenticated attackers to duplicate media via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.
+  name: Polylang Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d056eeea-6ed2-4139-ba32-727a95f29aaf?source=api-prod
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H
-    cvss-score: 8.8
-    cve-id: 
+    - https://wordpress.org/plugins/polylang/
   metadata:
-    fofa-query: "wp-content/plugins/polylang/"
-    google-query: inurl:"/wp-content/plugins/polylang/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,polylang,medium
+    plugin_namespace: polylang
+    wpscan: https://wpscan.com/plugin/polylang
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/polylang/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/polylang.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "polylang"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 2.5.1')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022016413c8ae382423a262901ed9838f3990bee470ca0d65212336decc028222c2102210091efd8dd9201e20fa7e7e063fd5f324300e6a217e1fe652d744dbe20ab4f3b0a:922c64590222798bb761d5b6d8e72950

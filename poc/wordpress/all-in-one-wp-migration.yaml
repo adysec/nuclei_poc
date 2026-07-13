@@ -1,59 +1,49 @@
-id: all-in-one-wp-migration
+id: wordpress-all-in-one-wp-migration
 
 info:
-  name: >
-    All-in-One WP Migration <= 7.62 - Authenticated (Admin+) Cross-Site Scripting
-  author: topscoder
-  severity: low
-  description: >
-    The All-in-One WP Migration plugin for WordPress is vulnerable to cross-site scripting via the 'storage' parameter in versions up to, and including, 7.62 due to insufficient input sanitization and output escaping. This allows attackers to execute arbitrary web scripts in victim's browsers. This only affects multi-site installations and installations where unfiltered_html has been disabled.
+  name: All-in-One WP Migration Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/66519150-7719-4598-8302-b3437719f0a0?source=api-prod
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
-    cvss-score: 5.5
-    cve-id: 
+    - https://wordpress.org/plugins/all-in-one-wp-migration/
   metadata:
-    fofa-query: "wp-content/plugins/all-in-one-wp-migration/"
-    google-query: inurl:"/wp-content/plugins/all-in-one-wp-migration/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,all-in-one-wp-migration,low
+    plugin_namespace: all-in-one-wp-migration
+    wpscan: https://wpscan.com/plugin/all-in-one-wp-migration
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/all-in-one-wp-migration/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/all-in-one-wp-migration.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "all-in-one-wp-migration"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 7.62')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

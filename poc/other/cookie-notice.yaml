@@ -1,59 +1,49 @@
-id: cookie-notice
+id: wordpress-cookie-notice
 
 info:
-  name: >
-    Cookie Notice & Compliance for GDPR / CCPA <= 2.4.17.1 - Authenticated (Admin+) Stored Cross-Site Scripting
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Cookie Notice & Compliance for GDPR / CCPA Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/73fd35b4-16b3-4f57-a3e4-46e4de0ee822?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/cookie-notice/
   metadata:
-    fofa-query: "wp-content/plugins/cookie-notice/"
-    google-query: inurl:"/wp-content/plugins/cookie-notice/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,cookie-notice,low
+    plugin_namespace: cookie-notice
+    wpscan: https://wpscan.com/plugin/cookie-notice
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/cookie-notice/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/cookie-notice.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "cookie-notice"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 2.4.17.1')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

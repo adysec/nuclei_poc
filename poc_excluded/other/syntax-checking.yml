@@ -1,0 +1,37 @@
+name: Template Validation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: YAML lint (repo config)
+        run: |
+          find . -maxdepth 1 -type f \( -name "*.yaml" -o -name "*.yml" \) -print0 | \
+            xargs -0 yamllint -c .yamllint
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Install nuclei
+        run: go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+
+      - name: Validate templates with nuclei
+        run: |
+          "$(go env GOPATH)/bin/nuclei" -validate -t .

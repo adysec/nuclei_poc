@@ -1,0 +1,31 @@
+name: poc-yaml-activemq-weak-password
+manual: true
+transport: http
+payloads:
+  payloads:
+    p1:
+      username: r"guest"
+      password: r"guest*PWD"
+rules:
+  check:
+    request:
+      cache: true   # check页面只需要访问一次，所以cache为true
+      method: GET
+      path: /index.php
+    expression: response.status == 200 && response.body.ibcontains(b"Reporter")
+  auth:
+    request:
+      cache: false
+      method: POST
+      path: /action.php
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+      body: "\
+        language=zh_CN&user_name={{username}}&user_password={{password}}&do=login\
+        "
+    expression: response.status == 200 && response.body.bcontains(b"window.location") && response.body.bcontains(b"main.html")
+expression: check() && auth()
+detail:
+  author: k3ppf0r
+  links:
+    - https://blog.csdn.net/ge00111/article/details/72765210

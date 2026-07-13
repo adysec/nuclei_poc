@@ -1,0 +1,58 @@
+id: wp-appbox-d72ab6ef6f50761791e01802a8344172
+
+info:
+  name: "WP-Appbox <= 4.3.17 - Local File Inclusion"
+  author: topscoder
+  severity: high
+  description: "The WP-Appbox plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 4.3.17 via the 'tab' parameter. This allows authenticated attackers to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where images and other “safe” file types can be uploaded and included."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&new=2657745%40wp-appbox&old=2657041%40wp-appbox&sfp_email=&sfph_mail=
+    - https://ithemes.com/blog/wordpress-vulnerability-report-january-19-2022/
+    - https://wpscan.com/vulnerability/b78e4a3b-e432-4968-8b83-125f3bac15cd
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-appbox/"
+    google-query: inurl:"/wp-content/plugins/wp-appbox/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-appbox,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-appbox/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-appbox"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.3.17')

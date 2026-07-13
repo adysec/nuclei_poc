@@ -1,59 +1,49 @@
-id: loginizer
+id: wordpress-loginizer
 
 info:
-  name: >
-    Loginizer <= 1.6.3 - SQL Injection
-  author: topscoder
-  severity: critical
-  description: >
-    
+  name: Loginizer Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/58f8bba4-1be5-4111-aa41-d076a6f06948?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/loginizer/
   metadata:
-    fofa-query: "wp-content/plugins/loginizer/"
-    google-query: inurl:"/wp-content/plugins/loginizer/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,loginizer,critical
+    plugin_namespace: loginizer
+    wpscan: https://wpscan.com/plugin/loginizer
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/loginizer/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/loginizer.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "loginizer"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 1.6.4')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

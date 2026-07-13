@@ -1,59 +1,50 @@
-id: plugin
+id: wordpress-contact-form-7
 
 info:
-  name: >
-    WP Revisions Manager <= 1.0.2 - Cross-Site Request Forgery
-  author: topscoder
-  severity: medium
-  description: >
-    
+  name: Contact Form 7 Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/96a5db79-a88d-4c1f-9da4-6dd3120ff85e?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/contact-form-7/
   metadata:
-    fofa-query: "wp-content/plugins/Plugin/"
-    google-query: inurl:"/wp-content/plugins/Plugin/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,Plugin,medium
+    max-request: 1
+    plugin_namespace: contact-form-7
+    wpscan: https://wpscan.com/plugin/contact-form-7
+  tags: tech,wordpress,wp-plugin,top-100,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
-      - "{{BaseURL}}/wp-content/plugins/Plugin/readme.txt"
+      - "{{BaseURL}}/wp-content/plugins/contact-form-7/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/contact-form-7.txt
 
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "Plugin"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.0.2')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022100834c80323ba79362ea5ee5c25b5de19171905d24e44a47064c8ecab88734c0bc0220359ee288f95141d9b770922bebf03b837ef046cc956d4d3e7cb88cab9b62629f:922c64590222798bb761d5b6d8e72950

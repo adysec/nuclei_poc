@@ -1,0 +1,56 @@
+id: hc-custom-wp-admin-url-8d6af71de79b804901e9479a5b1471fc
+
+info:
+  name: "HC Custom WP-Admin URL <= 1.4 - Missing Authorization to Login URL Change"
+  author: topscoder
+  severity: high
+  description: "HC Custom WP-Admin URL versions up to 1.4 set the admin login slug via the admin_init hook with no capability checks. This allows unauthenticated attackers to change the login slug."
+  reference:
+    - https://plugins.trac.wordpress.org/browser/hc-custom-wp-admin-url/trunk/hc-custom-wp-admin-url.php#L37
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/hc-custom-wp-admin-url/"
+    google-query: inurl:"/wp-content/plugins/hc-custom-wp-admin-url/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,hc-custom-wp-admin-url,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hc-custom-wp-admin-url/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "hc-custom-wp-admin-url"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4')

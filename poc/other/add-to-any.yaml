@@ -1,59 +1,49 @@
-id: add-to-any
+id: wordpress-add-to-any
 
 info:
-  name: >
-    AddToAny Share Buttons <= 1.7.45 - Authenticated Stored Cross-Site Scripting
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: AddToAny Share Buttons Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/791ae60d-f2b7-4a53-9008-35cd2d465124?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/add-to-any/
   metadata:
-    fofa-query: "wp-content/plugins/add-to-any/"
-    google-query: inurl:"/wp-content/plugins/add-to-any/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,add-to-any,low
+    plugin_namespace: add-to-any
+    wpscan: https://wpscan.com/plugin/add-to-any
+  tags: tech,wordpress,wp-plugin,top-200
 
-http:
+requests:
   - method: GET
-    redirects: true
-    max-redirects: 3
+
     path:
       - "{{BaseURL}}/wp-content/plugins/add-to-any/readme.txt"
 
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/add-to-any.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "add-to-any"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '< 1.7.46')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
