@@ -59,7 +59,6 @@ git sparse-checkout set poc_gold_13
 - `poc.txt` — 当前已归档 PoC 的列表（文本清单）
 - `src/core/` — 共享公共库（哈希hash、YAML解析/验证/修复yaml、分类映射category、命名规范naming、特征提取features、JSON索引index）
 - `src/bin/` — 核心 Rust 源文件（每个文件对应一个可执行的流水线阶段）
-- `target/` — cargo 构建输出（包含 release 可执行文件）
 
 ### 输出策略与安全回滚
 
