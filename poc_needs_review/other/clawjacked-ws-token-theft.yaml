@@ -1,0 +1,62 @@
+id: clawjacked-ws-token-theft
+
+info:
+  name: OpenClaw ClawJacked WebSocket Token Theft (CVE-2026-25253)
+  author: lobster-guard
+  severity: high
+  description: |
+    OpenClaw before 2026.1.29 automatically connects via WebSocket to a gatewayUrl
+    from a query string and sends the auth token without user confirmation.
+    A malicious website can steal the token and achieve full RCE.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-25253
+    - https://github.com/openclaw/openclaw/security/advisories/GHSA-g8p2-7wf7-98mq
+  classification:
+    cvss-score: 8.8
+    cve-id: CVE-2026-25253
+    cwe-id: CWE-669
+  tags: openclaw,cve2026,websocket,token-theft,rce
+
+http:
+  - raw:
+      - |
+        GET /healthz HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "version"
+          - "ok"
+        condition: or
+
+    extractors:
+      - type: json
+        json:
+          - '.version'
+
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Origin: https://evil.com
+        Upgrade: websocket
+        Connection: Upgrade
+        Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+        Sec-WebSocket-Version: 13
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 101
+      - type: word
+        part: header
+        words:
+          - "Upgrade"
+          - "websocket"
+        condition: and

@@ -1,0 +1,617 @@
+id: flow-supply-chain-analyzer
+
+info:
+  name: Supply Chain Security Analyzer
+  author: geeknik
+  severity: medium
+  description: |
+    Comprehensive supply chain security assessment using Flow Protocol for dependency
+    analysis and third-party component evaluation. This template performs progressive
+    supply chain analysis including dependency extraction, CDN security assessment,
+    and third-party resource validation while maintaining defensive research principles
+    for identifying supply chain vulnerabilities and misconfigurations.
+  reference:
+    - https://owasp.org/www-project-dependency-check/
+    - https://csrc.nist.gov/Projects/ssdf
+  tags: supply-chain,dependencies,security,flow,third-party,defensive
+
+flow: |
+  // Extract main page to analyze dependencies
+  http("main-page-analysis");
+
+  const mainResponse = template["main_response"];
+  const targetDomain = template["target_domain"] || "unknown";
+
+  // Initialize all template variables to prevent undefined errors
+  template["dependencies"] = template["dependencies"] || [];
+  template["cdn_resources"] = template["cdn_resources"] || [];
+  template["external_domains"] = template["external_domains"] || [];
+  template["security_findings"] = template["security_findings"] || [];
+  template["vulnerable_libraries"] = template["vulnerable_libraries"] || [];
+  template["header_analysis"] = template["header_analysis"] || {};
+  template["statistics"] = template["statistics"] || {};
+  template["recommendations"] = template["recommendations"] || [];
+
+  // Helper function to safely add security findings
+  function addSecurityFinding(finding) {
+    if (!template["security_findings"]) template["security_findings"] = [];
+    template["security_findings"].push(finding);
+  }
+
+  // Helper function to safely add vulnerable library
+  function addVulnerableLibrary(library) {
+    if (!template["vulnerable_libraries"]) template["vulnerable_libraries"] = [];
+    template["vulnerable_libraries"].push(library);
+  }
+
+  if (mainResponse) {
+    // Extract JavaScript dependencies with enhanced parsing
+    const jsRegex = /<script[^>]*(?:src=["']([^"']+)["'])[^>]*(?:integrity=["']([^"']*)["'])?[^>]*>/gi;
+    let match;
+    while ((match = jsRegex.exec(mainResponse)) !== null) {
+      const url = match[1];
+      const integrity = match[2] || null;
+
+      // Skip relative URLs and data URLs
+      if (url.startsWith('http') || url.startsWith('//')) {
+        template["dependencies"].push({
+          "type": "javascript",
+          "url": url.startsWith('//') ? 'https:' + url : url,
+          "integrity": integrity,
+          "element": match[0]
+        });
+      }
+    }
+
+    // Extract CSS dependencies with enhanced parsing
+    const cssRegex = /<link[^>]*(?:rel=["']stylesheet["'])[^>]*(?:href=["']([^"']+)["'])[^>]*(?:integrity=["']([^"']*)["'])?[^>]*>/gi;
+    while ((match = cssRegex.exec(mainResponse)) !== null) {
+      const url = match[1];
+      const integrity = match[2] || null;
+
+      if (url.startsWith('http') || url.startsWith('//')) {
+        template["dependencies"].push({
+          "type": "css",
+          "url": url.startsWith('//') ? 'https:' + url : url,
+          "integrity": integrity,
+          "element": match[0]
+        });
+      }
+    }
+
+    // Enhanced CDN identification with more providers
+    const cdnPatterns = [
+      "cdn.jsdelivr.net",
+      "cdnjs.cloudflare.com",
+      "unpkg.com",
+      "ajax.googleapis.com",
+      "maxcdn.bootstrapcdn.com",
+      "stackpath.bootstrapcdn.com",
+      "code.jquery.com",
+      "ajax.aspnetcdn.com",
+      "netdna.bootstrapcdn.com",
+      "use.fontawesome.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+      "polyfill.io",
+      "d3js.org"
+    ];
+
+    template["dependencies"].forEach(dep => {
+      cdnPatterns.forEach(pattern => {
+        if (dep.url.includes(pattern)) {
+          template["cdn_resources"].push({
+            "provider": pattern,
+            "url": dep.url,
+            "type": dep.type,
+            "has_integrity": !!dep.integrity
+          });
+        }
+      });
+    });
+
+    // Extract external domains with better filtering
+    const domainSet = new Set();
+    template["dependencies"].forEach(dep => {
+      try {
+        const url = new URL(dep.url);
+        const domain = url.hostname;
+        if (!domain.includes(targetDomain) && domain !== targetDomain) {
+          domainSet.add(domain);
+        }
+      } catch (e) {
+        // Skip invalid URLs
+      }
+    });
+    template["external_domains"] = Array.from(domainSet).slice(0, 15);
+  }
+
+  // Enhanced integrity validation function
+  function validateIntegrity(integrity) {
+    if (!integrity) return { valid: false, algorithm: null };
+
+    const algorithms = ['sha256', 'sha384', 'sha512'];
+    const parts = integrity.split('-');
+
+    if (parts.length !== 2) return { valid: false, algorithm: null };
+
+    const algorithm = parts[0];
+    const hash = parts[1];
+
+    const isValidAlgorithm = algorithms.includes(algorithm);
+    const isValidHash = /^[A-Za-z0-9+/]+=*$/.test(hash);
+
+    return {
+      valid: isValidAlgorithm && isValidHash,
+      algorithm: algorithm,
+      strength: algorithm === 'sha512' ? 'high' : algorithm === 'sha384' ? 'medium' : 'low'
+    };
+  }
+
+  // Enhanced dependency security analysis
+  let riskScore = 0;
+
+  // Check for dependencies without integrity
+  const depsWithoutIntegrity = template["dependencies"].filter(dep => !dep.integrity);
+  if (depsWithoutIntegrity.length > 0) {
+    const criticalDeps = depsWithoutIntegrity.filter(dep =>
+      dep.type === 'javascript' &&
+      (dep.url.includes('jquery') || dep.url.includes('bootstrap') || dep.url.includes('angular'))
+    );
+
+    addSecurityFinding({
+      "type": "missing_subresource_integrity",
+      "severity": criticalDeps.length > 0 ? "high" : "medium",
+      "description": `${depsWithoutIntegrity.length} dependencies lack SRI, ${criticalDeps.length} are critical libraries`,
+      "count": depsWithoutIntegrity.length,
+      "critical_count": criticalDeps.length,
+      "affected_urls": depsWithoutIntegrity.slice(0, 5).map(dep => dep.url)
+    });
+    riskScore += criticalDeps.length > 0 ? 35 : 20;
+  }
+
+  // Check for insecure dependencies (HTTP instead of HTTPS)
+  const insecureDeps = template["dependencies"].filter(dep =>
+    dep.url.startsWith("http://") || dep.url.startsWith("//") && !dep.url.startsWith("//https")
+  );
+  if (insecureDeps.length > 0) {
+    addSecurityFinding({
+      "type": "insecure_dependencies",
+      "severity": "high",
+      "description": `${insecureDeps.length} dependencies served over insecure connections`,
+      "count": insecureDeps.length,
+      "affected_urls": insecureDeps.map(dep => dep.url)
+    });
+    riskScore += 40;
+  }
+
+  // Validate SRI integrity format for existing SRI
+  const depsWithIntegrity = template["dependencies"].filter(dep => dep.integrity);
+  const weakIntegrity = depsWithIntegrity.filter(dep => {
+    const validation = validateIntegrity(dep.integrity);
+    return !validation.valid || validation.strength === 'low';
+  });
+
+  if (weakIntegrity.length > 0) {
+    addSecurityFinding({
+      "type": "weak_subresource_integrity",
+      "severity": "medium",
+      "description": `${weakIntegrity.length} dependencies use weak or invalid SRI hashes`,
+      "count": weakIntegrity.length,
+      "affected_urls": weakIntegrity.map(dep => dep.url)
+    });
+    riskScore += 15;
+  }
+
+  // Prioritize critical dependencies for testing
+  const criticalLibraries = ['jquery', 'bootstrap', 'angular', 'react', 'vue', 'lodash', 'moment'];
+  const testDependencies = template["dependencies"]
+    .filter(dep => criticalLibraries.some(lib => dep.url.toLowerCase().includes(lib)))
+    .concat(template["dependencies"].filter(dep => !criticalLibraries.some(lib => dep.url.toLowerCase().includes(lib))))
+    .slice(0, 8); // Test up to 8 dependencies, prioritizing critical ones
+
+  for (let dep of iterate(testDependencies)) {
+    set("current_dependency", dep.url);
+
+    // First try HEAD request for efficiency
+    http("dependency-head-test");
+
+    const headStatus = template["dependency_head_status"];
+
+    if (headStatus && (headStatus === "200" || headStatus === "304")) {
+      // Only fetch content for JavaScript files or if HEAD fails
+      if (dep.type === "javascript" || !headStatus) {
+        http("dependency-content-test");
+
+        const depResponse = template["dependency_response"];
+        const depStatus = template["dependency_status"];
+
+        if (depStatus === "200" && depResponse) {
+          // Enhanced malicious content detection with context
+          const suspiciousPatterns = [
+            { pattern: /eval\s*\(/, severity: "high", description: "Dynamic code execution" },
+            { pattern: /document\.write\s*\(/, severity: "medium", description: "DOM manipulation via document.write" },
+            { pattern: /innerHTML\s*=.*<script/i, severity: "high", description: "Potential XSS via innerHTML" },
+            { pattern: /crypto|bitcoin|mining|blockchain/gi, severity: "medium", description: "Cryptocurrency-related content" },
+            { pattern: /atob\s*\(|btoa\s*\(/, severity: "low", description: "Base64 encoding/decoding" },
+            { pattern: /new\s+Function\s*\(/, severity: "high", description: "Dynamic function creation" }
+          ];
+
+          suspiciousPatterns.forEach(({ pattern, severity, description }) => {
+            if (pattern.test(depResponse)) {
+              template["security_findings"].push({
+                "type": "suspicious_dependency_content",
+                "severity": severity,
+                "description": `${description} detected in ${dep.url}`,
+                "dependency": dep.url,
+                "pattern": description
+              });
+              riskScore += severity === "high" ? 30 : severity === "medium" ? 20 : 10;
+            }
+          });
+
+          // Enhanced version detection for multiple libraries
+          const libraryChecks = [
+            {
+              name: "jquery",
+              versionRegex: /(\d+)\.(\d+)\.(\d+)/,
+              vulnerableVersions: [
+                { condition: (maj, min, patch) => maj < 3 || (maj === 3 && min < 5),
+                  description: "jQuery < 3.5.0 has known XSS vulnerabilities (CVE-2020-11022, CVE-2020-11023)" },
+                { condition: (maj, min, patch) => maj === 1 && min < 12,
+                  description: "jQuery 1.x < 1.12.0 has multiple security issues" }
+              ]
+            },
+            {
+              name: "bootstrap",
+              versionRegex: /(\d+)\.(\d+)\.(\d+)/,
+              vulnerableVersions: [
+                { condition: (maj, min, patch) => maj < 4 || (maj === 4 && min < 3 && patch < 1),
+                  description: "Bootstrap < 4.3.1 has XSS vulnerabilities in tooltip and popover" }
+              ]
+            },
+            {
+              name: "angular",
+              versionRegex: /(\d+)\.(\d+)\.(\d+)/,
+              vulnerableVersions: [
+                { condition: (maj, min, patch) => maj === 1 && min < 6,
+                  description: "AngularJS < 1.6.0 has sandbox bypass vulnerabilities" }
+              ]
+            }
+          ];
+
+          libraryChecks.forEach(lib => {
+            if (dep.url.toLowerCase().includes(lib.name)) {
+              const versionMatch = dep.url.match(lib.versionRegex);
+              if (versionMatch) {
+                const major = parseInt(versionMatch[1]);
+                const minor = parseInt(versionMatch[2]);
+                const patch = parseInt(versionMatch[3]) || 0;
+
+                lib.vulnerableVersions.forEach(vuln => {
+                  if (vuln.condition(major, minor, patch)) {
+                    template["vulnerable_libraries"].push({
+                      "library": lib.name,
+                      "version": versionMatch[0],
+                      "url": dep.url,
+                      "vulnerability": vuln.description
+                    });
+
+                    template["security_findings"].push({
+                      "type": "vulnerable_dependency_version",
+                      "severity": "medium",
+                      "description": vuln.description,
+                      "dependency": dep.url,
+                      "version": versionMatch[0]
+                    });
+                    riskScore += 25;
+                  }
+                });
+              }
+            }
+          });
+        }
+      }
+    } else if (headStatus && (headStatus === "404" || headStatus === "403")) {
+      template["security_findings"].push({
+        "type": "unreachable_dependency",
+        "severity": headStatus === "404" ? "high" : "medium",
+        "description": `Dependency returns ${headStatus}: ${dep.url}`,
+        "dependency": dep.url,
+        "status_code": headStatus
+      });
+      riskScore += headStatus === "404" ? 30 : 15;
+    }
+  }
+
+  // Enhanced security headers analysis
+  http("security-headers-analysis");
+
+  const securityHeaders = template["security_headers"];
+  template["header_analysis"] = {
+    "csp": { "present": false },
+    "hsts": { "present": false },
+    "referrer_policy": { "present": false },
+    "permissions_policy": { "present": false },
+    "x_content_type_options": { "present": false }
+  };
+
+  if (securityHeaders) {
+    // Content Security Policy analysis
+    const cspMatch = securityHeaders.match(/content-security-policy:\s*([^\r\n]+)/i);
+    if (cspMatch) {
+      const csp = cspMatch[1];
+      template["header_analysis"]["csp"] = {
+        "present": true,
+        "policy": csp,
+        "script_src": csp.includes("script-src"),
+        "object_src": csp.includes("object-src"),
+        "base_uri": csp.includes("base-uri"),
+        "unsafe_inline": csp.includes("'unsafe-inline'"),
+        "unsafe_eval": csp.includes("'unsafe-eval'"),
+        "allows_any": csp.includes("* ")
+      };
+
+      if (template["header_analysis"]["csp"]["unsafe_inline"]) {
+        if (!template["security_findings"]) template["security_findings"] = [];
+        template["security_findings"].push({
+          "type": "unsafe_csp_configuration",
+          "severity": "medium",
+          "description": "CSP allows 'unsafe-inline' which reduces XSS protection"
+        });
+        riskScore += 15;
+      }
+
+      if (template["header_analysis"]["csp"]["unsafe_eval"]) {
+        addSecurityFinding({
+          "type": "unsafe_csp_configuration",
+          "severity": "medium",
+          "description": "CSP allows 'unsafe-eval' which enables dynamic code execution"
+        });
+        riskScore += 20;
+      }
+
+      if (!template["header_analysis"]["csp"]["object_src"]) {
+        addSecurityFinding({
+          "type": "incomplete_csp_configuration",
+          "severity": "low",
+          "description": "CSP missing object-src directive"
+        });
+        riskScore += 5;
+      }
+    } else {
+      addSecurityFinding({
+        "type": "missing_csp",
+        "severity": "medium",
+        "description": "Content Security Policy not implemented"
+      });
+      riskScore += 20;
+    }
+
+    // Check other security headers
+    if (securityHeaders.includes("strict-transport-security")) {
+      template["header_analysis"]["hsts"]["present"] = true;
+    } else {
+      addSecurityFinding({
+        "type": "missing_hsts",
+        "severity": "low",
+        "description": "HTTP Strict Transport Security (HSTS) header missing"
+      });
+      riskScore += 10;
+    }
+
+    if (!securityHeaders.includes("x-content-type-options")) {
+      addSecurityFinding({
+        "type": "missing_content_type_options",
+        "severity": "low",
+        "description": "X-Content-Type-Options header missing, allowing MIME sniffing"
+      });
+      riskScore += 8;
+    } else {
+      template["header_analysis"]["x_content_type_options"]["present"] = true;
+    }
+  }
+
+  // Calculate comprehensive supply chain risk assessment
+  template["supply_chain_risk_score"] = Math.min(riskScore, 100);
+  template["supply_chain_risk_level"] = riskScore > 75 ? "Critical" :
+                                       riskScore > 50 ? "High" :
+                                       riskScore > 25 ? "Medium" : "Low";
+
+  // Generate comprehensive statistics
+  template["statistics"] = {
+    "total_dependencies": (template["dependencies"] || []).length,
+    "external_dependencies": (template["dependencies"] || []).filter(dep => !dep.url.includes(targetDomain)).length,
+    "cdn_dependencies": (template["cdn_resources"] || []).length,
+    "dependencies_with_sri": (template["dependencies"] || []).filter(dep => dep.integrity).length,
+    "insecure_dependencies": (insecureDeps || []).length,
+    "vulnerable_libraries": (template["vulnerable_libraries"] || []).length,
+    "external_domains": (template["external_domains"] || []).length,
+    "security_findings": (template["security_findings"] || []).length
+  };
+
+  // Generate prioritized recommendations
+  template["recommendations"] = [];
+
+  // Critical recommendations
+  if (insecureDeps.length > 0) {
+    template["recommendations"].push({
+      "priority": "critical",
+      "recommendation": "Migrate all HTTP dependencies to HTTPS to prevent man-in-the-middle attacks",
+      "affected_count": insecureDeps.length
+    });
+  }
+
+  if ((template["vulnerable_libraries"] || []).length > 0) {
+    template["recommendations"].push({
+      "priority": "critical",
+      "recommendation": "Update vulnerable library versions to latest secure versions",
+      "affected_count": (template["vulnerable_libraries"] || []).length,
+      "libraries": (template["vulnerable_libraries"] || []).map(lib => `${lib.library} ${lib.version}`)
+    });
+  }
+
+  // High priority recommendations
+  if (depsWithoutIntegrity.length > 0) {
+    template["recommendations"].push({
+      "priority": "high",
+      "recommendation": "Implement Subresource Integrity (SRI) for all external dependencies",
+      "affected_count": depsWithoutIntegrity.length,
+      "implementation": "Add integrity attribute with SHA-384 or SHA-512 hash"
+    });
+  }
+
+  if (!template["header_analysis"]["csp"]["present"]) {
+    template["recommendations"].push({
+      "priority": "high",
+      "recommendation": "Implement Content Security Policy to restrict external resource loading",
+      "implementation": "Start with report-only mode to avoid breaking functionality"
+    });
+  }
+
+  // Medium priority recommendations
+  if ((template["cdn_resources"] || []).length > 5) {
+    template["recommendations"].push({
+      "priority": "medium",
+      "recommendation": "Consider consolidating CDN dependencies to reduce attack surface",
+      "affected_count": (template["cdn_resources"] || []).length
+    });
+  }
+
+  // Always include general recommendations
+  template["recommendations"].push({
+    "priority": "medium",
+    "recommendation": "Implement automated dependency scanning in CI/CD pipeline",
+    "tools": ["npm audit", "Snyk", "OWASP Dependency Check"]
+  });
+
+  template["recommendations"].push({
+    "priority": "low",
+    "recommendation": "Document and review third-party dependency usage policy",
+    "implementation": "Create approval process for new external dependencies"
+  });
+
+  // Log final assessment
+  log(`Supply Chain Analysis Complete: ${template["supply_chain_risk_level"]} risk (${template["supply_chain_risk_score"]}/100)`);
+  log(`Found ${(template["security_findings"] || []).length} security findings across ${(template["dependencies"] || []).length} dependencies`);
+
+http:
+  - id: main-page-analysis
+    method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 3
+
+    matchers:
+      - type: status
+        status:
+          - 200
+        internal: true
+
+    extractors:
+      - type: regex
+        name: main_response
+        internal: true
+        part: body
+        regex:
+          - "(?s).*"
+
+      - type: regex
+        name: target_domain
+        internal: true
+        part: header
+        regex:
+          - '(?i)Host:[[:space:]]*([^[:space:]]+)'
+
+  - id: dependency-head-test
+    method: HEAD
+    path:
+      - "{{current_dependency}}"
+
+    redirects: true
+    max-redirects: 3
+
+    headers:
+      User-Agent: "Mozilla/5.0 (compatible; NucleiSupplyChainAnalyzer/1.0)"
+      Accept: "*/*"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 304
+          - 404
+          - 403
+          - 500
+        internal: true
+
+    extractors:
+      - type: dsl
+        name: dependency_head_status
+        internal: true
+        dsl:
+          - "status_code"
+
+  - id: dependency-content-test
+    method: GET
+    path:
+      - "{{current_dependency}}"
+
+    redirects: true
+    max-redirects: 3
+    max-size: 1048576  # 1MB limit for efficiency
+
+    headers:
+      User-Agent: "Mozilla/5.0 (compatible; NucleiSupplyChainAnalyzer/1.0)"
+      Accept: "application/javascript,text/css,*/*"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 304
+        internal: true
+
+    extractors:
+      - type: regex
+        name: dependency_response
+        internal: true
+        part: body
+        regex:
+          - "(?s).*"
+
+      - type: dsl
+        name: dependency_status
+        internal: true
+        dsl:
+          - "status_code"
+
+  - id: security-headers-analysis
+    method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 3
+
+    headers:
+      User-Agent: "Mozilla/5.0 (compatible; NucleiSupplyChainAnalyzer/1.0)"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+        internal: true
+
+    extractors:
+      - type: regex
+        name: security_headers
+        part: header
+        internal: true
+        regex:
+          - "(?s).*"
+
+# Enhanced Flow template with comprehensive supply chain security analysis
+# The template will show findings when risk score > 0 or vulnerabilities are detected

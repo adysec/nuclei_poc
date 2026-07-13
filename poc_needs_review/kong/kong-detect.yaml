@@ -1,34 +1,35 @@
 id: kong-detect
+
 info:
   name: Detect Kong
-  author: geeknik
-  description: The Cloud-Native API Gateway - https://github.com/Kong/kong
+  author: geeknik,joshlarsen
   severity: info
+  description: The Cloud-Native API Gateway
+  reference:
+    - https://github.com/Kong/kong
+  metadata:
+    max-request: 1
+  tags: tech,kong,discovery
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
 
-    raw:
-      - |
-        GET / HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
-        
-    matchers-condition: and
     matchers:
-
-      - type: regex
+      - type: word
         part: header
-        regex:
-          - "[Ss]erver: [Kk]ong+"
+        words:
+          - "server: kong"
+          - "x-kong-response-latency"
+          - "x-kong-upstream-latency"
+          - "x-kong-proxy-latency"
+          - "x-kong-admin-request-id"
+        condition: or
+        case-insensitive: true
 
     extractors:
       - type: kval
-        part: header
         kval:
           - server
+# digest: 4a0a00473045022071407d9b5f6a251adbd136b4c749b649d221fd4c60d967b770d9fb3b52524d4b022100de8abc91eb9d3d82cdaf03ad4c28235b4ed01c787bd8f7245cc41afe7c1303aa:922c64590222798bb761d5b6d8e72950

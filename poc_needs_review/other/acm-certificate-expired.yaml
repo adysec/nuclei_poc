@@ -1,0 +1,56 @@
+id: acm-certificate-expired
+info:
+  author: princechaddha
+  description: 'Checks for expired certificates
+
+    '
+  name: ACM Certificate Expired
+  reference:
+  - https://docs.aws.amazon.com/acm/latest/APIReference/API_ListCertificates.html
+  remediation: 'Review and delete expired AWS ACM certificates to ensure validity
+    of SSL/TLS certificates
+
+    '
+  severity: high
+  tags: aws,amazon,cloud,acm
+requests:
+- extractors:
+  - internal: true
+    name: certificatearn
+    part: body
+    regex:
+    - '"CertificateArn":\s*"([^"]+)"'
+    type: regex
+  - dsl:
+    - '"ACM certificates " + certificatearn + " is expired"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"CertificateSummaryList":'
+  - negative: true
+    type: word
+    words:
+    - '{"CertificateSummaryList":[]}'
+  matchers-condition: and
+  raw:
+  - 'POST https://{{service}}.{{region}}.amazonaws.com HTTP/1.1
+
+    Host: {{service}}.{{region}}.amazonaws.com
+
+    Content-Type: application/x-amz-json-1.1
+
+    X-Amz-Target: CertificateManager.ListCertificates
+
+    User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/21.6.0 source/arm64 prompt/off
+    command/acm.list-certificates
+
+
+    {"CertificateStatuses": ["EXPIRED"]}
+
+    '
+self-contained: true
+signature: aws
+variables:
+  region: us-east-1
+  service: acm

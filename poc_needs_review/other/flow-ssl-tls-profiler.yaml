@@ -1,0 +1,111 @@
+id: flow-ssl-tls-profiler
+
+info:
+  name: SSL/TLS Security Profiler
+  author: geeknik
+  severity: info
+  description: |
+    SSL/TLS certificate analysis using Flow Protocol for security assessment.
+    Analyzes certificate validity, TLS version, and cipher strength.
+  reference:
+    - https://tools.ietf.org/html/rfc5246
+    - https://owasp.org/www-project-web-security-testing-guide/
+  tags: ssl,tls,certificates,flow,security-assessment,defensive
+
+flow: |
+  ssl();
+
+  // Process SSL certificate data using built-in variables
+  const certSubject = template["ssl_subject_dn"];
+  const certIssuer = template["ssl_issuer_dn"];
+  const certNotBefore = template["ssl_not_before"];
+  const certNotAfter = template["ssl_not_after"];
+  const tlsVersion = template["ssl_tls_version"];
+  const cipherSuite = template["ssl_cipher"];
+  const domains = template["ssl_domains"];
+
+  let securityScore = 100;
+  let findings = [];
+
+  // Build certificate analysis
+  const certAnalysis = {
+    "subject": certSubject || "N/A",
+    "issuer": certIssuer || "N/A",
+    "valid_from": certNotBefore || "N/A",
+    "valid_to": certNotAfter || "N/A",
+    "tls_version": tlsVersion || "N/A",
+    "cipher_suite": cipherSuite || "N/A",
+    "domains": domains || "N/A"
+  };
+
+  set("cert_analysis", JSON.stringify(certAnalysis, null, 2));
+
+  // Check certificate expiration
+  if (certNotAfter) {
+    try {
+      const now = new Date();
+      const expiry = new Date(certNotAfter);
+      const daysUntilExpiry = Math.floor((expiry - now) / (24 * 60 * 60 * 1000));
+      const expiresSoon = daysUntilExpiry < 30;
+
+      set("cert_expires_soon", expiresSoon);
+      set("days_until_expiry", daysUntilExpiry);
+
+      if (expiresSoon && daysUntilExpiry > 0) {
+        securityScore -= 20;
+        findings.push("Certificate expires in " + daysUntilExpiry + " days");
+      } else if (daysUntilExpiry <= 0) {
+        securityScore -= 50;
+        findings.push("Certificate has expired");
+      }
+    } catch (e) {
+      findings.push("Could not parse expiration date");
+    }
+  }
+
+  // Check TLS version
+  if (tlsVersion) {
+    const version = tlsVersion.toLowerCase();
+    if (version.includes("ssl") || version.includes("tls10") || version.includes("tls11")) {
+      securityScore -= 30;
+      findings.push("Weak TLS version: " + tlsVersion);
+      set("weak_tls_version", true);
+    } else {
+      set("weak_tls_version", false);
+    }
+  }
+
+  // Calculate final security assessment
+  const finalScore = Math.max(securityScore, 0);
+  const riskLevel = finalScore > 80 ? "Low" :
+                   finalScore > 60 ? "Medium" :
+                   finalScore > 40 ? "High" : "Critical";
+
+  set("ssl_security_score", finalScore);
+  set("ssl_risk_level", riskLevel);
+  set("security_findings", findings.join("; "));
+
+  http();
+
+ssl:
+  - address: "{{Host}}:{{Port}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 403
+          - 404
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"SSL Security Score: " + ssl_security_score + "/100 (" + ssl_risk_level + " Risk)"'
+          - '"Certificate: " + cert_analysis'
+          - '"Findings: " + security_findings'
