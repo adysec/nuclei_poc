@@ -10,7 +10,6 @@ use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tokio::time::timeout;
 use tracing::{error, info, warn};
-use walkdir::WalkDir;
 
 /// 并发克隆或更新仓库，并限制并发数。
 /// 克隆完成后会将已有的 poc/ 目录移入 clone-templates/，
@@ -156,7 +155,6 @@ async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
     } // end of clone block
 
     // ── 将所有已有的 poc* 目录移入 clone-templates/ ──
-    // 先复制再删除，避免流水线中途失败导致数据丢失。
     for poc_dir in &args.poc_dirs {
         let poc_src = Path::new(poc_dir);
         if !poc_src.is_dir() {
@@ -170,15 +168,10 @@ async fn async_main(args: Args, jobs_final: usize) -> anyhow::Result<()> {
                 warn!("无法清理旧目录 {:?}: {}", poc_dest, e);
             }
         }
-        info!("复制已有 POC: {:?} -> {:?}", poc_src, poc_dest);
-        match copy_dir_recursive(poc_src, &poc_dest) {
-            Ok(n) => {
-                info!("已复制 {} 个文件到 {:?}", n, poc_dest);
-                if let Err(e) = fs::remove_dir_all(poc_src) {
-                    warn!("无法删除原目录 {}: {} (不影响后续流程)", poc_dir, e);
-                }
-            }
-            Err(e) => warn!("复制 {} 失败: {} (原目录保留)", poc_dir, e),
+        info!("移动已有 POC: {:?} -> {:?}", poc_src, poc_dest);
+        match fs::rename(poc_src, &poc_dest) {
+            Ok(()) => info!("已移动到 {:?}", poc_dest),
+            Err(e) => warn!("移动 {} 失败: {} (原目录保留)", poc_dir, e),
         }
     }
 
@@ -199,21 +192,3 @@ fn parse_owner_repo(url: &str) -> Option<(String, String)> {
     None
 }
 
-/// 递归复制目录，返回复制的文件数。
-fn copy_dir_recursive(src: &Path, dest: &Path) -> anyhow::Result<u64> {
-    let mut count = 0u64;
-    for entry in WalkDir::new(src).into_iter().filter_map(|e| e.ok()) {
-        let rel = entry.path().strip_prefix(src)?;
-        let target = dest.join(rel);
-        if entry.file_type().is_dir() {
-            fs::create_dir_all(&target)?;
-        } else {
-            if let Some(parent) = target.parent() {
-                fs::create_dir_all(parent)?;
-            }
-            fs::copy(entry.path(), &target)?;
-            count += 1;
-        }
-    }
-    Ok(count)
-}
