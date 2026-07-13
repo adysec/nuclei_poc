@@ -142,7 +142,7 @@
   <div class="stat-item animate delay-1"><div class="num" id="statTotal">—</div><div class="label">验证通过 POC (poc/)</div></div>
   <div class="stat-item animate delay-2"><div class="num green">~6 min</div><div class="label">全量流水线耗时</div></div>
   <div class="stat-item animate delay-3"><div class="num blue" id="statDedup">—</div><div class="label">去重 POC (poc_dedup/)</div></div>
-  <div class="stat-item animate delay-4"><div class="num purple" id="statGold">—</div><div class="label">精品层级 (5 级梯度)</div></div>
+  <div class="stat-item animate delay-4"><div class="num purple" id="statGold">—</div><div class="label">精品 POC (最高质量)</div></div>
 </div>
 
 <section id="outputs">
@@ -212,25 +212,25 @@
 
 <script>
 (async function(){
-  function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toLocaleString()}
-  function shortNum(n){if(n>=1e4)return(n/1e4).toFixed(1)+'<span style="font-size:1.2rem">万</span>';return n.toLocaleString()}
+  // Exact number formatting — no abbreviation, full precision with locale separators
+  function exactNum(n){return n.toLocaleString()}
   try{
     var res=await fetch('_categories.json');
     if(!res.ok)throw new Error('HTTP '+res.status);
     var cats=await res.json();
-    var pocTotal=0,dedupTotal=0,goldTiers=0;
-    for(var d in cats){var t=0;for(var c in cats[d])t+=cats[d][c];if(d==='poc')pocTotal=t;else if(d==='poc_dedup')dedupTotal=t;else if(d.startsWith('poc_gold_'))goldTiers++}
-    document.getElementById('statTotal').innerHTML=shortNum(pocTotal);
-    document.getElementById('statDedup').innerHTML=shortNum(dedupTotal);
-    document.getElementById('statGold').innerHTML=goldTiers;
+    var pocTotal=0,dedupTotal=0,goldTotal=0,goldTiers=0;
+    for(var d in cats){var t=0;for(var c in cats[d])t+=cats[d][c];if(d==='poc')pocTotal=t;else if(d==='poc_dedup')dedupTotal=t;else if(d.startsWith('poc_gold_')){goldTiers++;goldTotal+=t}}
+    document.getElementById('statTotal').innerHTML=exactNum(pocTotal);
+    document.getElementById('statDedup').innerHTML=exactNum(dedupTotal);
+    document.getElementById('statGold').innerHTML=exactNum(goldTotal);
     var cardsHtml='';
-    cardsHtml+='<div class="card animate delay-1"><div class="icon">📁</div><h3>全量验证集</h3><div class="count">'+fmt(pocTotal)+'</div><p>Step 4 nuclei 验证通过，按 80+ 类别组织。日常扫描首选，覆盖面最广。</p></div>';
+    cardsHtml+='<div class="card animate delay-1"><div class="icon">📁</div><h3>全量验证集</h3><div class="count">'+exactNum(pocTotal)+'</div><p>Step 4 nuclei 验证通过，按 80+ 类别组织。日常扫描首选，覆盖面最广。</p></div>';
     var dedupPct=pocTotal>0?(dedupTotal/pocTotal*100).toFixed(1):'—';
-    cardsHtml+='<div class="card animate delay-2"><div class="icon">🔍</div><h3>全量去重集</h3><div class="count">'+fmt(dedupTotal)+'</div><p>ID 去重 + 语义相似度去重，保留全量的 '+dedupPct+'%，覆盖面广且无冗余。</p></div>';
+    cardsHtml+='<div class="card animate delay-2"><div class="icon">🔍</div><h3>全量去重集</h3><div class="count">'+exactNum(dedupTotal)+'</div><p>ID 去重 + 语义相似度去重，保留全量的 '+dedupPct+'%，覆盖面广且无冗余。</p></div>';
     var goldKeys=Object.keys(cats).filter(function(k){return k.startsWith('poc_gold_')}).sort();
     var tierColors=['t1','t2','t3','t4','t5'],tierNames=['基准','标准','高品','极优','精选'],tierStars=['⭐','⭐','⭐⭐','⭐⭐','⭐⭐⭐'];
     var tierDescs=['评分 ≥11，覆盖面最广的精品集（dedup 的 94%），适合日常扫描。','评分 ≥12，平衡质量与覆盖（dedup 的 62%），适合对外发布。','评分 ≥13，约 30% dedup，误报明显减少。','评分 ≥14，极致质量，适合安全基线基准。','评分 ≥15，最高质量，误报率趋近于零。'];
-    for(var i=0;i<goldKeys.length;i++){var k=goldKeys[i],total=0;for(var c in cats[k])total+=cats[k][c];var n=k.replace('poc_gold_','');cardsHtml+='<div class="card animate delay-'+(3+i)+'"><span class="tier-badge '+tierColors[i]+'">Lv.'+n+'</span><div class="icon">'+tierStars[i]+'</div><h3>精品 '+tierNames[i]+'</h3><div class="count">'+fmt(total)+'</div><p>'+tierDescs[i]+'</p></div>'}
+    for(var i=0;i<goldKeys.length;i++){var k=goldKeys[i],total=0;for(var c in cats[k])total+=cats[k][c];var n=k.replace('poc_gold_','');cardsHtml+='<div class="card animate delay-'+(3+i)+'"><span class="tier-badge '+tierColors[i]+'">Lv.'+n+'</span><div class="icon">'+tierStars[i]+'</div><h3>精品 '+tierNames[i]+'</h3><div class="count">'+exactNum(total)+'</div><p>'+tierDescs[i]+'</p></div>'}
     cardsHtml+='<div class="card animate delay-5"><div class="icon">🗑️</div><h3>排除审计</h3><div class="count">~550</div><p>Step 3 拦截的非 nuclei 文件，保留审计，不进入管线。</p></div>';
     document.getElementById('outputCards').innerHTML=cardsHtml;
   }catch(err){console.error('Failed to load stats:',err)}

@@ -216,37 +216,20 @@ fn main() -> anyhow::Result<()> {
     let root = Path::new(&args.repo_root);
     let out_dir = root.join(OUT_DIR);
 
-    // Clean and recreate output directory — but preserve static files (HTML, config)
     ensure_dir(&out_dir)?;
-    // Only delete previously generated JSON index files, keep static frontend assets
-    if out_dir.exists() {
-        for entry in fs::read_dir(&out_dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.extension().map_or(false, |ext| ext == "json") {
-                if let Err(e) = fs::remove_file(&path) {
-                    eprintln!("  warn: cannot remove {}: {e}", path.display());
-                }
-            }
-        }
-    }
 
-    // We'll collect stats for _categories.json
-    // Structure: BTreeMap<dir_name, BTreeMap<cat, count>>
-    let mut all_cats: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
+    // ── Phase 1: Collect all data first (without writing files) ──
+    // Structure: BTreeMap<dir_name, (BTreeMap<cat, Vec<filenames>>)>
+    let mut all_data: BTreeMap<String, BTreeMap<String, Vec<String>>> = BTreeMap::new();
 
     // ── 1. poc/ from poc.txt ──
     let poc_txt = root.join(&args.poc_txt);
     if poc_txt.exists() {
         println!("[1/3] poc/  — from {}", args.poc_txt);
         let cats = parse_poc_txt(&poc_txt)?;
-        let mut summary = BTreeMap::new();
-        for (cat, files) in &cats {
-            let (count, chunks) = write_chunks(&out_dir, "poc", cat, files)?;
-            summary.insert(cat.clone(), count);
-            println!("  poc/{}: {} → {} chunk(s)", cat, count, chunks);
-        }
-        all_cats.insert("poc".to_string(), summary);
+        let count: usize = cats.values().map(|v| v.len()).sum();
+        println!("  poc/: {} files across {} categories", count, cats.len());
+        all_data.insert("poc".to_string(), cats);
     } else {
         eprintln!("  [SKIP] {} not found", args.poc_txt);
     }
@@ -256,13 +239,9 @@ fn main() -> anyhow::Result<()> {
     if dedup_dir.is_dir() {
         println!("[2/3] poc_dedup/  — from filesystem");
         let cats = scan_fs_dir(&dedup_dir);
-        let mut summary = BTreeMap::new();
-        for (cat, files) in &cats {
-            let (count, chunks) = write_chunks(&out_dir, "poc_dedup", cat, files)?;
-            summary.insert(cat.clone(), count);
-            println!("  poc_dedup/{}: {} → {} chunk(s)", cat, count, chunks);
-        }
-        all_cats.insert("poc_dedup".to_string(), summary);
+        let count: usize = cats.values().map(|v| v.len()).sum();
+        println!("  poc_dedup/: {} files across {} categories", count, cats.len());
+        all_data.insert("poc_dedup".to_string(), cats);
     } else {
         eprintln!("  [SKIP] poc_dedup/ not found");
     }
@@ -279,14 +258,53 @@ fn main() -> anyhow::Result<()> {
                 continue;
             }
             let cats = scan_fs_dir(&dir);
-            let mut summary = BTreeMap::new();
-            for (cat, files) in &cats {
-                let (count, chunks) = write_chunks(&out_dir, dir_name, cat, files)?;
-                summary.insert(cat.clone(), count);
-                println!("  {}/{}: {} → {} chunk(s)", dir_name, cat, count, chunks);
-            }
-            all_cats.insert(dir_name.to_string(), summary);
+            let count: usize = cats.values().map(|v| v.len()).sum();
+            println!("  {}/: {} files across {} categories", dir_name, count, cats.len());
+            all_data.insert(dir_name.to_string(), cats);
         }
+    }
+
+    // ── Phase 2: Guard against empty data — don't overwrite previous good data ──
+    let grand_total: usize = all_data.values()
+        .flat_map(|cats| cats.values())
+        .map(|v| v.len())
+        .sum();
+
+    if grand_total == 0 {
+        eprintln!(
+            "\n⚠️  WARNING: No POC files found in any tier (poc/, poc_dedup/, poc_gold_*).\n\
+               This likely means the upstream pipeline didn't produce files.\n\
+               Existing _categories.json and chunk files will NOT be overwritten.\n\
+               Please check steps 4-7 in the CI pipeline."
+        );
+        return Ok(());
+    }
+
+    // ── Phase 3: Clean old JSON and write new chunk files ──
+    // Delete previously generated JSON index files, keep static frontend assets
+    if out_dir.exists() {
+        for entry in fs::read_dir(&out_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.extension().map_or(false, |ext| ext == "json") {
+                if let Err(e) = fs::remove_file(&path) {
+                    eprintln!("  warn: cannot remove {}: {e}", path.display());
+                }
+            }
+        }
+    }
+
+    // Write chunks and build summary
+    let mut all_cats: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
+
+    for (tier_name, cats) in &all_data {
+        let mut summary = BTreeMap::new();
+        for (cat, files) in cats {
+            let (count, chunks) = write_chunks(&out_dir, &tier_name, cat, files)?;
+            summary.insert(cat.clone(), count);
+            println!("  {}/{}: {} → {} chunk(s)", tier_name, cat, count, chunks);
+        }
+        all_cats.insert(tier_name.clone(), summary);
     }
 
     // ── Write _categories.json ──
@@ -295,9 +313,10 @@ fn main() -> anyhow::Result<()> {
 
     let file_count = fs::read_dir(&out_dir)?.count();
     println!(
-        "\nDone! {} → {} files",
+        "\nDone! {} → {} files (grand total: {} POCs)",
         OUT_DIR,
-        file_count
+        file_count,
+        grand_total
     );
     println!("  _categories.json written");
 
