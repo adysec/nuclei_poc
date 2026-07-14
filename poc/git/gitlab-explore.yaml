@@ -11,7 +11,7 @@ info:
     max-request: 2
     shodan-query: title:"GitLab"
     fofa-query: title="GitLab"
-  tags: gitlab,explore,panel,detect
+  tags: gitlab,explore,panel,detect,discovery
 
 http:
   - method: GET
@@ -20,15 +20,19 @@ http:
       - "{{BaseURL}}/api/v4/projects"
 
     stop-at-first-match: true
-    matchers-condition: and
+
     matchers:
       - type: dsl
+        name: gitlab-community
         dsl:
           - 'contains_all(body, ">Most stars", "Hide archived projects")'
           - 'contains_all(body, "description\":", "name_with_namespace\":")'
         condition: or
 
-      - type: status
-        status:
-          - 200
-# digest: 4a0a004730450220230c5219a57a71eac89d81d2fffc9aa30d830c2ce2a2aecfec194bb0ad14f4b1022100c80bad67c50a92bd6698423a96630a5c96688cd5cca50a8128b74087d492cc59:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        name: gitlab-enterprise
+        dsl:
+          - 'contains_all(body, ">Most starred", "Explore public groups")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a0046304402200ed24b5716117d445e45976f6cef64bb44b647bc8a1497e7cdd5dfcce342f4e50220759f131ff9cead5a0e4c89ece93a0677240cb7801ef143f4e1c490dcd0b9aaa1:922c64590222798bb761d5b6d8e72950
