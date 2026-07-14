@@ -3,44 +3,41 @@ info:
   name: Graphql Hasura Detect
   author: princechaddha
   severity: info
-  reference:
-    - https://github.com/dolevf/graphw00f/blob/main/graphw00f/lib.py
+  reference: https://github.com/dolevf/graphw00f/blob/main/graphw00f/lib.py
   tags: tech,graphql,hasura
 
-http:
+requests:
   - method: POST
     path:
-      - "{{BaseURL}}/graphql"
-      - "{{BaseURL}}/api/graphql"
-      - "{{BaseURL}}/query"
       - "{{BaseURL}}/"
-    body: '{"query":"query {aa}"}'
+    body: 'query {aa}'
+
     headers:
       Content-Type: application/json
     redirects: true
 
-    matchers-condition: and
+  - method: POST
+    path:
+      - "{{BaseURL}}/"
+    body: 'query @skip {__typename}'
+
+    headers:
+      Content-Type: application/json
+    redirects: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/"
+    body: 'query { __schema }'
+
+    headers:
+      Content-Type: application/json
+    redirects: true
     matchers:
-      - type: status
-        status:
-          - 200
-
       - type: word
         words:
-          - "field \"aa\" not found in type: 'query_root'"
-        part: body
-
-      - type: word
-        words:
-          - 'Content-Type: text/html'
-        part: header
-        negative: true
-
-      - type: word
-        words:
-          - '<html'
-          - '<body'
+          - "field \"aaa\" not found in type: 'query_root'"
+          - "directive \"skip\" is not allowed on a query"
+          - "missing selection set for \"__Schema\""
         part: body
         condition: or
-        negative: true
-# digest: 4a0a00473045022100c8107ba4a842129e7d69197b584b54ce13d4a1b6b834be6f77ed910924ffdce002206f245ca68fbb36c93f1642a9a325e5db73c9bd2b2ea8bf88f5112d526df1cb91:922c64590222798bb761d5b6d8e72950
