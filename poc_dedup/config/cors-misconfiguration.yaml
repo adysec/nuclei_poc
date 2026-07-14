@@ -1,26 +1,21 @@
-http:
-- matchers:
-  - condition: and
-    dsl:
-    - 'contains(tolower(header), ''access-control-allow-origin: {{cors_origin}}'')'
-    - 'contains(tolower(header), ''access-control-allow-credentials: true'')'
-    name: arbitrary-origin
-    type: dsl
-  payloads:
-    cors_origin:
-    - https://{{tolower(rand_base(5))}}.{{RDN}}
-  raw:
-  - 'GET  HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Origin: {{cors_origin}}
-
-    '
-  stop-at-first-match: true
 id: cors-misconfiguration
 info:
-  author: the_shadow_0
   name: CORS Misconfiguration
+  author: exxonabhijit
   severity: medium
-  tags: cors,misconfig
+  description: Identifies insecure CORS policies allowing arbitrary origins.
+
+requests:
+  - method: OPTIONS
+    path:
+      - "{{BaseURL}}"
+
+    headers:
+      Origin: "http://evil.com"
+      Access-Control-Request-Method: "GET"
+
+    matchers:
+      - type: regex
+        regex:
+          - "Access-Control-Allow-Origin: \\*"
+          - "Access-Control-Allow-Origin: http://evil.com"
