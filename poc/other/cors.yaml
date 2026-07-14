@@ -1,25 +1,19 @@
 id: cors-misconfig
 info:
   name: CORS Misconfiguration
-  author: r3dcl1ff
-  severity: high
-  tags: cors,generic,misconfig
-
-http:
-  - raw:
-      - |
-        GET  HTTP/1.1
-        Host: {{Hostname}}
-        Origin: {{cors_origin}}
-
-    payloads:
-      cors_origin:
-        - "https://{{tolower(rand_base(5))}}.{{RDN}}" # Find domain in RDN with Misconfiguration
-    stop-at-first-match: true
-    matchers:
-      - type: dsl
-        name: arbitrary-origin
-        dsl:
-          - "contains(tolower(header), 'access-control-allow-origin: {{cors_origin}}')"
-          - "contains(tolower(header), 'access-control-allow-credentials: true')"
-        condition: and
+  severity: medium
+  description: Detects potential CORS misconfigurations in the target
+author: qaisar afridi
+tags:
+  - web
+  - cors
+requests:
+- method: OPTIONS
+  path:
+    - "/api"
+    - "/check-cors"
+  matchers:
+  - type: regex
+    part: headers
+    regex:
+    - "Access-Control-Allow-Origin: .*"
