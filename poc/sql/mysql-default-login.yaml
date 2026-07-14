@@ -10,18 +10,15 @@ info:
     verified: true
     max-request: 21
     shodan-query: "port:3306"
-  tags: js,mysql,default-login,network,fuzz
+  tags: js,mysql,default-login,network,fuzz,enum,vuln
 
 javascript:
   - pre-condition: |
-      var m = require("nuclei/mysql");
-      var c = m.MySQLClient();
-      c.IsMySQL(Host, Port);
-
+      isPortOpen(Host,Port);
     code: |
       var m = require("nuclei/mysql");
       var c = m.MySQLClient();
-      c.Connect(Host,Port,Username,Password)
+      c.Connect(Host,Port,User,Pass)
 
     args:
       Host: "{{Host}}"
@@ -30,17 +27,8 @@ javascript:
       Pass: "{{passwords}}"
 
     payloads:
-      usernames:
-        - root
-        - admin
-        - mysql
-        - test
-      passwords:
-        - root
-        - admin
-        - mysql
-        - test
-        -
+      usernames: helpers/wordlists/mysql-users.txt
+      passwords: helpers/wordlists/mysql-passwords.txt
     attack: clusterbomb
 
     matchers:
@@ -49,4 +37,4 @@ javascript:
           - "response == true"
           - "success == true"
         condition: and
-# digest: 4a0a004730450220733725a3093b270900d6688f205629ca6477122f4f7d69f53792848fee2c5b56022100e1bc0a82d4775f448f3ba233a51ec6c9d5730b3336a0bd4add33052537f6a8a7:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a00473045022013541efe22c0aad4388b54499544021725653c8c88b5f36050c8dc3667baafdc02210085b983b931edaa3125882de6444bcc33de5920813653e4ef1ead12d7e4f5b762:922c64590222798bb761d5b6d8e72950
