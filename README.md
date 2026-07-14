@@ -41,10 +41,9 @@ git sparse-checkout set poc_gold_13
 2. 2_delete_duplicated — 执行第一轮去重，删除明显重复的 PoC 文件。
 3. 3_move_file — 预过滤非 nuclei 文件（→ `poc_non_nuclei/`）后将 PoC 按类别归档到 `tmp/` 和 `poc_all/`。
 4. 4_check_poc — 先 `auto_fix_poc()` 修复常见格式问题，再运行 nuclei 校验；通过→`poc/`，未通过→`poc_needs_review/`（不删除）。
-5. 5_get_pocname — 生成结构化索引：`poc_index.json`（含分类/质量分/CVE等元数据）、`poc_summary.json`（统计摘要）及 `poc.txt`（纯文本清单）。
-6. 6_dedup_advanced — 多因素评分去重+格式修复。（读取 poc/ → 输出 poc_dedup/）
-7. 7_dedup_high_quality — 多级评分梯度精选，产生 poc_gold_11 ~ poc_gold_15 目录。
-8. 8_generate_browser_index — 生成 GitHub Pages 前端所需的 JSON 索引文件到 docs/。
+5. 5_dedup_advanced — 多因素评分去重+格式修复。（读取 poc/ → 输出 poc_dedup/）
+6. 6_dedup_high_quality — 多级评分梯度精选，产生 poc_gold_11 ~ poc_gold_15 目录。
+7. 7_generate_browser_index — 生成 GitHub Pages 前端所需的 JSON 索引文件到 docs/。
 
 ### 根目录（常见文件/目录）
 
