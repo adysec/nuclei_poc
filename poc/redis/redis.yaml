@@ -1,27 +1,23 @@
-id: assessment-redis-template
+id: redis
 info:
-  name: Assessment Redis Template
-  author: Cavonstavant
+  name: Redis key-value store
+  author: nmap,cn-kali-team
+  tags: detect,tech,redis,service
   severity: info
-  description: |
-    This template queries the target on port 6379 and checks for a specific password.
-
-javascript:
-  - code: |
-      const redis = require("nuclei/redis");
-      redis.GetServerInfoAuth(Host, Port, Password);
-    args:
-      Host: "{{Host}}"
-      Port: 6379
-      Password: "test_password"
-    matchers:
-      - type: word
-        words:
-          - "redis_version"
-          - "process_id"
-        condition: and
-    extractors:
-      - type: regex
-        name: redis_version
-        regex:
-          - "redis_version:(.*)"
+  metadata:
+    product: redis
+    rarity: 8
+    vendor: redislabs
+    verified: true
+tcp:
+- name: redis-server
+  inputs:
+  - data: '*1\r\n$4\r\ninfo\r\n'
+  host:
+  - '{{Hostname}}'
+  port: 6379,6380,16379
+  extractors:
+  - name: redis
+    type: regex
+    regex:
+    - ^-NOAUTH Authentication required.\r\n

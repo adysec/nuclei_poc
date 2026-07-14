@@ -1,32 +1,35 @@
 id: prometheus-config
-
 info:
-  name: Prometheus config API endpoint
-  author: geeknik
-  severity: info
-  description: The config endpoint returns the loaded Prometheus configuration file. This file also contains addresses of targets and alerting/discovery services alongside the credentials required to access them. Usually, Prometheus replaces the passwords in the credentials config configuration field with the placeholder <secret> (although this still leaks the username).
-  reference: https://jfrog.com/blog/dont-let-prometheus-steal-your-fire/
-  tags: prometheus,config
-
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/api/v1/status/config"
-
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - '"status": "success":'
-          - '"data":'
-          - '"yaml":'
-        condition: and
-
-      - type: word
-        part: header
-        words:
-          - 'application/json'
+  name: Prometheus Config API Endpoint Discovery
+  author:
+  - l0ne1y
+  description: |-
+    Prometheus配置文件信息泄露
+    攻击者通过发现了一个Prometheus配置API端点。配置端点中返回Prometheus配置文件，以及目标和警报/发现服务的地址等敏感信息
+  severity: medium
+  remediation: |-
+    官方修复方案：
+    1、建议用户到官方获取最新补丁或者最新版本程序：
+    https://github.com/prometheus/prometheus/
+    临时修复方案：
+    1、禁止带有敏感数据的Web页面展示，以防止敏感信息泄漏。
+    2、对必须发送的敏感数据或页面请求接口做好严格的权限认证
+requests:
+- matchers:
+  - type: status
+    status:
+    - 200
+  - type: word
+    condition: and
+    words:
+    - '"status": "success":'
+    - '"data":'
+    - '"yaml":'
+  - type: word
+    part: header
+    words:
+    - application/json
+  matchers-condition: and
+  path:
+  - '{{BaseURL}}/api/v1/status/config'
+  method: GET

