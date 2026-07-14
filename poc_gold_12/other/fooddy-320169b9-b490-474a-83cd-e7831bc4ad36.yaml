@@ -1,0 +1,51 @@
+id: fooddy-320169b9-b490-474a-83cd-e7831bc4ad36
+
+info:
+  name: >
+    Fooddy <= 1.3.10 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/320169b9-b490-474a-83cd-e7831bc4ad36?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/fooddy/"
+    google-query: inurl:"/wp-content/themes/fooddy/"
+    shodan-query: 'http.html:"wp-content/themes/fooddy/"'
+  tags: cve,wordpress,wp-theme,fooddy,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/fooddy/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "fooddy"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.10')

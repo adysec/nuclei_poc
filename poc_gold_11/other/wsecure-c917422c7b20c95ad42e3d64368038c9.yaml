@@ -1,0 +1,59 @@
+id: wsecure-c917422c7b20c95ad42e3d64368038c9
+
+info:
+  name: >
+    wSecure Lite <= 2.5 - Authenticated (Administrator+) Stored Cross-Site Scripting via settings
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/05f5addb-ab1d-4b67-b969-3b95d43be790?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wsecure/"
+    google-query: inurl:"/wp-content/plugins/wsecure/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wsecure,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wsecure/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wsecure"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5')

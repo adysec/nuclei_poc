@@ -1,0 +1,81 @@
+# gap: directus-public-role-collections-readable
+id: directus-public-role-collections-readable
+
+info:
+  name: Directus Public Role Reads directus_collections Anonymously
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Directus instance where the `Public` role has been
+    granted read on `directus_collections` (or one or more user
+    collections) — the standard footgun documented in Directus's
+    access-control guide. The matcher confirms anonymous reach by
+    discriminating between Directus's `"data":[…]` success
+    envelope and its `"errors":[{"extensions":{"code":"FORBIDDEN"}}]`
+    rejection envelope. A successful response leaks the collection
+    schema, which is the precondition for reading user
+    collections under the same role.
+
+    Class signal: `GET /server/info` returns a 200 JSON object
+    containing the top-level `project` key (Directus's
+    canonical server-info envelope) — required to confirm the
+    target IS Directus before evaluating the access result.
+    Then `GET /items/directus_collections?limit=1` returns the
+    Directus `data` envelope with collection metadata.
+  reference:
+    - https://directus.com/docs/guides/auth/access-control
+    - https://directus.com/docs/guides/security/best-practices
+  tags: custom,exposures,directus,baas,headless-cms,disclosure,cwe-306
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/server/info"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"project"'
+          - '"directus"'
+        condition: and
+    # Internal pre-filter — confirms target is Directus before the
+    # access-control check fires. Does not produce a finding alone.
+    internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/items/directus_collections?limit=1"
+      - "{{BaseURL}}/collections?limit=1"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        # Directus success envelope (NOT the errors/FORBIDDEN shape).
+        regex:
+          - '^\s*\{\s*"data"\s*:\s*\['
+      - type: word
+        part: body
+        negative: true
+        words:
+          - '"errors"'
+          - '"FORBIDDEN"'
+          - '"INVALID_CREDENTIALS"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: collection-names
+        regex:
+          - '"collection"\s*:\s*"([^"]+)"'
+        group: 1

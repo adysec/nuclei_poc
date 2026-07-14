@@ -1,0 +1,82 @@
+id: wsus-detect
+
+info:
+  name: Microsoft Product - Detect
+  severity: info
+  author: darses
+  description: |
+    Microsoft Product was detected.
+  classification:
+    cve-id: todo
+  metadata:
+    verified: false
+    max-requests: 2
+    vendor: microsoft
+    product: product
+    shodan-query:
+      -
+    fofa-query:
+      - 'server="Microsoft-IIS" && "Content-Length: 0" && "X-Powered-By: ASP.NET" && status_code="200" && header!="X-Frame-Options" && header!="Etag" && header!="Last-Modified" && header!="Set-Cookie" && header!="Content-Type"'
+  reference:
+    - http://example.com
+  tags: tech,microsoft
+
+http:
+  # - method: GET
+  #   path:
+  #     - "{{BaseURL}}/SimpleAuthWebService/SimpleAuth.asmx"
+  #     # - "{{BaseURL}}/ClientWebService/Client.asmx"
+  #     # - "{{BaseURL}}/ReportingWebService/ReportingWebService.asmx"
+  #     # - "{{BaseURL}}/selfupdate/wuident.cab"
+  #     # - "{{BaseURL}}/selfupdate/iuident.cab"
+  #     # - "{{BaseURL}}/selfupdate/WSUS3/x64/Other/wsus3setup.cab"
+    
+  #   matchers-condition: and
+  #   matchers:
+  #     - type: word
+  #       words:
+  #         - "GetAuthorizationCookie"
+
+  #     - type: status
+  #       status:
+  #         - 200
+
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/ClientWebService/Client.asmx"
+
+    headers:
+      Content-Type: text/xml
+      Soapaction: "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetConfig"
+
+    body: |
+      <?xml version="1.0" encoding="utf-8"?>
+      <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+          <GetConfig xmlns="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService">
+            <protocolVersion>3.2</protocolVersion>
+          </GetConfig>
+        </soap:Body>
+      </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "LastChange"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '<LastChange>([\d\-]+)T[\d\w\-\:\.]+</LastChange>'
+
+      - type: regex
+        group: 1
+        regex:
+          - '<Name>PackageServerShare</Name><Value>\\\\([\d\w\-\.]+)\\[\w\d\-]+</Value>'

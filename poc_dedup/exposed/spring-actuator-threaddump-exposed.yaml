@@ -1,0 +1,48 @@
+# gap: spring-actuator-threaddump-exposed
+id: spring-actuator-threaddump-exposed
+
+info:
+  name: Spring Boot Actuator /threaddump Endpoint Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed Spring Boot Actuator /threaddump (or /dump on
+    Spring Boot 1.x) endpoint that returns a snapshot of every JVM
+    thread with its stack trace and locked monitors. In a live system
+    these stack traces routinely include in-flight request URIs with
+    query-string tokens, Authorization headers held in thread-local
+    SecurityContexts, SQL statements with bound parameters, and HTTP
+    client state holding outbound bearer tokens. Repeated polling
+    effectively reconstructs traffic without sniffing. Family detection
+    — replays on any Spring Boot deployment where the endpoint is
+    reachable, not a single CVE.
+  reference:
+    - https://docs.spring.io/spring-boot/docs/current/actuator-api/htmlsingle/#threaddump
+  tags: custom,exposures,spring,spring-boot,actuator,threaddump,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/actuator/threaddump"
+      - "{{BaseURL}}/threaddump"
+      - "{{BaseURL}}/dump"
+      - "{{BaseURL}}/api/actuator/threaddump"
+      - "{{BaseURL}}/management/threaddump"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "\"threads\"") && contains(tolower(body), "\"stacktrace\"") && contains(tolower(body), "\"threadname\"")'
+          - 'contains(body, "[com.sun.management.ThreadInfo")'
+        condition: or
+    extractors:
+      - type: regex
+        part: body
+        name: thread_names
+        group: 1
+        regex:
+          - '"threadName"\s*:\s*"([^"]+)"'

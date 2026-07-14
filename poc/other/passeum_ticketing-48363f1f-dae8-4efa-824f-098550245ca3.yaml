@@ -1,0 +1,51 @@
+id: passeum_ticketing-48363f1f-dae8-4efa-824f-098550245ca3
+
+info:
+  name: >
+    Passeum Ticketing <= 1.0 - Authenticated (Administrator+) Stored Cross-Site Scripting via 'shop_name' Setting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/48363f1f-dae8-4efa-824f-098550245ca3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/passeum-ticketing/"
+    google-query: inurl:"/wp-content/plugins/passeum-ticketing/"
+    shodan-query: 'http.html:"wp-content/plugins/passeum-ticketing/"'
+  tags: cve,wordpress,wp-plugin,passeum-ticketing,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/passeum-ticketing/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "passeum-ticketing"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0')

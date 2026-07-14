@@ -1,0 +1,58 @@
+# gap: spring-actuator-discovery
+id: spring-actuator-discovery
+
+info:
+  name: Spring Boot Actuator Endpoint Discovered
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects an exposed Spring Boot Actuator base endpoint that returns the
+    HAL-style JSON catalog of management endpoints. Reaching /actuator at
+    all is the gateway signal for the entire actuator attack surface:
+    once enumerable, individual endpoints (env, heapdump, gateway/routes,
+    mappings, jolokia, refresh) become trivial to weaponise and have
+    powered every Spring Boot RCE family since 2022 (SpEL injection,
+    Jackson polymorphic deserialization, Spring Cloud Gateway code
+    evaluation). This is family detection that replays on future Spring
+    Boot vulnerabilities rather than a single CVE.
+  reference:
+    - https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html
+    - https://docs.spring.io/spring-boot/docs/current/actuator-api/htmlsingle/
+  tags: custom,exposures,spring,spring-boot,actuator,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/actuator"
+      - "{{BaseURL}}/actuator/"
+      - "{{BaseURL}}/api/actuator"
+      - "{{BaseURL}}/admin/actuator"
+      - "{{BaseURL}}/management/actuator"
+      - "{{BaseURL}}/manage"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/vnd.spring-boot.actuator"
+          - "application/json"
+        condition: or
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "\"_links\"")'
+          - 'contains(tolower(body), "\"self\"") && contains(tolower(body), "\"href\"")'
+          - 'contains(tolower(body), "\"health\"") || contains(tolower(body), "\"env\"") || contains(tolower(body), "\"metrics\"") || contains(tolower(body), "\"mappings\"") || contains(tolower(body), "\"heapdump\"") || contains(tolower(body), "\"loggers\"") || contains(tolower(body), "\"beans\"") || contains(tolower(body), "\"configprops\"")'
+        condition: and
+    extractors:
+      - type: kval
+        kval:
+          - server
+      - type: regex
+        part: body
+        regex:
+          - '"(health|info|env|metrics|mappings|heapdump|threaddump|beans|configprops|loggers|gateway)"\s*:\s*\{'

@@ -1,0 +1,55 @@
+id: wordpress-backup-files
+
+info:
+  name: Compressed Backup File - Detect
+  author: rix4uni
+  severity: medium
+  description: Multiple compressed backup files were detected.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  reference:
+    https://twitter.com/0x_Akoko/status/1479271656564555776
+    https://twitter.com/kab33rrr/status/1478736986315923458
+  metadata:
+    max-request: 600
+  tags: exposure,backup
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{FILENAME}}"
+
+    payloads:
+      FILENAME: helpers/wordlists/wordpress-backup-files.txt
+
+    threads: 10
+
+    max-size: 500  # Size in bytes - Max Size to read from server response
+    matchers-condition: and
+    matchers:
+      - type: binary
+        binary:
+          - "377ABCAF271C"  # 7z
+          - "314159265359"  # bz2
+          - "53514c69746520666f726d6174203300"  # SQLite format 3.
+          - "1f8b"  # gz tar.gz
+          - "526172211A0700"  # rar RAR archive version 1.50
+          - "526172211A070100"  # rar RAR archive version 5.0
+          - "FD377A585A0000"  # xz tar.xz
+          - "1F9D"  # z tar.z
+          - "1FA0"  # z tar.z
+          - "4C5A4950"  # lz
+          - "504B0304"  # zip
+        condition: or
+        part: body
+
+      - type: regex
+        regex:
+          - "application/[-\\w.]+"
+        part: header
+
+      - type: status
+        status:
+          - 200

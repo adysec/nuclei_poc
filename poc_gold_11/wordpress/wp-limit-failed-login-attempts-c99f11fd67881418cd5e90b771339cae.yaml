@@ -1,0 +1,59 @@
+id: wp-limit-failed-login-attempts-c99f11fd67881418cd5e90b771339cae
+
+info:
+  name: >
+    Limit Login Attempts (Spam Protection) <= 2.9 - Cross-Site Request Forgery to Arbitrary Plugin Installation/Activation
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/7d525c50-5911-4be6-a860-b48db619adba?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-limit-failed-login-attempts/"
+    google-query: inurl:"/wp-content/plugins/wp-limit-failed-login-attempts/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-limit-failed-login-attempts,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-limit-failed-login-attempts/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-limit-failed-login-attempts"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.9')

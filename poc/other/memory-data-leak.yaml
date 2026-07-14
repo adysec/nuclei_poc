@@ -1,0 +1,51 @@
+id: openclaw-memory-data-leak
+
+info:
+  name: OpenClaw Memory Session Data Leakage (VULN-36)
+  author: LobsterGuard
+  severity: high
+  description: |
+    Memory search returns results across agent sessions, leaking sensitive
+    data from other agents' memory stores. Cross-session isolation broken.
+    Source: memory/session-files.ts, memory/search-manager.ts
+  tags: openclaw,memory,disclosure,idor,v4
+
+http:
+  - raw:
+      - |
+        POST /api/memory/search HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Authorization: Bearer {{token}}
+
+        {"query":"password","limit":20}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "session_id"
+          - "sessionId"
+          - "agent_id"
+          - "agentId"
+        condition: or
+        part: body
+
+  - raw:
+      - |
+        GET /api/memory/collections HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{token}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        regex:
+          - '^\[.+\]$'
+        part: body

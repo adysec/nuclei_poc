@@ -1,0 +1,58 @@
+id: wp24-domain-check-522bb1874fd16e132f497278173879fe
+
+info:
+  name: "WP24 Domain Check <= 1.6.2 - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The WP24 Domain Check plugin for WordPress is vulnerable to Stored Cross-Site Scripting via several parameters in versions up to, and including, 1.6.2 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - https://ithemes.com/blog/wordpress-vulnerability-roundup-january-2021-part-2/
+    - https://wpscan.com/vulnerability/4c4075de-c6e0-4130-8cad-a4ea5311f5ea
+    - https://plugins.trac.wordpress.org/changeset/2457088
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 5.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wp24-domain-check/"
+    google-query: inurl:"/wp-content/plugins/wp24-domain-check/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp24-domain-check,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp24-domain-check/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp24-domain-check"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.2')

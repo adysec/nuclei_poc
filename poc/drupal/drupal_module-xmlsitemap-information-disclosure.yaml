@@ -1,0 +1,54 @@
+
+id: drupal_module-xmlsitemap-information-disclosure
+info:
+  name: drupal_module-xmlsitemap-information-disclosure
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to generate XML sitemaps and it helps search engines to more intelligently crawl a website and keep their results up to date.  The module doesnt sufficiently handle access rights under the scenario of updating contents from cron execution."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-053
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:Uncommon"
+    vulnerability: "information-disclosure"
+    fofa-query: "/sites/all/modules/xmlsitemap/"
+    google-query: "inurl:'/sites/all/modules/xmlsitemap/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/xmlsitemap/xmlsitemap.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'xmlsitemap'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.3')
+         - compare_versions(version, '7.x-2.2')
+         - compare_versions(version, '7.x-2.1')
+         - compare_versions(version, '7.x-2.0')

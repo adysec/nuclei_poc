@@ -1,0 +1,58 @@
+id: feed-them-gallery-plugin
+
+info:
+  name: >
+    Feed Them Gallery <= 1.1.8 - Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    The Feed Them Gallery plugin for WordPress is vulnerable to Cross-Site Scripting in versions up to, and including, 1.1.8 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ed866cda-2244-4172-a8bd-63005bbee4fc?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/feed-them-gallery/"
+    google-query: inurl:"/wp-content/plugins/feed-them-gallery/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,feed-them-gallery,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/feed-them-gallery/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "feed-them-gallery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.8')

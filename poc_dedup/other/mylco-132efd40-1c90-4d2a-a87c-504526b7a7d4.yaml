@@ -1,0 +1,51 @@
+id: mylco-132efd40-1c90-4d2a-a87c-504526b7a7d4
+
+info:
+  name: >
+    myLCO <= 0.8.1 - Reflected Cross-Site Scripting via $_SERVER['PHP_SELF']
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/132efd40-1c90-4d2a-a87c-504526b7a7d4?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mylco/"
+    google-query: inurl:"/wp-content/plugins/mylco/"
+    shodan-query: 'http.html:"wp-content/plugins/mylco/"'
+  tags: cve,wordpress,wp-plugin,mylco,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mylco/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mylco"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 0.8.1')

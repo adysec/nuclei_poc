@@ -1,0 +1,85 @@
+# gap: apisix-admin-api-anonymous
+id: apisix-admin-api-anonymous
+
+info:
+  name: Apache APISIX Admin API Anonymous Route Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an Apache APISIX deployment where the admin API
+    (/apisix/admin/routes, /apisix/admin/consumers,
+    /apisix/admin/upstreams) is reachable without the
+    X-API-KEY header, returning the gateway-routing catalog as
+    JSON. Class signal: response carries APISIX's canonical
+    list envelope (`{"list":[…],"total":N}` or
+    `{"node":{"nodes":[…]}}`) with entries that include APISIX
+    route fields (`uri`, `methods`, `upstream`, `plugins`,
+    `host`, `priority`).
+
+    Anonymous admin-API access is materially worse than a
+    typical read-only exposure because APISIX's admin API
+    accepts POST / PUT / PATCH on the same endpoints — an
+    attacker creates a route that proxies arbitrary traffic
+    to an attacker-controlled upstream, or installs a `serverless-
+    pre-function` plugin that executes attacker-supplied Lua
+    code on every request (an unauth RCE primitive against the
+    APISIX worker). The class detection — keys on APISIX
+    list/node response shape, not vendor banner — catches
+    future CVEs that re-introduce default API keys
+    (CVE-2024-32638 family) or that bypass the X-API-KEY check.
+    Complements upstream `apache-apisix-panel` (HTML dashboard
+    fingerprint).
+  reference:
+    - https://apisix.apache.org/docs/apisix/admin-api/
+    - https://github.com/apache/apisix/security/advisories
+  tags: custom,exposures,apisix,apache,gateway,admin,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/apisix/admin/routes"
+      - "{{BaseURL}}/apisix/admin/services"
+      - "{{BaseURL}}/apisix/admin/upstreams"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"(list|node)"\s*:'
+      - type: word
+        part: body
+        words:
+          - '"upstream"'
+          - '"plugins"'
+          - '"uri"'
+          - '"methods"'
+        condition: or
+      # APISIX admin response carries `total` count OR `nodes` array;
+      # both are distinctive identifiers.
+      - type: regex
+        part: body
+        regex:
+          - '"total"\s*:\s*[0-9]+|"nodes"\s*:\s*\['
+
+    extractors:
+      - type: regex
+        part: body
+        name: route-uris
+        regex:
+          - '"uri"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: upstream-nodes
+        regex:
+          - '"nodes"\s*:\s*\{([^}]+)\}'
+        group: 1

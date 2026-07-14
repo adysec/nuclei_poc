@@ -1,0 +1,45 @@
+id: enhanced-webpack-sourcemap-disclosure
+info:
+  name: Enhanced Webpack Sourcemap Disclosure
+  description: |
+    This plugin enhances the webpack sourcemap disclosure by adding a link to the source code on GitHub.
+    extract all sourcemap files
+  author: Esonhugh-self-maintained
+  severity: medium
+  tags: exposure,files,webpack,sourcemap
+
+http:
+  - path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/{{js-path}}"
+      - "{{BaseURL}}{{js-path}}"
+    method: GET
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        regex:
+          - "//# sourceMappingURL=(.*).js.map"
+    extractors:
+      - type: xpath
+        name: js-path
+        internal: true
+        xpath:
+          - "/html/head/script/@src"
+          - "/html/head/link[ends-with(@href,'.js')]/@href"
+      - type: regex
+        name: map_file_name
+        part: body
+        group: 1
+        regex:
+          - "//# sourceMappingURL=(.*)"
+      - type: dsl
+        name: map_file_path
+        part: body
+        dsl:
+          - "print_debug(js-path)"
+# digest: 4a0a004730450220753a947eda9514fee93c2f9ffa0bfa7bb1770b135ce1584951679e0b156d8bd8022100c9e4cf6af7aada14e5e72ac651fd4bf8b5cd6827cd122755e88f27373b8800f2:569246fd1e83ae0648e1a21ffb4fe811

@@ -1,0 +1,78 @@
+id: schneider-electric-ecostruxure-link150-default-login
+
+info:
+  name: Schneider Electric EcoStruxure Link150 - Default Login
+  author: Vincent Bouvier,inokii
+  severity: high
+  description: |
+    The Schneider Electric EcoStruxure Link150 Ethernet gateway ships with
+    default credentials (Administrator / Gateway). If unchanged, an attacker
+    with network access can log in to the web interface and gain full
+    administrative control over the device configuration.
+  reference:
+    - https://www.se.com/uk/en/product-range/63423-ecostruxure-link150/#overview
+    - https://www.se.com/ww/en/product/TCSEGLA23F14F/ecostruxure-link150-application
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    max-request: 2
+    vendor: Schneider Electric
+    product: EcoStruxure Link150
+    runzero-match: asset["hw"] matches `Schneider Electric EcoStruxure Link\s?150` || (any(each(service["html.titles"]), {# matches "Schneider Electric"}) && any(each(service["vscan.technologies"]), {# matches "schneider-electric-ecostruxure"}))
+  tags: default-login,schneider-electric,ecostruxure,link150,ics,scada,gateway,runzero
+
+# ──────────────────────────────────────────────────────────────────────────────
+# HOW THIS TEMPLATE WORKS
+# ──────────────────────────────────────────────────────────────────────────────
+# Step 1 – Fingerprint: A GET request is sent to the root URL.  The template
+#           checks whether the response looks like the Link 150 login page
+#           before trying any credentials (reduces false-positives).
+#
+# Step 2 – Auth check: A second GET request is sent using HTTP Basic
+#           Authentication (Base64-encoded "Administrator:Gateway").
+#           A successful login is confirmed when the server responds with
+#           HTTP 200 and the response body contains content that is only
+#           visible after authentication (e.g., the device dashboard).
+# ──────────────────────────────────────────────────────────────────────────────
+
+variables:
+  username: Administrator
+  password: Gateway
+
+flow: http(1) && http(2)
+
+http:
+  # ── Request 1: Fingerprint the login page ──────────────────────────────────
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        # The server is asking for credentials (401 Unauthorized) or
+        # HTTP 200 and any one of these words is enough to fingerprint
+        dsl:
+          - 'status_code == 401'
+          - '(status_code == 200 && contains_any(tolower(body), "schneider", "link150", "link 150", "ecostruxure", "administrator"))'
+        condition: or
+        internal: true # skip printing this result
+
+  # ── Request 2: Test default credentials via HTTP Basic Auth ────────────────
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    headers:
+      Authorization: Basic {{base64('{{username}}:{{password}}')}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        # The server must return HTTP 200 (not 401 Unauthorized)
+        # The authenticated page must contain content visible only after login.
+        # Adjust these words if you inspect the real dashboard HTML.
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(tolower(body), "schneider", "link150", "link 150", "logout", "dashboard")'
+        condition: and

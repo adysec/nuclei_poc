@@ -1,0 +1,34 @@
+id: header-reflection
+info:
+  author: panch0r3d
+  name: Looking for reflected values from request headers
+  severity: high
+requests:
+- extractors:
+  - part: header
+    regex:
+    - ".*?(c|C)(a|A)(n|N)(a|A)(r|R)(y|Y).*?[\r\n]"
+    type: regex
+  headers:
+    Cookie: 'Canary12345=qwerty%0d%0ASet-Cookie: CanaryCookie=12345CK; path=/; secure;
+      httponly'
+    Origin: 'Canary123456.com%0d%0ASet-Cookie: CanaryCookie=12345XR; path=/; secure;
+      httponly'
+    Referer: 'google.com%0d%0ASet-Cookie: CanaryCookie=12345R; path=/; secure; httponly'
+    User-Agent: 'Mozilla Canary12345%0d%0ASet-Cookie: CanaryCookie=12345UA; path=/;
+      secure; httponly'
+    X-Forwarded-For: '0.0.0.0%0d%0ASet-Cookie: CanaryCookie=12345XF; path=/; secure;
+      httponly'
+    x-request-id: '123456%0d%0ASet-Cookie: CanaryCookie=12345XR; path=/; secure; httponly'
+  matchers:
+  - part: header
+    regex:
+    - .*?(c|C)(a|A)(n|N)(a|A)(r|R)(y|Y).*?
+    type: regex
+  matchers-condition: and
+  max-redirects: 5
+  method: GET
+  path:
+  - '{{BaseURL}}/'
+  - '{{BaseURL}}/%0d%0aset-cookie%20%3amycookie%3dCanary12345;%20%44omain%20%3d.{{Hostname}}'
+  redirects: true

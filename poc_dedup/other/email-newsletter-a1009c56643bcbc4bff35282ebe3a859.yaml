@@ -1,0 +1,58 @@
+id: email-newsletter-a1009c56643bcbc4bff35282ebe3a859
+
+info:
+  name: "Email Newsletter <= 20.13.6 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: high
+  description: "The Email Newsletter plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘search’ parameter in versions up to, and including, 20.13.6 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - http://cinu.pl/research/wp-plugins/mail_2d6940988705b7465f60c05e15bf220c.html
+    - http://blog.cinu.pl/2015/11/php-static-code-analysis-vs-top-1000-wordpress-plugins.html
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=1217495%40email-newsletter&new=1217495%40email-newsletter&sfp_email=&sfph_mail=
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:L
+    cvss-score: 7.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/email-newsletter/"
+    google-query: inurl:"/wp-content/plugins/email-newsletter/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,email-newsletter,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/email-newsletter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "email-newsletter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 20.13.6')

@@ -1,0 +1,31 @@
+id: ssh-detect
+
+info:
+  name: SSH Service - Detect
+  author: zan8in
+  severity: info
+  verified: true
+  description: |-
+    SSH service was detected.
+  tags: network,ssh,fingerprint
+  created: 2026/01/09
+
+set:
+  host: request.url.host
+rules:
+  r0:
+    request:
+      type: tcp
+      host: "{{host}}"
+      steps:
+        - read:
+            read-size: 4096
+            read-timeout: 3
+            read-until: "\r\n"
+    expression: '"(?i)SSH-".bmatches(response.raw)'
+    extractors:
+      - type: regex
+        extractor:
+          ext: '"(?i)(?P<ssh>SSH-[^\\r\\n]+)".bsubmatch(response.raw)'
+          ssh: ext["ssh"]
+expression: r0()

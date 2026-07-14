@@ -1,0 +1,54 @@
+id: redis-default-logins-6379
+info:
+  author: tarunKoyalwar
+  description: 'Redis service was accessed with easily guessed credentials.
+
+    '
+  metadata:
+    fofa-query:
+    - apache airflow
+    - title="airflow - dags" || http.html:"apache airflow"
+    - title="sign in - airflow"
+    google-query:
+    - intitle:"airflow - dags" || http.html:"apache airflow"
+    - intitle:"sign in - airflow"
+    max-request: 6
+    product: airflow
+    shodan-query:
+    - product:"redis"
+    - http.title:"airflow - dags" || http.html:"apache airflow"
+    - http.title:"sign in - airflow"
+    vendor: apache
+  name: Redis - Default Logins
+  severity: high
+  tags: js,redis,default-login,network
+javascript:
+- args:
+    Host: '{{Host}}'
+    Password: '{{passwords}}'
+    Port: '6379'
+  code: 'var m = require("nuclei/redis");
+
+    m.GetServerInfoAuth(Host,Port,Password);
+
+    '
+  matchers:
+  - type: word
+    words:
+    - redis_version
+  - negative: true
+    type: word
+    words:
+    - redis_mode:sentinel
+  matchers-condition: and
+  payloads:
+    passwords:
+    - ''
+    - root
+    - password
+    - admin
+    - iamadmin
+  pre-condition: 'isPortOpen(Host,Port)
+
+    '
+  stop-at-first-match: true

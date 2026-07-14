@@ -1,0 +1,51 @@
+
+id: drupal_module-acl-arbitrary-php-code-execution
+info:
+  name: drupal_module-acl-arbitrary-php-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "The ACL module, short for Access Control Lists, is an API for other modules to create lists of users and give them access to nodes. The module processes user input in a way that could be unsafe. This can lead to Remote Code Execution via Object Injection. As this is an API module, it is only exploitable if a client module exposes the vulnerability. Details of some contributed client modules are given below. Custom modules using ACL could also expose the vulnerability. This vulnerability is mitigated by the fact that an attacker typically needs an admin-type permission provided by one of ACLs client modules. Known client modules include:  Forum Access Flexi Access Content Access  Coordinated Security Advisories are being released for those client modules that have  Security coverage."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-034
+  metadata:
+    security-risk: "Critical 17∕25 AC:Basic/A:Admin/CI:All/II:All/E:Theoretical/TD:All"
+    vulnerability: "arbitrary-php-code-execution"
+    fofa-query: "/sites/all/modules/acl/"
+    google-query: "inurl:'/sites/all/modules/acl/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/acl/acl.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'acl'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 1.0.0')

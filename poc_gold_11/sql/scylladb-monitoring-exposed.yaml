@@ -1,0 +1,52 @@
+# gap: scylladb-monitoring-exposed
+id: scylladb-monitoring-exposed
+
+info:
+  name: ScyllaDB Monitoring Dashboard Exposed
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects an exposed ScyllaDB monitoring stack served from a pre-configured
+    Grafana instance (typically on port 3000). When left publicly reachable
+    without authentication, the dashboards leak cluster topology, keyspace
+    names, throughput, and node-level performance metrics that aid further
+    reconnaissance of the database tier.
+  reference:
+    - https://hacktricks.wiki/en/network-services-pentesting/
+    - https://monitoring.docs.scylladb.com/stable/
+  tags: custom,exposures,scylladb,grafana,panel
+
+http:
+  - method: GET
+    path:
+      # The official ScyllaDB monitoring stack provisions Grafana with
+      # ScyllaDB-prefixed folders/dashboards. Probing these paths avoids
+      # firing on any Grafana that merely mentions ScyllaDB in docs/comments.
+      - "{{BaseURL}}/dashboards/f/scylla-folder/scylla"
+      - "{{BaseURL}}/api/dashboards/uid/scylla-overview"
+      - "{{BaseURL}}/api/search?folderIds=&query=scylla"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        # Grafana dashboard JSON / search response carrying ScyllaDB titles.
+        regex:
+          - '(?i)"(title|name|uid)"\s*:\s*"[^"]*scylla[^"]*"'
+          - '(?i)<title>[^<]*ScyllaDB[^<]*</title>'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: scylla-dashboards
+        regex:
+          - '(?i)"title"\s*:\s*"([^"]*scylla[^"]*)"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "X-Grafana-Org-Id"

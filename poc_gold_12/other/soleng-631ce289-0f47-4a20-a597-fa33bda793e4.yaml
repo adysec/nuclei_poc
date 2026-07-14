@@ -1,0 +1,51 @@
+id: soleng-631ce289-0f47-4a20-a597-fa33bda793e4
+
+info:
+  name: >
+    Soleng <= 1.0.5 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/631ce289-0f47-4a20-a597-fa33bda793e4?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/soleng/"
+    google-query: inurl:"/wp-content/themes/soleng/"
+    shodan-query: 'http.html:"wp-content/themes/soleng/"'
+  tags: cve,wordpress,wp-theme,soleng,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/soleng/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "soleng"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.5')

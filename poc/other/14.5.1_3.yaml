@@ -1,0 +1,53 @@
+id: ASVS-4-0-3-V14-5-1
+
+info:
+  name: ASVS 14.5.1 Check
+  author: Hamed Salimian
+  severity: low
+  classification:
+    cwe-id: CWE-749
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/06-Test_HTTP_Methods.html
+  tags: asvs,14.5.1
+  description: |
+    Verify that the application server only accepts the HTTP methods in use by the application/API, including pre-flight OPTIONS, and logs/alerts on any requests that are not valid for the application context.
+
+http:
+  - method: TRACE
+    path:
+      - "{{BaseURL}}"
+    headers:
+      Host: "{{Hostname}}"
+    extractors:
+      - type: dsl
+        name: "TRACE method is Enabled"
+        dsl:
+          - status_code
+    matchers-condition: and
+    matchers:
+      - type: status
+        negative: true
+        status:
+          - 405
+          - 501
+          - 404
+          - 400
+      - type: regex
+        part: body
+        regex:
+          - '^TRACE \S+ HTTP\/[0-9]\.[0-9]'
+
+  - raw:
+      - |
+        {{to_upper(rand_text_alpha(4))}} {{BaseURL}} HTTP/1.1
+        Host: {{Hostname}}
+    matchers:
+      - type: status
+        name: "CUSTOM method is allowed."
+        negative: true
+        status:
+          - 405
+          - 501
+          - 404
+          - 400
+# digest: 4a0a00473045022056efd4ffa79d457f8040b28f78c1c1c8dc607cbe837deff231cd64d5ce088052022100db36511d3cc0c05d90b04e67d5fa171ad962c19bc1eb4e0563620b53166d2ed8:236a7c23afe836fbe231d6e037cff444

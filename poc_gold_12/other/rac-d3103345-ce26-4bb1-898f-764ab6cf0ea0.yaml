@@ -1,0 +1,51 @@
+id: rac-d3103345-ce26-4bb1-898f-764ab6cf0ea0
+
+info:
+  name: >
+    WooCommerce Recover Abandoned Cart <= 24.6.0 - Missing Authorization to Unauthenticated Arbitrary Content Deletion
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/d3103345-ce26-4bb1-898f-764ab6cf0ea0?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/rac/"
+    google-query: inurl:"/wp-content/plugins/rac/"
+    shodan-query: 'http.html:"wp-content/plugins/rac/"'
+  tags: cve,wordpress,wp-plugin,rac,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/rac/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "rac"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 24.6.0')

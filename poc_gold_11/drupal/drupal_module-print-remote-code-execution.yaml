@@ -1,0 +1,51 @@
+
+id: drupal_module-print-remote-code-execution
+info:
+  name: drupal_module-print-remote-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "This module provides printer-friendly versions of content, including send by e-mail and PDF versions. The module doesnt sufficiently sanitize the arguments passed to the wkhtmltopdf executable, allowing a remote attacker to execute arbitrary shell commands. It also doesnt sufficiently sanitize the HTML content passed to dompdf, allowing a privileged attacker to execute arbitrary PHP code. This vulnerability is mitigated by the fact that the site must have either the wkhtmltopdf or dompdf sub-modules enabled and selected as the PDF generation tool. In the case of the dompdf vulnerability, the attacker must be able to write content to the site."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-063
+  metadata:
+    security-risk: "Highly critical 20∕25 AC:None/A:None/CI:All/II:All/E:Theoretical/TD:Uncommon"
+    vulnerability: "remote-code-execution"
+    fofa-query: "/sites/all/modules/print/"
+    google-query: "inurl:'/sites/all/modules/print/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/print/print.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'print'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.0')

@@ -1,0 +1,84 @@
+# gap: oauth-dynamic-client-registration-public
+id: oauth-dynamic-client-registration-public
+
+info:
+  name: OAuth Dynamic Client Registration Anonymous Access
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects OAuth / OIDC authorization servers whose Dynamic Client
+    Registration endpoint (RFC 7591) accepts unauthenticated POSTs and
+    returns a fresh client_id. The probe submits the minimal valid
+    registration body to common registration endpoint paths and
+    matches a 201/200 response carrying `"client_id":` and
+    `"redirect_uris":` echoed back — the canonical RFC 7591
+    registration response shape.
+
+    Open registration is permitted by the spec but creates real
+    attack surface: an attacker registers a client with an
+    attacker-controlled redirect_uri, then chains with any
+    redirect_uri exact-match-violation (see
+    `oauth-redirect-uri-wildcard`) to harvest authorization codes
+    from authenticated victims. It also enables resource exhaustion
+    of the client store and gives attackers a stable foothold for
+    consent-screen phishing under the issuer's brand. Class
+    detection — keys on RFC 7591 response shape, not vendor banner.
+  reference:
+    - https://datatracker.ietf.org/doc/html/rfc7591
+    - https://www.scottbrady91.com/oauth/dynamic-client-registration
+  tags: custom,misconfig,oauth,oidc,registration,owasp,cwe-862
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/connect/register"
+      - "{{BaseURL}}/oauth/register"
+      - "{{BaseURL}}/oauth2/register"
+      - "{{BaseURL}}/register"
+      - "{{BaseURL}}/oidc/register"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "redirect_uris": ["https://nuclei-canary-{{rand_text_alpha(6)}}.invalid/cb"],
+        "client_name": "nuclei-canary-{{rand_text_alpha(8)}}",
+        "token_endpoint_auth_method": "none"
+      }
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"client_id"'
+      - type: word
+        part: body
+        words:
+          - '"redirect_uris"'
+      - type: word
+        part: body
+        words:
+          - 'nuclei-canary-'
+
+    extractors:
+      - type: regex
+        part: body
+        name: registered-client-id
+        regex:
+          - '"client_id"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: registration-access-token
+        regex:
+          - '"registration_access_token"\s*:\s*"([^"]+)"'
+        group: 1

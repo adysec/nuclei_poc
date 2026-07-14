@@ -1,0 +1,51 @@
+id: metro-ff06c6f3-1dd7-4b4e-bd13-4e41f2198bf2
+
+info:
+  name: >
+    Metro <= 2.13 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ff06c6f3-1dd7-4b4e-bd13-4e41f2198bf2?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/metro/"
+    google-query: inurl:"/wp-content/themes/metro/"
+    shodan-query: 'http.html:"wp-content/themes/metro/"'
+  tags: cve,wordpress,wp-theme,metro,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/metro/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "metro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.13')

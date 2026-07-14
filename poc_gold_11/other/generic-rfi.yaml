@@ -1,0 +1,34 @@
+id: generic-rfi
+
+info:
+  name: Generic Remote File Inclusion
+  author: m4lwhere
+  severity: high
+  tags: rfi,dast,oast
+  reference:
+    - https://www.invicti.com/learn/remote-file-inclusion-rfi/
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      rfi:
+        - "https://rfi.nessus.org/rfi.txt"
+        - "https://cirt.net/rfiinc.txt"
+
+    fuzzing:
+      - part: query
+        mode: single
+        fuzz:
+          - "{{rfi}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body  # Confirms the PHP was executed
+        words:
+          - "NessusCodeExecTest"
+          - "nikto:10227245764.38:<br>"

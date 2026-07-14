@@ -1,0 +1,53 @@
+
+id: drupal_module-mail_login-access-bypass
+info:
+  name: drupal_module-mail_login-access-bypass
+  author: me
+  severity: medium
+  description: "This module enables users to log in by email address with minimal configurations.  Drupal core contains protection against brute force attacks via a flood control mechanism. This modules functionality did not replicate the flood control, enabling brute force attacks. A previous security advisory, SA-CONTRIB-2023-45, was released for this issue, but that release did not successfully address the vulnerability. This security advisory and updated module version supersede the previous one."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-048
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:None/CI:None/II:Some/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/mail_login/"
+    google-query: "inurl:'/sites/all/modules/mail_login/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/mail_login/mail_login.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'mail_login'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 2.9.0')

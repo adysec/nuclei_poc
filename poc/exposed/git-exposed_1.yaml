@@ -1,0 +1,54 @@
+id: git-exposed
+
+info:
+  name: Exposed Git Repository
+  author: kaks3c
+  severity: medium
+  description: |
+    Checks for exposed Git repositories by making requests to potential Git repository paths.
+  tags: p3,logs,git
+
+http:
+  - raw:
+      - |
+        GET {{BaseURL}}{{path}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:119.0) Gecko/20100101 Firefox/119.0
+        Accept: */*
+        Accept-Language: en-US,en;q=0.5
+        Connection: close
+
+    attack: pitchfork
+    payloads:
+      path:
+        - /.git/
+        - /.git/HEAD
+        - /.git/config
+        - /.git/logs/HEAD
+        - /.git/logs/
+        - /.git/description
+        - /.git/refs/heads/
+        - /.git/refs/remotes/
+        - /.git/objects/
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "commit (initial): Initial commit" #/.git/logs/HEAD
+          - "ref: refs/heads/" #/.git/HEAD
+          - "logallrefupdates = true" #/.git/config
+          - "repositoryformatversion = 0" #/.git/config
+          - "Index of /" #/.git/
+          - "You do not have permission to access /.git/" #403_/.git
+          - "Unnamed repository; edit this file 'description' to name the repository" #/.git/description
+
+      - type: regex
+        regex:
+          - "info/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}" #/.git/objects/
+          - "pack/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}" #/.git/objects/
+          - "master/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}" #/.git/refs/heads/
+          - "origin/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}" #/.git/refs/remotes/
+          - "refs/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}"  #/.git/logs/
+
+    stop-at-first-match: true

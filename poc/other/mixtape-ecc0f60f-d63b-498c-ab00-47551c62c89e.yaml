@@ -1,0 +1,51 @@
+id: mixtape-ecc0f60f-d63b-498c-ab00-47551c62c89e
+
+info:
+  name: >
+    Mixtape <= 2.1 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/ecc0f60f-d63b-498c-ab00-47551c62c89e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/mixtape/"
+    google-query: inurl:"/wp-content/themes/mixtape/"
+    shodan-query: 'http.html:"wp-content/themes/mixtape/"'
+  tags: cve,wordpress,wp-theme,mixtape,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/mixtape/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mixtape"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.1')

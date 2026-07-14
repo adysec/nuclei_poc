@@ -1,0 +1,55 @@
+
+id: drupal_module-modal_page-access-bypass
+info:
+  name: drupal_module-modal_page-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This project enables administrators to create modal dialogs. The routes used by the module lacked proper permissions, allowing untrusted users to access, create and modify modal configurations."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-094
+  metadata:
+    security-risk: "Moderately critical 10∕25 AC:Basic/A:User/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/modal_page/"
+    google-query: "inurl:'/sites/all/modules/modal_page/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/modal_page/modal_page.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'modal_page'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-2.4')
+         - compare_versions(version, '8.x-2.3')
+         - compare_versions(version, '8.x-2.2')
+         - compare_versions(version, '8.x-2.1')
+         - compare_versions(version, '8.x-2.0')

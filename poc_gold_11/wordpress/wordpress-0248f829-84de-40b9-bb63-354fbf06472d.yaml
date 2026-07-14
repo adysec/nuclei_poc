@@ -1,0 +1,61 @@
+id: wordpress-0248f829-84de-40b9-bb63-354fbf06472d
+
+info:
+  name: >
+    WordPress Core < 6.0.2 - Authenticated SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    WordPress Core, in versions up to 6.0.2, is vulnerable to SQL Injection that can be exploited by authenticated users via the LIMIT parameter passed through the get_bookmarks function. This can be exploited on default WordPress installations by users with high-level privileges, such as an editor or administrator, and it may be possible for this to be exploited by lower-privileged users if a plugin/theme passes an unescaped user supplied LIMIT value from those level users to the get_bookmarks function.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/0248f829-84de-40b9-bb63-354fbf06472d?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 8
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,low,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.0', '<= 6.0.1')
+          - compare_versions(version_by_js, '>= 6.0', '<= 6.0.1')
+          - compare_versions(version_by_css, '>= 6.0', '<= 6.0.1')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

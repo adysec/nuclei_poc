@@ -1,0 +1,97 @@
+id: schneider-electric-pm8000-default-login
+
+info:
+  name: Schneider Electric PowerLogic PM8000 Power Quality Meter - Default Login
+  author: Vincent Bouvier,inokii
+  severity: high
+  description: |
+    The Schneider Electric PowerLogic PM8000 Power Quality Meter ships with
+    default credentials (User1 / 0). If unchanged, an attacker with network
+    access can log in to the web interface and gain access to power measurement
+    data and device configuration.
+  reference:
+    - https://www.se.com/us/en/faqs/FA243275/
+    - https://www.se.com/ww/en/product-range/61102-powerlogic-pm8000/
+    - https://www.productinfo.schneider-electric.com/nadigest/5c51d645347bdf0001f1f280/Master/17704_MAIN%20(bookmap)_0000041932.xml/$/PowerQualityMeters-PM8000CPT_0000083065
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    max-request: 2
+    vendor: Schneider Electric
+    product: PowerLogic PM8000
+    runzero-match: any([ service["tls.cn"], service["tls.names"] ], {# matches `(?i)PM8000-`}) || (asset["hw"] matches `Schneider Electric PowerLogic (?:PM8000 )?Power (?:Quality )?Meter` && any([ service["http.head.location"], service["last.http.head.location"] ], {# matches `(?i)/web/resources/monitoring\.html`}))
+  tags: default-login,schneider-electric,powerlogic,pm8000,ics,scada,iot,meter,runzero
+
+# ──────────────────────────────────────────────────────────────────────────────
+# HOW THIS TEMPLATE WORKS
+# ──────────────────────────────────────────────────────────────────────────────
+# The PM8000 uses a form-based POST login (confirmed via HAR analysis).
+# Credentials are NOT sent via HTTP Basic Auth.
+#
+# Step 1 – GET the login page at /web/ to capture the dynamic nonce.
+#           The server generates a unique nonce per session that MUST be
+#           included in the login POST or the server will reject it.
+#
+# Step 2 – POST credentials to /web/resources/monitoring.html using:
+#             credentials = User1:0    (combined field, URL-encoded as User1%3A0)
+#             language    = English
+#             nonce       = <value captured in Step 1>
+#             URL         = resources/monitoring.html  (redirect target)
+#
+#           The server responds with 301 → Nuclei follows the redirect →
+#           lands on /web/resources/monitoring.html with HTTP 200 →
+#           the matcher confirms authenticated dashboard content.
+# ──────────────────────────────────────────────────────────────────────────────
+
+variables:
+  username: User1
+  password: 0
+
+http:
+  - raw:
+      # ── Request 1: GET login page, extract the dynamic nonce ─────────────
+      - |
+        GET /web/ HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html
+        Connection: close
+
+      # ── Request 2: POST credentials with the captured nonce ──────────────
+      - |
+        POST /web/resources/monitoring.html HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Connection: close
+
+        credentials={{username}}%3A{{password}}&language=English&nonce={{nonce}}&URL=resources%2Fmonitoring.html
+
+    # Follow the 301 redirect that the server sends after a successful login
+    redirects: true
+    max-redirects: 3
+
+    extractors:
+      # ── Nonce extractor (internal – used in Request 2, not printed) ───────
+      # Captures the 24-character hex nonce from the login page HTML.
+      # The nonce is embedded as a hidden <input> field, e.g.:
+      #   <input type="hidden" name="nonce" value="1234567890abcdef12345678">
+      - type: regex
+        name: nonce
+        internal: true # store as variable, do not print to output
+        part: body
+        group: 1
+        regex:
+          - '(?i)name=["\x27]nonce["\x27][^>]+value=["\x27]([a-f0-9]{24})["\x27]'
+          - '(?i)value=["\x27]([a-f0-9]{24})["\x27][^>]+name=["\x27]nonce["\x27]'
+          - '(?i)"nonce"\s*:\s*"([a-f0-9]{24})"'
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        # Server must return HTTP 200 after following the post-login redirect
+        # These strings exist ONLY in the authenticated dashboard HTML.
+        # Confirmed from HAR capture of a successful login session.
+        dsl:
+          - 'status_code_1 == 200'
+          - 'status_code_2 == 200'
+          - 'contains_any(body_2, "customUserPages.populateCustomUserPagesForSection", "powerQualitySummary", "instReadings.html", "waveforms.html")'
+        condition: and

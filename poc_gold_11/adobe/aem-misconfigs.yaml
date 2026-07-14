@@ -1,0 +1,43 @@
+# gap: aem-misconfigs
+id: aem-misconfigs
+
+info:
+  name: Adobe Experience Manager Admin Surface Exposed
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects an Adobe Experience Manager (AEM) deployment that exposes
+    one of its administrative consoles (CRXDE Lite, CRX Package
+    Manager, OSGi Console, or Groovy Console) without restricting
+    access at the network or dispatcher layer. These panels routinely
+    grant code execution, content modification, or credential reset
+    capabilities and are common AEM hardening checks.
+  reference:
+    - https://github.com/panch0r3d/nuclei-templates/blob/master/AEM_misconfig.yaml
+    - https://experienceleague.adobe.com/docs/experience-manager-65/administering/security/security-checklist.html
+  tags: custom,misconfigurations,aem,adobe,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/crx/de/index.jsp"
+      - "{{BaseURL}}/crx/packmgr/index.jsp"
+      - "{{BaseURL}}/system/console"
+      - "{{BaseURL}}/etc/groovyconsole.html"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "CRXDE Lite"
+          - "CRX Package Manager"
+          - "Content Explorer"
+          - "Apache Felix Web Console"
+          - "OSGi Management Console"
+          - "Groovy Console"
+          - "AEM Groovy Console"
+        condition: or

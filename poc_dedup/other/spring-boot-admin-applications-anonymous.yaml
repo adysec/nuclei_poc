@@ -1,0 +1,69 @@
+# gap: spring-boot-admin-applications-anonymous
+id: spring-boot-admin-applications-anonymous
+
+info:
+  name: Spring Boot Admin Server - Anonymous Applications Registry
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed codecentric Spring Boot Admin (SBA)
+    aggregator server with anonymous access to the registered
+    applications list. SBA is the central UI/aggregator distinct
+    from a single app's `/actuator/*` — when its login is unset
+    (default OOTB) anyone browsing `/applications` can read every
+    registered application's name, management URL, health URL,
+    and proxy through to the underlying actuators.
+
+    Wire-format keys on the SBA registration envelope: a JSON
+    array of objects where each object contains BOTH
+    `"registration":{"name"` AND `"managementUrl"`. The pair is
+    unique to SBA — generic Spring actuator JSON has neither
+    structure. Optional secondary signal: `/sba-settings.js`
+    returns 200 with `sbaConfig` in body.
+
+    Spring Boot Admin servers are widely deployed in CI/CD and
+    internal platform clusters but commonly forgotten when egress
+    rules tighten — a classic anonymous-management-plane exposure.
+  reference:
+    - https://github.com/codecentric/spring-boot-admin
+    - https://docs.spring-boot-admin.com/current/server.html
+    - https://www.baeldung.com/spring-boot-admin
+  tags: custom,exposures,spring,actuator,admin,anonymous,cwe-862
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/applications"
+      - "{{BaseURL}}/sba/applications"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+      - type: regex
+        part: body
+        regex:
+          - '"registration"\s*:\s*\{[^}]{0,200}"name"'
+      - type: word
+        part: body
+        words:
+          - '"managementUrl"'
+          - '"healthUrl"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: registered-app-name
+        regex:
+          - '"name"\s*:\s*"([^"]{1,80})"'
+        group: 1
+      - type: regex
+        part: body
+        name: management-url
+        regex:
+          - '"managementUrl"\s*:\s*"([^"]{1,200})"'
+        group: 1

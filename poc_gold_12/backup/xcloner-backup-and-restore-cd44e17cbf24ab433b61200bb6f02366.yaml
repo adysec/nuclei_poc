@@ -1,0 +1,59 @@
+id: xcloner-backup-and-restore-cd44e17cbf24ab433b61200bb6f02366
+
+info:
+  name: "Backup, Restore and Migrate WordPress Sites With the XCloner Plugin <= 3.1.4 - Path Traversal to Sensitive Information Disclosure"
+  author: topscoder
+  severity: medium
+  description: "The XCloner plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 3.1.4 via leaked directory listings from the 'files_xml.' AJAX action. This can allow authenticated attackers to extract sensitive data including otherwise private filepaths and backups."
+  reference:
+    - https://gist.github.com/ldionmarcil/b223bb39694019d6f35a601ed7f841bf
+    - https://plugins.trac.wordpress.org/changeset/1565339/xcloner-backup-and-restore
+    - https://wpscan.com/vulnerability/6a01c1e4-e9e3-4f42-9f84-a3a8c159890e
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-backup-restore-and-migrate-wordpress-sites-with-the-xcloner-directory-traversal-3-1-4/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/xcloner-backup-and-restore/"
+    google-query: inurl:"/wp-content/plugins/xcloner-backup-and-restore/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,xcloner-backup-and-restore,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/xcloner-backup-and-restore/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "xcloner-backup-and-restore"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.1.4')

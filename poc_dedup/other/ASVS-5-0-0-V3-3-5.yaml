@@ -1,0 +1,39 @@
+flow: 'http()
+
+  javascript()
+
+  '
+http:
+- host-redirects: true
+  max-redirects: 2
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: ASVS-5-0-0-V3-3-5
+info:
+  author: AmirHossein Raeisi
+  classification:
+    cwe-id: CWE-613
+  description: 'Verify that when the application writes a cookie, the cookie name
+    and value length combined are not over 4096 bytes. Overly large cookies will not
+    be stored by the browser and therefore not sent with requests, preventing the
+    user from using application functionality which relies on that cookie.
+
+    '
+  name: ASVS 3.3.5 Check
+  reference:
+  - https://en.wikipedia.org/wiki/HTTP_cookie
+  severity: info
+  tags: asvs,3.3.5
+javascript:
+- code: "content = template.http_all_headers;\nconst setCookieLines = content\n  .split(/\\\
+    r\\n/)\n  .filter(line => line.trim().toLowerCase().startsWith('set-cookie:'));\n\
+    \nconst cookieDetails = setCookieLines\n  .map(line => {\n    const match = line.match(/set-cookie:\\\
+    s*([^=]+)=([^;]+)/i);\n    if (match) {\n      const cookieName = match[1];\n\
+    \      const cookieValue = match[2];\n      const cookieString = `${cookieName}=${cookieValue}`;\n\
+    \      if (cookieString.length > 4096) {\n        return cookieName;\n      }\n\
+    \    }\n  })\n  .filter(Boolean);\n\ncookieDetails;\n"
+  extractors:
+  - regex:
+    - '[a-zA-Z0-9_-]+'
+    type: regex

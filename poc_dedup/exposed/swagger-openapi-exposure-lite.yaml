@@ -1,0 +1,85 @@
+id: swagger-openapi-exposure-lite
+
+info:
+  name: Public Swagger / OpenAPI - Detect (Lite)
+  author: custom-refined
+  severity: info
+  description: |
+    Detects publicly accessible Swagger UI or OpenAPI/Swagger specification
+    endpoints using a compact path set suitable for large-scale scans.
+  reference:
+    - https://swagger.io/
+    - https://spec.openapis.org/oas/latest.html
+  metadata:
+    verified: true
+    max-request: 21
+    shodan-query: http.html:"swagger-ui" OR http.html:"openapi"
+  tags: exposure,api,swagger,openapi,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{p}}"
+
+    payloads:
+      p:
+        - "/swagger-ui.html"
+        - "/swagger-ui/"
+        - "/swagger-ui/index.html"
+        - "/v2/api-docs"
+        - "/v3/api-docs"
+        - "/v3/api-docs.yaml"
+        - "/v3/api-docs/swagger-config"
+        - "/swagger.json"
+        - "/swagger.yaml"
+        - "/openapi.json"
+        - "/openapi.yaml"
+        - "/api-docs"
+        - "/api-docs/swagger.json"
+        - "/api-docs/swagger.yaml"
+        - "/swagger-resources"
+        - "/swagger-resources/configuration/ui"
+        - "/swagger-resources/configuration/security"
+        - "/webjars/swagger-ui/index.html"
+        - "/api/swagger-ui.html"
+        - "/api/swagger.json"
+        - "/api/swagger.yaml"
+
+    headers:
+      Accept: "text/html,application/json,application/yaml,text/yaml,text/plain,*/*"
+
+    redirects: true
+    max-redirects: 2
+    cookie-reuse: false
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)"swagger"\s*:\s*"2\.0"'
+          - '(?i)^swagger\s*:\s*["'']?2\.0["'']?'
+          - '(?i)"openapi"\s*:\s*"3\.[0-9.]+'
+          - '(?i)^openapi\s*:\s*["'']?3\.[0-9.]+["'']?'
+          - '(?i)<title>\s*swagger ui'
+          - '(?i)id="swagger-ui"'
+          - '(?i)swagger-ui-bundle\.js'
+          - '(?i)swagger-ui-standalone-preset\.js'
+          - '(?i)window\.ui\s*=\s*SwaggerUIBundle'
+          - '(?i)"configUrl"\s*:'
+          - '(?i)swagger-resources'
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)"openapi"\s*:\s*"?(3\.[0-9.]+)'
+          - '(?i)^openapi\s*:\s*"?((3\.[0-9.]+))'
+          - '(?i)"swagger"\s*:\s*"?(2\.0)'
+          - '(?i)^swagger\s*:\s*"?(2\.0)'

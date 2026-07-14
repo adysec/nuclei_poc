@@ -1,0 +1,55 @@
+# gap: owasp-wstg-conf-09-web-inf-exposure
+id: owasp-wstg-conf-09-web-inf-exposure
+
+info:
+  name: Exposed WEB-INF/web.xml Deployment Descriptor
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects Java EE applications that serve the WEB-INF/web.xml deployment
+    descriptor (or a .bak copy) directly over HTTP. The file usually leaks
+    servlet mappings, security-constraint definitions, internal URL routes
+    and the names of backend classes, all of which materially aid further
+    exploitation of the application.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/09-Test_File_Permission
+  tags: custom,misconfig,java,web-inf,exposure,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/WEB-INF/web.xml"
+      - "{{BaseURL}}/WEB-INF/web.xml.bak"
+      - "{{BaseURL}}/WEB-INF/classes/application.properties"
+      - "{{BaseURL}}/WEB-INF/classes/application.yml"
+      - "{{BaseURL}}/WEB-INF/classes/application.yaml"
+      - "{{BaseURL}}/WEB-INF/classes/config.properties"
+      - "{{BaseURL}}/META-INF/MANIFEST.MF"
+      - "{{BaseURL}}/WEB-INF/classes/log4j.properties"
+      - "{{BaseURL}}/WEB-INF/classes/log4j2.xml"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(body, "<web-app")'
+          - 'regex("(?im)^\\s*(spring\\.|server\\.|jdbc\\.|hibernate\\.|logging\\.|datasource\\.)[a-z0-9_.-]+\\s*[:=]", body)'
+          - 'contains(body, "Manifest-Version:")'
+          - 'contains(tolower(body), "log4j") && (contains(body, "rootlogger") || contains(body, "<configuration"))'
+        condition: or
+    extractors:
+      - type: regex
+        part: body
+        name: spring_datasource
+        group: 1
+        regex:
+          - '(?im)^\s*(spring\.datasource\.[a-z.-]+\s*[:=]\s*[^\r\n]+)'
+      - type: regex
+        part: body
+        name: manifest_version
+        group: 1
+        regex:
+          - '(?im)Implementation-Version:\s*([^\r\n]+)'

@@ -1,0 +1,51 @@
+id: lobo-db5305e6-46b9-41a9-a54b-0b8e0d56df72
+
+info:
+  name: >
+    Lobo < 2.8.6 - Authenticated (Subscriber+) SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/db5305e6-46b9-41a9-a54b-0b8e0d56df72?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/lobo/"
+    google-query: inurl:"/wp-content/themes/lobo/"
+    shodan-query: 'http.html:"wp-content/themes/lobo/"'
+  tags: cve,wordpress,wp-theme,lobo,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/lobo/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "lobo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.8.6')

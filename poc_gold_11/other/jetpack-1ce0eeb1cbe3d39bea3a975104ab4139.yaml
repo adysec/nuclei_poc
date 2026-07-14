@@ -1,0 +1,57 @@
+id: jetpack-1ce0eeb1cbe3d39bea3a975104ab4139
+
+info:
+  name: "Jetpack <= 3.7.1 - Stored Cross-Site Scripting"
+  author: topscoder
+  severity: high
+  description: "Jetpack versions 3.7.0 and earlier are vulnerable to a Cross-Site Scripting vulnerability in the contact form due to improper input sanitization. This allows an unauthenticated attacker to inject JavaScript into the contact form that can potentially execute in a site administrators browser."
+  reference:
+    - https://jetpack.me/2015/09/30/jetpack-3-7-1-and-3-7-2-security-and-maintenance-releases/
+    - https://blog.sucuri.net/2015/10/security-advisory-stored-xss-in-jetpack.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/jetpack/"
+    google-query: inurl:"/wp-content/plugins/jetpack/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,jetpack,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jetpack/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jetpack"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.7.1')

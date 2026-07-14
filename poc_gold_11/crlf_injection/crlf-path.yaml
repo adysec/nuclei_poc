@@ -1,0 +1,83 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{escape}}X-CRLF-Injected:true{{escape}}Set-Cookie:crlf={{randstr}}'
+    mode: single
+    part: path
+    type: postfix
+  matchers:
+  - part: header
+    regex:
+    - (?im)^X-CRLF-Injected\s*:\s*true
+    - (?im)^Set-Cookie\s*:.*crlf=
+    type: regex
+  - dsl:
+    - status_code >= 200 && status_code < 400
+    - status_code != 301 && status_code != 302
+    - '!contains(to_lower(header), "location:")'
+    type: dsl
+  matchers-condition: and
+  payloads:
+    escape:
+    - '%00'
+    - '%09%0A'
+    - '%09%0D'
+    - '%09%0D%0A'
+    - '%0a'
+    - '%0a%20'
+    - '%0d'
+    - '%0d%09'
+    - '%0d%0a'
+    - '%0d%0a%09'
+    - '%0d%0a%20'
+    - '%0d%20'
+    - '%20'
+    - '%20%0a'
+    - '%20%0d'
+    - '%20%0d%0a'
+    - '%23%0a'
+    - '%23%0a%20'
+    - '%23%0d'
+    - '%23%0d%0a'
+    - '%23%oa'
+    - '%25%30'
+    - '%25%30%61'
+    - '%2e%2e%2f%0d%0a'
+    - '%2f%2e%2e%0d%0a'
+    - '%2f..%0d%0a'
+    - '%3f'
+    - '%3f%0a'
+    - '%3f%0d'
+    - '%3f%0d%0a'
+    - '%C0%8D%C0%8A'
+    - '%C4%8A'
+    - '%C4%8D%C4%8A'
+    - '%EA%A8%8A'
+    - '%EA%A8%8D'
+    - '%EA%A8%8D%EA%A8%8A'
+    - '%e5%98%8a%e5%98%8d'
+    - '%e5%98%8a%e5%98%8d%0a'
+    - '%e5%98%8a%e5%98%8d%0d'
+    - '%e5%98%8a%e5%98%8d%0d%0a'
+    - '%e5%98%8a%e5%98%8d%e5%98%8a%e5%98%8d'
+    - '%u0000'
+    - '%u000a'
+    - '%u000d'
+    - '%u000d%u000a'
+  pre-condition:
+  - condition: and
+    dsl:
+    - method == "GET"
+    - '!contains(path, ".js")'
+    - '!contains(path, ".css")'
+    - '!contains(path, ".png")'
+    - '!contains(path, ".jpg")'
+    - '!contains(path, ".gif")'
+    type: dsl
+  stop-at-first-match: true
+id: crlf-path
+info:
+  author: reewardius
+  name: CRLF Injection - Path Based (Strict)
+  severity: medium
+  tags: fuzzing-req,fuzzing-req-crlf,fuzzing-req-path,dast,crlf

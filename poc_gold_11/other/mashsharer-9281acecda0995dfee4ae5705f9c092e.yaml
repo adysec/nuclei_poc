@@ -1,0 +1,59 @@
+id: mashsharer-9281acecda0995dfee4ae5705f9c092e
+
+info:
+  name: "Social Media Share Buttons | MashShare < 2.3.1 - Information Disclosure"
+  author: topscoder
+  severity: medium
+  description: "The Social Media Share Buttons | MashShare plugin for WordPress is vulnerable to Information Disclosure in versions before 2.3.1 via the mashsb_process_actions function. This can allow unauthenticated attackers to extract sensitive data including configuration information."
+  reference:
+    - https://g0blin.co.uk/g0blin-00045/
+    - https://github.com/espreto/wpsploit/blob/master/modules/auxiliary/scanner/http/wp_mashshare_info_disclosure.rb
+    - https://plugins.trac.wordpress.org/changeset/1137414/
+    - https://plugins.trac.wordpress.org/changeset/1137416
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/mashsharer/"
+    google-query: inurl:"/wp-content/plugins/mashsharer/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,mashsharer,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mashsharer/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mashsharer"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.3.1')

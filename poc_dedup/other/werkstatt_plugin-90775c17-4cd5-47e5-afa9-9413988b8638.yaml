@@ -1,0 +1,51 @@
+id: werkstatt_plugin-90775c17-4cd5-47e5-afa9-9413988b8638
+
+info:
+  name: >
+    WerkStatt <= 1.6.6 - Authenticated (Contributor+) Local File Inclusion
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/90775c17-4cd5-47e5-afa9-9413988b8638?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/werkstatt-plugin/"
+    google-query: inurl:"/wp-content/plugins/werkstatt-plugin/"
+    shodan-query: 'http.html:"wp-content/plugins/werkstatt-plugin/"'
+  tags: cve,wordpress,wp-plugin,werkstatt-plugin,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/werkstatt-plugin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "werkstatt-plugin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.6.6')

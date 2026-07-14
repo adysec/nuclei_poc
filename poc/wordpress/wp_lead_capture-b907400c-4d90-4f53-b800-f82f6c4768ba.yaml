@@ -1,0 +1,51 @@
+id: wp_lead_capture-b907400c-4d90-4f53-b800-f82f6c4768ba
+
+info:
+  name: >
+    Lead Capturing Pages <= 2.5 - Authenticated (Subscriber+) SQL Injection
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b907400c-4d90-4f53-b800-f82f6c4768ba?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-lead-capture/"
+    google-query: inurl:"/wp-content/plugins/wp-lead-capture/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-lead-capture/"'
+  tags: cve,wordpress,wp-plugin,wp-lead-capture,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-lead-capture/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-lead-capture"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5')

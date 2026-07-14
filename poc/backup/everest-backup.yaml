@@ -1,0 +1,56 @@
+id: everest-backup
+
+info:
+  name: "Everest Backup <= 1.0.7 - Missing Authorization Checks on Backup Exports"
+  author: topscoder
+  severity: medium
+  description: "The Everest Backup plugin for WordPress is vulnerable to backup export disclosure in versions up to, and including, 1.0.7. This is due to insufficient access controls on the everest_backup_get_ajax_response() function. This makes it possible for authenticated attackers to reveal sensitive information about back-ups created by the plugin."
+  reference:
+    - https://plugins.trac.wordpress.org/changeset/2711601/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/everest-backup/"
+    google-query: inurl:"/wp-content/plugins/everest-backup/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,everest-backup,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/everest-backup/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "everest-backup"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.7')

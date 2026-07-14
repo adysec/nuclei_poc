@@ -1,0 +1,51 @@
+id: youtube_feed_pro-e9f31ec5-c376-45b1-9ffe-35c80b89b60d
+
+info:
+  name: >
+    Feeds for YouTube Pro <= 2.6.0 - Unauthenticated Arbitrary File Read via Path Traversal
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e9f31ec5-c376-45b1-9ffe-35c80b89b60d?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/youtube-feed-pro/"
+    google-query: inurl:"/wp-content/plugins/youtube-feed-pro/"
+    shodan-query: 'http.html:"wp-content/plugins/youtube-feed-pro/"'
+  tags: cve,wordpress,wp-plugin,youtube-feed-pro,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/youtube-feed-pro/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "youtube-feed-pro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.6.0')

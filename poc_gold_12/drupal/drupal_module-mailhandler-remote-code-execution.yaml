@@ -1,0 +1,61 @@
+
+id: drupal_module-mailhandler-remote-code-execution
+info:
+  name: drupal_module-mailhandler-remote-code-execution
+  author: Bishopfox
+  severity: medium
+  description: "The Mailhandler module enables you to create nodes by email. The Mailhandler module does not validate file attachments. By sending a correctly crafted e-mail to a mailhandler mailbox an attacker can execute arbitrary code. The vulnerability applies to any active mailhandler mailbox, whether or not attachments are mapped to a field. Mitigating factors:  For 7.x versions prior to 7.x-2.5, the vulnerability is mitigated by the fact that the MailhandlerCommandsFiles plugin must be enabled. For later versions, the option to disable commands was removed, all commands are enabled in any case. The vulnerability is mitigated by the fact that the attacker must pass the authentication step. The default authentication is that the attacker must send the crafted e-mail from a registered e-mail address. The vulnerability is mitigated by the fact that the mailhandler mailbox e-mail address must be known by the attacker. This essentially depends on the usecase, e.g. Mailcomment module. The vulnerability is mitigated by the fact that the webserver configuration must either permit the execution of some file extensions in the public filesystem or (Apache) has .htaccess support enabled through the AllowOverride directive."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-089
+  metadata:
+    security-risk: "Critical 17∕25 AC:Complex/A:User/CI:All/II:All/E:Theoretical/TD:All"
+    vulnerability: "remote-code-execution"
+    fofa-query: "/sites/all/modules/mailhandler/"
+    google-query: "inurl:'/sites/all/modules/mailhandler/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/mailhandler/mailhandler.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'mailhandler'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-2.10')
+         - compare_versions(version, '7.x-2.9')
+         - compare_versions(version, '7.x-2.8')
+         - compare_versions(version, '7.x-2.7')
+         - compare_versions(version, '7.x-2.6')
+         - compare_versions(version, '7.x-2.5')
+         - compare_versions(version, '7.x-2.4')
+         - compare_versions(version, '7.x-2.3')
+         - compare_versions(version, '7.x-2.2')
+         - compare_versions(version, '7.x-2.1')
+         - compare_versions(version, '7.x-2.0')

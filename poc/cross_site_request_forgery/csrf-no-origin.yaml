@@ -1,0 +1,69 @@
+id: openclaw-csrf-no-origin
+
+info:
+  name: OpenClaw CSRF Bypass via Missing Origin/Referer
+  author: LobsterGuard
+  severity: high
+  description: |
+    Tests whether OpenClaw state-changing endpoints accept requests that
+    lack both Origin and Referer headers. Some CSRF protection middleware
+    only rejects requests with a mismatched Origin but allows requests
+    with no Origin at all. This enables cross-site attacks from contexts
+    that strip these headers (e.g. meta-redirect, bookmark JS, some
+    browser extensions).
+  reference:
+    - https://github.com/lobster-guard/openclaw-security
+  tags: openclaw,csrf,origin,bypass
+  metadata:
+    chain_id: 42
+
+http:
+  # Request 1: POST without Origin/Referer (should be blocked if CSRF protection works)
+  - raw:
+      - |
+        POST /v1/chat/completions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"model":"default","messages":[{"role":"user","content":"csrf probe no-origin"}]}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "choices"
+          - "message"
+          - "content"
+        condition: or
+
+  # Request 2: POST with evil Origin (should be blocked)
+  - raw:
+      - |
+        POST /v1/chat/completions HTTP/1.1
+        Host: {{Hostname}}
+        Origin: https://evil-attacker.com
+        Referer: https://evil-attacker.com/exploit
+        Content-Type: application/json
+
+        {"model":"default","messages":[{"role":"user","content":"csrf probe evil-origin"}]}
+
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 403
+          - 401
+
+      - type: word
+        part: body
+        words:
+          - "forbidden"
+          - "origin"
+          - "CSRF"
+          - "not allowed"
+        condition: or

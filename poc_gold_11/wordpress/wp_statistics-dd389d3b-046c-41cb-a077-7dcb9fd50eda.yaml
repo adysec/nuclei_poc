@@ -1,0 +1,51 @@
+id: wp_statistics-dd389d3b-046c-41cb-a077-7dcb9fd50eda
+
+info:
+  name: >
+    WP Statistics – Simple, privacy-friendly Google Analytics alternative <= 14.16.6 - Unauthenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/dd389d3b-046c-41cb-a077-7dcb9fd50eda?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-statistics/"
+    google-query: inurl:"/wp-content/plugins/wp-statistics/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-statistics/"'
+  tags: cve,wordpress,wp-plugin,wp-statistics,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-statistics/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-statistics"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 14.16.6')

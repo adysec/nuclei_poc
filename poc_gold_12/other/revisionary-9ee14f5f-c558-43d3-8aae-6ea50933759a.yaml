@@ -1,0 +1,51 @@
+id: revisionary-9ee14f5f-c558-43d3-8aae-6ea50933759a
+
+info:
+  name: >
+    PublishPress Revisions: Duplicate Posts, Submit, Approve and Schedule Content Changes <= 3.7.23 - Unauthenticated SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9ee14f5f-c558-43d3-8aae-6ea50933759a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/revisionary/"
+    google-query: inurl:"/wp-content/plugins/revisionary/"
+    shodan-query: 'http.html:"wp-content/plugins/revisionary/"'
+  tags: cve,wordpress,wp-plugin,revisionary,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/revisionary/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "revisionary"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.7.23')

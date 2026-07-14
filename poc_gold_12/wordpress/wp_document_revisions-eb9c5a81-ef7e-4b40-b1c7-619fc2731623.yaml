@@ -1,0 +1,51 @@
+id: wp_document_revisions-eb9c5a81-ef7e-4b40-b1c7-619fc2731623
+
+info:
+  name: >
+    WP Document Revisions <= 3.8.1 - Missing Authorization
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/eb9c5a81-ef7e-4b40-b1c7-619fc2731623?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-document-revisions/"
+    google-query: inurl:"/wp-content/plugins/wp-document-revisions/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-document-revisions/"'
+  tags: cve,wordpress,wp-plugin,wp-document-revisions,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-document-revisions/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-document-revisions"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.8.1')

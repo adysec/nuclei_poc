@@ -1,0 +1,51 @@
+id: wh_tweaks-5dc14681-b537-4ce2-af79-fc9ff1083e20
+
+info:
+  name: >
+    WH Tweaks <= 1.0.2 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5dc14681-b537-4ce2-af79-fc9ff1083e20?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wh-tweaks/"
+    google-query: inurl:"/wp-content/plugins/wh-tweaks/"
+    shodan-query: 'http.html:"wp-content/plugins/wh-tweaks/"'
+  tags: cve,wordpress,wp-plugin,wh-tweaks,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wh-tweaks/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wh-tweaks"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.2')

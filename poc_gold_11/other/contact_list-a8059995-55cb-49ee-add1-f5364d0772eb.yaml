@@ -1,0 +1,51 @@
+id: contact_list-a8059995-55cb-49ee-add1-f5364d0772eb
+
+info:
+  name: >
+    Contact List <= 3.0.18 - Authenticated (Contributor+) Stored Cross-Site Scripting via '_cl_map_iframe' Parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/a8059995-55cb-49ee-add1-f5364d0772eb?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/contact-list/"
+    google-query: inurl:"/wp-content/plugins/contact-list/"
+    shodan-query: 'http.html:"wp-content/plugins/contact-list/"'
+  tags: cve,wordpress,wp-plugin,contact-list,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/contact-list/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "contact-list"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.18')

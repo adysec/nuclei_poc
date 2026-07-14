@@ -1,0 +1,50 @@
+id: wp-plugin-detection-javascript-version
+
+info:
+  name: Check WordPress Plugin Version
+  author: ricardomaia
+  severity: info
+  description: Fetches the local and latest repository versions of a specified WordPress plugin to compare them.
+  reference: https://plugins.svn.wordpress.org/
+variables:
+  SLUG: "SLUG"
+
+javascript:
+  - code: |
+      const net = require('nuclei/net');
+      name = "csirt.df.gov.br:443";
+      let slug_array = slugs.split(",");
+      const conn = net.OpenTLS('tcp', name);
+      let found = false;
+
+      for(let i = 0; i < slug_array.length; i++) {
+        const regex = new RegExp(slug_array[i], 'gmi')
+        log("Regex: " + regex);
+        log("Checking slug: " + slug_array[i]);
+        conn.Send('GET /wp-content/plugins/'+slug_array[i]+'/readme.txt HTTP/1.1\r\nHost: '+name+'\r\n\r\n');
+        let resp = conn.RecvString(100000);
+        let regextest = resp.match(regex);
+        log("Regex Test: " + regextest);
+        log("Resp Type:" + typeof resp);
+        if(regextest){
+          found = true;
+        }
+      }
+
+      found ? log("Found match") : log("No match found");
+
+    args:
+      Host: "{{Hostname}}"
+      Port: 443
+      slugs: "{{SLUG}}"
+
+    matchers:
+      - type: word
+        words:
+          - "Found match"
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - ".*"

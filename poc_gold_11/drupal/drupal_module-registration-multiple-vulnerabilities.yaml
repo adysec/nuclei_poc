@@ -1,0 +1,57 @@
+
+id: drupal_module-registration-multiple-vulnerabilities
+info:
+  name: drupal_module-registration-multiple-vulnerabilities
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to take registrations for events, gathering information from registrants including email address and any other questions you wish to configure.  In some cases, an anonymous user may view, edit, or delete other anonymous registrations by guessing the URL of that registration based on a simple pattern. If anonymous users are allowed to register and:  anonymous users have the View permission, information included in the registration can be accessed. anonymous users have the Edit permission, information included in the registration can be altered. anonymous users have the Delete permission, the registration itself can be deleted.   This vulnerability is mitigated by the fact that it only applies to cases where the anonymous user role has specifically been given View, Edit, or Delete access to the specific Registration Type."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-017
+  metadata:
+    security-risk: "Critical 18∕25 AC:Basic/A:None/CI:Some/II:Some/E:Exploit/TD:Default"
+    vulnerability: "multiple-vulnerabilities"
+    fofa-query: "/sites/all/modules/registration/"
+    google-query: "inurl:'/sites/all/modules/registration/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/registration/registration.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'registration'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.6')
+         - compare_versions(version, '7.x-1.5')
+         - compare_versions(version, '7.x-1.4')
+         - compare_versions(version, '7.x-1.3')
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

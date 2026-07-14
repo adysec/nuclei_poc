@@ -1,0 +1,51 @@
+id: tiger-4750b57e-7d8d-49d7-bbbf-46483eb97bd9
+
+info:
+  name: >
+    Tiger <= 101.2.1 - Unauthenticated Privilege Escalation
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/4750b57e-7d8d-49d7-bbbf-46483eb97bd9?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/tiger/"
+    google-query: inurl:"/wp-content/themes/tiger/"
+    shodan-query: 'http.html:"wp-content/themes/tiger/"'
+  tags: cve,wordpress,wp-theme,tiger,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/tiger/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "tiger"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 101.2.1')

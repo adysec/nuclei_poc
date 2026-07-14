@@ -1,0 +1,56 @@
+id: theagency-7d8285b8a06ee27def592d28a059c05a
+
+info:
+  name: "TheAgency (All Versions) - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The TheAgency theme for WordPress is vulnerable to Cross-Site Scripting due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+    - https://jannefi.blogspot.com/2012/09/xss-vulnerability-in-multiple-premium.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/theagency/"
+    google-query: inurl:"/wp-content/themes/theagency/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,theagency,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/theagency/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "theagency"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>0')

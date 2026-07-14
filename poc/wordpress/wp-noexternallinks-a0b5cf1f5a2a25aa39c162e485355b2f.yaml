@@ -1,0 +1,59 @@
+id: wp-noexternallinks-a0b5cf1f5a2a25aa39c162e485355b2f
+
+info:
+  name: >
+    WP No External Links < 3.5.16 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fc91cae0-6d54-43f3-8c0e-d1f972573d13?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-noexternallinks/"
+    google-query: inurl:"/wp-content/plugins/wp-noexternallinks/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-noexternallinks,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-noexternallinks/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-noexternallinks"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.5.16')

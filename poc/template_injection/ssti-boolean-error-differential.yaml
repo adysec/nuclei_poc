@@ -1,0 +1,93 @@
+# gap: ssti-boolean-error-differential
+id: ssti-boolean-error-differential
+
+info:
+  name: SSTI Boolean Error-Based Differential — Language-Agnostic Syntax-Error Pair Probe
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects server-side template injection via the syntax-error
+    differential primitive from Vladko312 (`Research_Successful_Errors`
+    v1.1, Feb 2026; PortSwigger Top-10 #1 of 2025). The probe sends
+    two requests through the same reflective parameter with the same
+    per-template canary marker:
+
+      request 1: marker + `(3*4/2)`  — valid arithmetic; evaluates to
+                                       `6` in every supported template
+                                       engine (Twig, Jinja2, Velocity,
+                                       Pebble, Smarty, ERB, Freemarker,
+                                       Handlebars, EJS, Eta, doT).
+      request 2: marker + `3*)2(/4`  — unbalanced parentheses; raises
+                                       a syntax-class error in every
+                                       supported template engine.
+
+    The class signal is a behavioural differential: if the parameter
+    reaches a template renderer, request 2 returns either a different
+    status (4xx / 5xx) or a body containing a parser-exception keyword
+    (`SyntaxError`, `ParseError`, `Twig_Error`, `ZeroDivisionError`,
+    `ArithmeticException`, `ParseException`, `TemplateSyntaxError`,
+    `UnexpectedToken`, `FunctionClauseError`, `unexpected token`),
+    while request 1 returns 200 with a body that does not contain any
+    of those markers. Pure reflection (no SSTI) produces identical
+    responses for both inputs because both strings are valid character
+    sequences.
+
+    Class detection — keys on universal template-engine syntax-error
+    behaviour, NOT on engine error grammar. Distinct from
+    `ssti-error-page-engine-disclosure` (which keys on plain `1/0`
+    errors) and `ssti-arithmetic-active-probe` (which keys on
+    arithmetic-evaluation reflection).
+  reference:
+    - https://github.com/vladko312/Research_Successful_Errors
+    - https://portswigger.net/research/top-10-web-hacking-techniques-of-2025
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/18-Testing_for_Server-side_Template_Injection
+    - https://cwe.mitre.org/data/definitions/1336.html
+  tags: custom,vulnerabilities,ssti,injection,rce,owasp,cwe-1336
+
+variables:
+  marker: "nuclei{{rand_text_alpha(6)}}"
+
+http:
+  - raw:
+      # Request 1: valid arithmetic — every template engine evaluates cleanly
+      - |+
+        GET /?q={{marker}}%283%2A4%2F2%29 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+
+      # Request 2: unbalanced parens — universal syntax error
+      - |+
+        GET /?q={{marker}}3%2A%292%28%2F4 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          # Baseline must succeed
+          - "status_code_1 == 200"
+          # Behaviour differs between the two requests
+          - "status_code_2 != status_code_1 || len(body_2) != len(body_1)"
+      # Syntax-error keyword appears in the broken-syntax response
+      - type: regex
+        part: body_2
+        regex:
+          - 'SyntaxError|ParseError|Twig_Error|ZeroDivisionError|ArithmeticException|ParseException|TemplateSyntaxError|UnexpectedToken|FunctionClauseError|(?i)unexpected token|unexpected \)'
+      # FP guard: same keyword must NOT appear in the valid-arithmetic response
+      - type: regex
+        part: body_1
+        negative: true
+        regex:
+          - 'SyntaxError|ParseError|Twig_Error|ZeroDivisionError|ArithmeticException|ParseException|TemplateSyntaxError|UnexpectedToken|FunctionClauseError|(?i)unexpected token|unexpected \)'
+
+    extractors:
+      - type: regex
+        part: body_2
+        name: template-error
+        regex:
+          - '(SyntaxError|ParseError|Twig_Error|ZeroDivisionError|ArithmeticException|ParseException|TemplateSyntaxError|UnexpectedToken|FunctionClauseError|(?i)unexpected token|unexpected \))[^<\r\n]{0,160}'
+        group: 1

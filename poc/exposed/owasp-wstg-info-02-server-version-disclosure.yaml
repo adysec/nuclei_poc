@@ -1,0 +1,34 @@
+# gap: owasp-wstg-info-02-server-version-disclosure
+id: owasp-wstg-info-02-server-version-disclosure
+
+info:
+  name: Web Server Version Disclosure in Response Headers
+  author: TyrusRC
+  severity: info
+  description: |
+    Detects responses that disclose a fully qualified web-server or
+    application-runtime version in the Server or X-Powered-By header
+    (e.g. Apache/2.4.51, nginx/1.19.0, PHP/7.4.3). Detailed version strings
+    let an attacker map the target to public CVE feeds without further
+    probing and should be suppressed in production deployments.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/01-Information_Gathering/02-Fingerprint_Web_Server
+  tags: custom,misconfig,info-disclosure,headers,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?i)Server:\s*(Apache|nginx|Microsoft-IIS|lighttpd)/[0-9]+\.[0-9]+\.[0-9]+'
+          - '(?i)X-Powered-By:\s*(PHP|ASP\.NET|Express)/[0-9]+\.[0-9]+\.[0-9]+'
+        condition: or
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - '(?i)Server:\s*(?:Apache|nginx|Microsoft-IIS|lighttpd)/[0-9]+\.[0-9]+\.[0-9]+'
+          - '(?i)X-Powered-By:\s*(?:PHP|ASP\.NET|Express)/[0-9]+\.[0-9]+\.[0-9]+'

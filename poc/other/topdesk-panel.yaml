@@ -1,0 +1,54 @@
+id: topdesk-panel
+
+info:
+  name: TOPdesk - Panel
+  author: darses
+  severity: info
+  description: |
+    TOPdesk was detected.
+  metadata:
+    verified: true
+    max-requests: 1
+    vendor: topdesk
+    product: topdesk
+    shodan-query:
+      - http.favicon.hash:-1177777311
+      - http.favicon.hash:589927604
+      - http.favicon.hash:1123106483
+      - http.favicon.hash:1431756848
+    fofa-query:
+      - icon_hash="-1177777311"
+      - icon_hash="589927604"
+      - icon_hash="1123106483"
+      - icon_hash="1431756848"
+  tags: detect,panel,topdesk
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - 'href="/tas/'
+          - "topdeskidploginforwardurl"
+
+    extractors:
+      - type: regex
+        name: extracted_unix_timestamp
+        part: body
+        regex:
+          - "auth\\.css\\?timestamp=(\\d{10})"
+        group: 1
+        internal: true
+
+      - type: dsl
+        dsl:
+          - '"Release date: " + date_time("%Y-%M-%D", extracted_unix_timestamp)'

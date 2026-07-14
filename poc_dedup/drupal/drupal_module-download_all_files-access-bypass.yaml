@@ -1,0 +1,56 @@
+
+id: drupal_module-download_all_files-access-bypass
+info:
+  name: drupal_module-download_all_files-access-bypass
+  author: me
+  severity: medium
+  description: "This module provides a field formatter for the field type file called `Table of files with download all link` . The module had vulnerabilities allowing a user to download files they normally should not be able to download."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-069
+  metadata:
+    security-risk: "Critical 16 ∕ 25 AC:None/A:None/CI:Some/II:None/E:Proof/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/download_all_files/"
+    google-query: "inurl:'/sites/all/modules/download_all_files/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/download_all_files/download_all_files.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'download_all_files'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 2.0.2')

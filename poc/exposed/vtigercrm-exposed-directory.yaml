@@ -1,0 +1,53 @@
+flow: http(1) && http(2)
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - contains(body, "<title>vTiger")
+    - status_code == 200
+    internal: true
+    type: dsl
+  raw:
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- attack: pitchfork
+  matchers:
+  - condition: and
+    dsl:
+    - contains(body, "<title>Index of")
+    - status_code == 200
+    type: dsl
+  matchers-condition: and
+  payloads:
+    exposed_path:
+    - /logs/
+    - /data/
+    - /storage/
+  raw:
+  - 'GET {{exposed_path}} HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/x-www-form-urlencoded
+
+    '
+id: vtigercrm-exposed-directory
+info:
+  author: icarot
+  description: 'Detected a Vtiger CRM directory listing exposure that could have revealed
+    sensitive files and internal application structure.
+
+    '
+  metadata:
+    max-request: 3
+    shodan-query: html:"Powered by vtiger CRM"
+    verified: true
+  name: Vtiger CRM - Exposed Directory
+  reference:
+  - https://github.com/vtiger-crm/vtigercrm
+  - https://code.vtiger.com/vtiger/vtigercrm
+  severity: low
+  tags: vtiger,exposure,vtiger-crm,vuln

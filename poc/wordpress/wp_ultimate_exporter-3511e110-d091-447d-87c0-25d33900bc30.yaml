@@ -1,0 +1,51 @@
+id: wp_ultimate_exporter-3511e110-d091-447d-87c0-25d33900bc30
+
+info:
+  name: >
+    Export All Posts, Products, Orders, Refunds & Users <= 2.19 - Cross-Site Request Forgery to Sensitive Information Exposure
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/3511e110-d091-447d-87c0-25d33900bc30?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-ultimate-exporter/"
+    google-query: inurl:"/wp-content/plugins/wp-ultimate-exporter/"
+    shodan-query: 'http.html:"wp-content/plugins/wp-ultimate-exporter/"'
+  tags: cve,wordpress,wp-plugin,wp-ultimate-exporter,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-ultimate-exporter/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-ultimate-exporter"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.19')

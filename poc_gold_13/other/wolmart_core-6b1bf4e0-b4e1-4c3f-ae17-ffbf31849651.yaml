@@ -1,0 +1,51 @@
+id: wolmart_core-6b1bf4e0-b4e1-4c3f-ae17-ffbf31849651
+
+info:
+  name: >
+    Wolmart Core <= 1.9.6 - Unauthenticated SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6b1bf4e0-b4e1-4c3f-ae17-ffbf31849651?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wolmart-core/"
+    google-query: inurl:"/wp-content/plugins/wolmart-core/"
+    shodan-query: 'http.html:"wp-content/plugins/wolmart-core/"'
+  tags: cve,wordpress,wp-plugin,wolmart-core,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wolmart-core/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wolmart-core"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9.6')

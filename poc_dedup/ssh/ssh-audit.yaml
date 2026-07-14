@@ -1,0 +1,51 @@
+id: ssh-audit
+info:
+  author: pussycat0x
+  description: 'SSH (Secure Shell) is a critical tool for administering Linux servers
+    remotely. However, its powerful capabilities also make it a prime target for attackers.
+    SSH hardening refers to the process of strengthening SSH configuration and practices
+    to protect against unauthorized access and potential security breaches.
+
+    '
+  name: SSH - Audit
+  reference:
+  - https://vishalraj82.medium.com/hardening-openssh-security-37f5d634015f
+  - https://github.com/projectdiscovery/nuclei-templates/tree/main/file/audit/ssh
+  severity: unknown
+  tags: js,ssh,audit,network
+javascript:
+- args:
+    Host: '{{Host}}'
+    Password: toor
+    Port: '22'
+    Username: root
+  code: "var m = require(\"nuclei/ssh\");\nvar c = m.SSHClient();\nc.Connect(Host,Port,Username,Password);\n\
+    const sshConfig = c.Run('cat /etc/ssh/sshd_config')\nsshConfig\n\nlet result =\
+    \ \"\";\nif (sshConfig.includes('#Port 22') && !sshConfig.includes('Port  '))\
+    \ {\nresult += \"Default SSH Port Detected; \";\n }\nif (sshConfig.includes('PermitEmptyPasswords\
+    \ yes')) {\nresult += \"Disable SSH Empty Password Access; \";\n}\nif (sshConfig.includes('PermitRootLogin\
+    \ yes')) {\nresult += \"Disable SSH Root Login; \";\n}\nif (sshConfig.includes('AllowTcpForwarding\
+    \ yes') && !sshConfig.includes('#AllowTcpForwarding yes') || sshConfig.includes('X11Forwarding\
+    \ yes')) {\nresult += \"Disable SSH Forwarding; \";\n}\nif (!sshConfig.includes('Protocol\
+    \ 2')) {\nresult += \"Disable SSH Protocol 1; \";\n}\nif (!sshConfig.includes('UsePrivilegeSeparation\
+    \ yes')) {\nresult += \"Enable Privilege Separation in SSH; \";\n}\nif (!sshConfig.includes('PrintLastLog\
+    \ no')) {\nresult += \"Hide SSH Last Login Information; \";\n}\nif (sshConfig.includes('#ClientAliveInterval')\
+    \ && sshConfig.includes('#ClientAliveCountMax') && !sshConfig.includes('ClientAliveInterval\
+    \  ') && !sshConfig.includes('ClientAliveCountMax  ')){\nresult += \"Set SSH \
+    \ Idle Timeout Interval; \";\n}\nif (sshConfig.includes('#MaxAuthTries') && !sshConfig.includes('MaxAuthTries\
+    \  ')){\nresult += \"Set Maximum Limit SSH Authentication Attempts; \";\n}\nif\
+    \ (!sshConfig.includes('AllowGroups')){\nresult += \"Set or Limit SSH Users Group\
+    \ Access; \";\n}\nif (!sshConfig.includes('AllowUsers')){\nresult += \"Set or\
+    \ Limit SSH Users Access; \";\n}\nif (sshConfig.includes('#ListenAddress') &&\
+    \ !sshConfig.includes('ListenAddress  ')){\nresult += \"Limit SSH Access by IP\
+    \ Address / Whitelist IP; \";\n}\nif (sshConfig.includes('#PasswordAuthentication\
+    \ yes') && !sshConfig.includes('PasswordAuthentication yes')){\nresult += \"Setup/Use\
+    \ SSH Key-Based Authentication; \";\n}\n\nresult\n"
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+  matchers:
+  - dsl:
+    - success == true
+    type: dsl

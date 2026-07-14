@@ -1,0 +1,56 @@
+id: tingsboard-detect
+
+info:
+  name: ThingsBoard detect
+  author: wjlin0
+  severity: info
+  description: |
+    ThingsBoard是用于数据收集、处理、可视化和设备管理的开源物联网平台。
+  reference:
+    - http://www.ithingsboard.com/docs/user-guide/install/docker/
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: 'app="ThingsBoard"'
+  tags: tingsboard,detect
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /{{path1}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body_1
+        group: 1
+        name: path1
+        internal: true
+        regex:
+          - '<script src="(main\.[a-z|\d]+\.js)" defer>'
+      - type: regex
+        part: body_2
+        group: 1
+        name: version
+        regex:
+          - ',tbVersion:"(.*?)",'
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body_1
+        regex:
+          - '<script src="(main\.[a-z|\d]+\.js)" defer>'
+          - '<link rel="icon" type="image/x-icon" href="thingsboard.ico">'
+        condition: and
+      - type: word
+        part: body_2
+        words:
+          - 'https://thingsboard.io'
+          - 'gotoThingsboard'
+          - 'org.thingsboard.rule.engine.mail.TbSendEmailNode'
+        condition: and
+# digest: 4a0a0047304502205c0a12c95eac2e5098ecf953592aedd70c7f8d6b1e03b35ef2ef21e90afdc8140221009e5372ea9af68fd10b591890bf08edc3cc004de9a299c27a292fd8d2ec034886:9d8cf424f0e932381bf27cf1e926b867

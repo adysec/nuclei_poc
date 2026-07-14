@@ -1,0 +1,52 @@
+
+id: drupal_module-forms_steps-access-bypass
+info:
+  name: drupal_module-forms_steps-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "Forms Steps provides an UI to create form workflows using form modes. It creates quick and configurable multisteps forms. The module doesnt sufficiently check user permissions to access its workflows entities that allows to see any entities that have been created through the different steps of its multistep forms. This vulnerability is mitigated by the fact that you have to know the Forms Steps URL to create a content linked to the flow. Also, all created content is very hard to edit through the same flow as you have to know the URL and the linked hash to the content."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-064
+  metadata:
+    security-risk: "Critical 16∕25 AC:Basic/A:None/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/forms_steps/"
+    google-query: "inurl:'/sites/all/modules/forms_steps/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/forms_steps/forms_steps.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'forms_steps'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

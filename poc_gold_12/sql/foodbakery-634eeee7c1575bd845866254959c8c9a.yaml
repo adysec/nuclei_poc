@@ -1,0 +1,58 @@
+id: foodbakery-634eeee7c1575bd845866254959c8c9a
+
+info:
+  name: "FoodBakery <= 1.9 - Reflected Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The FoodBakery theme for WordPress is vulnerable to Reflected Cross-Site Scripting in versions up to, and including, 1.9 due to insufficient input sanitization and output escaping on the 'location' parameter. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://themeforest.net/item/food-bakery-restaurant-bakery-responsive-wordpress-theme/18970331
+    - http://web.archive.org/web/20201127171335/https%3A//vladvector.ru/exploit/2020-07-24-foodbakery-food-delivery-restaurant-directory-wordpress-theme-v1-9.txt
+    - https://wpscan.com/vulnerability/5f6d00ec-98b9-457a-8c65-068ec169a123
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/foodbakery/"
+    google-query: inurl:"/wp-content/themes/foodbakery/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,foodbakery,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/foodbakery/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "foodbakery"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.9')

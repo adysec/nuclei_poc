@@ -1,0 +1,84 @@
+# gap: argocd-settings-unauth-disclosure
+id: argocd-settings-unauth-disclosure
+
+info:
+  name: Argo CD /api/v1/settings Leaks Internal Configuration (GHSA-87p9-x75h-p4j2)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects Argo CD instances where `/api/v1/settings` (intentionally
+    reachable without auth to expose only `passwordPattern`) returns
+    the full settings document including OIDC client configuration,
+    Dex connectors, Kustomize options, cluster settings, and the
+    application-instance label key. The regression was disclosed as
+    GHSA-87p9-x75h-p4j2 and fixed in 2.11.3 / 2.10.12 / 2.9.17 — the
+    disclosed config is the precondition for targeted phishing of
+    the OIDC callback flow and for IdP impersonation.
+
+    Class signal: a 200 JSON response that contains any of the
+    Argo CD-specific top-level config blocks (`oidcConfig`, `dex`,
+    `kustomizeOptions`, `clusterSettings`, `appInstanceLabelKey`)
+    beyond the intentionally-public `passwordPattern`. Co-occurrence
+    of two or more confirms the over-disclosure.
+  reference:
+    - https://github.com/argoproj/argo-cd/security/advisories/GHSA-87p9-x75h-p4j2
+    - https://www.bleepingcomputer.com/news/security/max-severity-argo-cd-api-flaw-leaks-repository-credentials/
+  tags: custom,exposures,argocd,gitops,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/settings"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # passwordPattern is intentionally public; the leak is co-occurrence
+        # of any TWO additional Argo CD-specific config blocks.
+        words:
+          - '"oidcConfig"'
+          - '"dexConfig"'
+          - '"kustomizeOptions"'
+          - '"clusterSettings"'
+          - '"appInstanceLabelKey"'
+          - '"googleAnalytics"'
+          - '"chatUrl"'
+          - '"trackingMethod"'
+        condition: or
+      - type: word
+        part: body
+        # And at least one ArgoCD identity marker to differentiate from
+        # generic settings APIs of other products.
+        words:
+          - '"passwordPattern"'
+          - '"resourceCustomizations"'
+          - '"statusBadgeEnabled"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: oidc-issuer
+        regex:
+          - '"issuer"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: oidc-client-id
+        regex:
+          - '"clientID"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: app-label-key
+        regex:
+          - '"appInstanceLabelKey"\s*:\s*"([^"]+)"'
+        group: 1

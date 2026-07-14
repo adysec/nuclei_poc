@@ -1,0 +1,68 @@
+# gap: prometheus-alertmanager-anonymous-api
+id: prometheus-alertmanager-anonymous-api
+
+info:
+  name: Prometheus Alertmanager API Anonymous Access
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects a Prometheus Alertmanager where /api/v2/status, /api/v2/alerts,
+    or /api/v2/silences is reachable without authentication, returning
+    the alerting catalog as JSON. Class signal: response carries the
+    canonical Alertmanager shape `{"versionInfo":…,"config":…,"cluster":…}`
+    on /status, OR is a JSON array of alert/silence objects with stable
+    `labels` / `annotations` / `endsAt` fields.
+
+    Anonymous Alertmanager API access leaks the runtime alerting
+    configuration: receiver URLs (which routinely embed in-memory
+    secrets — Slack webhooks, PagerDuty integration keys, OpsGenie
+    API tokens, generic webhook bearer tokens), silence rules
+    (disclosing maintenance windows attackers can hide behind), and
+    active alerts that reveal cluster topology, hostnames, and
+    error-class instrumentation. The /api/v2/silences endpoint
+    further accepts POST for silence creation — anonymous silence
+    creation bypasses authentication of the alerting control plane
+    and lets an attacker mute compromise-detection alerts. Class
+    detection — keys on Alertmanager-specific JSON shape, not vendor
+    banner.
+  reference:
+    - https://prometheus.io/docs/alerting/latest/clients/
+    - https://github.com/prometheus/alertmanager/blob/main/api/v2/openapi.yaml
+  tags: custom,exposures,prometheus,alertmanager,observability,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v2/status"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        words:
+          - '"versionInfo"'
+      - type: regex
+        part: body
+        regex:
+          - '"cluster"\s*:\s*\{|"config"\s*:\s*\{'
+
+    extractors:
+      - type: regex
+        part: body
+        name: alertmanager-version
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: cluster-name
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+        group: 1

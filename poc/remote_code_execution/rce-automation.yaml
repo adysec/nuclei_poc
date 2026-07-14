@@ -1,0 +1,37 @@
+id: rce-automation
+
+info:
+  name: RCE Vulnerability Check
+  author: rix4uni
+  severity: critical
+  description: Checks for Remote Code Excution vulnerabilities
+  tags: rce
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      reflection:
+        - "ipconfig"
+        - "ifconfig"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Windows IP Configuration"
+          - "inet 127.0.0.1  netmask 255.0.0.0"
+
+      - type: status
+        status:
+          - 200

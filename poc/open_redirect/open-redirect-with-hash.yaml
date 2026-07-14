@@ -1,0 +1,42 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{redir}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - part: header
+    regex:
+    - (?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)oast\.me\/?(\/|[^.].*)?$
+    type: regex
+  - status:
+    - 301
+    - 302
+    - 303
+    - 304
+    - 306
+    - 307
+    - 308
+    type: status
+  matchers-condition: and
+  max-redirects: 3
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    redir:
+    - https://oast.me&hash={{md5('https://oast.me')}}
+    - https://oast.me&hash={{sha1('https://oast.me')}}
+    - https://oast.me&hash={{sha256('https://oast.me')}}
+    - https://oast.me&token={{md5('https://oast.me')}}
+    - https://oast.me&token={{sha1('https://oast.me')}}
+    - https://oast.me&token={{sha256('https://oast.me')}}
+  redirects: true
+  stop-at-first-match: true
+id: open-redirect-with-hash
+info:
+  author: reewardius
+  name: Open Redirect
+  severity: low
+  tags: fuzzing-redirect,fuzzing-req,dast

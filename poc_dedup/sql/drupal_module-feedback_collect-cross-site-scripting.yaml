@@ -1,0 +1,56 @@
+
+id: drupal_module-feedback_collect-cross-site-scripting-
+info:
+  name: drupal_module-feedback_collect-cross-site-scripting-
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to add feedback forms and gather end user feedback, bug reports or any kind of suggestions.  The module doesnt sufficiently filter output of its own fields under the scenario of creating or editing feedback-collect content types. This vulnerability is mitigated by the fact that an attacker must have a role with the permission create feedback-collect content or its related editing permissions."
+  reference:
+    - https://www.drupal.org/sa-contrib-2017-090
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting-"
+    fofa-query: "/sites/all/modules/feedback_collect/"
+    google-query: "inurl:'/sites/all/modules/feedback_collect/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/feedback_collect/feedback_collect.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'feedback_collect'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.5')
+         - compare_versions(version, '7.x-1.4')
+         - compare_versions(version, '7.x-1.3')
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

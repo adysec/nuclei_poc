@@ -1,0 +1,48 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .items[]
+    name: items
+    type: json
+  source: kubectl get deployments --all-namespaces --output=json
+flow: "code(1);\nfor (let deployment of template.items) {\n  set(\"deployment\", deployment)\n\
+  \  javascript(1);\n}\n"
+id: k8s-privileged-containers
+info:
+  author: princechaddha
+  description: Checks for containers running in privileged mode within Kubernetes
+    Deployments, and now also checks for user privileges and privilege escalation
+    settings.
+  impact: 'Running containers in privileged mode, as the root user, or with privilege
+    escalation enabled can grant them access to host resources and could lead to security
+    breaches if the container is compromised.
+
+    '
+  name: Privileged Containers Found in Deployments
+  reference:
+  - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#privileged
+  remediation: 'Ensure that no container in Kubernetes Deployments runs in privileged
+    mode, as the root user, or with privilege escalation enabled. Modify the security
+    context for each container to set `privileged: false`, `runAsUser` appropriately,
+    and `allowPrivilegeEscalation: false`.
+
+    '
+  severity: critical
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,k8s-cluster-security
+javascript:
+- code: "deployment = JSON.parse(template.deployment);\nfor (let container of deployment.spec.template.spec.containers)\
+    \ {\n  let sc = container.securityContext || {};\n  if (sc.privileged || sc.runAsUser\
+    \ < 1000 || sc.allowPrivilegeEscalation) {\n    let result = (`Deployment '${deployment.metadata.name}'\
+    \ in namespace '${deployment.metadata.namespace}' is running container '${container.name}'\
+    \ with insecure settings: Privileged=${sc.privileged}, runAsUser=${sc.runAsUser},\
+    \ allowPrivilegeEscalation=${sc.allowPrivilegeEscalation}.`);\n    Export(result);\n\
+    \    break;\n  }\n}\n"
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+self-contained: true

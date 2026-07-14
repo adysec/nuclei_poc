@@ -1,0 +1,69 @@
+# gap: http-jwks-symmetric-key-exposed
+id: http-jwks-symmetric-key-exposed
+
+info:
+  name: JWKS Endpoint Exposes Symmetric (HMAC) Key — Algorithm Confusion Primitive
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects JWKS (JSON Web Key Set) endpoints that expose symmetric HMAC
+    keys (kty:oct, alg:HS256/HS384/HS512). JWKS is designed to publish
+    PUBLIC keys for asymmetric verification (RSA, EC); publishing a
+    symmetric HMAC key allows any client that fetches the JWKS to forge
+    tokens by signing with that very key — a class-level signature
+    primitive that converts the verification key into a signing key.
+
+    Also flags JWKS that advertise HS* algorithms in their `alg` field —
+    the alg-confusion surface where an attacker can craft a token with
+    alg:HS256 signed using the public RSA key material, and the server's
+    HMAC verifier (configured to accept HS) treats the public key as a
+    shared secret. Class primitive, not vendor-specific.
+  reference:
+    - https://portswigger.net/web-security/jwt/algorithm-confusion
+    - https://datatracker.ietf.org/doc/html/rfc7517
+  tags: custom,misconfig,jwt,jwks,alg-confusion,http,exposure,cwe-321,cwe-798
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/jwks.json"
+      - "{{BaseURL}}/jwks.json"
+      - "{{BaseURL}}/oauth2/jwks"
+      - "{{BaseURL}}/.well-known/openid-configuration/jwks"
+      - "{{BaseURL}}/api/.well-known/jwks.json"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - '"keys"\s*:\s*\['
+      - type: regex
+        part: body
+        regex:
+          - '"kty"\s*:\s*"'
+      # Either kty:oct (symmetric key directly exposed) OR alg:HS* (HMAC algorithm advertised)
+      - type: regex
+        part: body
+        regex:
+          - '"kty"\s*:\s*"oct"'
+          - '"alg"\s*:\s*"HS(256|384|512)"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: exposed-alg
+        regex:
+          - '"alg"\s*:\s*"(HS(256|384|512))"'
+        group: 1
+      - type: regex
+        part: body
+        name: exposed-kid
+        regex:
+          - '"kid"\s*:\s*"([^"]+)"'
+        group: 1

@@ -1,0 +1,59 @@
+id: bbpress-3f6516991c018d03e8784c3a5b9cda81
+
+info:
+  name: >
+    bbPress < 2.5.13 - Unauthenticated Blind SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/5097da41-b5e9-4e07-a135-83a7d889fe9b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/bbpress/"
+    google-query: inurl:"/wp-content/plugins/bbpress/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,bbpress,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/bbpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "bbpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.5.13')

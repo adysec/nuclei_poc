@@ -1,0 +1,51 @@
+id: wpzoom_elementor_addons-e5b98a2c-faed-4e2b-8b94-31e2be95ad40
+
+info:
+  name: >
+    WPZOOM Addons for Elementor – Starter Templates & Widgets <= 1.3.4 - Unauthenticated Reflected Cross-Site Scripting via 'title_tag' Parameter
+  author: topscoder
+  severity: medium
+  description: >
+    The WPZOOM Addons for Elementor – Starter Templates & Widgets plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'title_tag' parameter in versions up to, and including, 1.3.4 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e5b98a2c-faed-4e2b-8b94-31e2be95ad40?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpzoom-elementor-addons/"
+    google-query: inurl:"/wp-content/plugins/wpzoom-elementor-addons/"
+    shodan-query: 'http.html:"wp-content/plugins/wpzoom-elementor-addons/"'
+  tags: cve,wordpress,wp-plugin,wpzoom-elementor-addons,medium,production
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpzoom-elementor-addons/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpzoom-elementor-addons"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.3.4')

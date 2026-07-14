@@ -1,0 +1,59 @@
+id: advanced-custom-fields-pro-3b3710e135e757bfb25f79654259f808
+
+info:
+  name: >
+    Advanced Custom Fields <= 6.3.8 & Secure Custom Fields <= 6.3.6.2 - Authenticated (Admin+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    The Advanced Custom Fields & Secure Custom Fields plugins for WordPress are vulnerable to Stored Cross-Site Scripting via ACF field labels in all versions up to, and including, 6.3.8 & 6.3.6.2 respectively due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level access, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled. Please follow the reference listed in this vulnerability record for instructions on how to update to the latest version of ACF that patches this issue and ensures accessibility to updates moving forward. Special note: only the minified files in Secure Custom Fields have been patched meaning the source build files are still vulnerable.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b3552de0-3e0b-4529-a757-a31c69a06122?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 4.4
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/advanced-custom-fields-pro/"
+    google-query: inurl:"/wp-content/plugins/advanced-custom-fields-pro/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,advanced-custom-fields-pro,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/advanced-custom-fields-pro/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "advanced-custom-fields-pro"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.3.8')

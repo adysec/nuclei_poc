@@ -1,0 +1,51 @@
+id: stumble_for_wordpress-19e1421d-8cb4-44b6-a982-769539b19582
+
+info:
+  name: >
+    Stumble! for WordPress <= 1.1.1 - Reflected Cross-Site Scripting via $_SERVER['PHP_SELF']
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/19e1421d-8cb4-44b6-a982-769539b19582?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/stumble-for-wordpress/"
+    google-query: inurl:"/wp-content/plugins/stumble-for-wordpress/"
+    shodan-query: 'http.html:"wp-content/plugins/stumble-for-wordpress/"'
+  tags: cve,wordpress,wp-plugin,stumble-for-wordpress,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/stumble-for-wordpress/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "stumble-for-wordpress"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.1')

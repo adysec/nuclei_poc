@@ -1,0 +1,51 @@
+id: legrand-571937a3-46f8-4cbf-a750-4c2fbb1f944b
+
+info:
+  name: >
+    Legrand <= 2.17 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/571937a3-46f8-4cbf-a750-4c2fbb1f944b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/legrand/"
+    google-query: inurl:"/wp-content/themes/legrand/"
+    shodan-query: 'http.html:"wp-content/themes/legrand/"'
+  tags: cve,wordpress,wp-theme,legrand,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/legrand/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "legrand"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.17')

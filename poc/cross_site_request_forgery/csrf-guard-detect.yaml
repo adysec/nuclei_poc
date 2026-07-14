@@ -1,0 +1,75 @@
+http:
+- extractors:
+  - group: 1
+    internal: true
+    name: masterToken
+    regex:
+    - (?:masterTokenValue\s*=\s*')([^']+)';
+    type: regex
+  - group: 1
+    name: master-token
+    regex:
+    - (?:masterTokenValue\s*=\s*')([^']+)';
+    type: regex
+  - json:
+    - .pageTokens
+    name: page-token
+    type: json
+  matchers:
+  - name: CSRFGuard-v3.x
+    type: word
+    words:
+    - FETCH-CSRF-TOKEN
+  - name: CSRFGuard-v4.x
+    type: word
+    words:
+    - masterTokenValue
+  - condition: and
+    dsl:
+    - status_code_3==400
+    - contains(body, "Token-Per-Page functionality is disabled")
+    name: Disabled-token-per-page
+    type: dsl
+  - condition: and
+    dsl:
+    - status_code_3==200
+    - contains(body, "{\"pageTokens")
+    name: Enabled-token-per-page
+    type: dsl
+  matchers-condition: or
+  raw:
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+  - 'GET /JavaScriptServlet HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Referer: {{BaseURL}}
+
+    '
+  - 'POST /JavaScriptServlet HTTP/1.1
+
+    Host: {{Hostname}}
+
+    OWASP-CSRFTOKEN: {{masterToken}}
+
+    '
+id: csrf-guard-detect
+info:
+  author: forgedhallpass
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+    cwe-id: CWE-200
+  description: OWASP CSRFGuard 3.x and 4.x were checked for whether token-per-page
+    support is enabled based on default configuration.
+  metadata:
+    max-request: 3
+  name: OWASP CSRFGuard 3.x/4.x - Detect
+  reference:
+  - https://github.com/OWASP/www-project-csrfguard
+  severity: info
+  tags: tech,csrfguard,owasp

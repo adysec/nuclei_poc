@@ -1,0 +1,51 @@
+id: linkedin_sc-1c4fd888-aeaf-4451-a151-8f884bc22f0b
+
+info:
+  name: >
+    LinkedIn SC <= 1.1.9 - Authenticated (Administrator+) Stored Cross-Site Scripting via Settings Page
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1c4fd888-aeaf-4451-a151-8f884bc22f0b?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/linkedin-sc/"
+    google-query: inurl:"/wp-content/plugins/linkedin-sc/"
+    shodan-query: 'http.html:"wp-content/plugins/linkedin-sc/"'
+  tags: cve,wordpress,wp-plugin,linkedin-sc,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/linkedin-sc/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "linkedin-sc"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.9')

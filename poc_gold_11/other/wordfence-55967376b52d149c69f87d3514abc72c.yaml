@@ -1,0 +1,58 @@
+id: wordfence-55967376b52d149c69f87d3514abc72c
+
+info:
+  name: "Wordfence Security – Firewall & Malware Scan <= 7.1.13 - Reflected Cross-Site Scripting and Information Disclosure"
+  author: topscoder
+  severity: medium
+  description: "Wordfence before 7.1.14 was vulnerable in certain unusual configurations to Reflected Cross-Site Scripting, as well as full path disclosure and author name disclosure."
+  reference:
+    - http://www.waraxe.us/advisory-109.html
+    - https://packetstormsecurity.com/files/149845/
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-wordfence-security-firewall-malware-scan-multiple-vulnerabilities-7-1-12/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 4.7
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wordfence/"
+    google-query: inurl:"/wp-content/plugins/wordfence/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wordfence,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordfence/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordfence"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 7.1.14')

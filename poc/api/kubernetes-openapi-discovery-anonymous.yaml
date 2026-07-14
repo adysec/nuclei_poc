@@ -1,0 +1,68 @@
+# gap: kubernetes-openapi-discovery-anonymous
+id: kubernetes-openapi-discovery-anonymous
+
+info:
+  name: Kubernetes API Server OpenAPI Discovery Anonymous Access
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects Kubernetes API servers where /openapi/v2 or /openapi/v3 is
+    reachable without authentication, returning the full OpenAPI spec
+    of every registered CRD and built-in resource. Class signal: JSON
+    body containing the Swagger 2.0 / OpenAPI 3.x version marker with
+    `/api/v1` or `/apis/` path entries.
+
+    Anonymous OpenAPI discovery exposes the complete API surface of
+    the cluster — every CRD installed (Istio, Tekton, ArgoCD,
+    cert-manager, kyverno, OPA Gatekeeper, custom operators), every
+    custom resource definition's spec/status fields (which routinely
+    reveal field-level secret keys), and the full list of admission
+    webhook configurations and validating policies. Combined with
+    `kubernetes-api-server-anonymous-access` (existing template) this
+    chains to enumeration of every resource type the anonymous
+    principal can list. Class detection — keys on Swagger/OpenAPI
+    envelope, not vendor banner.
+  reference:
+    - https://kubernetes.io/docs/concepts/overview/kubernetes-api/
+    - https://kubernetes.io/docs/reference/access-authn-authz/authorization/
+  tags: custom,cloud,kubernetes,k8s,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/openapi/v2"
+      - "{{BaseURL}}/openapi/v3"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - '"swagger"\s*:\s*"2\.0"|"openapi"\s*:\s*"3\.'
+      - type: word
+        part: body
+        words:
+          - '"/api/v1"'
+          - '/apis/'
+        condition: or
+      # Distinguish from non-K8s OpenAPI specs by requiring at least
+      # one Kubernetes-specific marker.
+      - type: word
+        part: body
+        words:
+          - "io.k8s.api"
+          - "io.k8s.apimachinery"
+          - "kubernetes"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: kube-version
+        regex:
+          - '"version"\s*:\s*"(v?[0-9]+\.[0-9]+\.[0-9]+[^"]*)"'
+        group: 1

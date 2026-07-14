@@ -1,0 +1,51 @@
+id: wpforo-fd1704ef-e259-40a3-974b-128145bc8a4a
+
+info:
+  name: >
+    wpForo Forum <= 2.4.12 - Unauthenticated SQL Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fd1704ef-e259-40a3-974b-128145bc8a4a?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wpforo/"
+    google-query: inurl:"/wp-content/plugins/wpforo/"
+    shodan-query: 'http.html:"wp-content/plugins/wpforo/"'
+  tags: cve,wordpress,wp-plugin,wpforo,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpforo/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wpforo"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.4.12')

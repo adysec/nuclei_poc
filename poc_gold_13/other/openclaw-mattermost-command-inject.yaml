@@ -1,0 +1,38 @@
+id: openclaw-mattermost-command-inject
+
+info:
+  name: OpenClaw Mattermost Command Injection
+  author: lobster-guard
+  severity: high
+  description: |
+    Tests if Mattermost slash command endpoint accepts unsigned requests.
+    Without token verification, attackers can forge slash commands to trigger
+    agent actions via the Mattermost integration channel.
+  tags: openclaw,mattermost,channel,injection
+  remediation: Set mattermost.verification_token in OpenClaw channel config and validate incoming request tokens.
+  classification:
+    cwe-id: CWE-345
+  metadata:
+    max-request: 1
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/channels/mattermost/command"
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    body: "token=openclaw&text=nuclei_probe&user_name=nuclei&command=%2Fopenclaw"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+          - 202
+      - type: regex
+        part: body
+        regex:
+          - '"(text|response_type|attachments)"'

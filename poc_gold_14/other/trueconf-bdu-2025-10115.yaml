@@ -1,0 +1,30 @@
+id: trueconf-bdu-2025-10115
+
+info:
+  name: TrueConf Server Path Traversal
+  author: collapsz
+  severity: high
+  description: A path traversal vulnerability in the TrueConf Server allows remote attackers to read arbitrary files via crafted input.
+  reference:
+    - https://bdu.fstec.ru/vul/2025-10115
+  tags: trueconf,bdu,lfi
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v3/server"
+
+    extractors:
+      - type: json
+        name: version
+        json:
+          - '.version'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - |
+            (regex("^5\\.3\\.", version) && compare_versions(version, "< 5.3.7")) ||
+            (regex("^5\\.4\\.", version) && compare_versions(version, "< 5.4.6")) ||
+            (regex("^5\\.5\\.0\\.", version)) ||
+            (regex("^5\\.5\\.1\\.", version) && compare_versions(version, "< 5.5.1.10180"))

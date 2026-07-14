@@ -1,0 +1,53 @@
+# gap: kubernetes-api-server-anonymous-access
+id: kubernetes-api-server-anonymous-access
+
+info:
+  name: Kubernetes API Server Anonymous Access Enabled
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects Kubernetes API servers with --anonymous-auth=true and permissive
+    RBAC bindings to system:anonymous. A GET request to /api/v1/namespaces
+    without an Authorization header returns HTTP 200 JSON with kind
+    NamespaceList instead of 401/403. NamespaceList reachability confirms
+    the anonymous principal has at least cluster-wide list access, which in
+    common misconfigurations extends to secrets / configmaps / pods —
+    leaking credentials, service-account tokens, and image-pull secrets
+    and frequently allowing exec arbitrary commands against any reachable
+    pod through the same anonymous identity.
+  reference:
+    - https://raw.githubusercontent.com/HackTricks-wiki/hacktricks-cloud/master/src/pentesting-cloud/kubernetes-security/kubernetes-enumeration.md
+    - https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-requests
+  tags: custom,cloud,kubernetes,k8s,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/namespaces"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "NamespaceList"
+
+    extractors:
+      - type: regex
+        part: body
+        name: namespace-names
+        regex:
+          - '"name"\s*:\s*"([a-z0-9-]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: resource-version
+        regex:
+          - '"resourceVersion"\s*:\s*"([0-9]+)"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Audit-Id"

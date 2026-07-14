@@ -1,0 +1,52 @@
+# gap: elasticsearch-unauth-rest
+id: elasticsearch-unauth-rest
+
+info:
+  name: Elasticsearch REST API Reachable Without Authentication
+  author: TyrusRC
+  severity: high
+  description: |
+    Probes the canonical Elasticsearch REST endpoints (/_cluster/health,
+    /_cat/indices?format=json, /_cluster/state, /_nodes) and matches on
+    the cluster-info JSON shape: cluster_name + status + (number_of_nodes
+    or version). An unauthenticated hit exposes index names, mapping,
+    document counts and node metadata; on older 1.x/5.x/6.x versions the
+    same endpoint surface chains to RCE via stored Groovy/Painless
+    scripts (CVE-2014-3120 and family). This is shape-based family
+    detection that replays on future Elasticsearch exposure variants
+    rather than a single CVE.
+  reference:
+    - https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-health.html
+    - https://www.elastic.co/guide/en/elasticsearch/reference/current/cat-indices.html
+    - https://www.cisa.gov/news-events/alerts/2015/03/16/elasticsearch-vulnerabilities
+  tags: custom,exposures,elasticsearch,elastic,unauth,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_cluster/health"
+      - "{{BaseURL}}/_cat/indices?format=json"
+      - "{{BaseURL}}/_cluster/state"
+      - "{{BaseURL}}/_nodes"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "\"cluster_name\"")'
+          - 'contains(tolower(body), "\"status\"") || contains(tolower(body), "\"health\"")'
+          - 'contains(tolower(body), "\"number_of_nodes\"") || contains(tolower(body), "\"version\"") || contains(tolower(body), "\"number_of_data_nodes\"") || contains(tolower(body), "\"active_shards\"")'
+        condition: and
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '"cluster_name"\s*:\s*"[^"]+"'
+          - '"number"\s*:\s*"[0-9][0-9.]*"'
+          - '"status"\s*:\s*"(green|yellow|red)"'
+          - '"number_of_nodes"\s*:\s*[0-9]+'
+          - '"number_of_data_nodes"\s*:\s*[0-9]+'
+          - '"index"\s*:\s*"[^"]+"'

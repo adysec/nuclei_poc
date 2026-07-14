@@ -1,0 +1,57 @@
+id: speakout-761656f8a016cc53b64260bc97dbd54a
+
+info:
+  name: "SpeakOut! Email Petitions <= 2.13.1.1 - Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "The SpeakOut! Email Petitions plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the ‘searchString’ parameter in versions up to, and including, 2.13.1.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link."
+  reference:
+    - https://wpscan.com/vulnerability/6df1cd74-34d3-455c-b51f-ba3928a89359
+    - https://ithemes.com/blog/wordpress-vulnerability-report-august-2021-part-3/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/speakout/"
+    google-query: inurl:"/wp-content/plugins/speakout/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,speakout,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/speakout/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "speakout"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.13.1.1')

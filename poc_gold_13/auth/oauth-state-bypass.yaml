@@ -1,0 +1,54 @@
+id: oauth-state-bypass
+info:
+  author: geeknik
+  classification:
+    cwe-id: CWE-352
+  description: 'Detects OAuth implementations vulnerable to CSRF attacks through missing,
+
+    predictable, or reusable state parameters in OAuth authorization flows.
+
+    '
+  metadata:
+    max-request: 5
+  name: OAuth State Parameter Bypass Detection
+  reference:
+  - https://portswigger.net/web-security/oauth
+  - https://datatracker.ietf.org/doc/html/rfc6749#section-10.12
+  severity: high
+  tags: oauth,csrf,authentication,bypass
+requests:
+- extractors:
+  - name: oauth_flow
+    part: header
+    regex:
+    - Location:\s*([^\s]+)
+    type: regex
+  - part: header
+    regex:
+    - '[?&]state=([^&]+)'
+    - '[?&]code=([^&]+)'
+    type: regex
+  matchers:
+  - part: header
+    regex:
+    - Location:.*[?&]code=
+    type: regex
+  - condition: and
+    dsl:
+    - status_code == 302
+    - '!contains(tolower(location), ''state='') || contains(tolower(location), ''state=predictable123'')
+      || contains(location, ''state=&'') || ends_with(location, ''state='')'
+    type: dsl
+  matchers-condition: and
+  max-redirects: 3
+  method: GET
+  path:
+  - '{{BaseURL}}/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}'
+  - '{{BaseURL}}/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}&state='
+  - '{{BaseURL}}/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}&state=predictable123'
+  - '{{BaseURL}}/auth/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}'
+  - '{{BaseURL}}/oauth2/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}'
+  redirects: true
+variables:
+  client_id: test_client_{{randstr}}
+  redirect_uri: https://example.com/callback

@@ -1,0 +1,116 @@
+id: config-ini
+
+info:
+  name: INI Configuration File Exposure with Credential Detection
+  author: geeknik
+  severity: high
+  description: |
+    Detects exposed INI configuration files containing actual credentials,
+    API keys, or database passwords with high-confidence pattern matching.
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/config.ini"
+      - "{{BaseURL}}/configuration.ini"
+      - "{{BaseURL}}/settings.ini"
+      - "{{BaseURL}}/database.ini"
+      - "{{BaseURL}}/db.ini"
+      - "{{BaseURL}}/app.ini"
+      - "{{BaseURL}}/application.ini"
+      - "{{BaseURL}}/.env.ini"
+      - "{{BaseURL}}/conf/config.ini"
+      - "{{BaseURL}}/config/config.ini"
+      - "{{BaseURL}}/config/database.ini"
+      - "{{BaseURL}}/config/settings.ini"
+      - "{{BaseURL}}/application/config.ini"
+      - "{{BaseURL}}/application/configs/application.ini"
+      - "{{BaseURL}}/app/config/config.ini"
+      - "{{BaseURL}}/etc/config.ini"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      # Must be valid INI file format
+      - type: regex
+        regex:
+          - '^\[[\w\s]+\]'  # INI section header like [database] or [api settings]
+          - '^\w[\w\s]*\s*=\s*.+'  # INI key=value pair
+        condition: and
+
+      # Must contain actual credentials/secrets (high-confidence patterns)
+      - type: regex
+        regex:
+          # Database credentials with values
+          - '(db_password|database_password|db_pass|mysql_password|postgres_password)\s*=\s*[^\s\n]{8,}'
+          - '(db_user|database_user|mysql_user|postgres_user)\s*=\s*[^\s\n]+'
+
+          # API keys with entropy
+          - '(api_key|apikey|api_secret)\s*=\s*[a-zA-Z0-9_\-]{32,}'
+          - '(secret_key|secret|private_key)\s*=\s*[a-zA-Z0-9_\-]{32,}'
+          - '(access_token|auth_token)\s*=\s*[a-zA-Z0-9_\-\.]{20,}'
+
+          # AWS credentials
+          - 'aws_access_key_id\s*=\s*AKIA[0-9A-Z]{16}'
+          - 'aws_secret_access_key\s*=\s*[a-zA-Z0-9/\+=]{40}'
+
+          # Connection strings with passwords
+          - 'connection_string\s*=\s*.*(password|pwd)=[^\s;]+'
+          - 'dsn\s*=\s*.*(password|pwd)=[^\s;]+'
+
+          # SMTP credentials
+          - '(smtp_password|mail_password|email_password)\s*=\s*[^\s\n]{6,}'
+
+          # Encryption keys
+          - '(encryption_key|encrypt_key|cipher_key)\s*=\s*[a-zA-Z0-9+/=]{16,}'
+        condition: or
+
+      # Exclude common false positives
+      - type: word
+        words:
+          - "example_password"
+          - "your_password_here"
+          - "changeme"
+          - "INSERT_PASSWORD"
+          - "TODO"
+          - "PLACEHOLDER"
+          - "xxxxxx"
+          - "<password>"
+          - "password123"
+          - "test123"
+        negative: true
+
+      # Exclude HTML/error responses
+      - type: word
+        part: header
+        words:
+          - "text/html"
+          - "application/json"
+        negative: true
+
+      # Must have reasonable file size (not empty, not huge)
+      - type: dsl
+        dsl:
+          - "len(body) > 50 && len(body) < 65536"
+
+    extractors:
+      - type: regex
+        name: database_creds
+        regex:
+          - '(db_password|database_password)\s*=\s*([^\s\n]+)'
+        group: 2
+
+      - type: regex
+        name: api_keys
+        regex:
+          - '(api_key|secret_key)\s*=\s*([a-zA-Z0-9_\-]{32,})'
+        group: 2
+
+      - type: regex
+        name: aws_keys
+        regex:
+          - 'aws_access_key_id\s*=\s*(AKIA[0-9A-Z]{16})'
+        group: 1

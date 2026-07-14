@@ -1,0 +1,37 @@
+id: openclaw-cors-misconfiguration
+
+info:
+  name: OpenClaw CORS Misconfiguration
+  author: lobster-guard
+  severity: high
+  description: |
+    Tests for CORS origin reflection on OpenClaw API endpoints.
+    A reflected origin allows cross-site credential theft via browser-based attacks.
+  tags: openclaw,cors,misconfiguration
+  remediation: Configure allowed_origins in OpenClaw Gateway config to restrict CORS to trusted domains only. Never reflect arbitrary origins.
+  classification:
+    cwe-id: CWE-942
+  metadata:
+    max-request: 3
+    verified: false
+    product: openclaw
+    vendor: openclaw
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/chat/completions"
+      - "{{BaseURL}}/__openclaw/a2ui/api/sessions/list"
+      - "{{BaseURL}}/__openclaw__/a2ui/api/sessions/list"
+    headers:
+      Origin: "https://evil-attacker.com"
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Access-Control-Allow-Origin: https://evil-attacker.com"
+      - type: word
+        part: header
+        words:
+          - "Access-Control-Allow-Credentials"

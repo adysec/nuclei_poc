@@ -1,0 +1,58 @@
+# gap: grafana-tempo-anonymous-api
+id: grafana-tempo-anonymous-api
+
+info:
+  name: Grafana Tempo Trace Query API Anonymous Access
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an anonymously accessible Grafana Tempo trace query API by
+    probing /api/search and matching the canonical Tempo JSON shape
+    `{"traces":[…],"metrics":{"inspectedTraces":…}}`. Self-hosted
+    Tempo bound to 0.0.0.0 returns trace IDs, span metadata, and
+    service.name attributes to any caller. The query API combined with
+    /api/traces/{traceID} discloses full distributed traces — request
+    URLs, HTTP headers (including Authorization bearer tokens),
+    SQL/cache query payloads, and user-identifier attributes that
+    constitute in-memory secret and credential exposure across the
+    instrumented services. Class detection — matches Tempo's
+    documented JSON envelope, not vendor banner.
+  reference:
+    - https://grafana.com/docs/tempo/latest/api_docs/
+    - https://grafana.com/docs/tempo/latest/operations/authentication/
+  tags: custom,exposures,grafana,tempo,observability,tracing,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/search?limit=1"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"traces"\s*:\s*(\[|null)'
+      - type: word
+        part: body
+        words:
+          - 'inspectedTraces'
+
+    extractors:
+      - type: regex
+        part: body
+        name: trace-service-names
+        regex:
+          - '"rootServiceName"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

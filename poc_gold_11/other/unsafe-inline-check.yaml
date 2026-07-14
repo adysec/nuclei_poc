@@ -1,0 +1,38 @@
+htmlhint:
+  alt-require: true
+  attr-lowercase: true
+  attr-no-duplication: true
+  attr-value-double-quotes: true
+  doctype-first: false
+  head-script-disabled: true
+  id-unique: true
+  inline-script-disabled: true
+  space-tab-mixed-disabled: space
+  spec-char-escape: true
+  style-disabled: true
+  tag-pair: true
+  tagname-lowercase: true
+id: unsafe-inline-check
+info:
+  author:
+  - Your Name Here
+  description: Checks for unsafe inline in HTML files.
+  name: Unsafe Inline Check
+  severity: low
+requests:
+- matchers:
+  - type: word
+    words:
+    - <script>
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  script: "response = http.get(\"/\")\nif '<script>' in response.text:\n  htmlhint_output\
+    \ = subprocess.run([\"echo\", response.text, \"|\", \"htmlhint\", \"--config=htmlhint.yaml\"\
+    , \"-\"], capture_output=True, text=True, shell=True)\n\n  if \"inline-script-disabled\"\
+    \ not in htmlhint_output.stdout:\n    info(\"No unsafe inline found.\")\n    return\n\
+    \n  security_warning(\"Unsafe inline found in HTML file!\")\nelse:\n  info(\"\
+    No inline scripts found in HTML file.\")\n"
+tags:
+- html
+- inline-script

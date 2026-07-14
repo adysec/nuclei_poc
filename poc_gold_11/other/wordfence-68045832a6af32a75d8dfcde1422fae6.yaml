@@ -1,0 +1,58 @@
+id: wordfence-68045832a6af32a75d8dfcde1422fae6
+
+info:
+  name: "Wordfence Security - Firewall & Malware Scan <= 3.3.6 - Stored Cross-Site Scripting"
+  author: topscoder
+  severity: medium
+  description: "WordPress plugin Wordfence versions 3.3.6 and older were vulnerable to Cross-Site Scripting via the unlockEmail functionality."
+  reference:
+    - https://packetstormsecurity.com/files/117565/WordPress-Wordfence-Security-3.3.5-Cross-Site-Scripting.html
+    - https://seclists.org/fulldisclosure/2012/Oct/139
+    - https://www.wordfence.com/wp-content/uploads/2017/11/changelog.txt
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.5
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/wordfence/"
+    google-query: inurl:"/wp-content/plugins/wordfence/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wordfence,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordfence/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wordfence"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.3.6')

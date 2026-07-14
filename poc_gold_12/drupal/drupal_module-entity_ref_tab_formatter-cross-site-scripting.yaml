@@ -1,0 +1,53 @@
+
+id: drupal_module-entity_ref_tab_formatter-cross-site-scripting
+info:
+  name: drupal_module-entity_ref_tab_formatter-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to show referenced entities in tabs. The module doesnt sufficiently sanitize the body fields of the referenced entities when it prints them to the tabs. This vulnerability is mitigated by the fact that an attacker must have a role with the permission create/edit content of the content type that is referenced."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-008
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/entity_ref_tab_formatter/"
+    google-query: "inurl:'/sites/all/modules/entity_ref_tab_formatter/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/entity_ref_tab_formatter/entity_ref_tab_formatter.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'entity_ref_tab_formatter'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

@@ -1,0 +1,51 @@
+id: jannah-2901d81f-b29a-481c-9fc5-64a7b71b29c8
+
+info:
+  name: >
+    Jannah <= 7.6.0 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/2901d81f-b29a-481c-9fc5-64a7b71b29c8?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/jannah/"
+    google-query: inurl:"/wp-content/themes/jannah/"
+    shodan-query: 'http.html:"wp-content/themes/jannah/"'
+  tags: cve,wordpress,wp-theme,jannah,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/jannah/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jannah"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 7.6.0')

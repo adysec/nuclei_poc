@@ -1,0 +1,51 @@
+
+id: drupal_module-bing_autosuggest_api-cross-site-scripting
+info:
+  name: drupal_module-bing_autosuggest_api-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to use the Bing Autosuggest API. The module doesnt sufficiently sanitize a value used to populate an API request."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-058
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:None/CI:None/II:Some/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/bing_autosuggest_api/"
+    google-query: "inurl:'/sites/all/modules/bing_autosuggest_api/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/bing_autosuggest_api/bing_autosuggest_api.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'bing_autosuggest_api'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

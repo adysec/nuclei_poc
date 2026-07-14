@@ -1,0 +1,54 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(xss_payloads)}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - part: body
+    regex:
+    - (?i)<xsg>al\('xs'\)</xsg>(?:<[^>]+>)*$
+    - (?i)<script[^>]*>.*"; alert\('xss'\); //.*</script>
+    - (?i)<script[^>]*>[^<]*"[^"\\]*"-alert\(document.domain\)-"[^<]*</script>
+    - (?i)<script[^>]*>[^<]*'[^"\\]*'-alert\(document.domain\)-'[^<]*</script>
+    - (?i)<script[^>]*>.*'-alert\(document.domain\)-'.*</script>
+    - (?i)href\s*=\s*["']?javascript:alert\(document.domain\)
+    - (?i)<[^>]*xss x="y" onmouseover="alert\('xss'\)"[^>]*>
+    - (?i)<[^>]* x="y" onmouseover="alert\('xss'\)"[^>]*>
+    - (?i)<[^>]* x="y" onscrollsend="alert\('xs'\)"[^>]*>
+    type: regex
+  - negative: true
+    part: body
+    regex:
+    - (?i)<script[^>]*>.*\\"; alert\('xss'\); //.*</script>
+    - (?i)<script[^>]*>[^<]*\\"; alert\('xss'\); //[^<]*</script>
+    - (?i)<script[^>]*>[^<]*\\'-alert\(document.domain\)-'[^<]*</script>
+    - (?i)<script[^>]*>[^<]*"[^"<]*><xss x="y" onmouseover="alert\('xss'\)"></xss>[^"<]*"[^<]*</script>
+    type: regex
+  - part: header
+    type: word
+    words:
+    - text/html
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    xss_payloads:
+    - <xsg>al('xs')</xsg>
+    - '"; alert(''xss''); //'
+    - '"-alert(document.domain)-"'
+    - '''-alert(document.domain)-'''
+    - javascript:alert(document.domain)
+    - '"><xss x="y" onmouseover="alert(''xss'')"></xss>'
+    - </script><xss x="y" onmouseover="alert('xss')"></xss>
+    - '" x="y" onmouseover="alert(''xss'')'
+    - '" x="y" onscrollsend="alert(''xs'')'
+id: xss-combined-fuzz-context-aware
+info:
+  author: yourname
+  description: Fuzzes all query parameters for various reflected XSS vulnerabilities
+    considering the reflection context.
+  name: Combined Reflected XSS Checks with Advanced Fuzzing (Context-Aware)
+  severity: medium

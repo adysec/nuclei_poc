@@ -1,0 +1,43 @@
+id: javascript-env 6
+info:
+  author: pdp
+  description: Detects common JavaScript environment configuration files.
+  name: JavaScript Environment Config
+  severity: low
+  tags: javascript,config,exposure
+requests:
+- attack: sniper
+  matchers:
+  - status:
+    - 200
+    type: status
+  - dsl:
+    - 'contains(tolower(all_headers), ''content-type: application/javascript'')'
+    part: header
+    type: dsl
+  - condition: or
+    part: body
+    type: word
+    words:
+    - module.exports
+    - const audience
+    - const domain
+    - NODE_ENV
+    - LOG_LEVEL
+    - TOKEN
+    - KEY
+    - PASSWORD
+    - VERSION
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /env.prod.js HTTP/1.1
+
+    Host: {{Subdomains}}
+
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101
+    Firefox/55
+
+    '
+  threads: 100

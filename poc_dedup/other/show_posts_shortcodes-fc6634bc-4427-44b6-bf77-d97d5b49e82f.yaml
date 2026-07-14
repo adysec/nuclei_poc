@@ -1,0 +1,51 @@
+id: show_posts_shortcodes-fc6634bc-4427-44b6-bf77-d97d5b49e82f
+
+info:
+  name: >
+    Show Posts list <= 1.1.0 - Authenticated (Contributor+) Stored Cross-Site Scripting via Shortcode
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fc6634bc-4427-44b6-bf77-d97d5b49e82f?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/show-posts-shortcodes/"
+    google-query: inurl:"/wp-content/plugins/show-posts-shortcodes/"
+    shodan-query: 'http.html:"wp-content/plugins/show-posts-shortcodes/"'
+  tags: cve,wordpress,wp-plugin,show-posts-shortcodes,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/show-posts-shortcodes/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "show-posts-shortcodes"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.1.0')

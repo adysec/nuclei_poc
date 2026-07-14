@@ -1,0 +1,51 @@
+id: shopify_plugin-6f9cedea-086c-479b-a1ae-e124df1e09f1
+
+info:
+  name: >
+    Shopify <= 1.0.0 - Authenticated (Contributor+) Local File Inclusion
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6f9cedea-086c-479b-a1ae-e124df1e09f1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/shopify-plugin/"
+    google-query: inurl:"/wp-content/plugins/shopify-plugin/"
+    shodan-query: 'http.html:"wp-content/plugins/shopify-plugin/"'
+  tags: cve,wordpress,wp-plugin,shopify-plugin,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/shopify-plugin/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "shopify-plugin"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.0.0')

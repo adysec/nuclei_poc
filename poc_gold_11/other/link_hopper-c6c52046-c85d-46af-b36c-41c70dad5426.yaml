@@ -1,0 +1,51 @@
+id: link_hopper-c6c52046-c85d-46af-b36c-41c70dad5426
+
+info:
+  name: >
+    Link Hopper <= 2.5 - Authenticated (Administrator+) Stored Cross-Site Scripting via 'hop_name' Parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/c6c52046-c85d-46af-b36c-41c70dad5426?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/link-hopper/"
+    google-query: inurl:"/wp-content/plugins/link-hopper/"
+    shodan-query: 'http.html:"wp-content/plugins/link-hopper/"'
+  tags: cve,wordpress,wp-plugin,link-hopper,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/link-hopper/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "link-hopper"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.5')

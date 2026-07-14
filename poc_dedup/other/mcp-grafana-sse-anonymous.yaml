@@ -1,0 +1,84 @@
+# gap: mcp-grafana-sse-anonymous
+id: mcp-grafana-sse-anonymous
+
+info:
+  name: Grafana MCP Server (SSE Transport) Anonymous Access
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an instance of grafana/mcp-grafana started with `-t sse`
+    bound to a network interface. The SSE transport mode (deprecated
+    upstream but still widely deployed via the Docker README) listens
+    on 0.0.0.0:8000 by default and exposes `/healthz` and `/sse`
+    without auth. A connected client inherits the server's
+    `GRAFANA_API_KEY` ambient credential — that key is typically a
+    Grafana admin/editor token, so an anonymous connector gains
+    write access to dashboards, datasource enumeration, team
+    membership, alert rules, and (via tools that wrap PromQL) the
+    backing time-series stores.
+
+    Class detection keys on the mcp-go SSE handshake event
+    (`event: endpoint` followed by a `data: /messages/?session_id=`
+    line) — a signature of the upstream go-mcp SSE transport that
+    distinguishes it from generic SSE streams. The `/healthz`
+    response (`ok`) is the cheap pre-filter; the `/sse` Accept-stream
+    handshake is the confirming signal.
+  reference:
+    - https://mcpsec.dev/advisories/2025-09-02-grafana-mcp-unauthenticated-sse-access/
+    - https://github.com/grafana/mcp-grafana
+    - https://github.com/mark3labs/mcp-go
+  tags: custom,exposures,mcp,grafana,ai,llm,sse,disclosure,cwe-306
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/healthz"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "ok"
+    # Internal pre-filter — does not produce a finding on its own.
+    internal: true
+
+  - raw:
+      - |
+        GET /sse HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/event-stream
+        Cache-Control: no-cache
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "text/event-stream"
+      - type: word
+        part: body
+        # mcp-go's canonical SSE handshake event: an `event: endpoint`
+        # line followed by `data: /messages/?session_id=...`.
+        words:
+          - "event: endpoint"
+          - "data: /messages/?session_id="
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: mcp-session-endpoint
+        regex:
+          - '(data:\s*/messages/\?session_id=[a-f0-9-]+)'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "Server"

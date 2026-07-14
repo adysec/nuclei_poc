@@ -1,0 +1,51 @@
+id: job_board-1eb1622f-19fb-472e-871b-9a456f80f390
+
+info:
+  name: >
+    Job Board by BestWebSoft <= 1.2.1 - Cross-Site Request Forgery to Stored Cross-Site Scripting via $_GET Array Storage
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1eb1622f-19fb-472e-871b-9a456f80f390?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/job-board/"
+    google-query: inurl:"/wp-content/plugins/job-board/"
+    shodan-query: 'http.html:"wp-content/plugins/job-board/"'
+  tags: cve,wordpress,wp-plugin,job-board,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/job-board/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "job-board"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.1')

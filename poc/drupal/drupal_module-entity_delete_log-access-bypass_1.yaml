@@ -1,0 +1,53 @@
+
+id: drupal_module-entity_delete_log-access-bypass
+info:
+  name: drupal_module-entity_delete_log-access-bypass
+  author: me
+  severity: medium
+  description: "The Entity Delete Log module tracks the deletion of configured entity types, such as node or comments. It does not add sufficient permission to the log report page, allowing an attacker to view information from deleted entities."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-007
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/entity_delete_log/"
+    google-query: "inurl:'/sites/all/modules/entity_delete_log/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/entity_delete_log/entity_delete_log.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'entity_delete_log'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 1.1.1')

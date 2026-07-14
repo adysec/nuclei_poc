@@ -1,0 +1,38 @@
+# gap: setup-wp
+id: setup-wp
+
+info:
+  name: WordPress Installer setup-config.php Re-Runnable
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects a WordPress installation that exposes
+    /wp-admin/setup-config.php?step=1 in a re-runnable state. When
+    the installer wizard is reachable on a live site, an attacker
+    can submit attacker-controlled database credentials, point the
+    site at their own DB, or recover sensitive install metadata —
+    effectively taking over the application.
+  reference:
+    - https://github.com/coffinxp/nuclei-templates/blob/main/wp-setup-config.yaml
+    - https://wordpress.org/documentation/article/how-to-install-wordpress/
+  tags: custom,misconfigurations,wordpress,installer
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-admin/setup-config.php?step=1"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "Database Name"
+          - 'name="dbname"'
+        condition: or
+      - type: word
+        part: body
+        words:
+          - "WordPress"

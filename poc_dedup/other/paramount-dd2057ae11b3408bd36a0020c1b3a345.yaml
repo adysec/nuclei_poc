@@ -1,0 +1,59 @@
+id: paramount-dd2057ae11b3408bd36a0020c1b3a345
+
+info:
+  name: >
+    Paramount (All Versions) - Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    The Paramount theme for WordPress is vulnerable to Reflected Cross-Site Scripting via an unknown parameter in all versions due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/346cc9af-6a1b-444c-9483-94f940cd18ad?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/paramount/"
+    google-query: inurl:"/wp-content/themes/paramount/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,paramount,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/paramount/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "paramount"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

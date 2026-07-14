@@ -1,0 +1,68 @@
+# gap: praisonai-unauth-agents-api
+id: praisonai-unauth-agents-api
+
+info:
+  name: PraisonAI Flask API Server Exposes /agents Without Authentication (CVE-2026-44338)
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects the PraisonAI agent-orchestration server (api_server.py)
+    serving its `/agents` endpoint without authentication. The legacy
+    Flask API shipped with `AUTH_ENABLED=False` / `AUTH_TOKEN=None`
+    hard-coded by default; anonymous callers receive the configured
+    agent inventory (with file paths, model selections, and tool
+    bindings) and can also invoke `/chat` to execute the workflows.
+    Sysdig observed in-the-wild scanning of the exact endpoint within
+    3h44m of disclosure. Fixed in 4.6.34.
+
+    Class signal: the response JSON envelope carries the
+    `"agent_file"` + `"agents"` top-level key pair, which is unique
+    to api_server.py's response shape and does not collide with
+    generic /agents handlers used by other agent frameworks.
+  reference:
+    - https://www.sysdig.com/blog/cve-2026-44338-praisonai-authentication-bypass-in-under-4-hours-and-the-growing-trend-of-rapid-exploitation
+    - https://github.com/advisories/GHSA-6rmh-7xcm-cpxj
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-44338
+  tags: custom,exposures,praisonai,ai,llm,agents,cve,cve-2026-44338,cwe-306
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/agents"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        case-insensitive: true
+        words:
+          - "application/json"
+      - type: word
+        part: body
+        # api_server.py envelope: top-level agent_file + agents pair.
+        words:
+          - '"agent_file"'
+          - '"agents"'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: agent-file
+        regex:
+          - '"agent_file"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: agent-names
+        regex:
+          - '"name"\s*:\s*"([^"]+)"\s*,\s*"role"'
+        group: 1
+      - type: regex
+        part: body
+        name: agent-models
+        regex:
+          - '"llm"\s*:\s*"([^"]+)"'
+        group: 1

@@ -1,0 +1,60 @@
+id: wplms-9951a84eab4170ced8992613b65f65d2
+
+info:
+  name: "WPLMS Learning Management System for WordPress, WordPress LMS <= 1.8.4.1 - Privilege Escalation"
+  author: topscoder
+  severity: high
+  description: "The WPLMS theme for WordPress is vulnerable to Privilege Escalation in versions 1.5.2 to 1.8.4.1 via the 'wp_ajax_import_data' AJAX action. This makes it possible for authenticated attackers to change otherwise restricted settings and potentially create a new accessible admin account."
+  reference:
+    - https://packetstormsecurity.com/files/130291/
+    - https://www.rapid7.com/db/modules/auxiliary/admin/http/wp_wplms_privilege_escalation/
+    - https://twitter.com/_wpscan_/status/564874637679820800?lang=ca
+    - https://wpscan.com/vulnerability/7785
+    - https://themeforest.net/item/wplms-learning-management-system/6780226
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/themes/wplms/"
+    google-query: inurl:"/wp-content/themes/wplms/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-theme,wplms,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/wplms/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wplms"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.8.4.1')

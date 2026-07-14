@@ -1,0 +1,35 @@
+id: wordpress-setup
+
+info:
+  name: Wordpress new database Setup - Detect
+  author: rix4uni
+  severity: medium
+  description: It allows an attacker can create a new database.
+  reference:
+    - https://twitter.com/0xJin/status/1399809593262358528?t=8qZIUP4_Qbtd5qASWNBgGw&s=09
+    - https://smaranchand.com.np/2020/04/misconfigured-wordpress-takeover-to-remote-code-execution
+  metadata:
+    google-query:
+      - inurl:"/wp-admin/setup-config.php?step=1"
+    shodan-query:
+      - http.title:"wordpress"
+  tags: wordpress,authetication,misconfig
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-admin/setup-config.php?step=1"
+      - "{{BaseURL}}/wordpress/wp-admin/setup-config.php?step=1"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<td><input name="dbname" id="dbname" type="text" size="25" value="wordpress" /></td>'
+          - "Database Name"
+
+      - type: status
+        status:
+          - 200

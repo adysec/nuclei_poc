@@ -1,0 +1,51 @@
+id: the_guardian_news_feed-e9065f61-d899-44a3-a43a-3eeeeedaa6f1
+
+info:
+  name: >
+    The Guardian News Feed <= 1.2 - Cross-Site Request Forgery to Settings Update
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e9065f61-d899-44a3-a43a-3eeeeedaa6f1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/the-guardian-news-feed/"
+    google-query: inurl:"/wp-content/plugins/the-guardian-news-feed/"
+    shodan-query: 'http.html:"wp-content/plugins/the-guardian-news-feed/"'
+  tags: cve,wordpress,wp-plugin,the-guardian-news-feed,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/the-guardian-news-feed/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "the-guardian-news-feed"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2')

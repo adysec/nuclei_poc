@@ -1,0 +1,55 @@
+id: exacqvision-webservice-version-detect
+
+info:
+  name: exacqVision Web Service - Version Detection via /health.web (CVE-2021-27656)
+  author: Mark Dube
+  severity: info
+  description: >
+    Queries /health.web to extract exacqVision Web Service version fields.
+    This endpoint historically exposed version and OS details without auth (CVE-2021-27656).
+    Johnson Controls advised upgrading the Web Service to v21.03+ (v21.03.3+ is the patched train).
+  reference:
+    - https://www.cisa.gov/news-events/ics-advisories/icsa-21-077-01
+    - https://support.avigilon.com/s/article/ACM--CVE202127656-Johnson-Controls-exacqVision-Web-Service
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-27656
+  tags: tech,exacqvision,ics,exposure,cve,fingerprint
+  metadata:
+    vendor: Johnson Controls
+    product: exacqVision Web Service
+    cve: CVE-2021-27656
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/health.web"
+    headers:
+      Accept: application/json
+
+    # Be strict enough to avoid noise but tolerant across versions
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        condition: and
+        words:
+          - '"version"'
+          - '"webServer"' # observed JSON key in vulnerable responses
+          - '"service"'
+
+    # Extract commonly seen fields from JSON response
+    extractors:
+      - type: json
+        name: exacq_webserver_version
+        json:
+          - ".version.webServer" # e.g., "9.6.2.143398"
+      - type: json
+        name: exacq_service_version
+        json:
+          - ".version.service" # sometimes mirrors webServer
+      - type: json
+        name: exacq_evapi_version
+        json:
+          - ".version.evapi"

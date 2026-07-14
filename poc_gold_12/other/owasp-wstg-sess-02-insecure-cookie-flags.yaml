@@ -1,0 +1,37 @@
+# gap: owasp-wstg-sess-02-insecure-cookie-flags
+id: owasp-wstg-sess-02-insecure-cookie-flags
+
+info:
+  name: Session Cookie Missing HttpOnly Flag
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects Set-Cookie responses that issue a well-known session cookie
+    (PHPSESSID, JSESSIONID, sessionid, connect.sid, laravel_session,
+    ASP.NET_SessionId) without the HttpOnly attribute on that line.
+    The negative is scoped per Set-Cookie line via a multi-line regex so
+    HttpOnly on an unrelated cookie does not suppress the finding. Missing
+    HttpOnly allows client-side scripts to read the session identifier and
+    enables session theft via cross-site scripting. Residual limitation:
+    if the same session cookie name is set twice in one response and only
+    one has HttpOnly, this detection may misreport.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes
+    - https://owasp.org/www-community/HttpOnly
+  tags: custom,misconfig,cookies,session,owasp,wstg
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?im)^set-cookie:\s*(PHPSESSID|JSESSIONID|sessionid|connect\.sid|laravel_session|ASP\.NET_SessionId)=[^\r\n]*$'
+      - type: regex
+        part: header
+        negative: true
+        regex:
+          - '(?im)^set-cookie:\s*(PHPSESSID|JSESSIONID|sessionid|connect\.sid|laravel_session|ASP\.NET_SessionId)=[^\r\n]*HttpOnly[^\r\n]*$'

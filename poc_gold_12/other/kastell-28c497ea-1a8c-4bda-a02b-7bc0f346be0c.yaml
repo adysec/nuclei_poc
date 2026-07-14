@@ -1,0 +1,51 @@
+id: kastell-28c497ea-1a8c-4bda-a02b-7bc0f346be0c
+
+info:
+  name: >
+    Kastell <= 2.0 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/28c497ea-1a8c-4bda-a02b-7bc0f346be0c?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/kastell/"
+    google-query: inurl:"/wp-content/themes/kastell/"
+    shodan-query: 'http.html:"wp-content/themes/kastell/"'
+  tags: cve,wordpress,wp-theme,kastell,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/kastell/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kastell"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.0')

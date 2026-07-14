@@ -1,0 +1,51 @@
+id: kirki-1a4414b1-6a49-42f8-9927-93763d1502ce
+
+info:
+  name: >
+    Kirki <= 6.0.6 - Missing Authorization to Authenticated (Subscriber+) Sensitive Form Submission Data Exposure via 'kirki_wp_admin_get_apis' Action
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/1a4414b1-6a49-42f8-9927-93763d1502ce?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/kirki/"
+    google-query: inurl:"/wp-content/plugins/kirki/"
+    shodan-query: 'http.html:"wp-content/plugins/kirki/"'
+  tags: cve,wordpress,wp-plugin,kirki,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/kirki/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "kirki"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 6.0.6')

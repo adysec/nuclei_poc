@@ -1,0 +1,71 @@
+http:
+- extractors:
+  - name: mssql_dump_info
+    part: body
+    regex:
+    - (?mi)(?:CREATE|DROP|ALTER)\s+(TABLE|DATABASE|SCHEMA)\s+[^\s;]+
+    - (?mi)BACKUP\s+DATABASE|--\s*SQL\s+Server\s+dump
+    type: regex
+  - name: table_names
+    part: body
+    regex:
+    - (?mi)CREATE\s+TABLE\s+([^\s(]+)
+    type: regex
+  headers:
+    Range: bytes=0-3000
+  matchers:
+  - part: body
+    regex:
+    - (?mi)(?:CREATE|DROP|ALTER)\s+(TABLE|DATABASE|SCHEMA)\s+[^\s;]+
+    - (?mi)INSERT\s+INTO\s+[^\s;]+
+    - (?mi)BACKUP\s+DATABASE
+    - (?mi)--\s*SQL\s+Server\s+dump|--\s*Microsoft\s+SQL\s+Server
+    type: regex
+  - condition: or
+    status:
+    - 200
+    - 206
+    type: status
+  matchers-condition: and
+  max-size: 2000
+  method: GET
+  path:
+  - '{{BaseURL}}{{paths}}'
+  payloads:
+    paths:
+    - /mssql_backup.sql
+    - /db_mssql.sql
+    - /database_mssql.sql
+    - /mssql_dump.sql
+    - /{{Host}}_mssql.sql
+    - /{{Host}}_db_mssql.sql
+    - /mssql.sql
+    - /sqlserver.sql
+    - /backup_mssql.sql
+    - /data_mssql.sql
+    - /dump_mssql.sql
+    - /localhost_mssql.sql
+    - /site_mssql.sql
+    - /users_mssql.sql
+    - /www_mssql.sql
+    - /temp_mssql.sql
+    - /sql_mssql.sql
+    - /db/mssql_backup.sql
+    - /backups/mssql_dump.sql
+    - /wp-content/uploads/mssql.sql
+    - /wp-content/mssql_backup.sql
+    - /data/mssql_db.sql
+id: ai-mssql-dump-files
+info:
+  author: xai
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  description: A Microsoft SQL Server (MSSQL) dump file was found, potentially exposing
+    sensitive database information.
+  metadata:
+    max-request: 22
+  name: MSSQL - Dump Files
+  severity: high
+  tags: exposure, backup, mssql

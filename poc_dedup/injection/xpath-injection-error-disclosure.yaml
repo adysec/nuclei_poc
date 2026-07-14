@@ -1,0 +1,74 @@
+# gap: xpath-injection-error-disclosure
+id: xpath-injection-error-disclosure
+
+info:
+  name: XPath Injection Error Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects XPath injection by sending unbalanced-quote / unbalanced-
+    parenthesis payloads through common query parameters and matching
+    runtime-specific XPath parser exception markers in the response
+    body. The exception class signatures are stable across XPath
+    implementations: `javax.xml.xpath.XPathException` /
+    `XPathSyntaxException` / `org.apache.xpath.*` for Java,
+    `System.Xml.XPath.XPathException` for .NET, libxml2 / SimpleXML
+    parser errors for PHP, and lxml `XPathEvalError` for Python.
+
+    XPath injection enables authentication bypass against XPath-driven
+    login flows and arbitrary node-set extraction from XML stores
+    (which often contain configuration files with embedded
+    credentials, customer records, and SSO assertion fragments). The
+    error-disclosure variant proves the parameter reaches an XPath
+    evaluator — the next step (blind / boolean / time-based
+    extraction) follows from there. Class detection — keys on parser
+    exception class names, not vendor banner.
+  reference:
+    - https://owasp.org/www-community/attacks/XPATH_Injection
+    - https://cwe.mitre.org/data/definitions/643.html
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/09-Testing_for_XPath_Injection
+  tags: custom,vulnerabilities,xpath,injection,owasp,cwe-643
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?id=%27or%271%27%3D%271"
+      - "{{BaseURL}}/?q=%27or%271%27%3D%271"
+      - "{{BaseURL}}/?search=%27or%271%27%3D%271"
+      - "{{BaseURL}}/?user=%27or%271%27%3D%271"
+      - "{{BaseURL}}/?name=%27or%271%27%3D%271"
+      - "{{BaseURL}}/?lookup=%27%5D%7C%2F%2F%2A%5B%27"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'javax\.xml\.xpath\.XPath(Exception|SyntaxException)'
+          - 'org\.apache\.xpath\.'
+          - 'XPathEvalError'
+          - 'System\.Xml\.XPath\.XPathException'
+          - 'MS\.Internal\.Xml\.'
+          - 'SimpleXMLElement::xpath'
+          - 'lxml\.etree\.XPathEvalError'
+          - 'Expression must evaluate to a node-set'
+          - 'A character was found that cannot be encoded'
+          - 'XPath error at character'
+        condition: or
+      # Guard: payload appears in body indicates reflection only —
+      # require an exception marker (above) to confirm parser invocation.
+      - type: word
+        part: header
+        negative: true
+        words:
+          - "X-Forbidden-Reason"
+        case-insensitive: true
+
+    extractors:
+      - type: regex
+        part: body
+        name: xpath-error
+        regex:
+          - '(javax\.xml\.xpath\.[A-Z][a-zA-Z]+|System\.Xml\.XPath\.[A-Z][a-zA-Z]+|lxml\.etree\.[A-Z][a-zA-Z]+)'
+        group: 1

@@ -1,0 +1,31 @@
+id: fronius-datamanager
+info:
+  name: Fronius Datamanager Inverter UI Detect
+  author: r3dcl1ff
+  severity: info
+  description: Detects local Fronius Datamanager/GEN24/Tauro UI. Non-invasive, headers/titles/realms or favicon hash.
+  tags: iiot,solar,fronius
+  metadata:
+    shodan-query: 'http.favicon.hash:1471834791 OR http.favicon.hash:1787265245 OR title:"Fronius"'
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/"
+    max-redirects: 3
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl: ["mmh3(base64(body)) == 1471834791"]
+      - type: dsl
+        dsl: ["mmh3(base64(body)) == 1787265245"]
+      - type: regex
+        part: body
+        regex: ["(?i)\\bFronius\\b"]
+      - type: regex
+        part: body
+        regex: ["(?i)\\b(Datamanager|GEN24|Tauro|Solar\\.web)\\b"]
+      - type: regex
+        part: header
+        regex: ["(?im)^www-authenticate:\\s*basic\\s+realm=\"?.*fronius.*\"?$"]

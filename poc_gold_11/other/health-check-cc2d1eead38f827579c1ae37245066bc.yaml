@@ -1,0 +1,58 @@
+id: health-check-cc2d1eead38f827579c1ae37245066bc
+
+info:
+  name: "Health Check & Troubleshooting <= 1.2.3 - Path Traversal"
+  author: topscoder
+  severity: medium
+  description: "The Health Check & Troubleshooting plugin for WordPress is vulnerable to Path Traversal in versions up to, and including, 1.2.3 via the POST parameter 'file' where it is used unchecked with 'file_get_contents'. This allows authenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information."
+  reference:
+    - https://www.synacktiv.com/ressources/advisories/WordPress_Health_Check_1.2.3_Vulnerabilities.pdf
+    - https://plugins.trac.wordpress.org/changeset/2011772/health-check
+    - https://wpscan.com/vulnerability/5eecc4a7-0b44-495d-9352-78dccebfc72a
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 4.3
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/health-check/"
+    google-query: inurl:"/wp-content/plugins/health-check/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,health-check,medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/health-check/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "health-check"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.2.3')

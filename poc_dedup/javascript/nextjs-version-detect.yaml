@@ -1,0 +1,57 @@
+id: nextjs-version-detect
+
+info:
+  name: Next.js Version Detection
+  author: slcyber
+  severity: info
+  description: |
+    Detects Next.js version and identifies potentially vulnerable installations.
+    Use this template to enumerate Next.js applications before running exploit checks.
+  reference:
+    - https://nextjs.org/docs
+  metadata:
+    verified: true
+    max-request: 2
+    product: nextjs
+    vendor: vercel
+  tags: tech,nextjs,fingerprint,version
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/_next/static/chunks/main.js"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "X-Powered-By: Next.js"
+
+      - type: regex
+        part: body
+        regex:
+          - 'self\.__next_f\.push'
+          - '\$ACTION_'
+          - '/_next/static/'
+
+    extractors:
+      - type: regex
+        name: nextjs-version
+        part: header
+        regex:
+          - 'X-Powered-By: Next\.js ([0-9]+\.[0-9]+\.[0-9]+)'
+        group: 1
+
+      - type: regex
+        name: build-id
+        part: body
+        regex:
+          - '/_next/static/([a-zA-Z0-9_-]+)/'
+        group: 1
+
+      - type: kval
+        name: server
+        kval:
+          - server

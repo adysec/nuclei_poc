@@ -1,0 +1,81 @@
+# gap: pulsar-admin-api-anonymous-tenants
+id: pulsar-admin-api-anonymous-tenants
+
+info:
+  name: Apache Pulsar Admin API Anonymous Tenant / Namespace Disclosure
+  author: TyrusRC
+  severity: high
+  description: |
+    Detects an Apache Pulsar broker where the admin REST API
+    (/admin/v2/tenants, /admin/v2/clusters, /admin/v2/brokers) is
+    reachable without authentication, returning the tenant /
+    cluster / broker catalog as a JSON array. Class signal:
+    response is a JSON array of string identifiers
+    (`["tenant-a","tenant-b",…]`) on /admin/v2/tenants, or an
+    object whose values carry the canonical Pulsar broker
+    metadata (`brokerVersion`, `serviceUrl`, `webServiceUrl`,
+    `clusterName`).
+
+    Anonymous Pulsar admin access leaks the messaging topology
+    (tenant / namespace / topic naming carries product and
+    feature identifiers) and chains directly to
+    /admin/v2/persistent/<tenant>/<ns>/<topic>/subscribe — which
+    when also anonymous lets an attacker subscribe to every
+    business event stream. Pulsar topics routinely transport
+    in-memory secrets via payload, including session
+    invalidation events with bearer tokens, password-reset
+    events with one-time codes, and CDC streams revealing
+    schema and row data. Class detection — keys on Pulsar admin
+    array / broker-metadata shape, not vendor banner.
+  reference:
+    - https://pulsar.apache.org/docs/admin-api-overview/
+    - https://pulsar.apache.org/docs/security-overview/
+  tags: custom,exposures,pulsar,apache,messaging,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/admin/v2/tenants"
+      - "{{BaseURL}}/admin/v2/clusters"
+      - "{{BaseURL}}/admin/v2/brokers"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          # Tenants returns ["tenant-a", "tenant-b"]; clusters returns ["cluster"];
+          # brokers returns object map. Match any of the canonical Pulsar shapes.
+          - '^\s*\[("[a-zA-Z0-9_\-./]+"|{"[a-zA-Z0-9_-]+"\s*:)'
+      - type: word
+        part: body
+        # Pulsar-specific markers only; generic tenant names ("public", "pulsar")
+        # and lone "standalone" excluded — they collide with many other products.
+        words:
+          - '"brokerVersion"'
+          - '"webServiceUrl"'
+          - '"webServiceUrlTls"'
+          - '"brokerServiceUrl"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: tenants
+        regex:
+          - '"([a-zA-Z0-9_\-]+)"'
+        group: 1
+      - type: regex
+        part: body
+        name: broker-version
+        regex:
+          - '"brokerVersion"\s*:\s*"([^"]+)"'
+        group: 1

@@ -1,0 +1,62 @@
+# gap: nextjs-production-source-maps-exposed
+id: nextjs-production-source-maps-exposed
+
+info:
+  name: Next.js Production Build Source Maps Exposed
+  author: TyrusRC
+  severity: medium
+  description: |
+    Detects a Next.js production deployment that ships browser source
+    maps (`.map` files under `/_next/static/chunks/`) — the result of
+    leaving `productionBrowserSourceMaps: true` in next.config.js.
+    The maps expose original source paths, API endpoints baked into
+    the bundle, internal route handlers, server-only auth helpers,
+    and frequently the names of feature-flag keys and undocumented
+    routes.
+
+    Class signal: response is a JSON source-map (`"version":3` +
+    `"sources":["webpack://_N_E/`). The `_N_E` namespace prefix is
+    Next.js-unique (set by Next's webpack config) and discriminates
+    this finding from the generic `webpack-sourcemap-disclosure`
+    upstream template, which fires on any webpack-built app.
+  reference:
+    - https://nextjs.org/docs/app/api-reference/config/next-config-js/productionBrowserSourceMaps
+    - https://github.com/vercel/next.js/blob/canary/packages/next/src/build/webpack-config.ts
+  tags: custom,exposures,nextjs,sourcemap,disclosure,cwe-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_next/static/chunks/main.js.map"
+      - "{{BaseURL}}/_next/static/chunks/webpack.js.map"
+      - "{{BaseURL}}/_next/static/chunks/pages/_app.js.map"
+      - "{{BaseURL}}/_next/static/chunks/main-app.js.map"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        # Source-map shape AND Next-specific webpack namespace prefix.
+        words:
+          - '"version":3'
+          - '"sources":'
+          - 'webpack://_N_E/'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: leaked-source-paths
+        regex:
+          - '"(webpack://_N_E/[^"]{1,200})"'
+        group: 1
+      - type: regex
+        part: body
+        name: leaked-api-routes
+        regex:
+          - '(/api/[a-zA-Z0-9_\-/\[\]\.]+)'
+        group: 1

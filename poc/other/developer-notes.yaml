@@ -1,0 +1,38 @@
+# gap: developer-notes
+id: developer-notes
+
+info:
+  name: Developer Comments in HTML Source (TODO/FIXME/Credentials Keywords)
+  author: TyrusRC
+  severity: info
+  description: |
+    Extracts HTML comment blocks from the root document that contain
+    developer-flag keywords (TODO, FIXME, XXX, HACK, DEBUG, PASSWORD,
+    API_KEY, SECRET, TOKEN, PRIVATE, INTERNAL, DEV, STAGING). Informational
+    disclosure surface intended for triage: many flagged comments are
+    harmless reminders, but a non-zero fraction leak credentials, internal
+    hostnames, or staging context. Operator must review the extracted text
+    to decide impact.
+  reference:
+    - https://github.com/panch0r3d/nuclei-templates/blob/master/developer_notes.yaml
+    - https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Web_Page_Content_for_Information_Leakage
+  tags: custom,exposure,disclosure,comments
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - '(?is)<!--\s*(TODO|FIXME|XXX|HACK|PASSWORD|API[_-]?KEY|SECRET|TOKEN|STAGING|CREDENTIAL).{0,500}?-->'
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '(?is)<!--\s*(TODO|FIXME|XXX|HACK|PASSWORD|API[_-]?KEY|SECRET|TOKEN|STAGING|CREDENTIAL).{0,500}?-->'

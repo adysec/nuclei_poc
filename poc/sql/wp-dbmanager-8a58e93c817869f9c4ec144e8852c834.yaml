@@ -1,0 +1,59 @@
+id: wp-dbmanager-8a58e93c817869f9c4ec144e8852c834
+
+info:
+  name: >
+    WP-DBManager <= 2.79.1 - Directory Traversal Allowing Arbitrary File Deletion
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/52c24f18-832b-4416-a148-a23e38b257e0?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/wp-dbmanager/"
+    google-query: inurl:"/wp-content/plugins/wp-dbmanager/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,wp-dbmanager,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-dbmanager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "wp-dbmanager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.79.2')

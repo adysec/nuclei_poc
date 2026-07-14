@@ -1,0 +1,52 @@
+
+id: drupal_module-decoupled_router-access-bypass
+info:
+  name: drupal_module-decoupled_router-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to resolve the provided Drupal path in order to find the canonical path and information about the resolved entity. This information includes entity type ID, entity ID, entity UUID and entity label. The module doesnt sufficiently check access before displaying entity labels. This leads to the display of labels on entities that are not be accessible, for example; titles of unpublished content."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-071
+  metadata:
+    security-risk: "Critical 15∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/decoupled_router/"
+    google-query: "inurl:'/sites/all/modules/decoupled_router/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/decoupled_router/decoupled_router.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'decoupled_router'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

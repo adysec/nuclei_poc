@@ -1,0 +1,56 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"OS Config service is disabled for Project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  source: 'gcloud services list --project $projectId --enabled --filter="name:cloudasset.googleapis.com"
+    --format="json"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n}\n"
+id: gcloud-cloud-asset-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that Cloud Asset Inventory is enabled for all your GCP projects
+    in order to efficiently manage the history and the inventory of your cloud resources.
+    Google Cloud Asset Inventory is a fully managed metadata inventory service that
+    allows you to view, monitor, analyze, and gain insights for your Google Cloud
+    and Anthos assets. Cloud Asset Inventory is disabled by default in each GCP project.
+
+    '
+  impact: 'Not having Cloud Asset Inventory enabled can prevent the organization from
+    having a managed and insightful view over its cloud resources, potentially leading
+    to mismanagement and security risks.
+
+    '
+  name: Cloud Asset Inventory Not Enabled
+  reference:
+  - https://cloud.google.com/asset-inventory/docs
+  remediation: 'Enable the Google Cloud Asset Inventory by activating the Cloud Asset
+    API in each GCP project through the Google Cloud Console or using the `gcloud
+    services enable cloudasset.googleapis.com --project <project-id>` command.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,cloud-asset,gcp-cloud-config
+self-contained: true

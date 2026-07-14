@@ -1,0 +1,51 @@
+id: task_manager-9bbd8616-e160-4e1c-8c2c-be38f7768194
+
+info:
+  name: >
+    Task Manager <= 3.0.2 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/9bbd8616-e160-4e1c-8c2c-be38f7768194?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/task-manager/"
+    google-query: inurl:"/wp-content/plugins/task-manager/"
+    shodan-query: 'http.html:"wp-content/plugins/task-manager/"'
+  tags: cve,wordpress,wp-plugin,task-manager,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/task-manager/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "task-manager"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0.2')

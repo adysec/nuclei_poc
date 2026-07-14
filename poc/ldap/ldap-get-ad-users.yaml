@@ -1,0 +1,36 @@
+id: ldap-get-ad-users
+info:
+  author: pussycat0x
+  description: 'Retrieve users from Active Directory, where each user is represented
+    by an ADObject.
+
+    '
+  metadata:
+    max-request: 1
+    shodan-query: ldap
+  name: LDAP Get Active Directory User - Enumeration
+  reference:
+  - https://docs.projectdiscovery.io/templates/protocols/javascript/modules/ldap.ADObject
+  severity: info
+  tags: js,network,ldap,enum
+javascript:
+- args:
+    Host: ldap://{{Host}}
+    Port: 389
+  code: "const ldap = require('nuclei/ldap');\nconst cfg = new ldap.Config();\ncfg.Upgrade\
+    \ = true;\nconst client = ldap.Client(Host, Port, cfg);\nconst users = client.GetADUsers();\n\
+    const bytes = require('nuclei/bytes');\nconst buffer = new bytes.Buffer();\nfor\
+    \ (const user of users) {\n  buffer.WriteString(\"DistinguishedName: '\" + user.DistinguishedName+\
+    \ \"' ,\");\n  buffer.WriteString(\"SAMAccountName: '\" + user.SAMAccountName+\
+    \ \"' ,\");\n  buffer.WriteString(\"PWDLastSet: '\" + user.PWDLastSet+ \"' ,\"\
+    );\n  buffer.WriteString(\"LastLogon: '\" + user.LastLogon+ \"' ,\");\n  buffer.WriteString(\"\
+    MemberOf: '\" + user.MemberOf+ \"' ,\");\n  buffer.WriteString(\"ServicePrincipalName:\
+    \ '\" + user.ServicePrincipalName+ \"' ,\");\n}\nExport(buffer.String());\n"
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+  matchers:
+  - dsl:
+    - success == true
+    type: dsl

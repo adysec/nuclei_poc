@@ -1,0 +1,59 @@
+id: realia-0d0f38f3e987ffc5255d449e133645e4
+
+info:
+  name: "Realia <= 1.4.0 - Arbitrary Post Deletion"
+  author: topscoder
+  severity: critical
+  description: "The Realia plugin for WordPress is vulnerable to Arbitrary Post Deletion in versions up to, and including, 1.4.0. This is due to the 'includes/class-realia-submission.php' file. This makes it possible for unauthenticated attackers to delete any post within the vulnerability's scope."
+  reference:
+    - https://gist.github.com/erwanlr/625a3a241a6bd59f18b8b048cedf1b41
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-realia-security-bypass-1-4-0/
+    - https://wpscan.com/vulnerability/4ff539c5-6e08-4af8-81a9-d8e0b7fcff70
+    - https://wordpress.org/plugins/realia/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:H
+    cvss-score: 9.1
+    cve-id:
+  metadata:
+    fofa-query: "wp-content/plugins/realia/"
+    google-query: inurl:"/wp-content/plugins/realia/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,realia,critical
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/realia/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "realia"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 1.4.0')

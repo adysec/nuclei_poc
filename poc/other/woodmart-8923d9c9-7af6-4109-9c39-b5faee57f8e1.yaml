@@ -1,0 +1,51 @@
+id: woodmart-8923d9c9-7af6-4109-9c39-b5faee57f8e1
+
+info:
+  name: >
+    Woodmart <= 8.3.8 - Unauthenticated PHP Object Injection
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/8923d9c9-7af6-4109-9c39-b5faee57f8e1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/themes/woodmart/"
+    google-query: inurl:"/wp-content/themes/woodmart/"
+    shodan-query: 'http.html:"wp-content/themes/woodmart/"'
+  tags: cve,wordpress,wp-theme,woodmart,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/woodmart/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "woodmart"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 8.3.8')
