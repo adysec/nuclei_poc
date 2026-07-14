@@ -1,27 +1,39 @@
 id: wpconfig-aws-keys
-
 info:
   name: AWS S3 keys Leak
-  author: r12w4n
+  author:
+  - l0ne1y
+  tags:
+  - aws
+  - s3
+  - wordpress
+  - disclosure
+  description: |-
+    Wordpress 备份文件wp-config.php-backup泄漏AWS认证信息漏洞
+    WordPress和WordPress plugin都是WordPress基金会的产品。WordPress是一套使用PHP语言开发的博客平台。该平台支持在PHP和MySQL的服务器上架设个人博客网站。
+    wp-config.php-backup备份可能存有aws的认证key。
   severity: high
-  description: AWS S3 keys are exposed.
-  metadata:
-    max-request: 2
-  tags: aws,s3,wordpress,disclosure,exposure
-
-http:
-  - method: GET
-    path:
-      - '{{BaseURL}}/wp-config.php-backup'
-      - "{{BaseURL}}/%c0"
-
-    matchers:
-      - type: word
-        words:
-          - 'access-key-id'
-          - 'secret-access-key'
-          - 'DB_NAME'
-          - 'DB_PASSWORD'
-        condition: and
-        part: body
-# digest: 4a0a00473045022100d4dec0861fd92d1f5e06459a7e0655d7d2b0db44988b7c87ee1bd87a0a34caf302202920734592b3a2a3d1e03e0ab7b539aab4ac9b8c922b3c45f46449b605c3d950:922c64590222798bb761d5b6d8e72950
+  remediation: |-
+    1、去除页面、cookie或缓存中涉及的敏感信息或删除泄露信息页面
+    2、将敏感信息进行加密存储，非必要不可发送前端
+    3、发送敏感信息时需加密传输，如有必要需脱敏处理
+    4、禁止用自己开发的加密算法，必须使用公开、安全的标准加密算法。
+    5、禁止在日志中记录明文的敏感数据：禁止在日志中记录明文的敏感数据（如口
+    令、会话标识jsessionid等）， 防止敏感信息泄漏。
+    6、禁止带有敏感数据的Web页面缓存：带有敏感数据的Web页面都应该禁止缓
+    存，以防止敏感信息泄漏或通过代理服务器上网的用户数据互窜问题。
+    7、对必须发送的敏感数据或页面请求接口做好严格的权限认证
+requests:
+- matchers:
+  - type: word
+    condition: and
+    part: body
+    words:
+    - access-key-id
+    - secret-access-key
+    - DB_NAME
+    - DB_PASSWORD
+  path:
+  - '{{BaseURL}}/wp-config.php-backup'
+  - '{{BaseURL}}/%c0'
+  method: GET
