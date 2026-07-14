@@ -61,10 +61,9 @@ Runs every 2 hours. 9 stages total:
 | 2 | `2_delete_duplicated` | SHA256 exact dedup (first pass — removes byte-identical files) |
 | 3 | `3_move_file` | Filter non-nuclei files → `poc_excluded/`, categorize the rest into `tmp/` |
 | 4 | `4_check_poc` | `auto_fix_poc()` repair → nuclei validate → pass → `poc/`, fail → `poc_needs_review/` |
-| 5 | `5_get_pocname` | Generate `poc_index.json` + `poc_summary.json` + `poc.txt` |
-| 6 | `6_dedup_advanced` | ID dedup + cross-ID multi-factor semantic similarity dedup + format repair → `poc_dedup/` |
-| 7 | `7_dedup_high_quality` | Quality scoring by tiers (default 11/12/13/14/15) → `poc_gold_{N}/` directories |
-| 8 | `8_generate_browser_index` | Generate chunked JSON index files for GitHub Pages browser viewer |
+| 5 | `5_dedup_advanced` | ID dedup + cross-ID multi-factor semantic similarity dedup + format repair → `poc_dedup/` |
+| 6 | `6_dedup_high_quality` | Quality scoring by tiers (default 11/12/13/14/15) → `poc_gold_{N}/` directories |
+| 7 | `7_generate_browser_index` | Generate chunked JSON index files for GitHub Pages browser viewer |
 
 > Note: Step 6: `--threshold` (similarity, default 70). Step 7: `--tiers` (gradient, default 11,12,13,14,15).
 
@@ -107,10 +106,6 @@ nuclei_poc/
 ├── poc_excluded/           # 🚫 Non-nuclei files (audit trail)
 ├── poc_needs_review/       # ⚠️ Failed nuclei validation (manual review)
 ├── poc_all/                # 📚 Full archive (historical rollback)
-│
-├── poc.txt                 # Plaintext PoC manifest
-├── poc_index.json          # Structured index (category/CVE/quality score)
-└── poc_summary.json        # Statistics summary
 ```
 
 ---
