@@ -1,45 +1,35 @@
 id: samba-detect
 
 info:
-  name: Samba - Detection
+  name: Samba Service Detection
   author: pussycat0x
   severity: info
-  description: |
-    Samba allows file and print sharing between computers running Microsoft Windows and computers running Unix. It is an implementation of dozens of services and a dozen protocols, including: NetBIOS over TCP/IP (NBT) SMB (known as CIFS in some versions)
+  description: Samba is a free and open-source software that allows files to be shared across Windows and Linux systems simply and easily.
+  reference:
+    - https://www.samba.org/samba/what_is_samba.html
+    - https://www.samba.org/samba/history/security.html
+  remediation: Always apply the latest security patch.
+  classification:
+    cwe-id: CWE-200
   metadata:
     max-request: 1
-    shodan-query: "port:445"
-    product: dionaea
-    vendor: dionaea
-  tags: js,network,samba,detect,linux
-javascript:
-  - pre-condition: |
-      isPortOpen(Host,Port);
-    code: |
-      let m = require("nuclei/smb");
-      let c = new m.SMBClient();
-      let response = c.ConnectSMBInfoMode(Host, Port);
+  tags: network,smb,samba,detect
 
-      const conditionsMet = (response.SupportV1 === true  && response.Version.VerString === "SMB 1.0");
+tcp:
+  - inputs:
+      - data: 000000a4ff534d4272000000000801400000000000000000000000000000400600000100008100025043204e4554574f524b2050524f4752414d20312e3000024d4943524f534f4654204e4554574f524b5320312e303300024d4943524f534f4654204e4554574f524b5320332e3000024c414e4d414e312e3000024c4d312e3258303032000253616d626100024e54204c414e4d414e20312e3000024e54204c4d20302e313200
+        type: hex
+    host:
+      - "{{Hostname}}"
+    port: 139
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "SMBr"
 
-      if (conditionsMet) {
-
-      if (response.NTLM === "") {
-      printedValue = "Samba detected";
-      } else {
-      printedValue = response.NTLM;
-      }
-      }
-      else {
-      process.exit(1);
-      }
-
-    args:
-      Host: "{{Host}}"
-      Port: 445
-
-    extractors:
-      - type: dsl
-        dsl:
-          - response
-# digest: 4a0a00473045022100d9ef60961c5a5cc50e337d1d612f75f49065ddbae4b5428678c012873299a82202206ca222dae50bd0f55a7da4862c4d5d07fd6c3714f69b04cc4c0d6939920c1465:922c64590222798bb761d5b6d8e72950
+      - type: word
+        words:
+          - "HTTP/1.1"
+        negative: true
+# digest: 490a0046304402205c153fbf52a7b2dfadb408469629086b32e13a3223444116b3e82f4d762044d2022007d379537a766d3cd6913722a0ef27530f0b94fe88229c24efb1786afd25b1fb:922c64590222798bb761d5b6d8e72950
