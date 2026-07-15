@@ -1,4 +1,5 @@
 id: perforce-remote-depot-unauth
+
 info:
   name: Perforce Server - Unauthenticated Remote Depot Access
   author: Morgan Robertson
@@ -15,14 +16,16 @@ info:
     cwe-id: CWE-306
     cpe: cpe:2.3:a:perforce:helix_core:*:*:*:*:*:*:*:*
   metadata:
-    fofa-query: port="1666" && protocol="unknown"
+    verified: true
     max-request: 3
+    vendor: perforce
     product: helix_core
     shodan-query: port:1666 "P4D"
-    vendor: perforce
-    verified: true
-  tags: helixcore,info-disclosure,perforce,rpc,scm,unauth
+    fofa-query: port="1666" && protocol="unknown"
+  tags: perforce,helixcore,scm,unauth,rpc,info-disclosure
+
 flow: tcp(1) && javascript(1)
+
 tcp:
   - host:
       - "{{Host}}:1666"
@@ -39,6 +42,7 @@ tcp:
           - "server"
         condition: and
         internal: true
+
 javascript:
   - code: |
       var net = require("nuclei/net");
@@ -268,22 +272,26 @@ javascript:
       }
 
       JSON.stringify(files);
+
     args:
       Host: "{{Host}}"
       Port: "1666"
+
     matchers:
       - type: word
         words:
           - '"depotFile":'
           - '"change":'
         condition: and
+
     extractors:
       - type: json
         name: depot_files
         json:
           - '.[].depotFile'
+
       - type: json
         name: changes
         json:
           - '.[].change'
-        # digest: 4b0a00483046022100beb0e94d80cf8fa7e3d1a2114d7f14ff3eba183f5adde97d1591695f641842fd022100f1a98751e7f8449887b0a308d2dc99cf0ad873a5119ae1b4eb7def4040982fe1:922c64590222798bb761d5b6d8e72950
+# digest: 4b0a00483046022100beb0e94d80cf8fa7e3d1a2114d7f14ff3eba183f5adde97d1591695f641842fd022100f1a98751e7f8449887b0a308d2dc99cf0ad873a5119ae1b4eb7def4040982fe1:922c64590222798bb761d5b6d8e72950
