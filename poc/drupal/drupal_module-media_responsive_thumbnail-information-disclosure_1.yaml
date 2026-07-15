@@ -1,0 +1,55 @@
+
+id: drupal_module-media_responsive_thumbnail-information-disclosure
+info:
+  name: drupal_module-media_responsive_thumbnail-information-disclosure
+  author: Bishopfox
+  severity: medium
+  description: "The Media Responsive Thumbnail module allows media reference fields to be rendered as a responsive image. This module does not properly check entity access prior to rendering media. This may result in users seeing thumbnails of media items they do not have access to. This release was coordinated with SA-CORE-2023-002."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-010
+  metadata:
+    security-risk: "Moderately critical 14∕25 AC:None/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "information-disclosure"
+    fofa-query: "/sites/all/modules/media_responsive_thumbnail/"
+    google-query: "inurl:'/sites/all/modules/media_responsive_thumbnail/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/media_responsive_thumbnail/media_responsive_thumbnail.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'media_responsive_thumbnail'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.4')
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')
