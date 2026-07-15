@@ -1,31 +1,30 @@
 id: prometheus-log
+
 info:
   name: Exposed Prometheus
-  author:
-  - l0ne1y
-  description: |-
-    prometheus网关请求统计和日志配置信息泄露
-    允许通过访问特定路径获取到prometheus网关请求统计和日志配置的敏感信息
+  author: dhiyaneshDK,thevillagehacker
   severity: low
-  remediation: |-
-    官方修复方案：
-    1、建议用户到官方获取最新补丁或者最新版本程序：
-    https://github.com/prometheus/prometheus/
-    临时修复方案：
-    1、禁止带有敏感数据的Web页面展示，以防止敏感信息泄漏。
-    2、对必须发送的敏感数据或页面请求接口做好严格的权限认证
-requests:
-- matchers:
-  - type: word
-    condition: or
-    words:
-    - gateway_request_total
-    - logback_events_total
-  - type: status
-    status:
-    - 200
-  matchers-condition: and
-  path:
-  - '{{BaseURL}}/prometheus'
-  - '{{BaseURL}}/actuator/prometheus'
-  method: GET
+  metadata:
+    max-request: 3
+  tags: prometheus,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/prometheus"
+      - "{{BaseURL}}/actuator/prometheus"
+      - "{{BaseURL}}/actuator/prometheus;%2f..%2f..%2f"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'gateway_request_total'
+          - 'logback_events_total'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+# digest: 490a0046304402204c8f9d53fa53ba9703067ef51db779be4c5b84f1f60f8c1b976df6c667a84006022056c3f6ff537a1a586201c8021d2f8dc14167042c8c6f5e86bd80676ec3f9dfef:922c64590222798bb761d5b6d8e72950
