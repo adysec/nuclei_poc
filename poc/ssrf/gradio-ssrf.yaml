@@ -12,6 +12,7 @@ info:
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
     cvss-score: 7.5
+    cwe-id: CWE-918
     epss-percentile: 0.36659
     cpe: cpe:2.3:a:gradio_project:gradio:*:*:*:*:python:*:*:*
   metadata:
@@ -20,9 +21,29 @@ info:
     shodan-query: html:"__gradio_mode__"
     product: gradio
     vendor: gradio_project
-  tags: cve,cve2024,unauth,gradio,ssrf
+  tags: cve,cve2024,unauth,gradio,ssrf,vuln
+
+flow: http(1) && http(2)
 
 http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /component_server HTTP/1.1
+        Host: {{Hostname}}
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(tolower(body), "content=\"gradio", "gradio_mode", "gradio-app", "https://gradio.app")'
+          - 'contains(tolower(body), "\"method not allowed")'
+        condition: or
+        internal: true
+
   - raw:
       - |
         POST /component_server HTTP/1.1
@@ -58,4 +79,4 @@ http:
       - type: status
         status:
           - 200
-# digest: 4b0a00483046022100a57d4c461cd62ed8750d9c45f036bbcc01a6f7fb3c689f903bbb89d289a499ce022100f6abf408f1f3f89b7ec854d6bc298fd3f3d18e9c11680a224cd72ea773545d15:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a00473045022100888a89f042d61721c6cd5d2c6650334bf08de571072d85d2329f813dd9685405022014731391b454ea9d5637de7f14fcbf6332e509d151116494479915eb3b86eed3:922c64590222798bb761d5b6d8e72950

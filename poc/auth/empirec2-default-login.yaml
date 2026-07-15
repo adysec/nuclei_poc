@@ -1,18 +1,36 @@
 id: empirec2-default-login
 
 info:
-  name: Empire-C2 Default Login
-  author: clem9669
+  name: Empire C2 / Starkiller Interface - Default Login
+  author: clem9669,parzival
   severity: high
+  description: |
+    Empire C2 / Starkiller Default Administrator Credentials Discovered.
   reference:
     - https://github.com/BC-SECURITY/Empire
-    - https://bc-security.gitbook.io/empire-wiki/quickstart/configuration/server
+    - https://github.com/BC-SECURITY/empire-docs/blob/main/restful-api/README.md
   metadata:
     verified: true
-  tags: default-login,empire
+    max-request: 2
+  tags: default-login,empire,c2,intrusive,vuln
 
-requests:
+http:
   - raw:
+      - |
+        POST /token HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoZwyedGcQU4FrcFV
+        Accept: application/json, text/plain, */*
+
+        ------WebKitFormBoundaryoZwyedGcQU4FrcFV
+        Content-Disposition: form-data; name="username"
+
+        {{username}}
+        ------WebKitFormBoundaryoZwyedGcQU4FrcFV
+        Content-Disposition: form-data; name="password"
+
+        {{password}}
+        ------WebKitFormBoundaryoZwyedGcQU4FrcFV--
       - |
         POST /api/admin/login HTTP/1.1
         Host: {{Hostname}}
@@ -22,23 +40,33 @@ requests:
 
     attack: pitchfork
     payloads:
-      user:
+      username:
         - empireadmin
-      pass:
+      password:
         - password123
+    stop-at-first-match: true
 
     matchers-condition: and
     matchers:
-      - type: regex
+      - type: word
         part: body
-        regex:
+        words:
+          - 'access_token'
           - '{"token":".*"}'
+        condition: or
 
       - type: word
-        part: header
+        part: body
         words:
-          - 'application/json'
+          - '"code":1001'
+        negative: true
+
+      - type: word
+        part: content_type
+        words:
+          - application/json
 
       - type: status
         status:
           - 200
+# digest: 4a0a004730450220452d7baca81d93014099ae6d27dba13bd39f75911a563fe493fa231501a023100221009c0f25711237f8141e61b9a5f2e5e5463b09bf69b48146bd2c340407d52f6626:922c64590222798bb761d5b6d8e72950

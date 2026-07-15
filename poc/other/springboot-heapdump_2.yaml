@@ -1,0 +1,50 @@
+id: springboot-heapdump 2
+info:
+  author: that_juan_,dwisiswant0,wdahlenb
+  description: Environment variables and HTTP requests can be found in the HPROF
+  name: Detect Springboot Heapdump Actuator
+  severity: critical
+  tags: springboot,disclosure
+requests:
+- attack: sniper
+  matchers:
+  - binary:
+    - 4a4156412050524f46494c45
+    - 4850524f46
+    - 1f8b080000000000
+    condition: or
+    part: body
+    type: binary
+  - status:
+    - 200
+    type: status
+  - condition: or
+    part: header
+    type: word
+    words:
+    - application/octet-stream
+    - application/vnd.spring-boot.actuator
+    - application/vnd.spring-boot.actuator.v1+json
+  - condition: or
+    dsl:
+    - len(body) >= 100000
+    - content_length >= 100000
+    part: header
+    type: dsl
+  matchers-condition: and
+  max-size: 2097152
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /actuator/heapdump HTTP/1.1
+
+    Host: {{Subdomains}}
+
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+
+    Accept-Encoding: gzip, deflate
+
+    Accept: */*
+
+    '
+  threads: 100
