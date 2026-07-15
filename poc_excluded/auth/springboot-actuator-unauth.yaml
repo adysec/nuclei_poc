@@ -7,30 +7,50 @@ info:
   verified: true
   reference:
     - https://github.com/LandGrey/SpringBootVulExploit
+  tags: actuator,springboot,unauth
+  created: 2023/07/07
 
 rules:
   r0:
+    brute:
+      mode: sniper
+      commit: winner
+      continue: false
+      p:
+        - /env
+        - /appenv
+        - /env%72
+        - /appenv%72
+        - ;;/env;.css
     request:
       method: GET
-      path: /env
+      path: "{{p}}"
     expression: |
       response.status == 200 && response.content_type.contains("json") && response.body.bcontains(b"java.version") && response.body.bcontains(b"os.arch")
   r1:
+    brute:
+      mode: sniper
+      commit: winner
+      continue: false
+      p:
+        - /actuator
+        - /api/actuator
+        - /nacos/actuator
+        - /prod-api/actuator
+        - /dev-api/actuator
+        - /actuato%72
+        - /api/actuato%72
+        - /nacos/actuato%72
+        - /prod-api/actuato%72
+        - /dev-api/actuato%72
     request:
       method: GET
-      path: /actuator/env
+      path: "{{p}}"
     expression: |
-      response.status == 200 && response.content_type.contains("json") && response.body.bcontains(b"java.version") && response.body.bcontains(b"os.arch")
-  r2: 
-    request: 
-      method: GET
-      path: /appenv
-    expression: |
-      response.status == 200 && response.content_type.contains("json") && response.body.bcontains(b"java.version") && response.body.bcontains(b"os.arch")
-  r3: 
-    request: 
-      method: GET
-      path: /api/actuator/env
-    expression: |
-      response.status == 200 && response.content_type.contains("json") && response.body.bcontains(b"java.version") && response.body.bcontains(b"os.arch")
-expression: r0() || r1() || r2() || r3()
+      response.status == 200 && 
+      response.body.bcontains(b'"_links":') && 
+      response.body.bcontains(b'"self":') && 
+      response.body.bcontains(b'"health"') &&
+      response.body.bcontains(b'"env":') && 
+      response.body.bcontains(b'"heapdump":')
+expression: r0() || r1()

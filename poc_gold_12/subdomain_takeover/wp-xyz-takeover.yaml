@@ -1,0 +1,42 @@
+id: wp-xyz-takeover
+
+info:
+  name: WordPress takeover detection
+  author: roninja,gudetama
+  severity: high
+  description: WordPress takeover was detected.
+  reference:
+    - https://github.com/EdOverflow/can-i-take-over-xyz/pull/176
+    - https://hackerone.com/reports/274336
+  metadata:
+    max-request: 1
+  tags: takeover, wordpress, hackerone
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true  # Follow 301/302 redirects automatically
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - Host != ip
+
+      - type: word
+        words:
+          - "wordpress.com</em> doesn&apos;t&nbsp;exist"
+        condition: and
+
+      - type: word
+        words:
+          - "cannot be registered"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - cname
+

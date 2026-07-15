@@ -1,36 +1,34 @@
 id: x-forwarded
 info:
+  name: "X-Forwarded Header Reflection"
   author: coffin
-  description: This template detects the reflection of X-Forwarded headers in the
-    response.
-  name: X-Forwarded Header Reflection
   severity: medium
-requests:
-- extractors:
-  - regex:
-    - evil.com
-    - evil.com
-    type: regex
-  matchers:
-  - part: body
-    type: word
-    words:
-    - evil.com
-    - evil.com
-  - part: headers
-    type: word
-    words:
-    - evil.com
-    - evil.com
-  raw:
-  - 'GET / HTTP/1.1
+  description: "This template detects the reflection of X-Forwarded headers in the response."
 
-    Host: {{Hostname}}
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Host: evil.com
+        X-Forwarded-For: evil.com
+        Connection: close
 
-    X-Forwarded-Host: evil.com
+    matchers:
+      - type: word
+        words:
+          - "evil.com"
+          - "evil.com"
+        part: body
 
-    X-Forwarded-For: evil.com
+      - type: word
+        words:
+          - "evil.com"
+          - "evil.com"
+        part: headers
 
-    Connection: close
-
-    '
+    extractors:
+      - type: regex
+        regex:
+          - "evil.com"
+          - "evil.com"

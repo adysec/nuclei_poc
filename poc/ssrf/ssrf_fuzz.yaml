@@ -1,0 +1,33 @@
+id: ssrf-header-injection
+
+info:
+  name: Header Command Injection
+  author: nullrabbit
+  severity: high
+  description: Fuzzing headers for command injection
+  tags: fuzz,ssrf
+
+requests:
+  - payloads:
+      payload: helpers/payloads/ssrf-hosts.txt
+      header: helpers/payloads/proxy-headers.txt
+
+    raw:
+      - |
+        GET / HTTP/1.1
+        Host: §payload§
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+        Connection: close
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+        §header§ §payload§
+        Connection: close
+
+    attack: clusterbomb
+    threads: 10
+    matchers:
+    - type: status
+      status:
+        - 200
