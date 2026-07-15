@@ -1,21 +1,23 @@
 id: laravel-log-file
-
 info:
   name: Laravel log file publicly accessible
   author: sheikhrishad,geeknik
   severity: high
   description: The log file of this Laravel web app might reveal details on the inner workings of the app, possibly even tokens, credentials or personal information.
-  reference:
-    - https://laravel.com/docs/master/logging
-  metadata:
-    max-request: 1
+  reference: https://laravel.com/docs/master/logging
   tags: laravel,logs,exposure
-
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/storage/logs/laravel.log"
-
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /storage/logs/laravel.log HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
     matchers-condition: and
     matchers:
       - type: word
@@ -26,15 +28,12 @@ http:
           - "ErrorException"
           - "syntax error"
         condition: or
-
       - type: word
         part: header
         words:
           - "text/plain"
           - "text/x-log"
         condition: or
-
       - type: status
         status:
           - 200
-# digest: 4a0a00473045022100cf9cce1e7515e2beaa47c6d2acc45b590ca57037f98f90ebfc89aebc7bc464e10220795e1825cbd0800cfe3f51d722c15eadbf21dcb0f7bf0278cf825d62fae4d832:922c64590222798bb761d5b6d8e72950
