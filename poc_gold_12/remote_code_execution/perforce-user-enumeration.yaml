@@ -1,4 +1,5 @@
 id: perforce-user-enumeration
+
 info:
   name: Perforce Server - User Enumeration
   author: Morgan Robertson
@@ -15,14 +16,16 @@ info:
     cwe-id: CWE-200
     cpe: cpe:2.3:a:perforce:helix_core:*:*:*:*:*:*:*:*
   metadata:
-    fofa-query: port="1666" && protocol="unknown"
+    verified: true
     max-request: 3
+    vendor: perforce
     product: helix_core
     shodan-query: port:1666 "P4D"
-    vendor: perforce
-    verified: true
-  tags: enum,helixcore,perforce,scm,unauth,user-listing
+    fofa-query: port="1666" && protocol="unknown"
+  tags: perforce,helixcore,scm,unauth,user-listing,enum
+
 flow: tcp(1) && javascript(1)
+
 tcp:
   - host:
       - "{{Host}}:1666"
@@ -39,6 +42,7 @@ tcp:
           - "server"
         condition: and
         internal: true
+
 javascript:
   - code: |
       var net = require("nuclei/net");
@@ -200,26 +204,31 @@ javascript:
       }
 
       JSON.stringify(users);
+
     args:
       Host: "{{Host}}"
       Port: "1666"
+
     matchers:
       - type: word
         words:
           - '"user":'
           - '"email":'
         condition: and
+
     extractors:
       - type: json
         name: users
         json:
           - '.[].user'
+
       - type: json
         name: emails
         json:
           - '.[].email'
+
       - type: json
         name: full_names
         json:
           - '.[].fullName'
-        # digest: 4a0a0047304502203d06c4f4a1645558779e9fa03d978b1999667f9c6e01a2b3c064a4f07989f2d6022100c0cc2e9d8961bf39db2ccadcf4356c77474fd433f7d8aeda6bc4d9f20cea94cb:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a0047304502203d06c4f4a1645558779e9fa03d978b1999667f9c6e01a2b3c064a4f07989f2d6022100c0cc2e9d8961bf39db2ccadcf4356c77474fd433f7d8aeda6bc4d9f20cea94cb:922c64590222798bb761d5b6d8e72950
