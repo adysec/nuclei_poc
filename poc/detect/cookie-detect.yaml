@@ -1,16 +1,29 @@
 id: cookie-detect
+
 info:
-  author: Nagli
-  description: Extract cookies
-  name: Cookies-extractor
+  name: Detect cookies present in the response
+  author: anonymous
   severity: info
-  tags: cookies
-requests:
-- extractors:
-  - kval:
-    - Set_Cookie
-    part: header
-    type: kval
-  method: GET
-  path:
-  - '{{BaseURL}}'
+  tags: generic,cookie,noisy
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method != "HEAD"'
+          - 'method != "OPTIONS"'
+        condition: and
+
+    fuzzing:
+      - part: header
+        type: postfix
+        mode: single
+        fuzz:
+          - ""
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - '(?i)Set-Cookie:\s([^=;]+)'
