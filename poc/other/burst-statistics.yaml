@@ -1,59 +1,48 @@
-id: burst-statistics
+id: wordpress-burst-statistics
 
 info:
-  name: >
-    Burst Statistics – Privacy-Friendly Analytics for WordPress <= 1.5.6.1 - Authenticated(Contributor+) Stored Cross-Site Scripting via burst_total_pageviews_count
-  author: topscoder
-  severity: low
-  description: >
-    
+  name: Burst Statistics – Privacy-Friendly Analytics for WordPress Detection
+  author: ricardomaia
+  severity: info
   reference:
-    - https://github.com/topscoder/nuclei-wordfence-cve
-    - https://www.wordfence.com/threat-intel/vulnerabilities/id/fa587df5-9d96-4cac-ae5d-2a0485a3a789?source=api-scan
-  classification:
-    cvss-metrics: 
-    cvss-score: 
-    cve-id: 
+    - https://wordpress.org/plugins/burst-statistics/
   metadata:
-    fofa-query: "wp-content/plugins/burst-statistics/"
-    google-query: inurl:"/wp-content/plugins/burst-statistics/"
-    shodan-query: 'vuln:'
-  tags: cve,wordpress,wp-plugin,burst-statistics,low
+    plugin_namespace: burst-statistics
+    wpscan: https://wpscan.com/plugin/burst-statistics
+  tags: tech,wordpress,wp-plugin,top-200
 
 http:
   - method: GET
-    redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/burst-statistics/readme.txt"
 
+    payloads:
+      last_version: helpers/wordpress/plugins/burst-statistics.txt
+
     extractors:
       - type: regex
-        name: version
         part: body
-        group: 1
         internal: true
+        name: internal_detected_version
+        group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
       - type: regex
-        name: version
         part: body
+        name: detected_version
         group: 1
         regex:
-          - "(?mi)Stable tag: ([0-9.]+)"
+          - '(?i)Stable.tag:\s?([\w.]+)'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "burst-statistics"
-        part: body
-
       - type: dsl
+        name: "outdated_version"
         dsl:
-          - compare_versions(version, '<= 1.5.6.1')
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

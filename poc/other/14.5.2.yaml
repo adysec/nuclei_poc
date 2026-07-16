@@ -1,0 +1,49 @@
+id: ASVS-4-0-3-V14-5-2
+
+info:
+  name: ASVS 14.5.2 Check
+  author: Hamed Salimian
+  severity: low
+  classification:
+    cwe-id: CWE-346
+  reference:
+    - https://snbig.github.io/Vulnerable-Pages/ASVS_14_5_2/
+  tags: asvs,14.5.2
+  description: |
+    Verify that the supplied Origin header is not used for authentication or access control decisions, as the Origin header can easily be changed by an attacker.
+
+variables:
+  forbidden_status_code: 403
+
+http:
+  - raw:
+      - |
+        GET {{BaseURL}} HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{origin_schema}}{{origin_host}}{{origin_port}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+        Accept: */*
+
+    cookie-reuse: true
+    payloads:
+      origin_host:
+        - 127.0.0.1
+        - localhost
+        - '{{resolve("{{FQDN}}")}}'
+      origin_schema:
+        - http://
+        - https://
+      origin_port:
+        -
+        - :80
+        - :443
+    attack: clusterbomb
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        name: 'Access Restriction Bypass Via Origin Spoof'
+        dsl:
+          - status_code < 210 && status_code >= 200
+          - to_number(forbidden_status_code) != status_code
+# digest: 4b0a00483046022100dee307ac580c08c30516144b38c8f4ea9d17d0406f1a6b2365fb23f7b5b3f476022100effd3e26b9477bf834811cc0d8d1d231f3a36adf25c6ae2a492d403649db76b0:236a7c23afe836fbe231d6e037cff444
