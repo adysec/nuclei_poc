@@ -1,0 +1,59 @@
+id: custom-post-types
+
+info:
+  name: >
+    Custom post types <= 4.0.12 - Authenticated (Administrator+) Stored Cross-Site Scripting
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/eb94520e-a99d-4e34-b174-e01898de0978?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/custom-post-types/"
+    google-query: inurl:"/wp-content/plugins/custom-post-types/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,custom-post-types,low
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/custom-post-types/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "custom-post-types"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 5.0.0')
