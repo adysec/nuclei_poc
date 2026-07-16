@@ -5,11 +5,7 @@ info:
   author: geeknik
   severity: info
   tags: fuzz,oauth
-
-variables:
-  oauth_id: "{{randstr}}"
-
-requests:
+http:
   - payloads:
       boolean:
         - true
@@ -37,22 +33,21 @@ requests:
     attack: clusterbomb
     raw:
       - |
-        GET /oauth/authorize?new-flow=§boolean§&client_id={{randstr}}&redirect_uri=https://{{interactsh-url}}%2Flogin%2F{{oauth_id}}&response_type=code&scope=openid&acr_values=§acr§+password&state={{randstr}} HTTP/1.1
+        GET /oauth/authorize?new-flow=§boolean§&client_id={{randstr}}&redirect_uri=https://{{interactsh-url}}%2Flogin&response_type=code&scope=openid&acr_values=§acr§+password&state={{randstr}} HTTP/1.1
         Host: {{Hostname}}
         User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36
         Accept: */*
         Accept-Language: en
         Accept-Encoding: gzip
         Connection: close
-    matchers-condition: and
+    matchers-condition: or
     matchers:
+      - type: word
+        words:
+          - "{{randstr}}"
       - type: word
         part: interactsh_protocol
         words:
           - "dns"
           - "http"
         condition: or
-      - type: word
-        part: interactsh_request
-        words:
-          - "/login/{{oauth_id}}"
