@@ -1,0 +1,41 @@
+id: gitlab-weak-login
+
+info:
+  name: Gitlab Default Login
+  author: Suman_Kar,dwisiswant0
+  severity: high
+  verified: true
+  description: |-
+    Gitlab default login credentials were discovered.
+  reference:
+    - https://twitter.com/0xmahmoudJo0/status/1467394090685943809
+    - https://git-scm.com/book/en/v2/Git-on-the-Server-GitLab
+  tags: gitlab,default-login
+  created: 2023/06/24
+
+set:
+  hostname: request.url.host
+  hosturl: request.url
+rules:
+  r0:
+    stop_if_match: true
+    brute:
+      mode: clusterbomb
+      commit: winner
+      continue: false
+      username:
+        - root
+        - admin
+        - admin@local.host
+      password:
+        - 5iveL!fe
+        - 123456789
+    request:
+      method: POST
+      path: /oauth/token
+      headers:
+        content-type: application/json
+      body: |
+        {"grant_type":"password","username":"{{username}}","password":"{{password}}"}
+    expression: response.status == 200 && response.headers["content-type"].contains("application/json") && response.body.bcontains(b'"access_token":') && response.body.bcontains(b'"token_type":') && response.body.bcontains(b'"refresh_token":')
+expression: r0()
