@@ -1,0 +1,41 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(xss_payloads)}}'
+    - '{{url_encode(url_encode(xss_payloads))}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - part: body
+    regex:
+    - (?i)<[^>]* x="y" onmouseover="alert\('xss'\)"[^>]*>
+    - (?i)<[^>]* x="y" onscrollsend="alert\('xs'\)"[^>]*>
+    - (?i)<[^>]* x="y" onfocus="alert\('xss'\)"[^>]*>
+    - (?i)<[^>]* x='y' onscrollsend='alert\(1\)'[^>]*>
+    - (?i)<[^>]* x='y' onmouseover='alert\(1\)'[^>]*>
+    - (?i)<[^>]* x='y' onfocus='alert\(1\)'[^>]*>
+    type: regex
+  - part: header
+    type: word
+    words:
+    - text/html
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  payloads:
+    xss_payloads:
+    - '" x="y" onmouseover="alert(''xss'')'
+    - '" x="y" onscrollsend="alert(''xs'')'
+    - '" x="y" onfocus="alert(''xss'')'
+    - ''' x=''y'' onscrollsend=''alert(1)'
+    - ''' x=''y'' onmouseover=''alert(1)'
+    - ''' x=''y'' onfocus=''alert(1)'
+id: xss-fuzz-html-attribute-injection
+info:
+  author: quas
+  description: Fuzzes all query parameters for various reflected XSS vulnerabilities
+    via HTML attribute injections.
+  name: Reflected XSS Checks via HTML attribute injections
+  severity: medium

