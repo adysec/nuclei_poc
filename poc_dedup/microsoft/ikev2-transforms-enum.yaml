@@ -1,26 +1,24 @@
 id: ikev2-transforms-enum
-
 info:
   name: IKEv2 Supported Transforms - Enumeration
   author: pussycat0x
   severity: info
   description: |
-   Enumerates supported IKEv2 encryption cipher suites by sending individual SA_INIT probes with single-algorithm proposals. Accepted ciphers return an SA payload response, while rejected ones return a NO_PROPOSAL_CHOSEN notification.
+    Enumerates supported IKEv2 encryption cipher suites by sending individual SA_INIT probes with single-algorithm proposals. Accepted ciphers return an SA payload response, while rejected ones return a NO_PROPOSAL_CHOSEN notification.
   reference:
     - https://www.rfc-editor.org/rfc/rfc7296
     - https://www.iana.org/assignments/ikev2-parameters
     - https://www.rfc-editor.org/rfc/rfc7634
   metadata:
-    verified: true
+    fofa-query: port="500" && protocol="isakmp"
     max-request: 6
-    shodan-query: "port:500 product:IKE"
-    fofa-query: 'port="500" && protocol="isakmp"'
-  tags: js,network,udp,ikev2,ipsec,vpn,ike
-
+    shodan-query: port:500 product:IKE
+    verified: true
+  tags: ike,ikev2,ipsec,js,network,udp,vpn
 javascript:
-  - pre-condition: |
-      isUDPPortOpen(Host, Port);
-
+  - args:
+      Host: '{{Host}}'
+      Port: "500"
     code: |
       let c = require("nuclei/net");
 
@@ -219,24 +217,20 @@ javascript:
       }
 
       Export(output);
+    extractors:
+      - name: transforms
+        regex:
+          - PROBE:[^:]+:accepted:[^\n]+
+        # digest: 4a0a00473045022100e0da17854e305f1e02c933fbe9efe56213b9fa5ccc814e9d288b9817a1a5e2e102203478464a4f83ca9128ff705db6e5c913adb9cbbe3ba5d62fe0ce1e5aeaf04904:922c64590222798bb761d5b6d8e72950
 
-    args:
-      Host: "{{Host}}"
-      Port: "500"
-
-    matchers-condition: and
+        type: regex
     matchers:
-      - type: dsl
-        dsl:
-          - "success == true"
-
+      - dsl:
+          - success == true
+        type: dsl
       - type: word
         words:
-          - ":accepted:"
-
-    extractors:
-      - type: regex
-        name: transforms
-        regex:
-          - 'PROBE:[^:]+:accepted:[^\n]+'
-# digest: 4a0a00473045022100e0da17854e305f1e02c933fbe9efe56213b9fa5ccc814e9d288b9817a1a5e2e102203478464a4f83ca9128ff705db6e5c913adb9cbbe3ba5d62fe0ce1e5aeaf04904:922c64590222798bb761d5b6d8e72950
+          - ':accepted:'
+    matchers-condition: and
+    pre-condition: |
+      isUDPPortOpen(Host, Port);
