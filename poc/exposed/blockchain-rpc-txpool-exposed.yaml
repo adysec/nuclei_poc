@@ -1,5 +1,4 @@
 id: blockchain-rpc-txpool-exposed
-
 info:
   name: Blockchain RPC - txpool_content Exposed
   author: 0xBassia
@@ -18,37 +17,32 @@ info:
     cvss-score: 7.5
     cwe-id: CWE-200
   metadata:
-    verified: true
     max-request: 1
-    shodan-query: "jsonrpc"
-  tags: misconfig,blockchain,rpc,txpool,mev,web3
-
+    shodan-query: jsonrpc
+    verified: true
+  tags: blockchain,mev,misconfig,rpc,txpool,web3
 http:
-  - raw:
+  - matchers:
+      - condition: and
+        part: body
+        type: word
+        words:
+          - '"jsonrpc"'
+          - '"result"'
+          - '"pending"'
+          - '"queued"'
+      - part: header
+        type: word
+        words:
+          - application/json
+      - status:
+          - 200
+        type: status
+    matchers-condition: and
+    raw:
       - |
         POST / HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/json
 
         {"jsonrpc":"2.0","method":"txpool_content","params":[],"id":1}
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '"jsonrpc"'
-          - '"result"'
-          - '"pending"'
-          - '"queued"'
-        condition: and
-
-      - type: word
-        part: header
-        words:
-          - "application/json"
-
-      - type: status
-        status:
-          - 200
-# digest: 4a0a0047304502205843c301e4760f6e5304ac63171b5959e2631b123af52a868574ed8e697b4b470221008aec93db1b2dbbd979be8b3f84f17a79167152a6fca1f0ed0846300adf5b9e6f:922c64590222798bb761d5b6d8e72950
