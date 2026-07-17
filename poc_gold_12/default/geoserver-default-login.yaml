@@ -1,8 +1,8 @@
 id: geoserver-default-login
 
 info:
-  name: Geoserver Default Admin Login
-  author: For3stCo1d
+  name: Geoserver Admin - Default Login
+  author: For3stCo1d,professorabhay,ritikchaddha
   severity: high
   description: Geoserver default admin credentials were discovered.
   reference:
@@ -11,9 +11,14 @@ info:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
     cvss-score: 8.3
     cwe-id: CWE-522
+    cpe: cpe:2.3:a:geoserver:geoserver:*:*:*:*:*:*:*:*
   metadata:
+    verified: true
+    max-request: 2
     fofa-query: app="GeoServer"
-  tags: geoserver,default-login
+    product: geoserver
+    vendor: geoserver
+  tags: geoserver,default-login,vuln
 
 http:
   - raw:
@@ -23,6 +28,9 @@ http:
         Content-Type: application/x-www-form-urlencoded
 
         username={{user}}&password={{pass}}
+      - |
+        GET /geoserver/web/ HTTP/1.1
+        Host: {{Hostname}}
 
     attack: pitchfork
     payloads:
@@ -30,17 +38,13 @@ http:
         - admin
       pass:
         - geoserver
-
-    matchers-condition: and
+    host-redirects: true
+    max-redirects: 2
     matchers:
       - type: dsl
         dsl:
-          - "contains(tolower(location), '/geoserver/web')"
-          - "!contains(tolower(location), 'error=true')"
+          - "contains(tolower(location_1), '/geoserver/web') && contains(body_2, '<span>admin</span>')"
+          - "!contains(tolower(location_1), 'error=true')"
+          - 'status_code_1 == 302'
         condition: and
-
-      - type: status
-        status:
-          - 302
-
-# Enhanced by mp on 2022/03/28
+# digest: 4b0a0048304602210097696ea05121d6da25d5352300273d57fb3efaeb60975c3ecbafc96efefbd804022100ec11644d8cbd8fefa22ba1b3a5b7abd09ffb1c156b8869b18ea02e7d522bfb09:922c64590222798bb761d5b6d8e72950
