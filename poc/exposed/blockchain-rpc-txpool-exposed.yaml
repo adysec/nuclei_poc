@@ -1,48 +1,63 @@
+http:
+- matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"jsonrpc"'
+    - '"result"'
+    - '"pending"'
+    - '"queued"'
+  - part: header
+    type: word
+    words:
+    - application/json
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'POST / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"jsonrpc":"2.0","method":"txpool_content","params":[],"id":1}
+
+    '
 id: blockchain-rpc-txpool-exposed
 info:
-  name: Blockchain RPC - txpool_content Exposed
   author: 0xBassia
-  severity: high
-  description: |
-    The blockchain RPC endpoint exposes the txpool_content method, which returns all pending (unmined) transactions in the mempool including sender addresses, transaction data, gas prices, and values. This enables frontrunning attacks, sandwich attacks, and other MEV (Maximal Extractable Value) exploitation against users.
-  impact: |
-    An attacker can monitor pending transactions in real-time to perform frontrunning (executing trades before victims), sandwich attacks (placing buy/sell orders around a victim's swap), and general mempool surveillance. This directly impacts every user performing DeFi transactions on the chain.
-  remediation: |
-    Disable txpool_content, txpool_status, and txpool_inspect on public RPC endpoints. These should only be accessible to internal validator/sequencer nodes. If needed for tooling, expose them on a separate authenticated endpoint.
-  reference:
-    - https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool
-    - https://ethereum.org/en/developers/docs/mev/
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
     cvss-score: 7.5
     cwe-id: CWE-200
+  description: 'The blockchain RPC endpoint exposes the txpool_content method, which
+    returns all pending (unmined) transactions in the mempool including sender addresses,
+    transaction data, gas prices, and values. This enables frontrunning attacks, sandwich
+    attacks, and other MEV (Maximal Extractable Value) exploitation against users.
+
+    '
+  impact: 'An attacker can monitor pending transactions in real-time to perform frontrunning
+    (executing trades before victims), sandwich attacks (placing buy/sell orders around
+    a victim''s swap), and general mempool surveillance. This directly impacts every
+    user performing DeFi transactions on the chain.
+
+    '
   metadata:
     max-request: 1
     shodan-query: jsonrpc
     verified: true
-  tags: blockchain,mev,misconfig,rpc,txpool,web3
-http:
-  - matchers:
-      - condition: and
-        part: body
-        type: word
-        words:
-          - '"jsonrpc"'
-          - '"result"'
-          - '"pending"'
-          - '"queued"'
-      - part: header
-        type: word
-        words:
-          - application/json
-      - status:
-          - 200
-        type: status
-    matchers-condition: and
-    raw:
-      - |
-        POST / HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
+  name: Blockchain RPC - txpool_content Exposed
+  reference:
+  - https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool
+  - https://ethereum.org/en/developers/docs/mev/
+  remediation: 'Disable txpool_content, txpool_status, and txpool_inspect on public
+    RPC endpoints. These should only be accessible to internal validator/sequencer
+    nodes. If needed for tooling, expose them on a separate authenticated endpoint.
 
-        {"jsonrpc":"2.0","method":"txpool_content","params":[],"id":1}
+    '
+  severity: high
+  tags: blockchain,mev,misconfig,rpc,txpool,web3

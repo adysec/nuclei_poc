@@ -1,236 +1,113 @@
 id: ikev2-transforms-enum
 info:
-  name: IKEv2 Supported Transforms - Enumeration
   author: pussycat0x
-  severity: info
-  description: |
-    Enumerates supported IKEv2 encryption cipher suites by sending individual SA_INIT probes with single-algorithm proposals. Accepted ciphers return an SA payload response, while rejected ones return a NO_PROPOSAL_CHOSEN notification.
-  reference:
-    - https://www.rfc-editor.org/rfc/rfc7296
-    - https://www.iana.org/assignments/ikev2-parameters
-    - https://www.rfc-editor.org/rfc/rfc7634
+  description: 'Enumerates supported IKEv2 encryption cipher suites by sending individual
+    SA_INIT probes with single-algorithm proposals. Accepted ciphers return an SA
+    payload response, while rejected ones return a NO_PROPOSAL_CHOSEN notification.
+
+    '
   metadata:
     fofa-query: port="500" && protocol="isakmp"
     max-request: 6
     shodan-query: port:500 product:IKE
     verified: true
+  name: IKEv2 Supported Transforms - Enumeration
+  reference:
+  - https://www.rfc-editor.org/rfc/rfc7296
+  - https://www.iana.org/assignments/ikev2-parameters
+  - https://www.rfc-editor.org/rfc/rfc7634
+  severity: info
   tags: ike,ikev2,ipsec,js,network,udp,vpn
 javascript:
-  - args:
-      Host: '{{Host}}'
-      Port: "500"
-    code: |
-      let c = require("nuclei/net");
+- args:
+    Host: '{{Host}}'
+    Port: '500'
+  code: "let c = require(\"nuclei/net\");\n\n\nlet prf_sha256   = \"0300000802000005\"\
+    ;   // PRF-HMAC-SHA256 (always)\nlet integ_sha256 = \"030000080300000c\";   //\
+    \ INTEG-HMAC-SHA256-128\nlet integ_none   = \"0300000803000000\";   // INTEG_NONE\
+    \ (for AEAD)\nlet dh_group14   = \"000000080400000e\";   // DH Group 14 (last\
+    \ xform)\n\nlet ke_payload = \"28000108000e0000\" +\n  \"000102030405060708090a0b0c0d0e0f\"\
+    \ +\n  \"101112131415161718191a1b1c1d1e1f\" +\n  \"202122232425262728292a2b2c2d2e2f\"\
+    \ +\n  \"303132333435363738393a3b3c3d3e3f\" +\n  \"404142434445464748494a4b4c4d4e4f\"\
+    \ +\n  \"505152535455565758595a5b5c5d5e5f\" +\n  \"606162636465666768696a6b6c6d6e6f\"\
+    \ +\n  \"707172737475767778797a7b7c7d7e7f\" +\n  \"808182838485868788898a8b8c8d8e8f\"\
+    \ +\n  \"909192939495969798999a9b9c9d9e9f\" +\n  \"a0a1a2a3a4a5a6a7a8a9aaabacadaeaf\"\
+    \ +\n  \"b0b1b2b3b4b5b6b7b8b9babbbcbdbebf\" +\n  \"c0c1c2c3c4c5c6c7c8c9cacbcccdcecf\"\
+    \ +\n  \"d0d1d2d3d4d5d6d7d8d9dadbdcdddedf\" +\n  \"e0e1e2e3e4e5e6e7e8e9eaebecedeeef\"\
+    \ +\n  \"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff\";\n\nlet nonce_payload = \"00000024\"\
+    \ +\n  \"4142434445464748494a4b4c4d4e4f50\" +\n  \"5152535455565758595a414243444546\"\
+    ;\n\nlet suites = [\n  {\n    name: \"AES-GCM-16ICV-256\",\n    iana: \"ENCR_AES_GCM_16(20)\
+    \ KeyLen=256\",\n    encr: \"0300000c01000014800e0100\",\n    integ: integ_none,\n\
+    \    spi: \"aa01aa01aa01aa01\",\n    xform_bytes: 36\n  },\n  {\n    name: \"\
+    AES-GCM-16ICV-128\",\n    iana: \"ENCR_AES_GCM_16(20) KeyLen=128\",\n    encr:\
+    \ \"0300000c01000014800e0080\",\n    integ: integ_none,\n    spi: \"bb02bb02bb02bb02\"\
+    ,\n    xform_bytes: 36\n  },\n  {\n    name: \"AES-CBC-256\",\n    iana: \"ENCR_AES_CBC(12)\
+    \ KeyLen=256\",\n    encr: \"0300000c0100000c800e0100\",\n    integ: integ_sha256,\n\
+    \    spi: \"cc03cc03cc03cc03\",\n    xform_bytes: 36\n  },\n  {\n    name: \"\
+    AES-CBC-128\",\n    iana: \"ENCR_AES_CBC(12) KeyLen=128\",\n    encr: \"0300000c0100000c800e0080\"\
+    ,\n    integ: integ_sha256,\n    spi: \"dd04dd04dd04dd04\",\n    xform_bytes:\
+    \ 36\n  },\n  {\n    name: \"3DES-CBC\",\n    iana: \"ENCR_3DES(3)\",\n    encr:\
+    \ \"0300000801000003\",\n    integ: integ_sha256,\n    spi: \"ee05ee05ee05ee05\"\
+    ,\n    xform_bytes: 32\n  },\n  {\n    name: \"CHACHA20-POLY1305\",\n    iana:\
+    \ \"ENCR_CHACHA20_POLY1305(28)\",\n    encr: \"030000080100001c\",\n    integ:\
+    \ integ_none,\n    spi: \"ff06ff06ff06ff06\",\n    xform_bytes: 32\n  }\n];\n\n\
+    let supported = [];\nlet rejected  = [];\nlet probes    = [];\n\nfor (let i =\
+    \ 0; i < suites.length; i++) {\n  let s = suites[i];\n\n  let proposal_len = 8\
+    \ + s.xform_bytes;\n  let sa_len       = 4 + proposal_len;\n  let total_len  \
+    \  = 28 + sa_len + 264 + 36;\n\n\n  let prop_hex  = (\"0000\" + proposal_len.toString(16)).slice(-4);\n\
+    \  let sa_hex    = (\"0000\" + sa_len.toString(16)).slice(-4);\n  let total_hex\
+    \ = (\"00000000\" + total_len.toString(16)).slice(-8);\n\n  let packet =\n   \
+    \ s.spi +\n    \"0000000000000000\" +\n    \"21202208\" +\n    \"00000000\" +\n\
+    \    total_hex +\n    \"2200\" + sa_hex +\n    \"0000\" + prop_hex +\n    \"01010004\"\
+    \ +\n    s.encr +\n    prf_sha256 +\n    s.integ +\n    dh_group14 +\n    ke_payload\
+    \ +\n    nonce_payload;\n\n  let status = \"error\";\n  let detail = \"\";\n \
+    \ try {\n    let conn = c.Open('udp', Host + ':' + Port);\n    conn.SetTimeout(8);\n\
+    \    conn.SendHex(packet);\n\n    let raw = conn.Recv(2048);\n    let hexBuf =\
+    \ bytes.NewBuffer();\n    hexBuf.Write(raw);\n    let resp = hexBuf.Hex();\n \
+    \   conn.Close();\n\n    if (resp.length >= 56) {\n      let resp_spi  = resp.substring(16,\
+    \ 32);\n      let first_pay = parseInt(resp.substring(32, 34), 16);\n      let\
+    \ ver_byte  = parseInt(resp.substring(34, 36), 16);\n      let ike_major = (ver_byte\
+    \ >> 4) & 0x0f;\n\n      if (ike_major != 2) {\n        status = \"error\";\n\
+    \        detail = \"non-IKEv2-response\";\n      } else if (first_pay == 0x21)\
+    \ {\n        status = \"accepted\";\n        detail = \"SA-established-spi-\"\
+    \ + resp_spi;\n        supported.push(s.name);\n      } else if (first_pay ==\
+    \ 0x29) {\n        if (resp.length >= 72) {\n          let notify_type = parseInt(resp.substring(68,\
+    \ 72), 16);\n          if (notify_type == 14) {\n            status = \"rejected\"\
+    ;\n            detail = \"NO_PROPOSAL_CHOSEN\";\n            rejected.push(s.name);\n\
+    \          } else if (notify_type == 17) {\n            status = \"rejected\"\
+    ;\n            detail = \"INVALID_KE_PAYLOAD\";\n            rejected.push(s.name);\n\
+    \          } else if (notify_type == 16390) {\n            status = \"cookie\"\
+    ;\n            detail = \"COOKIE-challenge\";\n          } else {\n          \
+    \  status = \"rejected\";\n            detail = \"NOTIFY_\" + notify_type;\n \
+    \           rejected.push(s.name);\n          }\n        } else {\n          status\
+    \ = \"rejected\";\n          detail = \"Notify-truncated\";\n          rejected.push(s.name);\n\
+    \        }\n      } else {\n        status = \"unknown\";\n        detail = \"\
+    payload-0x\" + first_pay.toString(16);\n      }\n    } else if (resp.length >\
+    \ 0) {\n      status = \"error\";\n      detail = \"short-\" + (resp.length /\
+    \ 2) + \"bytes\";\n    } else {\n      status = \"error\";\n      detail = \"\
+    no-response\";\n    }\n  } catch(e) {\n    status = \"error\";\n    detail = \"\
+    conn-error\";\n  }\n\n  probes.push(\"PROBE:\" + s.name + \":\" + status + \"\
+    :\" + detail);\n}\n\n// \u2500\u2500 Build structured text output \u2500\u2500\
+    \nlet output = \"SUPPORTED=\" + (supported.length > 0 ? supported.join(\",\")\
+    \ : \"none\") +\n  \" REJECTED=\" + (rejected.length > 0 ? rejected.join(\",\"\
+    ) : \"none\") +\n  \" SUPPORTED_COUNT=\" + supported.length +\n  \" REJECTED_COUNT=\"\
+    \ + rejected.length +\n  \" TOTAL_PROBES=\" + suites.length +\n  \" FIXED_PARAMS=PRF-HMAC-SHA256+DH-Group14-MODP2048\"\
+    \ +\n  \" AEAD_NOTE=AEAD-ciphers-use-INTEG_NONE\" +\n  \" CLASSICAL_NOTE=Classical-ciphers-use-INTEG-HMAC-SHA256-128\"\
+    ;\n\nfor (let j = 0; j < probes.length; j++) {\n  output += \"\\n\" + probes[j];\n\
+    }\n\nExport(output);\n"
+  extractors:
+  - name: transforms
+    regex:
+    - PROBE:[^:]+:accepted:[^\n]+
+    type: regex
+  matchers:
+  - dsl:
+    - success == true
+    type: dsl
+  - type: word
+    words:
+    - ':accepted:'
+  matchers-condition: and
+  pre-condition: 'isUDPPortOpen(Host, Port);
 
-
-      let prf_sha256   = "0300000802000005";   // PRF-HMAC-SHA256 (always)
-      let integ_sha256 = "030000080300000c";   // INTEG-HMAC-SHA256-128
-      let integ_none   = "0300000803000000";   // INTEG_NONE (for AEAD)
-      let dh_group14   = "000000080400000e";   // DH Group 14 (last xform)
-
-      let ke_payload = "28000108000e0000" +
-        "000102030405060708090a0b0c0d0e0f" +
-        "101112131415161718191a1b1c1d1e1f" +
-        "202122232425262728292a2b2c2d2e2f" +
-        "303132333435363738393a3b3c3d3e3f" +
-        "404142434445464748494a4b4c4d4e4f" +
-        "505152535455565758595a5b5c5d5e5f" +
-        "606162636465666768696a6b6c6d6e6f" +
-        "707172737475767778797a7b7c7d7e7f" +
-        "808182838485868788898a8b8c8d8e8f" +
-        "909192939495969798999a9b9c9d9e9f" +
-        "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf" +
-        "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf" +
-        "c0c1c2c3c4c5c6c7c8c9cacbcccdcecf" +
-        "d0d1d2d3d4d5d6d7d8d9dadbdcdddedf" +
-        "e0e1e2e3e4e5e6e7e8e9eaebecedeeef" +
-        "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff";
-
-      let nonce_payload = "00000024" +
-        "4142434445464748494a4b4c4d4e4f50" +
-        "5152535455565758595a414243444546";
-
-      let suites = [
-        {
-          name: "AES-GCM-16ICV-256",
-          iana: "ENCR_AES_GCM_16(20) KeyLen=256",
-          encr: "0300000c01000014800e0100",
-          integ: integ_none,
-          spi: "aa01aa01aa01aa01",
-          xform_bytes: 36
-        },
-        {
-          name: "AES-GCM-16ICV-128",
-          iana: "ENCR_AES_GCM_16(20) KeyLen=128",
-          encr: "0300000c01000014800e0080",
-          integ: integ_none,
-          spi: "bb02bb02bb02bb02",
-          xform_bytes: 36
-        },
-        {
-          name: "AES-CBC-256",
-          iana: "ENCR_AES_CBC(12) KeyLen=256",
-          encr: "0300000c0100000c800e0100",
-          integ: integ_sha256,
-          spi: "cc03cc03cc03cc03",
-          xform_bytes: 36
-        },
-        {
-          name: "AES-CBC-128",
-          iana: "ENCR_AES_CBC(12) KeyLen=128",
-          encr: "0300000c0100000c800e0080",
-          integ: integ_sha256,
-          spi: "dd04dd04dd04dd04",
-          xform_bytes: 36
-        },
-        {
-          name: "3DES-CBC",
-          iana: "ENCR_3DES(3)",
-          encr: "0300000801000003",
-          integ: integ_sha256,
-          spi: "ee05ee05ee05ee05",
-          xform_bytes: 32
-        },
-        {
-          name: "CHACHA20-POLY1305",
-          iana: "ENCR_CHACHA20_POLY1305(28)",
-          encr: "030000080100001c",
-          integ: integ_none,
-          spi: "ff06ff06ff06ff06",
-          xform_bytes: 32
-        }
-      ];
-
-      let supported = [];
-      let rejected  = [];
-      let probes    = [];
-
-      for (let i = 0; i < suites.length; i++) {
-        let s = suites[i];
-
-        let proposal_len = 8 + s.xform_bytes;
-        let sa_len       = 4 + proposal_len;
-        let total_len    = 28 + sa_len + 264 + 36;
-
-
-        let prop_hex  = ("0000" + proposal_len.toString(16)).slice(-4);
-        let sa_hex    = ("0000" + sa_len.toString(16)).slice(-4);
-        let total_hex = ("00000000" + total_len.toString(16)).slice(-8);
-
-        let packet =
-          s.spi +
-          "0000000000000000" +
-          "21202208" +
-          "00000000" +
-          total_hex +
-          "2200" + sa_hex +
-          "0000" + prop_hex +
-          "01010004" +
-          s.encr +
-          prf_sha256 +
-          s.integ +
-          dh_group14 +
-          ke_payload +
-          nonce_payload;
-
-        let status = "error";
-        let detail = "";
-        try {
-          let conn = c.Open('udp', Host + ':' + Port);
-          conn.SetTimeout(8);
-          conn.SendHex(packet);
-
-          let raw = conn.Recv(2048);
-          let hexBuf = bytes.NewBuffer();
-          hexBuf.Write(raw);
-          let resp = hexBuf.Hex();
-          conn.Close();
-
-          if (resp.length >= 56) {
-            let resp_spi  = resp.substring(16, 32);
-            let first_pay = parseInt(resp.substring(32, 34), 16);
-            let ver_byte  = parseInt(resp.substring(34, 36), 16);
-            let ike_major = (ver_byte >> 4) & 0x0f;
-
-            if (ike_major != 2) {
-              status = "error";
-              detail = "non-IKEv2-response";
-            } else if (first_pay == 0x21) {
-              status = "accepted";
-              detail = "SA-established-spi-" + resp_spi;
-              supported.push(s.name);
-            } else if (first_pay == 0x29) {
-              if (resp.length >= 72) {
-                let notify_type = parseInt(resp.substring(68, 72), 16);
-                if (notify_type == 14) {
-                  status = "rejected";
-                  detail = "NO_PROPOSAL_CHOSEN";
-                  rejected.push(s.name);
-                } else if (notify_type == 17) {
-                  status = "rejected";
-                  detail = "INVALID_KE_PAYLOAD";
-                  rejected.push(s.name);
-                } else if (notify_type == 16390) {
-                  status = "cookie";
-                  detail = "COOKIE-challenge";
-                } else {
-                  status = "rejected";
-                  detail = "NOTIFY_" + notify_type;
-                  rejected.push(s.name);
-                }
-              } else {
-                status = "rejected";
-                detail = "Notify-truncated";
-                rejected.push(s.name);
-              }
-            } else {
-              status = "unknown";
-              detail = "payload-0x" + first_pay.toString(16);
-            }
-          } else if (resp.length > 0) {
-            status = "error";
-            detail = "short-" + (resp.length / 2) + "bytes";
-          } else {
-            status = "error";
-            detail = "no-response";
-          }
-        } catch(e) {
-          status = "error";
-          detail = "conn-error";
-        }
-
-        probes.push("PROBE:" + s.name + ":" + status + ":" + detail);
-      }
-
-      // ── Build structured text output ──
-      let output = "SUPPORTED=" + (supported.length > 0 ? supported.join(",") : "none") +
-        " REJECTED=" + (rejected.length > 0 ? rejected.join(",") : "none") +
-        " SUPPORTED_COUNT=" + supported.length +
-        " REJECTED_COUNT=" + rejected.length +
-        " TOTAL_PROBES=" + suites.length +
-        " FIXED_PARAMS=PRF-HMAC-SHA256+DH-Group14-MODP2048" +
-        " AEAD_NOTE=AEAD-ciphers-use-INTEG_NONE" +
-        " CLASSICAL_NOTE=Classical-ciphers-use-INTEG-HMAC-SHA256-128";
-
-      for (let j = 0; j < probes.length; j++) {
-        output += "\n" + probes[j];
-      }
-
-      Export(output);
-    extractors:
-      - name: transforms
-        regex:
-          - PROBE:[^:]+:accepted:[^\n]+
-        # digest: 4a0a00473045022100e0da17854e305f1e02c933fbe9efe56213b9fa5ccc814e9d288b9817a1a5e2e102203478464a4f83ca9128ff705db6e5c913adb9cbbe3ba5d62fe0ce1e5aeaf04904:922c64590222798bb761d5b6d8e72950
-
-        type: regex
-    matchers:
-      - dsl:
-          - success == true
-        type: dsl
-      - type: word
-        words:
-          - ':accepted:'
-    matchers-condition: and
-    pre-condition: |
-      isUDPPortOpen(Host, Port);
+    '

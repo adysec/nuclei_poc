@@ -1,43 +1,32 @@
-# gap: aem-misconfigs
-id: aem-misconfigs
-
-info:
-  name: Adobe Experience Manager Admin Surface Exposed
-  author: TyrusRC
-  severity: medium
-  description: |
-    Detects an Adobe Experience Manager (AEM) deployment that exposes
-    one of its administrative consoles (CRXDE Lite, CRX Package
-    Manager, OSGi Console, or Groovy Console) without restricting
-    access at the network or dispatcher layer. These panels routinely
-    grant code execution, content modification, or credential reset
-    capabilities and are common AEM hardening checks.
-  reference:
-    - https://github.com/panch0r3d/nuclei-templates/blob/master/AEM_misconfig.yaml
-    - https://experienceleague.adobe.com/docs/experience-manager-65/administering/security/security-checklist.html
-  tags: custom,misconfigurations,aem,adobe,exposure
-
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/crx/de/index.jsp"
-      - "{{BaseURL}}/crx/packmgr/index.jsp"
-      - "{{BaseURL}}/system/console"
-      - "{{BaseURL}}/etc/groovyconsole.html"
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
-      - type: word
-        part: body
-        words:
-          - "CRXDE Lite"
-          - "CRX Package Manager"
-          - "Content Explorer"
-          - "Apache Felix Web Console"
-          - "OSGi Management Console"
-          - "Groovy Console"
-          - "AEM Groovy Console"
-        condition: or
+- headers:
+    User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0
+  matchers:
+  - part: body
+    regex:
+    - (success).*?["][:](true).*?["](results)
+    - (CRXDE).(Lite)
+    - (Content).(Explorer)
+    - (CRX).(Package).(Manager)
+    - (Adobe)
+    type: regex
+  method: GET
+  path:
+  - '{{BaseURL}}/apps/system/config/.tidy.-1.json?.css'
+  - '{{BaseURL}}/bin/querybuilder.json?path=/apps/system/config&p.hits=full&p.limit=-1?.js'
+  - '{{BaseURL}}/crx/de/index.jsp?.js'
+  - '{{BaseURL}}/crx/explorer/browser/index.jsp?.css'
+  - '{{BaseURL}}/crx/packmgr/index.jsp?.json'
+  - '{{BaseURL}}/bin/querybuilder.json?fulltext=web&p.limit=300&p.start=1?.html'
+  - '{{BaseURL}}/bin/querybuilder.json?p.hits=selective&p.properties=jcr%3alastModifiedBy&property=jcr%3alastModifiedBy&property.operation=unequals&property.value=admin&type=nt%3abase&p.limit=1000&p.start=1?.js'
+  - '{{BaseURL}}/libs/granite/core/content/login.html?.ico'
+  - '{{BaseURL}}/etc/reports/diskusage.html?.html'
+  - '{{BaseURL}}///crx///de///index.jsp?.css'
+  - '{{BaseURL}}///bin///querybuilder.json?fulltext=web&p.limit=300&p.start=1?.html'
+id: aem-misconfigs
+info:
+  author: panch0r3d
+  name: Misconfigs and Auth bypasses for older unpatched AEM versions not an exhaustive
+    list but ones Ive had luck with
+  severity: high
+  tags: aem,generic

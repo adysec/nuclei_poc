@@ -1,55 +1,49 @@
+http:
+- body: '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"hello"}],"max_tokens":5}'
+  headers:
+    Content-Type: application/json
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"choices"'
+    - '"message"'
+    - '"content"'
+    - '"delta"'
+  - part: header
+    type: word
+    words:
+    - text/event-stream
+  - part: body
+    regex:
+    - '"role"\s*:\s*"assistant"'
+    - data:\s*\[DONE\]
+    type: regex
+  - part: header
+    type: word
+    words:
+    - anthropic-version
+    - x-openai-organization
+    - x-ratelimit-limit-tokens
+  matchers-condition: or
+  method: POST
+  path:
+  - '{{BaseURL}}/api/chat'
+  - '{{BaseURL}}/api/completions'
+  - '{{BaseURL}}/v1/chat/completions'
+  - '{{BaseURL}}/api/ask'
+  - '{{BaseURL}}/api/assistant'
+  - '{{BaseURL}}/api/message'
+  - '{{BaseURL}}/chat/completions'
+  - '{{BaseURL}}/api/query'
+  - '{{BaseURL}}/api/llm'
+  - '{{BaseURL}}/api/generate'
 id: llm-endpoint-detect
 info:
-  name: LLM Chat Endpoint Detection
   author: yourhandle
+  description: Detects exposed LLM-powered chat/completion endpoints by fingerprinting
+    common API patterns and response structures.
+  name: LLM Chat Endpoint Detection
   severity: info
-  description: Detects exposed LLM-powered chat/completion endpoints by fingerprinting common API patterns and response structures.
   tags: llm,ai,disclosure,recon
-
-http:
-  - method: POST
-    path:
-      - "{{BaseURL}}/api/chat"
-      - "{{BaseURL}}/api/completions"
-      - "{{BaseURL}}/v1/chat/completions"
-      - "{{BaseURL}}/api/ask"
-      - "{{BaseURL}}/api/assistant"
-      - "{{BaseURL}}/api/message"
-      - "{{BaseURL}}/chat/completions"
-      - "{{BaseURL}}/api/query"
-      - "{{BaseURL}}/api/llm"
-      - "{{BaseURL}}/api/generate"
-
-    headers:
-      Content-Type: application/json
-
-    body: '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"hello"}],"max_tokens":5}'
-
-    matchers-condition: or
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '"choices"'
-          - '"message"'
-          - '"content"'
-          - '"delta"'
-        condition: and
-
-      - type: word
-        part: header
-        words:
-          - "text/event-stream"
-
-      - type: regex
-        part: body
-        regex:
-          - '"role"\s*:\s*"assistant"'
-          - 'data:\s*\[DONE\]'
-
-      - type: word
-        part: header
-        words:
-          - "anthropic-version"
-          - "x-openai-organization"
-          - "x-ratelimit-limit-tokens"

@@ -1,51 +1,21 @@
-# gap: jolokia-instance
-id: jolokia-instance
-
-info:
-  name: Jolokia JMX Agent Version Disclosure
-  author: TyrusRC
-  severity: low
-  description: |
-    Detects an exposed Jolokia JMX-HTTP bridge endpoint that returns agent
-    metadata including timestamp, protocol version, and agent version without
-    authentication. Jolokia access can lead to JMX MBean enumeration and
-    potential remote code execution.
-  reference:
-    - https://github.com/pikpikcu/Nuclei-Templates/blob/master/files/jolokia.yaml
-  tags: custom,jolokia,jmx,exposure
-
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/jolokia/version"
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
-      - type: word
-        part: header
-        case-insensitive: true
-        words:
-          - "application/json"
-      - type: regex
-        part: body
-        regex:
-          # Canonical Jolokia version envelope (jolokia.org/reference/html/protocol.html):
-          # {"request":{"type":"version"}, "value":{"agent":"x.y.z","protocol":"7.2",...}, ...}
-          - '"request"\s*:\s*\{\s*"type"\s*:\s*"version"\s*\}'
-          - '"value"\s*:\s*\{[^}]*"agent"\s*:\s*"[0-9.]+"[^}]*"protocol"\s*:'
-
-    extractors:
-      - type: regex
-        part: body
-        name: jolokia-agent-version
-        regex:
-          - '"agent"\s*:\s*"([0-9][^"]+)"'
-        group: 1
-      - type: regex
-        part: body
-        name: jolokia-protocol-version
-        regex:
-          - '"protocol"\s*:\s*"([0-9.]+)"'
-        group: 1
+- matchers:
+  - condition: and
+    type: word
+    words:
+    - '"timestamp":'
+    - '"protocol":'
+    - '"agent":'
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/jolokia/version'
+  - '{{BaseURL}}:8080/jolokia/version'
+id: jolokia-instance
+info:
+  author: mavericknerd & dwisiswant0
+  name: Jolokia Version Disclosure
+  severity: low

@@ -1,59 +1,53 @@
-id: iqmessenger-detect
-
-info:
-  name: IQ Messenger - Panel
-  author: darses
-  severity: info
-  description: |
-    IQ Messenger was detected.
-  metadata:
-    verified: true
-    max-request: 2
-    vendor: iq_messenger
-    shodan-query:
-      - http.favicon.hash:1033082340
-      - title:"IQ Messenger"
-    fofa-query:
-      - icon_hash="-1987558539"
-      - icon_hash="-1021409057"
-      - title="IQ Messenger"
-  reference:
-    - https://iqmessenger.com/
-  tags: detect,panel,iqmessenger
-
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/ui"
+- extractors:
+  - group: 1
+    internal: true
+    name: stylesheet_filename
+    part: body
+    regex:
+    - href="(styles\.\w+\.css)"
+    type: regex
+  matchers:
+  - internal: true
+    status:
+    - 200
+    type: status
+  - internal: true
+    part: body
+    type: word
+    words:
+    - <iqm-root>
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/ui'
+- extractors:
+  - kval:
+    - last_modified
+    part: header
+    type: kval
+  method: GET
+  path:
+  - '{{BaseURL}}/ui/{{stylesheet_filename}}'
+id: iqmessenger-detect
+info:
+  author: darses
+  description: 'IQ Messenger was detected.
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        internal: true
-        status:
-          - 200
-
-      - type: word
-        part: body
-        internal: true
-        words:
-          - "<iqm-root>"
-
-    extractors:
-      - type: regex
-        name: stylesheet_filename
-        internal: true
-        part: body
-        regex:
-          - 'href="(styles\.\w+\.css)"'
-        group: 1
-
-  - method: GET
-    path:
-      - "{{BaseURL}}/ui/{{stylesheet_filename}}"
-
-    extractors:
-      - type: kval
-        part: header
-        kval:
-          - last_modified
+    '
+  metadata:
+    fofa-query:
+    - icon_hash="-1987558539"
+    - icon_hash="-1021409057"
+    - title="IQ Messenger"
+    max-request: 2
+    shodan-query:
+    - http.favicon.hash:1033082340
+    - title:"IQ Messenger"
+    vendor: iq_messenger
+    verified: true
+  name: IQ Messenger - Panel
+  reference:
+  - https://iqmessenger.com/
+  severity: info
+  tags: detect,panel,iqmessenger

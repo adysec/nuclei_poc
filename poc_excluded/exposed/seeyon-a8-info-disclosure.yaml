@@ -1,30 +1,32 @@
+expression: r0() || r1() || r2()
 id: seeyon-a8-info-disclosure
-
 info:
-  name: 致远OA A8 信息泄露漏洞
   author: zan8in
-  severity: medium
-  description: |
-    致远OA A8-m 存在状态监控页面信息泄露，攻击者可以从其中获取网站路径和用户名等敏感信息进一步攻击
-    title="A8-m"
-    fofa：app="致远互联-OA"
+  description: "\u81F4\u8FDCOA A8-m \u5B58\u5728\u72B6\u6001\u76D1\u63A7\u9875\u9762\
+    \u4FE1\u606F\u6CC4\u9732\uFF0C\u653B\u51FB\u8005\u53EF\u4EE5\u4ECE\u5176\u4E2D\
+    \u83B7\u53D6\u7F51\u7AD9\u8DEF\u5F84\u548C\u7528\u6237\u540D\u7B49\u654F\u611F\
+    \u4FE1\u606F\u8FDB\u4E00\u6B65\u653B\u51FB\ntitle=\"A8-m\"\nfofa\uFF1Aapp=\"\u81F4\
+    \u8FDC\u4E92\u8054-OA\"\n"
+  name: "\u81F4\u8FDCOA A8 \u4FE1\u606F\u6CC4\u9732\u6F0F\u6D1E"
   reference:
-    - http://wiki.peiqi.tech/wiki/oa/%E8%87%B4%E8%BF%9COA/%E8%87%B4%E8%BF%9COA%20A8%20status.jsp%20%E4%BF%A1%E6%81%AF%E6%B3%84%E9%9C%B2%E6%BC%8F%E6%B4%9E.html
-  
+  - http://wiki.peiqi.tech/wiki/oa/%E8%87%B4%E8%BF%9COA/%E8%87%B4%E8%BF%9COA%20A8%20status.jsp%20%E4%BF%A1%E6%81%AF%E6%B3%84%E9%9C%B2%E6%BC%8F%E6%B4%9E.html
+  severity: medium
 rules:
   r0:
+    expression: response.status == 200 && response.body.bcontains(b'Server') && response.body.bcontains(b'JVM')  &&
+      response.body.bcontains(b'GC')  && response.body.bcontains(b'http-80')
     request:
       method: GET
       path: /seeyon/management/status.jsp
-    expression: response.status == 200 && response.body.bcontains(b'Server') && response.body.bcontains(b'JVM')  && response.body.bcontains(b'GC')  && response.body.bcontains(b'http-80')
   r1:
+    expression: response.status == 200 && response.body.bcontains(b'[Access URL]')
+      && response.body.bcontains(b'==>')
     request:
       method: GET
       path: /seeyon/logs/login.log
-    expression: response.status == 200 && response.body.bcontains(b'[Access URL]') && response.body.bcontains(b'==>')
   r2:
+    expression: response.status == 200 && response.body.bcontains(b'[QuartzScheduler_Worker-1]  INFO
+      AccountDaoBean:29')
     request:
       method: GET
       path: /seeyon/logs/v3x.log
-    expression: response.status == 200 && response.body.bcontains(b'[QuartzScheduler_Worker-1]  INFO AccountDaoBean:29')
-expression: r0() || r1() || r2()

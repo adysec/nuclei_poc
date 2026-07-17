@@ -1,23 +1,21 @@
-id: influxdb-unauth
-
-info:
-    name: Influxdb Unauth
-    author: p0wd3r
-    severity: high
-    verified: true
-
-rules:
-    r0:
-        request:
-            method: GET
-            path: /ping
-            follow_redirects: true
-        expression: response.status == 204 && "x-influxdb-version" in response.headers
-    r1:
-        request:
-            method: GET
-            path: /query?q=show%20users
-            follow_redirects: true
-        expression: response.status == 200 && response.content_type.contains("application/json") && response.body.bcontains(b"columns") && response.body.bcontains(b"user")
 expression: r0() && r1()
-
+id: influxdb-unauth
+info:
+  author: p0wd3r
+  name: Influxdb Unauth
+  severity: high
+  verified: true
+rules:
+  r0:
+    expression: response.status == 204 && "x-influxdb-version" in response.headers
+    request:
+      follow_redirects: true
+      method: GET
+      path: /ping
+  r1:
+    expression: response.status == 200 && response.content_type.contains("application/json")
+      && response.body.bcontains(b"columns") && response.body.bcontains(b"user")
+    request:
+      follow_redirects: true
+      method: GET
+      path: /query?q=show%20users
