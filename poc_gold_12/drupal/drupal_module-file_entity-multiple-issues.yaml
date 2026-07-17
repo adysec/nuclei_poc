@@ -1,55 +1,56 @@
-http:
-- extractors:
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - dsl:
-    - compare_versions(version, '9.x-99.99')
-    type: dsl
-  matchers:
-  - condition: and
-    part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - condition: and
-    status:
-    - 200
-    type: status
-  - condition: and
-    part: body
-    type: word
-    words:
-    - file_entity
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/sites/all/modules/file_entity/file_entity.info'
-  redirects: true
+
 id: drupal_module-file_entity-multiple-issues
 info:
-  author: me
-  description: File entity provides interfaces for managing files. It also extends
-    the core file entity, allowing files to be fieldable, grouped into types, viewed
-    (using display modes) and formatted using field formatters. The module previously
-    did not sufficiently validate files under the scenario of a file replacement leading
-    to multiple exploit paths including persistent Cross Site Scripting. This vulnerability
-    is mitigated by the fact that an attacker must have a role with the permission
-    to edit files.
-  metadata:
-    created_at: '2025-01-09'
-    fofa-query: /sites/all/modules/file_entity/
-    google-query: inurl:'/sites/all/modules/file_entity/
-    impact: medium
-    security-risk: "Moderately critical 14\u2009\u2215\u200925 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:All"
-    type: indicator
-    vulnerability: multiple-issues
   name: drupal_module-file_entity-multiple-issues
-  reference:
-  - https://www.drupal.org/sa-contrib-2024-001
+  author: me
   severity: medium
+  description: "File entity provides interfaces for managing files. It also extends the core file entity, allowing files to be fieldable, grouped into types, viewed (using display modes) and formatted using field formatters. The module previously did not sufficiently validate files under the scenario of a file replacement leading to multiple exploit paths including persistent Cross Site Scripting. This vulnerability is mitigated by the fact that an attacker must have a role with the permission to edit files."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-001
+  metadata:
+    security-risk: "Moderately critical 14 ∕ 25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:All"
+    vulnerability: "multiple-issues"
+    fofa-query: "/sites/all/modules/file_entity/"
+    google-query: "inurl:'/sites/all/modules/file_entity/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
   tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/file_entity/file_entity.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'file_entity'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '9.x-99.99')

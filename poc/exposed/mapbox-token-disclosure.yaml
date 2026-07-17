@@ -1,27 +1,46 @@
-id: mapbox-token-disclosure
-
-info:
-  name: Mapbox Token Disclosure
-  author: Devang-Solanki
-  severity: medium
-  description: Mapbox secret token is exposed to external users.
-  reference:
-    - https://docs.gitguardian.com/secrets-detection/detectors/specifics/mapbox_token
-    - https://github.com/zricethezav/gitleaks/blob/master/cmd/generate/config/rules/mapbox.go
-  metadata:
-    verified: true
-    max-request: 1
-  tags: token,exposure,mapbox,disclosure
-
+flow: http(1) && http(2)
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
+- matchers:
+  - internal: true
+    name: token
+    part: body
+    regex:
+    - sk\.eyJ1Ijoi\w+\.[\w-]*
+    type: regex
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- disable-path-automerge: true
+  extractors:
+  - dsl:
+    - token
+    type: dsl
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains_all(body, "type","query","features")
+    type: dsl
+  raw:
+  - '@Host: https://api.mapbox.com:443
 
-    extractors:
-      - type: regex
-        name: mapbox-secret-token
-        part: body
-        regex:
-          - 'sk\.eyJ1Ijoi\w+\.[\w-]*'
-# digest: 4b0a00483046022100d7617443ed3e7a7a89df94632d8cf03ab1b0677d3982fa525f32c19edcf295230221008ada4257f38c87fc9de9cf1c57f95f0228b47ce3f9f82b80cae0b8c589acbe92:922c64590222798bb761d5b6d8e72950
+    GET /geocoding/v5/mapbox.places/Los%20Angeles.json?access_token={{token}} HTTP/1.1
+
+    Host: api.mapbox.com
+
+    '
+id: mapbox-token-disclosure
+info:
+  author: Devang-Solanki
+  description: Mapbox secret token is exposed to external users.
+  metadata:
+    max-request: 2
+    verified: true
+  name: Mapbox Token Disclosure
+  reference:
+  - https://docs.gitguardian.com/secrets-detection/detectors/specifics/mapbox_token
+  - https://github.com/zricethezav/gitleaks/blob/master/cmd/generate/config/rules/mapbox.go
+  - https://docs.mapbox.com/api/accounts/tokens/#token-format
+  - https://docs.mapbox.com/help/getting-started/access-tokens/
+  severity: medium
+  tags: token,exposure,mapbox,vuln
