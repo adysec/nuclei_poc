@@ -1,23 +1,49 @@
-id: wp-google-maps
+id: wordpress-wp-google-maps
+
 info:
-  name: wp-google-maps
-  author: cn-kali-team
-  tags: detect,tech,wp-google-maps
+  name: WP Go Maps (formerly WP Google Maps) Detection
+  author: ricardomaia
   severity: info
+  reference:
+    - https://wordpress.org/plugins/wp-google-maps/
   metadata:
-    fofa-query:
-    - body="wp-google-maps"
-    product: wp-google-maps
-    shodan-query:
-    - http.html:"wp-google-maps"
-    vendor: wpgmaps
-    verified: true
-http:
-- method: GET
-  path:
-  - '{{BaseURL}}/'
-  matchers:
-  - type: word
-    words:
-    - wp-google-maps
-    case-insensitive: true
+    plugin_namespace: wp-google-maps
+    wpscan: https://wpscan.com/plugin/wp-google-maps
+  tags: tech,wordpress,wp-plugin,top-200
+
+requests:
+  - method: GET
+
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-google-maps/readme.txt"
+
+    payloads:
+      last_version: ../../../helpers/wordpress/plugins/wp-google-maps.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
