@@ -1,0 +1,89 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusters
+    type: json
+  source: 'aws eks list-clusters --region $region --query ''clusters'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: nodegroups
+    type: json
+  source: 'aws eks list-nodegroups --region $region --cluster-name $cluster --query
+    ''nodegroups'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .
+    name: rolearn
+    type: json
+  source: 'aws eks describe-nodegroup --region $region --cluster-name $cluster --nodegroup-name
+    $nodegroup --query ''nodegroup.nodeRole'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"EKS node group " + nodegroup + " in cluster " + cluster + " does not have
+      AmazonEKS_CNI_Policy attached to its IAM role"'
+    type: dsl
+  matchers:
+  - negative: true
+    type: word
+    words:
+    - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+  - type: word
+    words:
+    - '['
+  matchers-condition: and
+  source: 'aws iam list-attached-role-policies --role-name $(echo $rolearn | cut -d''/''
+    -f2) --query ''AttachedPolicies[*].PolicyArn'' --output json
+
+    '
+flow: "code(1)\nfor(let cluster of iterate(template.clusters)){\n  set(\"cluster\"\
+  , cluster)\n  code(2)\n  for(let nodegroup of iterate(template.nodegroups)){\n \
+  \   set(\"nodegroup\", nodegroup)\n    code(3)\n    code(4)\n  }\n}\n"
+id: eks-iam-managed-policy-networking
+info:
+  author: princechaddha
+  description: 'Ensure that all Amazon EKS cluster node groups use the "AmazonEKS_CNI_Policy"
+    managed policy to manage cloud networking resources effectively. This policy provides
+    the necessary permissions to the Amazon VPC CNI Plugin for managing network interfaces.
+
+    '
+  impact: 'Without the AmazonEKS_CNI_Policy, the VPC CNI plugin cannot properly manage
+    network interfaces, which will affect pod networking and communication within
+    the EKS cluster.
+
+    '
+  name: Use AWS-managed policy to Manage Networking Resources
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/aws/EKS/eks-iam-managed-policy-networking.html
+  - https://docs.aws.amazon.com/eks/latest/userguide/cni-iam-role.html
+  remediation: 'Attach the AmazonEKS_CNI_Policy to the IAM role associated with your
+    EKS node groups using either the AWS Console or AWS CLI.
+
+    '
+  severity: high
+  tags: cloud,devops,aws,amazon,eks,aws-cloud-config
+self-contained: true
+variables:
+  region: us-east-1

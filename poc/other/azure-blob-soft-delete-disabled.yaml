@@ -1,0 +1,60 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: storageAccountNames
+    type: json
+  source: 'az storage account list --query ''[*].{"Name":name}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " blob storage does not have Soft Delete enabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  matchers-condition: and
+  source: 'az storage blob service-properties delete-policy show --account-name "$name"
+    --output json --query ''enabled''
+
+    '
+flow: "code(1);\nfor (let storageAccount of iterate(template.storageAccountNames))\
+  \ {\n  storageAccount = JSON.parse(storageAccount);\n  set(\"name\", storageAccount.Name);\n\
+  \  code(2);\n}\n"
+id: azure-blob-soft-delete-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that Soft Delete feature is enabled for all your Microsoft
+    Azure Storage blob objects (blobs and snapshots). Soft Delete enables you to save
+    and recover blob data in case your Azure Storage blobs or blob snapshots are deleted.
+    This extra layer of protection also extends to the Microsoft Azure blob data that
+    is erased as the result of an overwrite operation. With Soft Delete feature enabled,
+    when blob objects are deleted, they are transitioned to a soft deleted state instead
+    of being permanently erased. When blob objects are overwritten, soft deleted snapshots
+    are created to save the state of the overwritten blob data.
+
+    '
+  impact: 'Not having Soft Delete enabled can lead to permanent loss of blob data
+    which cannot be recovered, leading to potential data breaches and compliance issues.
+
+    '
+  name: Azure Blob Storage Soft Delete Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/storage/blobs/soft-delete-overview
+  remediation: 'Enable the Soft Delete feature for all blob storage accounts via the
+    Azure Portal or using Azure CLI commands to ensure data is recoverable even after
+    deletion or overwriting.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,blob-storage,azure-cloud-config
+self-contained: true

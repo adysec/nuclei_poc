@@ -1,0 +1,56 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: functionApps
+    type: json
+  source: 'az functionapp list --output json --query ''[*].{name:name, resourceGroup:resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " does not have Virtual Network Integration enabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - ''
+  source: 'az functionapp show --name $name --resource-group $resourceGroup --query
+    ''siteConfig.vnetName'' --output json
+
+    '
+flow: "code(1);\nfor (let AppData of iterate(template.functionApps)) {\n  AppData\
+  \ = JSON.parse(AppData);\n  set(\"name\", AppData.name);\n  set(\"resourceGroup\"\
+  , AppData.resourceGroup);\n  code(2);\n}\n"
+id: azure-functionapp-vnet-integration-missing
+info:
+  author: princechaddha
+  description: 'To follow Azure networking best practices and securely access cloud
+    resources available within your Azure Virtual Network (VNet), ensure that Virtual
+    Network integration is enabled for your Microsoft Azure Function Apps. With Virtual
+    Network integration, you can restrict your Function App outbound connections to
+    specific, trusted VNets only.
+
+    '
+  impact: 'Lack of Virtual Network integration may lead to insecure access to cloud
+    resources, posing a security risk by allowing outbound connections to non-trusted
+    networks.
+
+    '
+  name: Virtual Network Integration for Azure Functions Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/azure-functions/functions-networking-options
+  remediation: 'Enable Virtual Network integration for your Azure Function Apps to
+    secure connections to trusted Virtual Networks.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,functionapp,azure-cloud-config
+self-contained: true

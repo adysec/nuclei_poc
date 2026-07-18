@@ -1,0 +1,57 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: serviceList
+    type: json
+  source: 'az cognitiveservices account list --output json --query ''[?(kind==`OpenAI`)].{Name:name,
+    ResourceGroup:resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " does not have private endpoint connections
+      configured"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  matchers-condition: and
+  source: 'az cognitiveservices account show --name "$name" --resource-group "$resourceGroup"
+    --query ''properties.privateEndpointConnections''
+
+    '
+flow: "code(1);\nfor (let ServiceInstance of iterate(template.serviceList)) {\n  ServiceInstance\
+  \ = JSON.parse(ServiceInstance);\n  set(\"name\", ServiceInstance.Name);\n  set(\"\
+  resourceGroup\", ServiceInstance.ResourceGroup);\n  code(2);\n}\n"
+id: azure-openai-private-endpoints-unconfigured
+info:
+  author: princechaddha
+  description: 'To reduce the risk of exposure to external threats and strengthens
+    overall security for your Azure OpenAI interactions, ensure that your Azure OpenAI
+    service instances are accessed exclusively through private endpoint connections.
+
+    '
+  impact: 'Not using private endpoints for OpenAI service instances can expose them
+    to external threats, compromising the security of your Azure environment.
+
+    '
+  name: Azure OpenAI Service Instances Not Using Private Endpoints
+  reference:
+  - https://docs.microsoft.com/en-us/azure/private-link/private-endpoint-overview
+  remediation: 'Configure all Azure OpenAI service instances to use private endpoints
+    to enhance security and ensure that these instances are not accessible over the
+    public internet.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,openai,azure-cloud-config,ai
+self-contained: true

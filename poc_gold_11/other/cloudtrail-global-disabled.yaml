@@ -1,0 +1,56 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: cloudtrailname
+    type: json
+  source: 'aws cloudtrail list-trails --region $region --query ''Trails[*].Name''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"CloudTrail trail" + trail + " is not configured to record API calls for AWS
+      global services"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'aws cloudtrail describe-trails --region $region --trail-name-list $trail
+    --query ''trailList[*].IncludeGlobalServiceEvents''
+
+    '
+flow: "code(1)\nfor(let CloudTrail of iterate(template.cloudtrailname)){\n  set(\"\
+  trail\", CloudTrail)\n  code(2)\n}\n"
+id: cloudtrail-global-disabled
+info:
+  author: princechaddha
+  description: 'Ensure Amazon CloudTrail trails are configured to capture both regional
+    and global API activity for enhanced security and compliance in your AWS account.
+
+    '
+  impact: 'Lacking global event logging reduces visibility across AWS services that
+    operate at the global level, potentially missing critical security and compliance
+    data.
+
+    '
+  name: CloudTrail Global Events Enablement
+  reference:
+  - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-and-update-a-trail.html
+  remediation: 'Enable global service logging in CloudTrail by creating or updating
+    a trail to include global services. This ensures comprehensive activity monitoring.
+
+    '
+  severity: high
+  tags: cloud,devops,aws,amazon,cloudtrail,aws-cloud-config
+self-contained: true
+variables:
+  region: ap-south-1

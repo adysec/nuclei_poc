@@ -1,0 +1,63 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Data Access audit logs are not enabled for the \"storage.googleapis.com\"
+      service in project " + projectId'
+    type: dsl
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - ADMIN_READ
+    - DATA_READ
+    - DATA_WRITE
+  - negative: true
+    type: word
+    words:
+    - '"service": "allServices"'
+  source: 'gcloud projects get-iam-policy $projectId --format="json(auditConfigs)"
+    | jq -r ''.auditConfigs[]?.auditLogConfigs[]?.logType // "null"''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n}\n"
+id: gcloud-data-access-audit-logs-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that Data Access audit logs are enabled for your Google Cloud
+    Storage buckets and objects to track read, write, and admin operations. Data Access
+    audit logs provide insights into resource usage and help ensure security, compliance,
+    and effective troubleshooting.
+
+    '
+  impact: 'Without Data Access audit logs, tracking operations on storage resources
+    becomes difficult, increasing the risk of undetected unauthorized access or non-compliance
+    with security policies.
+
+    '
+  name: Enable Data Access Audit Logs for Cloud Storage
+  reference:
+  - https://cloud.google.com/logging/docs/audit
+  remediation: 'Enable Data Access audit logs for the "storage.googleapis.com" service
+    in your project to monitor all read, write, and admin activities on Cloud Storage
+    resources.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-storage,audit-logs,security,gcp-cloud-config
+self-contained: true

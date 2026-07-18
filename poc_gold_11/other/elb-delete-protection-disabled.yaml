@@ -1,0 +1,57 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: loadbalancers
+    type: json
+  source: 'aws elbv2 describe-load-balancers --region $region --query ''LoadBalancers[*].LoadBalancerArn''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"ELB Delete Protection " + loadbalancer + " is Disabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"false"'
+  source: 'aws elbv2 describe-load-balancer-attributes --region $region --load-balancer-arn
+    $loadbalancer --query ''Attributes[?(Key == `deletion_protection.enabled`)].Value
+    | []''
+
+    '
+flow: "code(1)\nfor (let LoadBalancer of iterate(template.loadbalancers)) {\n  set(\"\
+  loadbalancer\", LoadBalancer)\n  code(2)\n}\n"
+id: elb-delete-protection-disabled
+info:
+  author: DhiyaneshDK
+  description: 'Ensure that Deletion Protection safety feature is enabled for your
+    Amazon Gateway Load Balancers (GWLBs) in order to protect the load balancers from
+    being accidentally deleted.
+
+    '
+  impact: 'Disabling delete protection on an Elastic Load Balancer (ELB) increases
+    the risk of accidental or intentional deletion of the load balancer.
+
+    '
+  name: ELB Delete Protection - Disabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/ELBv2/enable-gwlb-deletion-protection.html
+  - https://awscli.amazonaws.com/v2/documentation/api/latest/reference/elbv2/index.html
+  remediation: 'Enable Server-Side Encryption (SSE) on the queue to protect sensitive
+    data by encrypting it at rest using AWS KMS.
+
+    '
+  severity: medium
+  tags: cloud, devops, aws, amazon, elb, aws-cloud-config
+self-contained: true
+variables:
+  region: us-west-2

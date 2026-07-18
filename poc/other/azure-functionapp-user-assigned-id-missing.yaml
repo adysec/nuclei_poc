@@ -1,0 +1,54 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: functionApps
+    type: json
+  source: 'az functionapp list --output json --query ''[*].{name:name, resourceGroup:resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " does not use user-assigned managed identity"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - SystemAssigned
+    - ''
+  source: 'az functionapp show --name $name --resource-group $resourceGroup --query
+    ''identity.type'' --output json
+
+    '
+flow: "code(1);\nfor (let AppData of iterate(template.functionApps)) {\n  AppData\
+  \ = JSON.parse(AppData)\n  set(\"name\", AppData.name);\n  set(\"resourceGroup\"\
+  , AppData.resourceGroup);\n  code(2);\n}\n"
+id: azure-functionapp-user-assigned-id-missing
+info:
+  author: princechaddha
+  description: 'Ensure that functions managed with Azure Function App are using user-assigned
+    managed identities for fine-grained control over access permissions.
+
+    '
+  impact: 'Using default or system-assigned identities can limit the granularity of
+    access control, potentially allowing broader than necessary access to resources.
+
+    '
+  name: User-Assigned Managed Identities for Azure Functions
+  reference:
+  - https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity
+  remediation: 'Configure user-assigned managed identities for your Azure Function
+    Apps to gain more granular control over permissions and reduce potential security
+    risks.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,functionapp,azure-cloud-config
+self-contained: true

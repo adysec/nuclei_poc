@@ -1,0 +1,66 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: perimeters
+    type: json
+  source: 'gcloud access-context-manager perimeters list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The VPC Service Perimeter " + perimeterName + " in project " + projectId +
+      " does not include storage.googleapis.com, leaving Cloud Storage buckets unprotected."'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - storage.googleapis.com
+  source: 'gcloud access-context-manager perimeters describe $perimeterName --project
+    $projectId --format=json | jq -r ''.status.restrictedServices[]? // "null"''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let perimeterName of iterate(template.perimeters)){\n\
+  \    set(\"perimeterName\", perimeterName)\n    code(3)\n  }\n}\n"
+id: gcloud-vpc-service-controls-not-configured
+info:
+  author: princechaddha
+  description: 'Ensure that VPC Service Controls are used to configure a security
+    perimeter around your Google Cloud Storage buckets to prevent data exfiltration
+    and enhance the security posture of your cloud environment.
+
+    '
+  impact: 'Without VPC Service Controls, sensitive data in your Google Cloud Storage
+    buckets is at a higher risk of unauthorized access and exfiltration.
+
+    '
+  name: Use VPC Service Controls for Cloud Storage Buckets
+  reference:
+  - https://cloud.google.com/vpc-service-controls/docs/overview
+  remediation: 'Configure VPC Service Controls with a security perimeter that includes
+    the Cloud Storage service (storage.googleapis.com) to protect your sensitive data.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-storage,vpc-service-controls,security,gcp-cloud-config
+self-contained: true

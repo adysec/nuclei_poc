@@ -1,0 +1,66 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: functions
+    type: json
+  source: 'gcloud functions list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Function not using CMEK: " + functionName + " in " + projectId + " project"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud functions describe $functionName --format="json(kmsKeyName)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let functionName of iterate(template.functions)){\n\
+  \    set(\"functionName\", functionName)\n    code(3)\n  }\n}\n"
+id: gcloud-func-cmek-not-used
+info:
+  author: princechaddha
+  description: 'Ensure that your Google Cloud functions use Customer-Managed Encryption
+    Keys (CMEK) instead of Google-managed encryption keys to encrypt data at rest.
+    CMEKs provide greater control over the encryption and decryption process, enabling
+    you to meet stringent compliance requirements.
+
+    '
+  impact: 'Using Google-managed encryption keys instead of CMEKs reduces your ability
+    to control the encryption process and comply with certain regulatory standards.
+
+    '
+  name: No Customer-Managed Encryption Keys in Google Cloud Functions
+  reference:
+  - https://cloud.google.com/functions/docs/securing/managing-encryption-keys
+  remediation: 'Configure your Google Cloud functions to use Customer-Managed Encryption
+    Keys (CMEK) to ensure data encryption at rest is managed according to your compliance
+    and security requirements.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+self-contained: true

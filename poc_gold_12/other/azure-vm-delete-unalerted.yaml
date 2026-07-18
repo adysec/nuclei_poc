@@ -1,0 +1,63 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: alertList
+    type: json
+  source: 'az monitor activity-log alert list --output json --query ''[?(enabled==`true`)].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - id + " does not have the correct alert configuration for Delete Virtual Machine
+      events"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"field": "operationName"'
+  - negative: true
+    type: word
+    words:
+    - Microsoft.Compute/virtualMachines/delete
+  matchers-condition: and
+  source: 'az monitor activity-log alert show --ids "$id" --query ''condition''
+
+    '
+flow: "code(1);\nfor (let AlertData of iterate(template.alertList)) {\n  set(\"id\"\
+  , AlertData);\n  code(2);\n}\n"
+id: azure-vm-delete-unalerted
+info:
+  author: princechaddha
+  description: 'Ensure that a Microsoft Azure activity log alert is fired whenever
+    a "Delete Virtual Machine" event is triggered within your cloud account. An Azure
+    activity log alert fires each time the action event that matches the condition
+    specified in the alert configuration is triggered. The alert condition that this
+    conformity rule searches for is `Whenever the Administrative Activity Log "Delete
+    Virtual Machine (Microsoft.Compute/virtualMachines)" has "any" Event level, with
+    "any" Status and Event initiated by "any"`.
+
+    '
+  impact: 'Not having alerts for "Delete Virtual Machine" events can allow unauthorized
+    deletions to go unnoticed, posing significant risks to operational continuity
+    and data integrity.
+
+    '
+  name: Azure Virtual Machine Delete Alert Not Configured
+  reference:
+  - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  remediation: 'Configure activity log alerts to fire on "Delete Virtual Machine"
+    events by setting the alert condition to "Microsoft.Compute/virtualMachines/delete"
+    and ensure that notifications are managed by an attached action group.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,virtual-machines,azure-cloud-config
+self-contained: true

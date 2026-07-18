@@ -1,0 +1,60 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: alertList
+    type: json
+  source: 'az monitor activity-log alert list --output json --query ''[?(enabled==`true`)].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - id + " does not have the correct alert configuration for Delete Public IP Address
+      events"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"field": "operationName"'
+  - negative: true
+    type: word
+    words:
+    - '"equals": "Microsoft.Network/publicIPAddresses/delete"'
+  matchers-condition: and
+  source: 'az monitor activity-log alert show --ids "$id"
+
+    '
+flow: "code(1);\nfor (let AlertData of iterate(template.alertList)) {\n  set(\"id\"\
+  , AlertData);\n  code(2);\n}\n"
+id: azure-public-ip-delete-unalerted
+info:
+  author: princechaddha
+  description: 'Ensure that activity log alerts are used to detect "Delete Public
+    IP Address" events within your Microsoft Azure cloud account. An activity log
+    alert gets activated when a new activity log event that matches the condition
+    specified in the alert occurs.
+
+    '
+  impact: 'Without proper alert rules configured for monitoring "Delete Public IP
+    Address" events, unauthorized or unwanted changes might go unnoticed, leading
+    to potential security risks.
+
+    '
+  name: Azure Public IP Delete Alert Not Configured
+  reference:
+  - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  remediation: 'Ensure alert rules are properly configured to monitor and notify on
+    "Delete Public IP Address" events by setting the alert condition to "Microsoft.Network/publicIPAddresses/delete"
+    and ensuring that an action group is attached to manage notifications.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,public-ip,azure-cloud-config
+self-contained: true

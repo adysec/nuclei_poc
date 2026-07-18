@@ -1,0 +1,41 @@
+flow: http(1) && http(2)
+http:
+- extractors:
+  - name: printer_version
+    part: body
+    regex:
+    - Dell([ 0-9A-Za-z]+).*Laser Printer
+    type: regex
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains_all(body, '<TITLE>Dell','Laser Printer</TITLE>')
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains_all(body, 'Security','Security')
+    internal: true
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}/cgi-bin/dynamic/config/secure/security.html'
+id: dell-laser-printer-unauth
+info:
+  author: pussycat0x
+  description: 'The Dell Laser Printer web interface was accessible without authentication.
+
+    '
+  metadata:
+    max-request: 1
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)Laser Printer"})
+    shodan-query: title="Laser Printer"
+    verified: true
+  name: Dell Laser Printer - Unauthenticated Detect
+  severity: high
+  tags: dell,discovery,iot,misconfig,printer,unauth,vuln

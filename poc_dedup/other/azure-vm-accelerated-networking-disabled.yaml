@@ -1,0 +1,71 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: vmIDs
+    type: json
+  source: 'az vm list --query ''[*].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: nicIDs
+    type: json
+  source: 'az vm show --ids "$vmId" --query ''networkProfile.networkInterfaces[*].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - vmId + " with NIC " + nicId + " has Accelerated Networking disabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'az network nic show --ids "$nicId" --query ''enableAcceleratedNetworking''
+
+    '
+flow: "code(1);\nfor(let InstanceDetails of iterate(template.vmIDs)) {\n  set(\"vmId\"\
+  , InstanceDetails);\n  code(2);\n  for(let NicId of iterate(template.nicIDs)) {\n\
+  \    set(\"nicId\", NicId);\n    code(3);\n  }\n}\n"
+id: azure-vm-accelerated-networking-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that Accelerated Networking feature is enabled for your Azure
+    virtual machines (VMs) in order to provide low latency and high throughput for
+    the network interfaces (NICs) attached to the VMs. Accelerated networking enables
+    single root input/output virtualization (SR-IOV) for virtual machines, vastly
+    improving its networking performance. This high-performance pathway bypasses the
+    host from the datapath, reducing latency, jitter and CPU utilization, so it can
+    be used with the most demanding network workloads that can be installed on the
+    supported VM types.
+
+    '
+  impact: 'Disabling Accelerated Networking may result in higher latency and lower
+    throughput on network interfaces attached to VMs, leading to potential performance
+    bottlenecks.
+
+    '
+  name: Azure VM Accelerated Networking Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-accelerated-networking-cli
+  remediation: 'Enable Accelerated Networking on all compatible Azure VMs to ensure
+    optimal network performance. This can be done through the Azure portal or using
+    Azure CLI commands.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,virtual-machines,azure-cloud-config
+self-contained: true

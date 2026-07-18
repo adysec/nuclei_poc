@@ -1,0 +1,53 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: serverList
+    type: json
+  source: 'az sql server list --query ''[*].{"id":id}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - id + " does not have auto-failover enabled."
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  matchers-condition: and
+  source: 'az sql failover-group list --ids "$id" --output json
+
+    '
+flow: "code(1);\nfor (let ServerData of iterate(template.serverList)) {\n  ServerData\
+  \ = JSON.parse(ServerData);\n  set(\"id\", ServerData.id);\n  code(2);\n  }\n"
+id: azure-sql-failover-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that Microsoft Azure SQL database servers are using auto-failover
+    groups in order to enable database replication and automatic failover. A Microsoft
+    Azure SQL failover group is designed to automatically manage replication, connectivity,
+    high availability, and failover for a set of SQL databases.
+
+    '
+  impact: 'Not using auto-failover groups may lead to higher risks of downtime and
+    data loss due to the lack of automatic failover capabilities.
+
+    '
+  name: Azure SQL Failover Groups Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/azure-sql/database/auto-failover-group-overview
+  remediation: 'Enable auto-failover groups on your Azure SQL database servers to
+    ensure high availability and automatic failover capabilities are in place.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,azure-sql,azure-cloud-config
+self-contained: true

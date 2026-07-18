@@ -1,0 +1,58 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: storageList
+    type: json
+  source: 'az storage account list --query ''[*].{"Name":name}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " storage account network access is not restricted (default action is
+      Allow)"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"Allow"'
+  matchers-condition: and
+  source: 'az storage account show --name "$name" --query ''networkRuleSet.defaultAction''
+
+    '
+flow: "code(1);\nfor (let StorageData of iterate(template.storageList)) {\n  StorageData\
+  \ = JSON.parse(StorageData);\n  set(\"name\", StorageData.Name);\n  code(2);\n}\n"
+id: azure-storage-network-unrestricted
+info:
+  author: princechaddha
+  description: 'Ensure that your Microsoft Azure Storage account is configured to
+    deny access to traffic from all networks (including Internet traffic). By restricting
+    access to your storage account default network, you add a new layer of security,
+    since the default action is to accept connections from clients on any network.
+    To limit access to selected networks or IP addresses, you must first change the
+    default action from "Allow" to "Deny".
+
+    '
+  impact: 'If the default network access is set to "Allow", all networks, including
+    the Internet, can access the selected Azure Storage account, potentially exposing
+    sensitive data or resources.
+
+    '
+  name: Azure Storage Default Network Access Not Restricted
+  reference:
+  - https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security
+  remediation: 'Configure the network access rule for Azure Storage accounts to "Deny"
+    to restrict access to selected networks only, enhancing security by preventing
+    unwanted or unauthorized access.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,storage,azure-cloud-config
+self-contained: true

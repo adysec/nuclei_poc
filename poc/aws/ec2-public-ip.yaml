@@ -1,0 +1,55 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].[]
+    name: instances
+    type: json
+  source: 'aws ec2 describe-instances --region $region --output json --query ''Reservations[*].Instances[*].InstanceId''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The Amazon Instance " + ec2instance + " uses public IP addresses"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - amazon
+  source: 'aws ec2 describe-instances --region $region --instance-ids $ec2instance
+    --query "Reservations[*].Instances[*].NetworkInterfaces[*].Association.IpOwnerId[]
+    | []"
+
+    '
+flow: "code(1)\nfor(let InstancesName of iterate(template.instances)){\n  set(\"ec2instance\"\
+  , InstancesName)\n  code(2)\n}\n"
+id: ec2-public-ip
+info:
+  author: princechaddha
+  description: 'Ensures Amazon EC2 instances, especially backend ones, do not use
+    public IP addresses to minimize Internet exposure.
+
+    '
+  impact: 'Instances with public IP addresses are more vulnerable to Internet-based
+    threats, compromising network security.
+
+    '
+  name: Public IP on EC2 Instances
+  reference:
+  - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#concepts-public-addresses
+  remediation: 'Restrict public IP assignment for EC2 instances, particularly for
+    backend instances. Use private IPs and manage access via AWS VPC and security
+    groups.
+
+    '
+  severity: unknown
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+self-contained: true
+variables:
+  region: us-east-1

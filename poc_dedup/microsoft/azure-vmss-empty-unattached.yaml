@@ -1,0 +1,56 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: scaleSetList
+    type: json
+  source: 'az vmss list --output json --query ''[*].{"Name":name,"ResourceGroup":resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " is empty and unattached"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  matchers-condition: and
+  source: 'az vmss list-instances --name "$name" --resource-group "$resourceGroup"
+    --query ''[*].id''
+
+    '
+flow: "code(1);\nfor (let ScaleSetData of iterate(template.scaleSetList)) {\n  ScaleSetData\
+  \ = JSON.parse(ScaleSetData);\n  set(\"name\", ScaleSetData.Name);\n  set(\"resourceGroup\"\
+  , ScaleSetData.ResourceGroup);\n  code(2);\n}\n"
+id: azure-vmss-empty-unattached
+info:
+  author: princechaddha
+  description: 'Identify any empty virtual machine scale sets available within your
+    Microsoft Azure cloud account and delete them in order to eliminate unnecessary
+    costs and meet compliance requirements when it comes to unused resources. A Microsoft
+    Azure virtual machine scale set is considered empty when it doesn''t have any
+    VM instances attached anymore and is no longer associated with a load balancer.
+
+    '
+  impact: 'Maintaining empty VM scale sets can incur unnecessary costs and occupy
+    valuable resources that could be utilized elsewhere.
+
+    '
+  name: Azure Virtual Machine Scale Sets Empty and Unattached
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/
+  remediation: 'Regularly check and remove any VM scale sets that do not contain any
+    VM instances and are not associated with any load balancers.
+
+    '
+  severity: low
+  tags: cloud,devops,azure,microsoft,vmss,azure-cloud-config
+self-contained: true

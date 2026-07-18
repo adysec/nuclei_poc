@@ -1,0 +1,59 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: vmList
+    type: json
+  source: 'az vm list --output json --query ''[*].{"name":name,"resourceGroup":resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " does not have Microsoft Entra ID authentication
+      enabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - AADLoginForWindows
+    - AADLoginForLinux
+  matchers-condition: and
+  source: 'az vm extension list --vm-name "$name" --resource-group "$resourceGroup"
+    --query ''[*].name''
+
+    '
+flow: "code(1);\nfor (let VmData of iterate(template.vmList)) {\n  VmData = JSON.parse(VmData);\n\
+  \  set(\"name\", VmData.name);\n  set(\"resourceGroup\", VmData.resourceGroup);\n\
+  \  code(2);\n}\n"
+id: azure-vm-entra-id-unenabled
+info:
+  author: princechaddha
+  description: 'Ensure that your Microsoft Azure virtual machines (VMs) are configured
+    to use Microsoft Entra ID credentials for secure SSH/RDP access. Once enabled,
+    you can use your corporate Microsoft Entra ID credentials to log in to your virtual
+    machines, enforce Multi-Factor Authentication (MFA), or enable access via RBAC
+    roles.
+
+    '
+  impact: 'Not configuring VMs with Microsoft Entra ID authentication could expose
+    them to unauthorized access and security breaches.
+
+    '
+  name: Azure VM Microsoft Entra ID Authentication Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/active-directory/develop/
+  remediation: 'Ensure the Microsoft Entra ID authentication extensions, "AADLoginForWindows"
+    or "AADLoginForLinux", are installed and enabled on your Azure VMs for secure
+    access management.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,entra-id,azure-cloud-config
+self-contained: true

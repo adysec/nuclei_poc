@@ -1,0 +1,59 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: vmList
+    type: json
+  source: 'az vm list --query ''[*].{"id":id}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - resourceId + " does not use the recommended tagging schema"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - ''
+  - negative: true
+    type: word
+    words:
+    - Name
+  matchers-condition: and
+  source: 'az tag list --resource-id "$resourceId" --output json --query ''properties.tags''
+
+    '
+flow: "code(1);\nfor (let VMData of iterate(template.vmList)) {\n  VMData = JSON.parse(VMData);\n\
+  \  set(\"resourceId\", VMData.id);\n  code(2);\n}\n"
+id: azure-vm-tags-schema-noncompliant
+info:
+  author: princechaddha
+  description: "Ensure that user-defined tags are being used for labeling, collecting,\
+    \ and organizing cloud resources within your Microsoft Azure account. User-defined\
+    \ tags are name/value pairs that enable you to categorize resources and view consolidated\
+    \ billing by applying the same tag to multiple cloud resources. Trend Micro Cloud\
+    \ One\u2122 \u2013 Conformity recommends the following tagging schema to help\
+    \ you identify and manage your Azure resources: Name, Role, Environment, and Owner.\n"
+  impact: 'Not using the recommended tagging schema can lead to difficulties in managing
+    and organizing cloud resources effectively, potentially leading to operational
+    inefficiencies and increased costs.
+
+    '
+  name: Azure VM Tags Schema Non-compliant
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-machines/tagging
+  remediation: 'Update the tagging schema of your Azure virtual machines to include
+    the recommended tags: Name, Role, Environment, and Owner to ensure effective resource
+    management and billing.
+
+    '
+  severity: low
+  tags: cloud,devops,azure,microsoft,azure-vm,azure-cloud-config
+self-contained: true

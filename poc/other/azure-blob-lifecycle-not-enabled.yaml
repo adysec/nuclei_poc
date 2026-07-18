@@ -1,0 +1,59 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: accountList
+    type: json
+  source: 'az storage account list --query ''[?kind!=`Storage`].{"Name":name,"ResourceGroup":resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " has no lifecycle management policy enabled"
+    type: dsl
+  matchers:
+  - part: stderr
+    type: word
+    words:
+    - No ManagementPolicy found for account
+  matchers-condition: and
+  source: 'az storage account management-policy show --account-name "$name" --resource-group
+    "$resourceGroup" --output json
+
+    '
+flow: "code(1);\nfor (let AccountData of iterate(template.accountList)) {\n  AccountData\
+  \ = JSON.parse(AccountData);\n  set(\"name\", AccountData.name);\n  set(\"resourceGroup\"\
+  , AccountData.resourceGroup);\n  code(2);\n}\n"
+id: azure-blob-lifecycle-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure there is a lifecycle management policy configured for your
+    Microsoft Azure Blob Storage data in order to meet compliance requirements when
+    it comes to security and cost optimization. Azure Storage lifecycle management
+    offers a rich, rule-based policy for general purpose and blob storage accounts.
+    Use the lifecycle management policy to transition your Azure cloud data to the
+    appropriate access tiers or expire it at the end of the data''s lifecycle.
+
+    '
+  impact: 'Not having a lifecycle management policy in place can lead to non-compliance
+    with security and cost management policies, potentially resulting in unnecessary
+    costs and data exposure.
+
+    '
+  name: Azure Blob Storage Lifecycle Management Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/storage/blobs/storage-lifecycle-management-concepts
+  remediation: 'Configure a lifecycle management policy for your Azure Blob Storage
+    accounts to enable automatic transitioning or expiration of data as appropriate.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,blob-storage,azure-cloud-config
+self-contained: true

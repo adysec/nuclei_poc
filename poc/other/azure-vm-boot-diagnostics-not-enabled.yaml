@@ -1,0 +1,52 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: vmList
+    type: json
+  source: 'az vm list --query ''[*].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - ids + " does not have Boot Diagnostics enabled."
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"BootDiagnosticsStatus": false'
+  matchers-condition: and
+  source: 'az vm show --ids "$ids" --query ''{"BootDiagnosticsStatus": diagnosticsProfile.bootDiagnostics.enabled}''
+
+    '
+flow: "code(1);\nfor (let VmData of iterate(template.vmList)) {\n  set(\"ids\", VmData);\n\
+  \  code(2);\n}\n"
+id: azure-vm-boot-diagnostics-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that Boot Diagnostics feature is enabled for your Azure virtual
+    machines (VMs) in order to capture server serial console output and the operating
+    system screenshots, required for diagnosing and troubleshooting VM startup issues.
+
+    '
+  impact: 'Disabling Boot Diagnostics may hinder effective troubleshooting and diagnosis
+    of VM startup issues, potentially increasing the downtime of critical services.
+
+    '
+  name: Azure VM Boot Diagnostics Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-machines/troubleshooting/boot-diagnostics
+  remediation: 'Enable Boot Diagnostics for all your Azure VMs to facilitate effective
+    troubleshooting and ensure quick recovery from startup-related issues.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,virtual-machines,azure-cloud-config
+self-contained: true

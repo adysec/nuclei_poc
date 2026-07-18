@@ -1,0 +1,35 @@
+http:
+- extractors:
+  - part: body
+    regex:
+    - wg_[a-f0-9]{32,40}
+    type: regex
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(content_type, "javascript")
+    - regex("wg_[a-f0-9]{32,40}", body)
+    - contains(body, "Weglot.initialize")
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}/scripts/weglot.js'
+id: weglot-api-key-exposure
+info:
+  author: 0x_Akoko
+  description: 'Detected Weglot API key was found exposed in a publicly accessible
+    JavaScript file.
+
+    '
+  metadata:
+    fofa-query: body="/scripts/weglot.js" || body="/js/weglot.js" || body="Weglot.initialize"
+      && body="api_key"
+    max-request: 1
+    verified: true
+  name: Weglot API Key - Exposed
+  reference:
+  - https://developers.weglot.com/api/authentication
+  - https://medium.com/@zx10a/my-first-accepted-hackerone-report-finding-exposed-weglot-api-keys-across-5-targets-fb14ecda869b
+  severity: medium
+  tags: api-key,exposure,js,misconfig,secret,weglot

@@ -1,0 +1,54 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: snapshots
+    type: json
+  source: 'aws rds describe-db-snapshots --region $region --snapshot-type manual --output
+    json --query ''DBSnapshots[*].DBSnapshotIdentifier''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Amazon RDS database snapshot " + snapshot + " is not encrypted"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'aws rds describe-db-snapshots --region $region --db-snapshot-identifier
+    $snapshot --query ''DBSnapshots[*].Encrypted''
+
+    '
+flow: "code(1)\nfor(let RDPsnaps of iterate(template.snapshots)){\n  set(\"snapshot\"\
+  , RDPsnaps)\n  code(2)\n}\n"
+id: rds-snapshot-encryption
+info:
+  author: princechaddha
+  description: 'Ensure Amazon RDS database snapshots are encrypted for data-at-rest
+    compliance within AWS environments.
+
+    '
+  impact: 'Unencrypted RDS snapshots can expose sensitive data to unauthorized access,
+    risking data breach and non-compliance penalties.
+
+    '
+  name: RDS Snapshot Encryption
+  reference:
+  - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_EncryptSnapshot.html
+  remediation: 'Enable encryption for RDS snapshots by using AWS KMS Customer Master
+    Keys (CMKs) for enhanced data security and compliance.
+
+    '
+  severity: medium
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+self-contained: true
+variables:
+  region: ap-northeast-1

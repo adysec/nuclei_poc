@@ -1,0 +1,59 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: resourceList
+    type: json
+  source: 'az apim list --output json --query ''[*].{name:name, resourceGroup:resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - resource + " in " + resourceGroup + " does not have resource logs configured
+      for Azure API Management services"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  matchers-condition: and
+  source: 'az monitor diagnostic-settings list --resource $resource --resource-group
+    $resourceGroup --resource-type "Microsoft.ApiManagement/service" --query ''[*].name''
+
+    '
+flow: "code(1);\nfor (let Resource of iterate(template.resourceList)) {\n  Resource\
+  \ = JSON.parse(Resource);\n  set(\"resource\", Resource.name);\n  set(\"resourceGroup\"\
+  , Resource.resourceGroup);\n  code(2);\n}\n"
+id: azure-apim-resource-logs-not-configured
+info:
+  author: princechaddha
+  description: 'Ensure that your Azure API Management API services are configured
+    to use resource logs to collect valuable information on API Management operations
+    and errors. By enabling resource logs through a diagnostic setting, you can gather
+    extensive information on the API requests received and handled by the Azure API
+    Management service gateway.
+
+    '
+  impact: 'Failing to configure resource logs for Azure API Management services could
+    result in a lack of visibility into API performance and errors, hindering effective
+    management and troubleshooting.
+
+    '
+  name: Azure API Management Service Resource Logs Not Configured
+  reference:
+  - https://docs.microsoft.com/en-us/azure/api-management/api-management-howto-use-diagnostic-logs
+  remediation: 'Ensure that resource logs are enabled by setting up diagnostic settings
+    for each Azure API Management service instance. This should include capturing
+    all logs related to API operations and errors.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,api-management,azure-cloud-config
+self-contained: true

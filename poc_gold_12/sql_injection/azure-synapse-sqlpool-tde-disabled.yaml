@@ -1,0 +1,67 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: workspaceIds
+    type: json
+  source: 'az synapse workspace list --query ''[*].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: sqlPoolIds
+    type: json
+  source: 'az synapse sql pool list --workspace-name "$workspaceId" --resource-group
+    "$resourceGroup" --query ''[*].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - workspaceId + " " + sqlPoolId + " does not have TDE enabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"Disabled"'
+  source: 'az synapse sql pool tde show --ids "$sqlPoolId" --transparent-data-encryption-name
+    current --query ''status''
+
+    '
+flow: "code(1);\nfor (let workspaceId of iterate(template.workspaceIds)) {\n  set(\"\
+  workspaceId\", workspaceId);\n  code(2);\n  for (let sqlPoolId of iterate(template.sqlPoolIds))\
+  \ {\n    set(\"sqlPoolId\", sqlPoolId);\n    code(3);\n  }\n}\n"
+id: azure-synapse-sqlpool-tde-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that Transparent Data Encryption (TDE) is enabled for all dedicated
+    SQL pools within Microsoft Azure Synapse Analytics workspaces in order to protect
+    your data at rest and help meet compliance requirements.
+
+    '
+  impact: 'Failing to enable Transparent Data Encryption (TDE) can result in non-compliance
+    with regulatory requirements and increased risk of unauthorized access to sensitive
+    data at rest.
+
+    '
+  name: Azure Synapse Analytics SQL Pool Transparent Data Encryption Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/sql-data-warehouse-overview-what-is
+  remediation: 'Enable Transparent Data Encryption (TDE) for all Azure Synapse Analytics
+    dedicated SQL pools to ensure your data at rest is encrypted and secure.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,synapse,azure-cloud-config
+self-contained: true

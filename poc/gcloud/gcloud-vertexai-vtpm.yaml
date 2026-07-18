@@ -1,0 +1,58 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Project " + projectId + " has Vertex AI notebook instances without Virtual
+      Trusted Platform Module (vTPM) enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'shieldedInstanceConfig: {}'
+  source: 'gcloud workbench instances describe tm-vertex-ai-notebook-instance --location=us-central1-a
+    --project=$projectId --format="yaml(gceSetup.shieldedInstanceConfig.enableVtpm)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n}\n"
+id: gcloud-vertexai-vtpm
+info:
+  author: princechaddha
+  description: 'Ensure that the Virtual Trusted Platform Module (vTPM) feature is
+    enabled for your Vertex AI notebook instances in order to protect them against
+    persistent and advanced attacks. vTPM safeguards the guest VM''s boot process
+    by validating its integrity before and during startup. Additionally, it provides
+    secure generation and protection for encryption keys.
+
+    '
+  impact: 'Without vTPM enabled, notebook instances lack hardware-based encryption
+    and secure storage for cryptographic keys. This could make them more vulnerable
+    to unauthorized access and tampering with sensitive data.
+
+    '
+  name: Virtual Trusted Platform Module Not Enabled for Vertex AI Notebooks
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/VertexAI/enable-vtpm.html
+  - https://cloud.google.com/vertex-ai/docs/workbench/user-managed/manage-instance
+  remediation: 'Enable vTPM for Vertex AI notebook instances using the ''gcloud workbench
+    instances update'' command with --shielded-vtpm flag set to true. Note that instances
+    must be stopped before updating this configuration.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,vertexai,security,vtpm,gcp-cloud-config,ai
+self-contained: true

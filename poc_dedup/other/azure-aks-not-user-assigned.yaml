@@ -1,0 +1,57 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusterList
+    type: json
+  source: 'az aks list --output json --query ''[*].{name:name, resourceGroup:resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in resource group " + resourceGroup + " does not use user-assigned
+      managed identities"
+    type: dsl
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - '"type": "SystemAssigned"'
+    - '"userAssignedIdentities": null'
+  matchers-condition: and
+  source: 'az aks show --name "$name" --resource-group "$resourceGroup" --query ''identity''
+
+    '
+flow: "code(1);\nfor (let ClusterInfo of iterate(template.clusterList)) {\n  ClusterInfo\
+  \ = JSON.parse(ClusterInfo);\n  set(\"name\", ClusterInfo.name);\n  set(\"resourceGroup\"\
+  , ClusterInfo.resourceGroup);\n  code(2);\n}\n"
+id: azure-aks-not-user-assigned
+info:
+  author: princechaddha
+  description: 'Ensure that your Azure Kubernetes Service (AKS) clusters are using
+    user-assigned managed identities for fine-grained control over access permissions.
+
+    '
+  impact: 'Not using user-assigned managed identities for AKS clusters can result
+    in less granular control over access permissions, potentially leading to unauthorized
+    access or misconfigurations.
+
+    '
+  name: Azure AKS Managed Identity Not User-Assigned
+  reference:
+  - https://docs.microsoft.com/en-us/azure/aks/use-managed-identity
+  remediation: 'Configure your AKS clusters to use user-assigned managed identities
+    by updating the identity type in the AKS cluster settings and specifying the appropriate
+    managed identities.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+self-contained: true

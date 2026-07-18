@@ -1,0 +1,59 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusterList
+    type: json
+  source: 'az aks list --output json --query ''[*].{name:name, resourceGroup:resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in resource group " + resourceGroup + " is not on the latest Kubernetes
+      API version"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"upgrades": ['
+  matchers-condition: and
+  source: 'az aks get-upgrades --name "$name" --resource-group "$resourceGroup" --output
+    json
+
+    '
+flow: "code(1);\nfor (let ClusterData of iterate(template.clusterList)) {\n  ClusterData\
+  \ = JSON.parse(ClusterData);\n  set(\"name\", ClusterData.name);\n  set(\"resourceGroup\"\
+  , ClusterData.resourceGroup);\n  code(2);\n}\n"
+id: azure-aks-api-version-not-latest
+info:
+  author: princechaddha
+  description: 'To maximize the benefits of your Azure Kubernetes Service (AKS) clusters,
+    it is important to ensure they are running on the latest Kubernetes version. By
+    doing so, you gain access to new and improved features, as well as the latest
+    security patches. The Kubernetes API upgrade becomes fully available only after
+    it is approved by Microsoft Azure.
+
+    '
+  impact: 'Running an older version of Kubernetes can expose the cluster to vulnerabilities
+    and limit access to improved functionality, potentially compromising the security
+    and efficiency of the infrastructure.
+
+    '
+  name: Azure AKS Kubernetes API Version Not Latest
+  reference:
+  - https://docs.microsoft.com/en-us/azure/aks/upgrade-cluster
+  remediation: 'Upgrade the Kubernetes API version of your AKS clusters by following
+    the Azure documentation to apply the latest approved updates and ensure all clusters
+    are consistently using the most recent version available.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,kubernetes,azure-cloud-config
+self-contained: true

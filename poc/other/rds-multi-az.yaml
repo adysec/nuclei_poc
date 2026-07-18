@@ -1,0 +1,55 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: dbclusters
+    type: json
+  source: 'aws rds describe-db-instances --region $region --output json --query ''DBInstances[*].DBInstanceIdentifier''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - dbcluster + " RDS Multi-AZ is Disabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'aws rds describe-db-instances --region $region --db-instance-identifier
+    $dbcluster --query ''DBInstances[*].MultiAZ''
+
+    '
+flow: "code(1)\nfor(let DBClusterIdentifier of iterate(template.dbclusters)){\n  set(\"\
+  dbcluster\", DBClusterIdentifier)\n  code(2)\n}\n"
+id: rds-multi-az
+info:
+  author: DhiyaneshDK
+  description: 'Ensure that your Amazon RDS instances are using the Multi-AZ deployment
+    configuration for high availability and automatic failover support, fully managed
+    by AWS.
+
+    '
+  impact: 'The RDS instance lacks high availability and failover support, increasing
+    the risk of downtime during instance failures or maintenance events.
+
+    '
+  name: RDS Multi-AZ - Disabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/RDS/rds-multi-az.html
+  - http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html
+  remediation: 'Enable Multi-AZ deployment for the RDS instance in the AWS Management
+    Console, CLI, or API to enhance availability and automatic failover.
+
+    '
+  severity: medium
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+self-contained: true
+variables:
+  region: us-west-2

@@ -1,0 +1,70 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: backendServices
+    type: json
+  source: 'gcloud compute backend-services list --global --project $projectId --format="json(name,enableCDN)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Unconfigured Cloud CDN Origin Authentication: " + backendServiceName + " in
+      Project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud compute backend-services describe $backendServiceName --global --format="json(cdnPolicy.signedUrlKeyNames)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let backendService of iterate(template.backendServices)){\n\
+  \    set(\"backendServiceName\", backendService)\n    code(3)\n  }\n}\n"
+id: gcloud-cdn-origin-auth-unconfigured
+info:
+  author: princechaddha
+  description: 'Ensure that Cloud CDN origins are configured to authenticate access
+    to the content available at backend (backend buckets or backend services) using
+    signed cookies and signed URLs. Signed cookies and URLs are designed to prevent
+    unauthorized users from bypassing the authentication process and accessing sensitive
+    information.
+
+    '
+  impact: 'If Cloud CDN origins are not properly configured with signed cookies and
+    signed URLs, it could lead to unauthorized access and potential exposure of sensitive
+    information. This configuration is essential for maintaining the security and
+    integrity of content delivery.
+
+    '
+  name: Unconfigured Cloud CDN Origin Authentication
+  reference:
+  - https://cloud.google.com/cdn/docs/using-signed-urls
+  remediation: 'Configure your Cloud CDN origins to use signed cookies and URLs by
+    adding signed request keys to your backend services. This will enforce authentication
+    on CDN-cached content, preventing unauthorized access.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,cloud-cdn,gcp-cloud-config
+self-contained: true

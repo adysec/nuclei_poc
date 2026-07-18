@@ -1,0 +1,69 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: keyVaultNames
+    type: json
+  source: 'az keyvault list --query ''[*].name'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: certificateIds
+    type: json
+  source: 'az keyvault certificate list --vault-name $vaultName --query ''[?(attributes.enabled==`true`)].id''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - vaultName + " SSL/TLS certificate " + certificateId + " uses an unapproved key
+      type"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - EC
+  source: 'az keyvault certificate show --id $certificateId --query ''policy.keyProperties.keyType''
+    --output json
+
+    '
+flow: "code(1);\nfor (let KeyVaultName of iterate(template.keyVaultNames)) {\n  set(\"\
+  vaultName\", KeyVaultName)\n  code(2);\n  for (let CertificateId of iterate(template.certificateIds))\
+  \ {\n    set(\"certificateId\", CertificateId)\n    code(3)\n  }\n}\n"
+id: azure-keyvault-cert-keytype-unapproved
+info:
+  author: princechaddha
+  description: 'Ensure that your Microsoft Azure Key Vault SSL certificates are using
+    the allowed key type(s) for security and compliance purposes. Prior to running
+    this rule by the Cloud Conformity engine, the allowed certificate key type(s)
+    must be configured within the rule settings, on the Cloud Conformity account dashboard.
+
+    '
+  impact: 'Using unapproved key types can violate compliance requirements and security
+    policies, potentially exposing sensitive data.
+
+    '
+  name: Unapproved Certificate Key Type in Azure Key Vaults
+  reference:
+  - https://docs.microsoft.com/en-us/azure/key-vault/certificates/about-certificates
+  remediation: 'Review and update the certificate key types for your Azure Key Vault
+    SSL/TLS certificates to align with approved key types through the Azure portal
+    or Azure CLI.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+self-contained: true

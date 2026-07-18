@@ -1,0 +1,61 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: redisIdList
+    type: json
+  source: 'az redis list --query ''[*].{"id":id}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " is using outdated TLS version"
+    type: dsl
+  matchers:
+  - negative: true
+    part: body
+    type: word
+    words:
+    - '1.0'
+    - '1.1'
+  - part: body
+    type: word
+    words:
+    - .
+  matchers-condition: and
+  source: 'az redis show --ids "$name" --query ''{"MinimumTLSVersion":minimumTlsVersion}''
+
+    '
+flow: "code(1);\nfor (let RedisData of iterate(template.redisIdList)) {\n  set(\"\
+  name\", RedisData);\n  code(2);\n}\n"
+id: azure-redis-tls-version-outdated
+info:
+  author: princechaddha
+  description: 'Ensure that all your Microsoft Azure Redis Cache servers are using
+    the latest available version of TLS encryption protocol in order to enhance the
+    security of the SSL/TLS connection between the cache servers and their web applications,
+    and comply with the industry standards.
+
+    '
+  impact: 'Using an outdated version of TLS can reduce the security level of communications
+    between clients and servers, potentially exposing data to interception or manipulation.
+
+    '
+  name: Azure Redis Cache TLS Version Not Latest
+  reference:
+  - https://docs.microsoft.com/en-us/azure/redis-cache/
+  remediation: 'Upgrade the TLS version of your Azure Redis Cache servers to the latest
+    version supported by Microsoft Azure to enhance security and compliance with industry
+    standards.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,redis,azure-cloud-config
+self-contained: true

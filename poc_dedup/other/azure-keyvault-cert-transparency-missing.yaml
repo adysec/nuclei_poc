@@ -1,0 +1,70 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: keyVaultNames
+    type: json
+  source: 'az keyvault list --query ''[*].name'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: certificateIds
+    type: json
+  source: 'az keyvault certificate list --vault-name $vaultName --query ''[?(attributes.enabled==`true`)].id''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - vaultName + " SSL/TLS certificate " + certificateId + " does not have Certificate
+      Transparency enabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'az keyvault certificate show --id $certificateId --query ''policy.issuerParameters.certificateTransparency''
+    --output json
+
+    '
+flow: "code(1);\nfor (let KeyVaultName of iterate(template.keyVaultNames)) {\n  set(\"\
+  vaultName\", KeyVaultName)\n  code(2);\n  for (let CertificateId of iterate(template.certificateIds))\
+  \ {\n    set(\"certificateId\", CertificateId)\n    code(3)\n  }\n}\n"
+id: azure-keyvault-cert-transparency-missing
+info:
+  author: princechaddha
+  description: 'Ensure that Certificate Transparency feature is enabled for all Azure
+    Key Vault SSL/TLS certificates to adhere to web security best practices. Certificate
+    Transparency (CT) is a new Internet standard that helps to make the Transport
+    Layer Security (TLS) ecosystem publicly auditable.
+
+    '
+  impact: 'Without Certificate Transparency, domain owners are unaware of certificates
+    issued to their domain unless directly requested, compromising transparency and
+    security.
+
+    '
+  name: Missing Certificate Transparency in Azure Key Vaults
+  reference:
+  - https://docs.microsoft.com/en-us/azure/key-vault/certificates/how-to-enable-certificate-transparency
+  remediation: 'Enable Certificate Transparency for all Azure Key Vault SSL/TLS certificates
+    through the Azure portal or Azure CLI to meet the standards enforced by the Certification
+    Authority Browser Forum (CA/Browser Forum).
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+self-contained: true

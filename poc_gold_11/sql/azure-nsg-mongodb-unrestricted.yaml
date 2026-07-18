@@ -1,0 +1,58 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: nsgdata
+    type: json
+  source: 'az network nsg list --query ''[*].{name:name, resourceGroup:resourceGroup}''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - nsg + " has unrestricted access on TCP ports 27017, 27018, and 27019"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"sourceAddressPrefix": "*"'
+    - '"sourceAddressPrefix": "internet"'
+    - '"sourceAddressPrefix": "any"'
+  source: 'az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup
+    --query "[?direction==''Inbound'' && access==''Allow'' && protocol==''TCP'' &&
+    (destinationPortRange==''27017'' || destinationPortRange==''27018'' || destinationPortRange==''27019'')]"
+
+    '
+flow: "code(1);\nfor (let NsgData of iterate(template.nsgdata)) {\n  NsgData = JSON.parse(NsgData)\n\
+  \  set(\"nsg\", NsgData.name)\n  set(\"resourcegroup\", NsgData.resourceGroup)\n\
+  \  code(2)\n}\n"
+id: azure-nsg-mongodb-unrestricted
+info:
+  author: princechaddha
+  description: 'Ensure that Microsoft Azure network security groups (NSGs) do not
+    allow unrestricted inbound access on TCP ports 27017, 27018, and 27019, used by
+    MongoDB, to prevent unauthorized database access.
+
+    '
+  impact: 'Allowing unrestricted access to MongoDB ports can expose databases to risks
+    such as unauthorized data access, data manipulation, or data theft.
+
+    '
+  name: Unrestricted MongoDB Access in Azure NSGs
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  remediation: 'Modify NSG rules to restrict access on TCP ports 27017, 27018, and
+    27019. Only allow known IPs and implement database encryption and other security
+    measures.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+self-contained: true

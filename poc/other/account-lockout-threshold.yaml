@@ -1,0 +1,48 @@
+code:
+- args:
+  - -ExecutionPolicy
+  - Bypass
+  engine:
+  - powershell
+  - powershell.exe
+  matchers:
+  - condition: or
+    type: word
+    words:
+    - ACCOUNT_LOCKOUT_THRESHOLD_NOT_SET
+    - ACCOUNT_LOCKOUT_THRESHOLD_EXCEEDS_MAX
+  pattern: '*.ps1'
+  pre-condition: 'IsWindows();
+
+    '
+  source: "$netAccountsOutput = net accounts\n$thresholdLine = $netAccountsOutput\
+    \ | Where-Object { $_ -match \"Lockout threshold:\" }\nif ($thresholdLine) {\n\
+    \    # \"Lockout threshold:\"\n    $matches = [regex]::Match($thresholdLine, \"\
+    Lockout threshold:\\s+(\\S+)\")\n    if ($matches.Success) {\n        $value =\
+    \ $matches.Groups[1].Value.Trim()\n        if ($value -eq \"0\" -or $value -eq\
+    \ \"Never\") {\n            Write-Output \"ACCOUNT_LOCKOUT_THRESHOLD_NOT_SET\"\
+    \n        }\n        elseif ([int]$value -gt 5) {\n            Write-Output \"\
+    ACCOUNT_LOCKOUT_THRESHOLD_EXCEEDS_MAX\"\n        }\n        else {\n         \
+    \   Write-Output \"ACCOUNT_LOCKOUT_THRESHOLD_OK\"\n        }\n    }\n    else\
+    \ {\n        Write-Output \"ACCOUNT_LOCKOUT_THRESHOLD_NOT_FOUND\"\n    }\n}\n\
+    else {\n    Write-Output \"ACCOUNT_LOCKOUT_THRESHOLD_NOT_FOUND\"\n}\n"
+id: account-lockout-threshold
+info:
+  author: nukunga[SungHyunJeon]
+  description: 'Ensure the account lockout threshold is configured to 5 or fewer invalid
+    login attempts to reduce the risk of brute-force attacks.
+
+    '
+  impact: 'An absent or misconfigured lockout threshold permits unlimited password
+    guessing attempts, significantly increasing the risk of account compromise.
+
+    '
+  name: Account Lockout Threshold Check
+  reference:
+  - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  remediation: "Set the lockout threshold using:\n> net accounts /lockoutthreshold:5\n\
+    or configure it via Local Security Policy under:\nAccount Lockout Policy \u2192\
+    \ Account lockout threshold.\n"
+  severity: medium
+  tags: account-management,code,windows-audit,kisa
+self-contained: true

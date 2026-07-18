@@ -1,0 +1,75 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: vaultNames
+    type: json
+  source: 'az keyvault list --query ''[*].name'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: certificateIDs
+    type: json
+  source: 'az keyvault certificate list --vault-name $vaultName --query ''[?(attributes.enabled==`true`)].id''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: certificateIDnum
+    type: json
+  - dsl:
+    - vaultName + " certificate ID " + certificateID + " has insufficient auto-renewal
+      period"
+    type: dsl
+  matchers:
+  - dsl:
+    - compare_versions(certificateIDnum, concat("< ", 30))
+    type: dsl
+  source: 'az keyvault certificate show --id $certificateID --query ''policy.lifetimeActions[*].trigger.daysBeforeExpiry''
+    --output json
+
+    '
+flow: "code(1);\nfor (let VaultData of iterate(template.vaultNames)) {\n  set(\"vaultName\"\
+  , VaultData);\n  code(2);\n  for (let CertificateData of iterate(template.certificateIDs))\
+  \ {\n    set(\"certificateID\", CertificateData);\n    code(3);\n  }\n}\n"
+id: azure-keyvault-certificate-insufficient-autorenew
+info:
+  author: princechaddha
+  description: 'Ensure that your Microsoft Azure Key Vault SSL certificates have a
+    sufficient auto-renewal period configured for security and compliance purposes.
+    This period indicates the amount of time (number of days) before SSL certificate
+    expiration, when the renewal process is automatically triggered.
+
+    '
+  impact: 'If the auto-renewal period is too short, there might not be enough time
+    to address issues if the renewal process fails, leading to potential service disruption
+    or security vulnerabilities.
+
+    '
+  name: Check for Sufficient Certificate Auto-Renewal Period
+  reference:
+  - https://docs.microsoft.com/en-us/azure/key-vault/certificates/about-certificates
+  remediation: 'Configure SSL certificates within Azure Key Vaults to have an auto-renewal
+    period that aligns with your organization''s security and compliance requirements
+    to ensure timely and effective renewal.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+self-contained: true

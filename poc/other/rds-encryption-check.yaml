@@ -1,0 +1,56 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'aws rds describe-db-instances --region $region --output json --query ''DBInstances[*].DBInstanceIdentifier''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The encryption of data at rest is not enabled for " + db + " RDS database
+      instance"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'aws rds describe-db-instances --region $region --db-instance-identifier
+    $db --query ''DBInstances[*].{"StorageEncrypted":StorageEncrypted,"KmsKeyId":KmsKeyId}''
+
+    '
+flow: "code(1)\nfor(let DBInstances of iterate(template.instances)){\n  set(\"db\"\
+  , DBInstances)\n  code(2)\n}\n"
+id: rds-encryption-check
+info:
+  author: princechaddha
+  description: 'Ensure that your Amazon RDS database instances are encrypted to fulfill
+    compliance requirements for data-at-rest encryption.
+
+    '
+  impact: 'Non-encrypted RDS instances may lead to data breaches, failing to comply
+    with data protection regulations, which could result in hefty fines and loss of
+    reputation.
+
+    '
+  name: RDS Instance Encryption
+  reference:
+  - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.Encryption.html
+  remediation: 'Enable encryption for your Amazon RDS instances by modifying the instance
+    and setting the "Storage Encrypted" option to true. For new instances, enable
+    encryption within the launch wizard.
+
+    '
+  severity: high
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+self-contained: true
+variables:
+  region: ap-northeast-1

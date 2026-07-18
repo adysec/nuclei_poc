@@ -1,0 +1,58 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: keyvaultdata
+    type: json
+  source: 'az keyvault list --query ''[*].id'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - resource + " does not have the required resource lock level"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"CanNotDelete"'
+    - '"ReadOnly"'
+  - type: word
+    words:
+    - '[]'
+  source: 'az lock list --resource $resource --query ''[*].{"name":name,"level":level}''
+
+    '
+flow: "code(1);\nfor (let keyVaultData of iterate(template.keyvaultdata)) {\n  keyVaultData\
+  \ = JSON.parse(keyVaultData)\n  set(\"resource\", keyVaultData.id)\n  code(2)\n\
+  }\n"
+id: azure-keyvault-resource-lock-check
+info:
+  author: princechaddha
+  description: 'Ensure that all your mission critical Azure cloud resources have resource
+    locks enabled so that certain users are not able to delete or modify these resources
+    in order to help prevent accidental and malicious changes or deletion.
+
+    '
+  impact: 'Not having resource locks on mission-critical resources can lead to accidental
+    or malicious modifications and deletions, potentially compromising the security
+    and stability of the application.
+
+    '
+  name: Azure KeyVault Resource Lock Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/lock-resources
+  remediation: 'Apply resource locks to all critical Azure resources, particularly
+    Key Vaults. Use either the "ReadOnly" or "CanNotDelete" lock levels to prevent
+    unwanted changes or deletions.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+self-contained: true

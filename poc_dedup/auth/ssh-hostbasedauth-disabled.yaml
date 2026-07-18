@@ -1,0 +1,41 @@
+code:
+- args:
+  - -c
+  - "SSHD_CONFIG=\"/etc/ssh/sshd_config\"\n# Check if the parameter is set to yes\
+    \ (bad)\nif grep -i '^\\s*HostbasedAuthentication\\s\\+yes' \"$SSHD_CONFIG\" >/dev/null;\
+    \ then\n  current_value=$(grep -i '^\\s*HostbasedAuthentication' \"$SSHD_CONFIG\"\
+    \ | head -1 | tr -d '\\n')\n  echo \"[cis-ssh-hostbasedauth-disabled:Policy-Fail]\
+    \ [$current_value] [CIS_FAIL] [medium]\"\nelse\n  echo \"[cis-ssh-hostbasedauth-disabled:Policy-Pass]\
+    \ [HostbasedAuthentication no or not set] [CIS_PASS] [medium]\"\nfi\n"
+  engine:
+  - bash
+  matchers:
+  - name: policy-pass
+    type: word
+    words:
+    - Policy-Pass
+  - name: policy-fail
+    type: word
+    words:
+    - Policy-Fail
+id: ssh-hostbasedauth-disabled
+info:
+  author: Th3l0newolf
+  description: 'The HostbasedAuthentication parameter determines whether SSH authentication
+    is permitted using trusted hosts, based on entries in .rhosts or /etc/hosts.equiv,
+    in combination with successful public key authentication from the client host.
+
+    '
+  metadata:
+    verified: true
+  name: Ensure SSH HostbasedAuthentication - Disabled
+  reference:
+  - https://www.cisecurity.org/benchmark/ubuntu_linux
+  - https://docs.datadoghq.com/security/default_rules/def-000-fqw/
+  remediation: 'Edit /etc/ssh/sshd_config to set ''HostbasedAuthentication no'' and
+    restart SSH service with ''sudo systemctl restart sshd''.
+
+    '
+  severity: high
+  tags: cis,local,ssh,linux,audit,ubuntu,benchmark
+self-contained: true

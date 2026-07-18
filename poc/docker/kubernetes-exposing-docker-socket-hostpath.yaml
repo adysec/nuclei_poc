@@ -1,0 +1,50 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .items[]
+    name: items
+    type: json
+  source: kubectl get pods --all-namespaces --output=json
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Exposed Docker socket via a volume in the " + pod + " pod of " + namespace
+      + " namespace"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - /var/run/docker.sock
+  source: echo -e '$volume'
+flow: "code(1);\nfor (let pod of template.items) {\n  pod = JSON.parse(pod);\n  if\
+  \ (!pod.spec.hasOwnProperty('volumes')) continue;\n  for (const volume of pod.spec.volumes)\
+  \ {\n    if (volume.hasOwnProperty('hostPath')) {\n      if (!volume.hostPath.hasOwnProperty('path'))\
+  \ continue;\n      const path = volume.hostPath.path;\n      if (path && path !==\
+  \ '/var/run/docker.sock') continue\n    }\n    set('volume', JSON.stringify(volume));\n\
+  \    set('pod', pod.metadata.name);\n    set('namespace', pod.metadata.namespace);\n\
+  \    code(2)\n  }\n}\n"
+id: kubernetes-exposing-docker-socket-hostpath
+info:
+  author: dwisiswant0
+  description: Exposing host's Docker socket to containers via a volume.
+  impact: 'The owner of this socket is root. Giving someone access to it is equivalent
+
+    to giving unrestricted root access to your host.
+
+    '
+  name: Kubernetes Exposing Host's Docker Socket
+  reference:
+  - https://kubernetes.io/docs/concepts/storage/volumes/#hostpath
+  - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#volumes-and-file-systems
+  - https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  - https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-1-do-not-expose-the-docker-daemon-socket-even-to-the-containers
+  remediation: Remove 'docker.sock' from hostpath to prevent this.
+  severity: high
+  tags: cloud,devops,kubernetes,k8s
+self-contained: true

@@ -1,0 +1,55 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: serverList
+    type: json
+  source: 'az postgres server list --output json --query ''[*].{"Name":name,"ResourceGroup":resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " has SSL disabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"Disabled"'
+  source: 'az postgres server show --name "$name" --resource-group "$resourceGroup"
+    --query sslEnforcement
+
+    '
+flow: "code(1);\nfor (let ServerData of iterate(template.serverList)) {\n  ServerData\
+  \ = JSON.parse(ServerData);\n  set(\"name\", ServerData.Name);\n  set(\"resourceGroup\"\
+  , ServerData.ResourceGroup);\n  code(2);\n}\n"
+id: azure-postgresql-ssl-enforcement
+info:
+  author: princechaddha
+  description: 'Ensure that Microsoft Azure PostgreSQL server data is encrypted in
+    transit in order to meet security and compliance requirements. In-transit encryption
+    helps prevent unauthorized users from getting access to critical data available
+    in your Azure PostgreSQL databases.
+
+    '
+  impact: 'Failure to enable SSL enforcement for PostgreSQL servers can lead to data
+    being intercepted and read by unauthorized parties during transit, posing significant
+    security and compliance risks.
+
+    '
+  name: Azure PostgreSQL SSL Enforcement Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/postgresql/concepts-ssl-connection-security
+  remediation: 'Enable SSL enforcement on all Azure PostgreSQL servers to ensure that
+    data is encrypted in transit and protected from unauthorized access.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+self-contained: true

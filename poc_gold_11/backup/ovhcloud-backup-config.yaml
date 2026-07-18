@@ -1,0 +1,50 @@
+http:
+- extractors:
+  - group: 1
+    internal: true
+    name: accesskey
+    part: body
+    regex:
+    - accessKey":"([0-9a-z ]+)
+    type: regex
+  - group: 1
+    internal: true
+    name: secretkey
+    part: body
+    regex:
+    - secretKey":"([a-z0-9]+)
+    type: regex
+  - dsl:
+    - '"accessKey: " + accesskey + " secretKey: "+ secretkey'
+    type: dsl
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains_all(body,'accessKey','secretKey')
+    - contains(content_type,'application/json')
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}/ovh-backups.json'
+  - '{{BaseURL}}/config/ovh-backups.json'
+  - '{{BaseURL}}/backup/ovh-backups.json'
+  - '{{BaseURL}}/storage/ovh-backups.json'
+  stop-at-first-match: true
+id: ovhcloud-backup-config
+info:
+  author: pussycat0x
+  description: 'Detected exposed OVHcloud backup configuration files (ovh-backups.json)
+    containing sensitive credentials such as OpenStack/Swift authentication details,
+    API keys, and storage configuration.
+
+    '
+  metadata:
+    max-request: 4
+    verified: true
+  name: OVHcloud Backup Configuration - Exposure
+  reference:
+  - https://docs.ovh.com/gb/en/storage/
+  - https://docs.ovh.com/gb/en/public-cloud/access_and_security_in_horizon/
+  severity: high
+  tags: ovh,ovhcloud,backup,config,exposure,cloud,openstack

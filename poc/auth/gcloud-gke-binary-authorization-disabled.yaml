@@ -1,0 +1,73 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusters
+    type: json
+  source: 'gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId
+      + " does not have Binary Authorization enabled"'
+    type: dsl
+  matchers:
+  - condition: or
+    type: word
+    words:
+    - '"evaluationMode": "DISABLED"'
+    - 'null'
+  source: 'gcloud container clusters describe $clusterName --location $location --project
+    $projectId --format="json(binaryAuthorization.evaluationMode)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let cluster of iterate(template.clusters)){\n   \
+  \ cluster = JSON.parse(cluster)\n    set(\"clusterName\", cluster.name)\n    set(\"\
+  location\", cluster.location)\n    code(3)\n  }\n}\n"
+id: gcloud-gke-binary-authorization-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that Binary Authorization is enabled for your Google Kubernetes
+    Engine (GKE) clusters to enforce container image security policies. Binary Authorization
+    enhances security by ensuring only trusted container images can be deployed, reducing
+    the risk of deploying vulnerable or unauthorized software.
+
+    '
+  impact: 'Without Binary Authorization enabled, there is no policy enforcement to
+    prevent the deployment of untrusted or unauthorized container images, increasing
+    the risk of deploying vulnerable or malicious software.
+
+    '
+  name: GKE Clusters Without Binary Authorization Enabled
+  reference:
+  - https://cloud.google.com/binary-authorization/docs/overview
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-binary-authorization.html
+  remediation: 'Enable Binary Authorization for your GKE clusters using:
+
+    gcloud container clusters update CLUSTER_NAME --zone=ZONE --binauthz-evaluation-mode=project-singleton-policy-enforce
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,container,authorization,gcp-cloud-config
+self-contained: true

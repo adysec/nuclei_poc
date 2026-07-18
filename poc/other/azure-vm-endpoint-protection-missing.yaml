@@ -1,0 +1,69 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: vmList
+    type: json
+  source: 'az vm list --output json --query ''[*].{"name":name,"resourceGroup":resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " is missing endpoint protection"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '['
+  - negative: true
+    part: body
+    type: word
+    words:
+    - EndpointSecurity
+    - TrendMicroDSA
+    - Antimalware
+    - EndpointProtection
+    - SCWPAgent
+    - PortalProtectExtension
+    - FileSecurity
+  matchers-condition: and
+  source: 'az vm extension list --vm-name "$name" --resource-group "$resourceGroup"
+    --query ''[*].name''
+
+    '
+flow: "code(1);\nfor (let VMData of iterate(template.vmList)) {\n  VMData = JSON.parse(VMData);\n\
+  \  set(\"name\", VMData.name);\n  set(\"resourceGroup\", VMData.resourceGroup);\n\
+  \  code(2);\n}\n"
+id: azure-vm-endpoint-protection-missing
+info:
+  author: princechaddha
+  description: 'Ensure that all your Microsoft Azure virtual machines (VMs) have endpoint
+    protection installed in order to help you identify and remove viruses, spyware,
+    and other malicious software. The Azure Security Center service monitors the status
+    of anti-malware protection for Azure virtual machines (VMs) and highlights if
+    there is insufficient protection, marking the virtual machines without endpoint
+    protection as vulnerable to malware threats.
+
+    '
+  impact: 'Virtual machines without endpoint protection are exposed to a higher risk
+    of being compromised by viruses, spyware, and other malicious software.
+
+    '
+  name: Azure VM Endpoint Protection Not Installed
+  reference:
+  - https://docs.microsoft.com/en-us/azure/security-center/security-center-intro
+  remediation: 'Install an approved endpoint protection solution on your Azure VMs
+    to mitigate the risk of malware and maintain compliance with organizational security
+    policies.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,endpoint-protection,azure-cloud-config
+self-contained: true

@@ -1,0 +1,54 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: VpcId
+    type: json
+  source: 'aws ec2 describe-vpcs --region $region --query ''Vpcs[*].VpcId'' --output
+    json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"VPC Endpoints Not Deployed in the VPC network " + vpc'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  source: 'aws ec2 describe-vpc-endpoints --region $region --filters Name=vpc-id,Values=$vpc
+    --query ''VpcEndpoints[*].VpcEndpointId''
+
+    '
+flow: "code(1)\nfor(let VpcIds of template.VpcId){\n  set(\"vpc\", VpcIds)\n  code(2)\n\
+  }\n"
+id: vpc-endpoints-not-deployed
+info:
+  author: princechaddha
+  description: 'Ensures VPC endpoints are utilized for secure AWS service connectivity
+    without needing an Internet Gateway, enhancing network security and efficiency.
+
+    '
+  impact: 'Avoids data exposure and reduces bandwidth use by ensuring AWS traffic
+    remains within the AWS network, without public IP requirements for EC2 instances.
+
+    '
+  name: VPC Endpoints Not Deployed
+  reference:
+  - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints.html
+  remediation: 'Implement VPC endpoints for supported AWS services to secure and optimize
+    connectivity within your VPC, minimizing external access risks.
+
+    '
+  severity: medium
+  tags: cloud,devops,aws,amazon,vpc,aws-cloud-config
+self-contained: true
+variables:
+  region: us-east-1

@@ -1,0 +1,61 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: scaleSetList
+    type: json
+  source: 'az vmss list --output json --query ''[*].{"name":name,"resourceGroup":resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " is not using a zone-redundant configuration"
+    type: dsl
+  matchers:
+  - part: body
+    type: word
+    words:
+    - '[]'
+  - negative: true
+    type: word
+    words:
+    - '1'
+  matchers-condition: and
+  source: 'az vmss show --name "$name" --resource-group "$resourceGroup" --query ''zones''
+    --output json
+
+    '
+flow: "code(1);\nfor (let ScaleSetData of iterate(template.scaleSetList)) {\n  ScaleSetData\
+  \ = JSON.parse(ScaleSetData);\n  set(\"name\", ScaleSetData.name);\n  set(\"resourceGroup\"\
+  , ScaleSetData.resourceGroup);\n  code(2);\n}\n"
+id: azure-vmss-zone-redundancy-missing
+info:
+  author: princechaddha
+  description: 'Ensure that all your Microsoft Azure virtual machine scale sets are
+    using zone-redundant availability configurations instead of single-zone (zonal)
+    configurations, to deploy and load balance virtual machines (VMs) across multiple
+    Availability Zones (AZs) in order to protect the scale sets from datacenter-level
+    failures.
+
+    '
+  impact: 'Using single-zone configurations can lead to potential datacenter-level
+    outages affecting your services'' availability and reliability.
+
+    '
+  name: Azure VMSS Zone-Redundant Configuration Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-design-overview
+  remediation: 'Configure your VMSS to use zone-redundant availability configurations
+    to ensure high availability and fault tolerance across multiple data centers.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,vmss,azure-cloud-config
+self-contained: true

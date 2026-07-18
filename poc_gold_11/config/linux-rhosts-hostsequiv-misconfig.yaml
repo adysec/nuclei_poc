@@ -1,0 +1,40 @@
+code:
+- engine:
+  - bash
+  matchers:
+  - part: response
+    type: word
+    words:
+    - /etc/hosts.equiv
+    - .rhosts
+    - '[WARN]'
+  source: "check_hosts_equiv() {\n    if [ -f /etc/hosts.equiv ]; then\n        echo\
+    \ \"[FOUND] /etc/hosts.equiv exists\"\n        ls -l /etc/hosts.equiv\n      \
+    \  if grep -q '^\\+' /etc/hosts.equiv; then\n            echo \"[WARN] Unsafe\
+    \ '+' entry found in /etc/hosts.equiv\"\n        fi\n        perms=$(stat -c \"\
+    %a\" /etc/hosts.equiv)\n        owner=$(stat -c \"%U\" /etc/hosts.equiv)\n   \
+    \     if [ \"$perms\" -gt 644 ] || [ \"$owner\" != \"root\" ]; then\n        \
+    \    echo \"[WARN] /etc/hosts.equiv has improper permissions or ownership\"\n\
+    \        fi\n    fi\n}\n\ncheck_rhosts() {\n    find /home /root -maxdepth 2 -name\
+    \ \".rhosts\" 2>/dev/null | while read rhost; do\n        echo \"[FOUND] $rhost\"\
+    \n        ls -l \"$rhost\"\n        if grep -q '^\\+' \"$rhost\"; then\n     \
+    \       echo \"[WARN] Unsafe '+' entry found in $rhost\"\n        fi\n       \
+    \ perms=$(stat -c \"%a\" \"$rhost\")\n        owner=$(stat -c \"%U\" \"$rhost\"\
+    )\n        if [ \"$perms\" -gt 600 ] || [ \"$owner\" != \"root\" ]; then\n   \
+    \         echo \"[WARN] $rhost has improper permissions or ownership\"\n     \
+    \   fi\n    done\n}\n\ncheck_hosts_equiv\ncheck_rhosts\n"
+id: linux-rhosts-hostsequiv-misconfig
+info:
+  author: songyaeji
+  description: 'Assessed the presence and configuration of .rhosts and /etc/hosts.equiv
+    files. Files with unsafe ''+'' entries, incorrect permissions, or improper ownership
+    could have permitted unauthorized remote command execution via rlogin or rsh.
+
+    '
+  name: Rhosts and Hosts.equiv Misconfiguration Check
+  reference:
+  - https://isms.kisa.or.kr
+  - https://linux.die.net/man/5/hosts.equiv
+  severity: high
+  tags: linux,local,audit,kisa,compliance
+self-contained: true
