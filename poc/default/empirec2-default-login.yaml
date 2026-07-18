@@ -1,75 +1,44 @@
-http:
-- attack: pitchfork
-  matchers:
-  - condition: or
-    part: body
-    type: word
-    words:
-    - access_token
-    - '{"token":".*"}'
-  - part: header
-    type: word
-    words:
-    - application/json
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  payloads:
-    password:
-    - password123
-    username:
-    - empireadmin
-  raw:
-  - 'POST /token HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoZwyedGcQU4FrcFV
-
-    Accept: application/json, text/plain, */*
-
-
-    ------WebKitFormBoundaryoZwyedGcQU4FrcFV
-
-    Content-Disposition: form-data; name="username"
-
-
-    {{username}}
-
-    ------WebKitFormBoundaryoZwyedGcQU4FrcFV
-
-    Content-Disposition: form-data; name="password"
-
-
-    {{password}}
-
-    ------WebKitFormBoundaryoZwyedGcQU4FrcFV--
-
-    '
-  - 'POST /api/admin/login HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/json
-
-
-    {"username":"{{user}}","password":"{{pass}}"}
-
-    '
-  stop-at-first-match: true
 id: empirec2-default-login
-info:
-  author: clem9669,parzival
-  description: 'Empire C2 / Starkiller Default Administrator Credentials Discovered.
 
-    '
-  metadata:
-    max-request: 2
-    verified: true
-  name: Empire C2 / Starkiller Interface - Default Login
-  reference:
-  - https://github.com/BC-SECURITY/Empire
-  - https://github.com/BC-SECURITY/empire-docs/blob/main/restful-api/README.md
+info:
+  name: Empire-C2 Default Login
+  author: clem9669
   severity: high
-  tags: default-login,empire,c2,intrusive
+  reference:
+    - https://github.com/BC-SECURITY/Empire
+    - https://bc-security.gitbook.io/empire-wiki/quickstart/configuration/server
+  metadata:
+    verified: true
+  tags: default-login,empire
+
+requests:
+  - raw:
+      - |
+        POST /api/admin/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{user}}","password":"{{pass}}"}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - empireadmin
+      pass:
+        - password123
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '{"token":".*"}'
+
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200

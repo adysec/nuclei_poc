@@ -1,48 +1,49 @@
-http:
-- attack: pitchfork
-  matchers:
-  - condition: and
-    part: body
-    type: word
-    words:
-    - '"token":'
-    - '"username":'
-  - part: header
-    type: word
-    words:
-    - application/json
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  payloads:
-    password:
-    - umami
-    username:
-    - admin
-  raw:
-  - 'POST /api/auth/login HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/json; charset=utf-8
-
-
-    {"username":"{{username}}","password":"{{password}}"}
-
-    '
 id: umami-default-login
+
 info:
+  name: Umami Default Login
   author: barthy.koeln
+  severity: high
+  description: |
+    Umami default admin credentials were discovered.
+  reference:
+    - https://umami.is/docs/login
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
     cvss-score: 8.3
     cwe-id: CWE-522
-  description: 'Umami default admin credentials were discovered.
-
-    '
-  name: Umami Default Login
-  reference:
-  - https://umami.is/docs/login
-  severity: high
   tags: umami,default-login
+
+http:
+  - raw:
+      - |
+        POST /api/auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json; charset=utf-8
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - umami
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"token":'
+          - '"username":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
