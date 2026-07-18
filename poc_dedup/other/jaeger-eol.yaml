@@ -1,35 +1,33 @@
-id: jaeger-eol
-
-info:
-  name: Jaeger End-of-Life - Detect
-  author: Shivam Kamboj
-  severity: info
-  description: |
-    Detected Jaeger versions that have reached End-of-Life (EOL) and no longer receive security updates.
-  reference:
-    - https://endoflife.date/jaeger
-    - https://github.com/jaegertracing/jaeger/issues/6321
-  metadata:
-    verified: true
-    max-request: 1
-    shodan-query: "title:\"Jaeger UI\""
-  tags: tech,jaeger,eol
-
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
+- extractors:
+  - group: 1
+    name: version
+    part: body
+    regex:
+    - '"gitVersion":"v?([0-9]+\.[0-9.]+)"'
+    type: regex
+  matchers:
+  - dsl:
+    - len(version) > 0 && compare_versions(version, "<2.0")
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: jaeger-eol
+info:
+  author: Shivam Kamboj
+  description: 'Detected Jaeger versions that have reached End-of-Life (EOL) and no
+    longer receive security updates.
 
-    extractors:
-      - type: regex
-        part: body
-        name: version
-        group: 1
-        regex:
-          - '"gitVersion":"v?([0-9]+\.[0-9.]+)"'
-
-    matchers:
-      - type: dsl
-        dsl:
-          - 'len(version) > 0 && compare_versions(version, "<2.0")'
-# digest: 490a004630440220442a05f59a554a617b120bcb45722075b1743a5ef4788108ffa1c36ad52c365e0220494af9653d969a2c34de2a53490294fa9103721b565014a3081f45a59371fa8d:922c64590222798bb761d5b6d8e72950
+    '
+  metadata:
+    max-request: 1
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)Jaeger UI"})
+    shodan-query: title:"Jaeger UI"
+    verified: true
+  name: Jaeger End-of-Life - Detect
+  reference:
+  - https://endoflife.date/jaeger
+  - https://github.com/jaegertracing/jaeger/issues/6321
+  severity: info
+  tags: tech,jaeger,eol
