@@ -1,44 +1,43 @@
 id: smb2-server-time
-
 info:
-  name: SMB2 Server Time - Detection
   author: DhiyaneshDK
-  severity: info
-  description: |
-    Trying to retrieve the present date of the system along with the initiation date of an SMB2 server.
-  reference:
-    - https://nmap.org/nsedoc/scripts/smb2-time.html
+  description: 'Trying to retrieve the present date of the system along with the initiation
+    date of an SMB2 server.
+
+    '
   metadata:
-    verified: true
     max-request: 1
-    shodan-query: "port:445"
-    product: dionaea
-    vendor: dionaea
+    shodan-query: port:445
+    verified: true
+  name: SMB2 Server Time - Detection
+  reference:
+  - https://nmap.org/nsedoc/scripts/smb2-time.html
+  severity: info
   tags: js,network,smb,enum
-
 javascript:
-  - pre-condition: |
-      isPortOpen(Host,Port);
-    code: |
-      var m = require("nuclei/smb");
-      var c = m.SMBClient();
-      var response = c.ConnectSMBInfoMode(Host,Port);
-      var systemTime = new Date(response.NegotiationLog.SystemTime * 1000).toISOString();
-      var serverstartTime = new Date(response.NegotiationLog.ServerStartTime * 1000).toISOString();
-      var result = "SystemTime: " + systemTime + " ServerStartTime: " + serverstartTime;
-      result
+- args:
+    Host: '{{Host}}'
+    Port: '445'
+  code: 'var m = require("nuclei/smb");
 
-    args:
-      Host: "{{Host}}"
-      Port: "445"
+    var c = m.SMBClient();
 
-    matchers:
-      - type: dsl
-        dsl:
-          - success
+    var response = c.ConnectSMBInfoMode(Host,Port);
 
-    extractors:
-      - type: dsl
-        dsl:
-          - response
-# digest: 490a00463044022066f6c210d58e0baa47b479cc34048fccd76369dd35b74f95150eb2902e457633022008ed12cf67e1e6f6ed4288138418e2294efe2c0412597181a233420408624383:922c64590222798bb761d5b6d8e72950
+    var systemTime = new Date(response.NegotiationLog.SystemTime * 1000).toISOString();
+
+    var serverstartTime = new Date(response.NegotiationLog.ServerStartTime * 1000).toISOString();
+
+    var result = "SystemTime: " + systemTime + " ServerStartTime: " + serverstartTime;
+
+    result
+
+    '
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+  matchers:
+  - dsl:
+    - success
+    type: dsl
