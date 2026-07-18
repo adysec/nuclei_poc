@@ -1,0 +1,85 @@
+id: openclaw-ratelimit-scope-bypass
+
+info:
+  name: OpenClaw Rate Limiter Scope Isolation Bypass
+  author: LobsterGuard
+  severity: high
+  description: |
+    Tests whether the rate limiter enforces per-scope isolation correctly.
+    Sends rapid requests across multiple endpoint scopes to determine if
+    rate limit counters are shared or isolated. If significantly fewer 429
+    responses are returned than expected when hitting different scopes,
+    the per-scope isolation is bypassable — an attacker can distribute
+    requests across scopes to avoid throttling.
+  reference:
+    - https://github.com/lobster-guard/openclaw-security
+  tags: openclaw,ratelimit,bypass,scope
+  metadata:
+    chain_id: 38
+
+http:
+  - raw:
+      - |
+        GET /api/status HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /api/status HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /api/status HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /healthz HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /healthz HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /healthz HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /v1/models HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /v1/models HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /v1/models HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /__openclaw/api/config HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /__openclaw/api/config HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /__openclaw/api/config HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /__openclaw__/api/config HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /__openclaw__/api/config HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /__openclaw__/api/config HTTP/1.1
+        Host: {{Hostname}}
+
+    race: true
+    race_count: 15
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+          - 204
+
+      - type: word
+        negative: true
+        words:
+          - "429 Too Many Requests"
+          - "rate limit exceeded"
+          - "Rate Limit"
+        condition: and
