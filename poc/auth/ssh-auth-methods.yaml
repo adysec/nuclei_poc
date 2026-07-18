@@ -1,37 +1,26 @@
 id: ssh-auth-methods
+
 info:
+  name: ssh-auth-methods
   author: Ice3man543
-  description: 'SSH (Secure Shell) authentication modes are methods used to verify
-    the identity of users and ensure secure access to remote systems. Common SSH authentication
-    modes include password-based authentication, which relies on a secret passphrase,
-    and public key authentication, which uses cryptographic keys for a more secure
-    and convenient login process. Additionally, multi-factor authentication (MFA)
-    can be employed to enhance security by requiring users to provide multiple forms
-    of authentication, such as a password and a one-time code.
-
-    '
-  metadata:
-    max-request: 1
-    shodan-query: product:"OpenSSH"
-  name: SSH Auth Methods - Detection
-  reference:
-  - https://nmap.org/nsedoc/scripts/ssh-auth-methods.html
   severity: info
-  tags: js,detect,ssh,enum,network
+  description: |
+    ssh-auth-methods
+  
+
 javascript:
-- args:
-    Host: '{{Host}}'
-    Port: '22'
-  code: 'var m = require("nuclei/ssh");
+  - code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      var response = c.ConnectSSHInfoMode(Host, Port);
+      to_json(response);
+    args:
+      Host: "{{Host}}"
+      Port: "22"
 
-    var c = m.SSHClient();
-
-    var response = c.ConnectSSHInfoMode(Host, Port);
-
-    Export(response);
-
-    '
-  extractors:
-  - json:
-    - .UserAuth
-    type: json
+    extractors:
+      - type: json
+        name: server
+        json:
+          - '.UserAuth'
+        part: response

