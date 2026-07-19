@@ -1,0 +1,47 @@
+id: fortinet-fortisandbox-panel
+info:
+  name: Fortinet FortiSandbox Panel - Detect
+  author: Umut ÖZEN,rxerium
+  severity: info
+  description: |
+    Fortinet FortiSandbox login panel was discovered.
+  reference:
+    - https://www.fortinet.com/products/sandbox/fortisandbox
+    - https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/FortiSandbox.pdf
+  classification:
+    cpe: cpe:2.3:a:fortinet:fortisandbox:*:*:*:*:*:*:*:*
+  metadata:
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)FortiSandbox"})
+    max-request: 1
+    product: fortisandbox
+    shodan-query: title:"FortiSandbox"
+    vendor: fortinet
+    verified: true
+  tags: discovery,fortinet,fortisandbox,login,panel,tech
+http:
+  - host-redirects: true
+    matchers:
+      - case-insensitive: true
+        condition: or
+        part: body
+        type: word
+        words:
+          - <title>FortiSandbox</title>
+          - <span>FortiSandbox
+          - fsa_login_logo
+          - /images/fsa_logo
+          - FortiSandbox
+      - part: header
+        regex:
+          - 'Set-Cookie: FSA_SESSION_ID='
+        # digest: 490a004630440220066b3d43b321748bc99e4e1293e928673a50e971313579ce9b8b8a0a901bfe6f02207439b50574944e5b77d606a4d8340b516411283e330ccb4addbbe000c6a45c8d:922c64590222798bb761d5b6d8e72950
+
+        type: regex
+    matchers-condition: or
+    max-redirects: 2
+    method: GET
+    path:
+      - '{{BaseURL}}'
+      - '{{BaseURL}}/fsa/login'
+      - '{{BaseURL}}/ng/login?returnUrl=%2F'
+    stop-at-first-match: true

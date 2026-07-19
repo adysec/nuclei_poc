@@ -1,240 +1,520 @@
-headless:
-- extractors:
-  - name: prototype_pollution_summary
-    part: body
-    regex:
-    - '"scan_completed":\s*true'
-    type: regex
-  - name: confirmed_prototype_vulnerabilities
-    part: body
-    regex:
-    - '"confirmed":\s*true'
-    type: regex
-  matchers:
-  - name: prototype_pollution_detected
-    regex:
-    - '"prototype_vulnerabilities_found":\s*true'
-    type: regex
-  - name: critical_prototype_pollution
-    regex:
-    - '"severity":\s*"critical"'
-    type: regex
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitload
-  - action: script
-    args:
-      code: "window.prototypePollutionResults = {\n  vulnerabilities: [],\n  test_results:\
-        \ [],\n  pollution_vectors: [],\n  original_prototypes: {},\n  framework_analysis:\
-        \ {},\n  risk_assessment: {}\n};\n\n// Store original prototype state for\
-        \ comparison\nwindow.prototypePollutionResults.original_prototypes = {\n \
-        \ object_keys: Object.keys(Object.prototype).length,\n  array_keys: Object.keys(Array.prototype).length,\n\
-        \  function_keys: Object.keys(Function.prototype).length,\n  string_keys:\
-        \ Object.keys(String.prototype).length\n};\n\n// Test if basic prototype pollution\
-        \ is possible\nfunction testBasicPollution() {\n  try {\n    const testObj\
-        \ = {};\n    testObj.__proto__.polluted = 'test123';\n    return ({}).polluted\
-        \ === 'test123';\n  } catch (e) {\n    return false;\n  }\n}\n\nwindow.prototypePollutionResults.basic_pollution_possible\
-        \ = testBasicPollution();\n\n// Analyze JavaScript frameworks present\nwindow.prototypePollutionResults.framework_analysis\
-        \ = {\n  jquery: typeof $ !== 'undefined',\n  lodash: typeof _ !== 'undefined',\n\
-        \  underscore: typeof _ !== 'undefined' && _.VERSION,\n  angular: typeof angular\
-        \ !== 'undefined',\n  vue: typeof Vue !== 'undefined',\n  react: typeof React\
-        \ !== 'undefined',\n  custom_merge_functions: []\n};\n\n// Scan for custom\
-        \ merge/extend functions in global scope\nObject.keys(window).forEach(key\
-        \ => {\n  if (typeof window[key] === 'function') {\n    const funcStr = window[key].toString();\n\
-        \    if (funcStr.includes('prototype') &&\n        (funcStr.includes('merge')\
-        \ || funcStr.includes('extend') || funcStr.includes('assign'))) {\n      window.prototypePollutionResults.framework_analysis.custom_merge_functions.push(key);\n\
-        \    }\n  }\n});\n\nreturn window.prototypePollutionResults;\n"
-    name: initialize_prototype_testing
-  - action: navigate
-    args:
-      url: '{{BaseURL}}?__proto__[polluted]=urlparam&constructor[prototype][polluted2]=urlparam2'
-  - action: waitload
-  - action: script
-    args:
-      code: "window.prototypePollutionResults.test_results.push('url_parameter_pollution');\n\
-        \n// Check if URL parameters polluted the prototype\nconst urlPolluted1 =\
-        \ ({}).polluted === 'urlparam';\nconst urlPolluted2 = ({}).polluted2 === 'urlparam2';\n\
-        \nif (urlPolluted1 || urlPolluted2) {\n  window.prototypePollutionResults.vulnerabilities.push({\n\
-        \    type: 'url_parameter_prototype_pollution',\n    vector: '__proto__ or\
-        \ constructor.prototype in URL',\n    confirmed: true,\n    severity: 'high',\n\
-        \    details: {\n      proto_pollution: urlPolluted1,\n      constructor_pollution:\
-        \ urlPolluted2\n    }\n  });\n}\n\n// Test if the application processes URL\
-        \ parameters unsafely\nconst urlParams = new URLSearchParams(window.location.search);\n\
-        const hasProtoParams = urlParams.has('__proto__[polluted]') ||\n         \
-        \              urlParams.toString().includes('constructor[prototype]');\n\n\
-        if (hasProtoParams) {\n  window.prototypePollutionResults.pollution_vectors.push({\n\
-        \    type: 'url_parameters',\n    description: 'Application accepts __proto__\
-        \ or constructor.prototype in URL parameters',\n    risk: 'high'\n  });\n\
-        }\n\nreturn window.prototypePollutionResults;\n"
-    name: url_parameter_pollution_test
-  - action: script
-    args:
-      code: "window.prototypePollutionResults.test_results.push('json_parsing_pollution');\n\
-        \n// Test various JSON parsing pollution vectors\nconst jsonPayloads = [\n\
-        \  '{\"__proto__\": {\"jsonPolluted\": \"test1\"}}',\n  '{\"constructor\"\
-        : {\"prototype\": {\"jsonPolluted2\": \"test2\"}}}',\n  '{\"__proto__.jsonPolluted3\"\
-        : \"test3\"}',\n  '{\"prototype\": {\"jsonPolluted4\": \"test4\"}}'\n];\n\n\
-        let jsonVulnFound = false;\nconst jsonResults = [];\n\njsonPayloads.forEach((payload,\
-        \ index) => {\n  try {\n    // Test different JSON parsing methods - using\
-        \ safe alternatives\n    const testCases = [\n      () => JSON.parse(payload),\n\
-        \      () => {\n        // Safe alternative to eval for testing purposes\n\
-        \        try {\n          return Function('\"use strict\"; return (' + payload\
-        \ + ')')();\n        } catch (e) {\n          return null;\n        }\n  \
-        \    }\n    ];\n\n    testCases.forEach((parseMethod, methodIndex) => {\n\
-        \      try {\n        const clearPollution = () => {\n          delete Object.prototype.jsonPolluted;\n\
-        \          delete Object.prototype.jsonPolluted2;\n          delete Object.prototype.jsonPolluted3;\n\
-        \          delete Object.prototype.jsonPolluted4;\n        };\n\n        clearPollution();\n\
-        \        parseMethod();\n\n        // Check if pollution occurred\n      \
-        \  const polluted = ({}).jsonPolluted || ({}).jsonPolluted2 ||\n         \
-        \              ({}).jsonPolluted3 || ({}).jsonPolluted4;\n\n        if (polluted)\
-        \ {\n          jsonVulnFound = true;\n          jsonResults.push({\n     \
-        \       payload_index: index,\n            method_index: methodIndex,\n  \
-        \          polluted_value: polluted,\n            method: methodIndex ===\
-        \ 0 ? 'JSON.parse' : 'safe_function_constructor'\n          });\n        }\n\
-        \n        clearPollution();\n      } catch (e) {\n        // Expected for\
-        \ malformed JSON\n      }\n    });\n  } catch (e) {\n    // Continue testing\
-        \ other payloads\n  }\n});\n\nif (jsonVulnFound) {\n  window.prototypePollutionResults.vulnerabilities.push({\n\
-        \    type: 'json_parsing_prototype_pollution',\n    vector: 'JSON parsing\
-        \ with prototype properties',\n    confirmed: true,\n    severity: 'high',\n\
-        \    details: jsonResults\n  });\n}\n\nreturn window.prototypePollutionResults;\n"
-    name: json_parsing_pollution_test
-  - action: script
-    args:
-      code: "window.prototypePollutionResults.test_results.push('deep_merge_pollution');\n\
-        \n// Create vulnerable merge function (common pattern)\nfunction vulnerableMerge(target,\
-        \ source) {\n  for (let key in source) {\n    if (typeof source[key] === 'object'\
-        \ && source[key] !== null) {\n      if (!target[key]) target[key] = {};\n\
-        \      vulnerableMerge(target[key], source[key]);\n    } else {\n      target[key]\
-        \ = source[key];\n    }\n  }\n  return target;\n}\n\n// Test merge-based pollution\n\
-        const maliciousPayload = {\n  __proto__: {\n    mergePolluted: 'deepmerge_test'\n\
-        \  }\n};\n\ntry {\n  const target = {};\n  vulnerableMerge(target, maliciousPayload);\n\
-        \n  const mergeVulnExists = ({}).mergePolluted === 'deepmerge_test';\n\n \
-        \ if (mergeVulnExists) {\n    window.prototypePollutionResults.vulnerabilities.push({\n\
-        \      type: 'deep_merge_prototype_pollution',\n      vector: 'Vulnerable\
-        \ deep merge implementation',\n      confirmed: true,\n      severity: 'high',\n\
-        \      details: {\n        pollution_key: 'mergePolluted',\n        pollution_value:\
-        \ 'deepmerge_test'\n      }\n    });\n  }\n\n  // Clean up\n  delete Object.prototype.mergePolluted;\n\
-        } catch (e) {\n  window.prototypePollutionResults.test_results.push('deep_merge_error:\
-        \ ' + e.message);\n}\n\nreturn window.prototypePollutionResults;\n"
-    name: deep_merge_pollution_test
-  - action: script
-    args:
-      code: "window.prototypePollutionResults.test_results.push('framework_specific_pollution');\n\
-        \n// Test jQuery extend pollution (if jQuery is present)\nif (window.prototypePollutionResults.framework_analysis.jquery)\
-        \ {\n  try {\n    const jqueryPayload = {\n      \"__proto__\": {\n      \
-        \  \"jqueryPolluted\": \"jquery_test\"\n      }\n    };\n\n    $.extend(true,\
-        \ {}, jqueryPayload);\n\n    if (({}).jqueryPolluted === 'jquery_test') {\n\
-        \      window.prototypePollutionResults.vulnerabilities.push({\n        type:\
-        \ 'jquery_extend_prototype_pollution',\n        vector: '$.extend() with __proto__\
-        \ property',\n        confirmed: true,\n        severity: 'high',\n      \
-        \  framework: 'jQuery'\n      });\n    }\n\n    delete Object.prototype.jqueryPolluted;\n\
-        \  } catch (e) {\n    window.prototypePollutionResults.test_results.push('jquery_test_error:\
-        \ ' + e.message);\n  }\n}\n\n// Test Lodash merge pollution (if Lodash is\
-        \ present)\nif (window.prototypePollutionResults.framework_analysis.lodash)\
-        \ {\n  try {\n    const lodashPayload = {\n      \"__proto__\": {\n      \
-        \  \"lodashPolluted\": \"lodash_test\"\n      }\n    };\n\n    _.merge({},\
-        \ lodashPayload);\n\n    if (({}).lodashPolluted === 'lodash_test') {\n  \
-        \    window.prototypePollutionResults.vulnerabilities.push({\n        type:\
-        \ 'lodash_merge_prototype_pollution',\n        vector: '_.merge() with __proto__\
-        \ property',\n        confirmed: true,\n        severity: 'high',\n      \
-        \  framework: 'Lodash'\n      });\n    }\n\n    delete Object.prototype.lodashPolluted;\n\
-        \  } catch (e) {\n    window.prototypePollutionResults.test_results.push('lodash_test_error:\
-        \ ' + e.message);\n  }\n}\n\nreturn window.prototypePollutionResults;\n"
-    name: framework_specific_pollution_test
-  - action: script
-    args:
-      code: "window.prototypePollutionResults.test_results.push('constructor_pollution');\n\
-        \n// Test constructor.prototype pollution\ntry {\n  const constructorPayload\
-        \ = {\n    \"constructor\": {\n      \"prototype\": {\n        \"constructorPolluted\"\
-        : \"constructor_test\"\n      }\n    }\n  };\n\n  // Test constructor prototype\
-        \ pollution without dangerous eval\n  const testObj = {};\n\n  // Safe way\
-        \ to test constructor.prototype pollution\n  try {\n    // Direct assignment\
-        \ to test the concept safely\n    testObj.constructor.prototype.constructorPolluted\
-        \ = 'constructor_test';\n  } catch (e) {\n    window.prototypePollutionResults.test_results.push('constructor_assignment_blocked:\
-        \ ' + e.message);\n    return window.prototypePollutionResults;\n  }\n\n \
-        \ if (({}).constructorPolluted === 'constructor_test') {\n    window.prototypePollutionResults.vulnerabilities.push({\n\
-        \      type: 'constructor_prototype_pollution',\n      vector: 'constructor.prototype\
-        \ property access',\n      confirmed: true,\n      severity: 'high',\n   \
-        \   details: {\n        pollution_method: 'constructor.prototype'\n      }\n\
-        \    });\n  }\n\n  delete Object.prototype.constructorPolluted;\n} catch (e)\
-        \ {\n  window.prototypePollutionResults.test_results.push('constructor_test_error:\
-        \ ' + e.message);\n}\n\nreturn window.prototypePollutionResults;\n"
-    name: constructor_pollution_test
-  - action: script
-    args:
-      code: "window.prototypePollutionResults.test_results.push('template_pollution');\n\
-        \n// Test if prototype pollution can affect client-side templates\ntry {\n\
-        \  // Pollute prototype with template-related properties\n  Object.prototype.templatePolluted\
-        \ = '<script>alert(\"XSS via prototype pollution\")</script>';\n  Object.prototype.isAdmin\
-        \ = true;\n  Object.prototype.role = 'administrator';\n\n  const templateTestResults\
-        \ = {\n    template_pollution: ({}).templatePolluted !== undefined,\n    privilege_pollution:\
-        \ ({}).isAdmin === true,\n    role_pollution: ({}).role === 'administrator'\n\
-        \  };\n\n  if (templateTestResults.template_pollution ||\n      templateTestResults.privilege_pollution\
-        \ ||\n      templateTestResults.role_pollution) {\n    window.prototypePollutionResults.vulnerabilities.push({\n\
-        \      type: 'template_prototype_pollution',\n      vector: 'Prototype pollution\
-        \ affecting template context',\n      confirmed: true,\n      severity: 'critical',\n\
-        \      details: templateTestResults,\n      impact: 'Potential XSS and privilege\
-        \ escalation'\n    });\n  }\n\n  // Clean up\n  delete Object.prototype.templatePolluted;\n\
-        \  delete Object.prototype.isAdmin;\n  delete Object.prototype.role;\n} catch\
-        \ (e) {\n  window.prototypePollutionResults.test_results.push('template_test_error:\
-        \ ' + e.message);\n}\n\nreturn window.prototypePollutionResults;\n"
-    name: template_pollution_test
-  - action: script
-    args:
-      code: "// Calculate comprehensive risk score\nlet riskScore = 0;\nconst confirmedVulns\
-        \ = window.prototypePollutionResults.vulnerabilities.filter(v => v.confirmed);\n\
-        \nconfirmedVulns.forEach(vuln => {\n  switch (vuln.severity) {\n    case 'critical':\
-        \ riskScore += 40; break;\n    case 'high': riskScore += 30; break;\n    case\
-        \ 'medium': riskScore += 20; break;\n    case 'low': riskScore += 10; break;\n\
-        \  }\n});\n\n// Additional risk factors\nif (window.prototypePollutionResults.basic_pollution_possible)\
-        \ riskScore += 10;\nif (window.prototypePollutionResults.framework_analysis.custom_merge_functions.length\
-        \ > 0) riskScore += 15;\n\nwindow.prototypePollutionResults.risk_assessment\
-        \ = {\n  total_vulnerabilities: confirmedVulns.length,\n  risk_score: Math.min(riskScore,\
-        \ 100),\n  risk_level: riskScore > 70 ? 'Critical' :\n             riskScore\
-        \ > 50 ? 'High' :\n             riskScore > 30 ? 'Medium' : 'Low',\n  test_coverage:\
-        \ window.prototypePollutionResults.test_results.length,\n  frameworks_analyzed:\
-        \ Object.keys(window.prototypePollutionResults.framework_analysis).length,\n\
-        \  recommendations: []\n};\n\nif (confirmedVulns.length > 0) {\n  window.prototypePollutionResults.risk_assessment.recommendations.push(\n\
-        \    'Implement safe object merging using Object.assign() or spread operator',\n\
-        \    'Validate and sanitize all user input before object processing',\n  \
-        \  'Use Map() instead of plain objects for user-controlled data',\n    'Implement\
-        \ Object.freeze() on critical prototypes',\n    'Add prototype pollution detection\
-        \ in CI/CD pipeline'\n  );\n}\n\n// Comprehensive cleanup - remove any remaining\
-        \ test pollution\nconst cleanupKeys = ['polluted', 'polluted2', 'jsonPolluted',\
-        \ 'jsonPolluted2',\n                   'jsonPolluted3', 'jsonPolluted4', 'mergePolluted',\n\
-        \                   'jqueryPolluted', 'lodashPolluted', 'constructorPolluted',\n\
-        \                   'templatePolluted', 'isAdmin', 'role'];\n\nlet cleanupErrors\
-        \ = [];\ncleanupKeys.forEach(key => {\n  try {\n    if (Object.prototype.hasOwnProperty(key))\
-        \ {\n      delete Object.prototype[key];\n    }\n  } catch (e) {\n    cleanupErrors.push(`Failed\
-        \ to cleanup ${key}: ${e.message}`);\n  }\n});\n\nif (cleanupErrors.length\
-        \ > 0) {\n  window.prototypePollutionResults.cleanup_errors = cleanupErrors;\n\
-        }\n\nwindow.prototypePollutionResults.summary = {\n  scan_completed: true,\n\
-        \  timestamp: new Date().toISOString(),\n  prototype_vulnerabilities_found:\
-        \ confirmedVulns.length > 0,\n  cleanup_completed: true\n};\n\nreturn window.prototypePollutionResults;\n"
-    name: final_prototype_assessment
 id: headless-prototype-pollution
+
 info:
-  author: geeknik
-  description: 'Advanced prototype pollution vulnerability detection using Headless
-    Protocol for
-
-    client-side JavaScript analysis. This template performs comprehensive prototype
-
-    chain manipulation testing, constructor pollution detection, and Object.prototype
-
-    modification analysis to identify prototype pollution vulnerabilities including
-
-    JSON parsing attacks, URL parameter pollution, and deep merge vulnerabilities
-
-    while maintaining defensive research principles.
-
-    '
   name: Client-Side Prototype Pollution Detector
-  reference:
-  - https://portswigger.net/research/server-side-prototype-pollution
-  - https://github.com/BlackFan/client-side-prototype-pollution
-  - https://owasp.org/www-project-web-security-testing-guide/
+  author: geeknik
   severity: high
+  description: |
+    Advanced prototype pollution vulnerability detection using Headless Protocol for
+    client-side JavaScript analysis. This template performs comprehensive prototype
+    chain manipulation testing, constructor pollution detection, and Object.prototype
+    modification analysis to identify prototype pollution vulnerabilities including
+    JSON parsing attacks, URL parameter pollution, and deep merge vulnerabilities
+    while maintaining defensive research principles.
+  reference:
+    - https://portswigger.net/research/server-side-prototype-pollution
+    - https://github.com/BlackFan/client-side-prototype-pollution
+    - https://owasp.org/www-project-web-security-testing-guide/
   tags: prototype-pollution,headless,javascript,client-side,defensive
+
+headless:
+  - steps:
+      # Navigate to target page
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      # Wait for page to fully load
+      - action: waitload
+
+      # Initialize prototype pollution testing framework
+      - action: script
+        name: initialize_prototype_testing
+        args:
+          code: |
+            window.prototypePollutionResults = {
+              vulnerabilities: [],
+              test_results: [],
+              pollution_vectors: [],
+              original_prototypes: {},
+              framework_analysis: {},
+              risk_assessment: {}
+            };
+
+            // Store original prototype state for comparison
+            window.prototypePollutionResults.original_prototypes = {
+              object_keys: Object.keys(Object.prototype).length,
+              array_keys: Object.keys(Array.prototype).length,
+              function_keys: Object.keys(Function.prototype).length,
+              string_keys: Object.keys(String.prototype).length
+            };
+
+            // Test if basic prototype pollution is possible
+            function testBasicPollution() {
+              try {
+                const testObj = {};
+                testObj.__proto__.polluted = 'test123';
+                return ({}).polluted === 'test123';
+              } catch (e) {
+                return false;
+              }
+            }
+
+            window.prototypePollutionResults.basic_pollution_possible = testBasicPollution();
+
+            // Analyze JavaScript frameworks present
+            window.prototypePollutionResults.framework_analysis = {
+              jquery: typeof $ !== 'undefined',
+              lodash: typeof _ !== 'undefined',
+              underscore: typeof _ !== 'undefined' && _.VERSION,
+              angular: typeof angular !== 'undefined',
+              vue: typeof Vue !== 'undefined',
+              react: typeof React !== 'undefined',
+              custom_merge_functions: []
+            };
+
+            // Scan for custom merge/extend functions in global scope
+            Object.keys(window).forEach(key => {
+              if (typeof window[key] === 'function') {
+                const funcStr = window[key].toString();
+                if (funcStr.includes('prototype') &&
+                    (funcStr.includes('merge') || funcStr.includes('extend') || funcStr.includes('assign'))) {
+                  window.prototypePollutionResults.framework_analysis.custom_merge_functions.push(key);
+                }
+              }
+            });
+
+            return window.prototypePollutionResults;
+
+      # Test URL parameter-based prototype pollution
+      - action: navigate
+        args:
+          url: "{{BaseURL}}?__proto__[polluted]=urlparam&constructor[prototype][polluted2]=urlparam2"
+
+      - action: waitload
+
+      - action: script
+        name: url_parameter_pollution_test
+        args:
+          code: |
+            window.prototypePollutionResults.test_results.push('url_parameter_pollution');
+
+            // Check if URL parameters polluted the prototype
+            const urlPolluted1 = ({}).polluted === 'urlparam';
+            const urlPolluted2 = ({}).polluted2 === 'urlparam2';
+
+            if (urlPolluted1 || urlPolluted2) {
+              window.prototypePollutionResults.vulnerabilities.push({
+                type: 'url_parameter_prototype_pollution',
+                vector: '__proto__ or constructor.prototype in URL',
+                confirmed: true,
+                severity: 'high',
+                details: {
+                  proto_pollution: urlPolluted1,
+                  constructor_pollution: urlPolluted2
+                }
+              });
+            }
+
+            // Test if the application processes URL parameters unsafely
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasProtoParams = urlParams.has('__proto__[polluted]') ||
+                                   urlParams.toString().includes('constructor[prototype]');
+
+            if (hasProtoParams) {
+              window.prototypePollutionResults.pollution_vectors.push({
+                type: 'url_parameters',
+                description: 'Application accepts __proto__ or constructor.prototype in URL parameters',
+                risk: 'high'
+              });
+            }
+
+            return window.prototypePollutionResults;
+
+      # Test JSON parsing-based prototype pollution
+      - action: script
+        name: json_parsing_pollution_test
+        args:
+          code: |
+            window.prototypePollutionResults.test_results.push('json_parsing_pollution');
+
+            // Test various JSON parsing pollution vectors
+            const jsonPayloads = [
+              '{"__proto__": {"jsonPolluted": "test1"}}',
+              '{"constructor": {"prototype": {"jsonPolluted2": "test2"}}}',
+              '{"__proto__.jsonPolluted3": "test3"}',
+              '{"prototype": {"jsonPolluted4": "test4"}}'
+            ];
+
+            let jsonVulnFound = false;
+            const jsonResults = [];
+
+            jsonPayloads.forEach((payload, index) => {
+              try {
+                // Test different JSON parsing methods - using safe alternatives
+                const testCases = [
+                  () => JSON.parse(payload),
+                  () => {
+                    // Safe alternative to eval for testing purposes
+                    try {
+                      return Function('"use strict"; return (' + payload + ')')();
+                    } catch (e) {
+                      return null;
+                    }
+                  }
+                ];
+
+                testCases.forEach((parseMethod, methodIndex) => {
+                  try {
+                    const clearPollution = () => {
+                      delete Object.prototype.jsonPolluted;
+                      delete Object.prototype.jsonPolluted2;
+                      delete Object.prototype.jsonPolluted3;
+                      delete Object.prototype.jsonPolluted4;
+                    };
+
+                    clearPollution();
+                    parseMethod();
+
+                    // Check if pollution occurred
+                    const polluted = ({}).jsonPolluted || ({}).jsonPolluted2 ||
+                                   ({}).jsonPolluted3 || ({}).jsonPolluted4;
+
+                    if (polluted) {
+                      jsonVulnFound = true;
+                      jsonResults.push({
+                        payload_index: index,
+                        method_index: methodIndex,
+                        polluted_value: polluted,
+                        method: methodIndex === 0 ? 'JSON.parse' : 'safe_function_constructor'
+                      });
+                    }
+
+                    clearPollution();
+                  } catch (e) {
+                    // Expected for malformed JSON
+                  }
+                });
+              } catch (e) {
+                // Continue testing other payloads
+              }
+            });
+
+            if (jsonVulnFound) {
+              window.prototypePollutionResults.vulnerabilities.push({
+                type: 'json_parsing_prototype_pollution',
+                vector: 'JSON parsing with prototype properties',
+                confirmed: true,
+                severity: 'high',
+                details: jsonResults
+              });
+            }
+
+            return window.prototypePollutionResults;
+
+      # Test deep merge vulnerability patterns
+      - action: script
+        name: deep_merge_pollution_test
+        args:
+          code: |
+            window.prototypePollutionResults.test_results.push('deep_merge_pollution');
+
+            // Create vulnerable merge function (common pattern)
+            function vulnerableMerge(target, source) {
+              for (let key in source) {
+                if (typeof source[key] === 'object' && source[key] !== null) {
+                  if (!target[key]) target[key] = {};
+                  vulnerableMerge(target[key], source[key]);
+                } else {
+                  target[key] = source[key];
+                }
+              }
+              return target;
+            }
+
+            // Test merge-based pollution
+            const maliciousPayload = {
+              __proto__: {
+                mergePolluted: 'deepmerge_test'
+              }
+            };
+
+            try {
+              const target = {};
+              vulnerableMerge(target, maliciousPayload);
+
+              const mergeVulnExists = ({}).mergePolluted === 'deepmerge_test';
+
+              if (mergeVulnExists) {
+                window.prototypePollutionResults.vulnerabilities.push({
+                  type: 'deep_merge_prototype_pollution',
+                  vector: 'Vulnerable deep merge implementation',
+                  confirmed: true,
+                  severity: 'high',
+                  details: {
+                    pollution_key: 'mergePolluted',
+                    pollution_value: 'deepmerge_test'
+                  }
+                });
+              }
+
+              // Clean up
+              delete Object.prototype.mergePolluted;
+            } catch (e) {
+              window.prototypePollutionResults.test_results.push('deep_merge_error: ' + e.message);
+            }
+
+            return window.prototypePollutionResults;
+
+      # Test framework-specific pollution vectors
+      - action: script
+        name: framework_specific_pollution_test
+        args:
+          code: |
+            window.prototypePollutionResults.test_results.push('framework_specific_pollution');
+
+            // Test jQuery extend pollution (if jQuery is present)
+            if (window.prototypePollutionResults.framework_analysis.jquery) {
+              try {
+                const jqueryPayload = {
+                  "__proto__": {
+                    "jqueryPolluted": "jquery_test"
+                  }
+                };
+
+                $.extend(true, {}, jqueryPayload);
+
+                if (({}).jqueryPolluted === 'jquery_test') {
+                  window.prototypePollutionResults.vulnerabilities.push({
+                    type: 'jquery_extend_prototype_pollution',
+                    vector: '$.extend() with __proto__ property',
+                    confirmed: true,
+                    severity: 'high',
+                    framework: 'jQuery'
+                  });
+                }
+
+                delete Object.prototype.jqueryPolluted;
+              } catch (e) {
+                window.prototypePollutionResults.test_results.push('jquery_test_error: ' + e.message);
+              }
+            }
+
+            // Test Lodash merge pollution (if Lodash is present)
+            if (window.prototypePollutionResults.framework_analysis.lodash) {
+              try {
+                const lodashPayload = {
+                  "__proto__": {
+                    "lodashPolluted": "lodash_test"
+                  }
+                };
+
+                _.merge({}, lodashPayload);
+
+                if (({}).lodashPolluted === 'lodash_test') {
+                  window.prototypePollutionResults.vulnerabilities.push({
+                    type: 'lodash_merge_prototype_pollution',
+                    vector: '_.merge() with __proto__ property',
+                    confirmed: true,
+                    severity: 'high',
+                    framework: 'Lodash'
+                  });
+                }
+
+                delete Object.prototype.lodashPolluted;
+              } catch (e) {
+                window.prototypePollutionResults.test_results.push('lodash_test_error: ' + e.message);
+              }
+            }
+
+            return window.prototypePollutionResults;
+
+      # Test constructor pollution patterns
+      - action: script
+        name: constructor_pollution_test
+        args:
+          code: |
+            window.prototypePollutionResults.test_results.push('constructor_pollution');
+
+            // Test constructor.prototype pollution
+            try {
+              const constructorPayload = {
+                "constructor": {
+                  "prototype": {
+                    "constructorPolluted": "constructor_test"
+                  }
+                }
+              };
+
+              // Test constructor prototype pollution without dangerous eval
+              const testObj = {};
+
+              // Safe way to test constructor.prototype pollution
+              try {
+                // Direct assignment to test the concept safely
+                testObj.constructor.prototype.constructorPolluted = 'constructor_test';
+              } catch (e) {
+                window.prototypePollutionResults.test_results.push('constructor_assignment_blocked: ' + e.message);
+                return window.prototypePollutionResults;
+              }
+
+              if (({}).constructorPolluted === 'constructor_test') {
+                window.prototypePollutionResults.vulnerabilities.push({
+                  type: 'constructor_prototype_pollution',
+                  vector: 'constructor.prototype property access',
+                  confirmed: true,
+                  severity: 'high',
+                  details: {
+                    pollution_method: 'constructor.prototype'
+                  }
+                });
+              }
+
+              delete Object.prototype.constructorPolluted;
+            } catch (e) {
+              window.prototypePollutionResults.test_results.push('constructor_test_error: ' + e.message);
+            }
+
+            return window.prototypePollutionResults;
+
+      # Test for client-side template pollution
+      - action: script
+        name: template_pollution_test
+        args:
+          code: |
+            window.prototypePollutionResults.test_results.push('template_pollution');
+
+            // Test if prototype pollution can affect client-side templates
+            try {
+              // Pollute prototype with template-related properties
+              Object.prototype.templatePolluted = '<script>alert("XSS via prototype pollution")</script>';
+              Object.prototype.isAdmin = true;
+              Object.prototype.role = 'administrator';
+
+              const templateTestResults = {
+                template_pollution: ({}).templatePolluted !== undefined,
+                privilege_pollution: ({}).isAdmin === true,
+                role_pollution: ({}).role === 'administrator'
+              };
+
+              if (templateTestResults.template_pollution ||
+                  templateTestResults.privilege_pollution ||
+                  templateTestResults.role_pollution) {
+                window.prototypePollutionResults.vulnerabilities.push({
+                  type: 'template_prototype_pollution',
+                  vector: 'Prototype pollution affecting template context',
+                  confirmed: true,
+                  severity: 'critical',
+                  details: templateTestResults,
+                  impact: 'Potential XSS and privilege escalation'
+                });
+              }
+
+              // Clean up
+              delete Object.prototype.templatePolluted;
+              delete Object.prototype.isAdmin;
+              delete Object.prototype.role;
+            } catch (e) {
+              window.prototypePollutionResults.test_results.push('template_test_error: ' + e.message);
+            }
+
+            return window.prototypePollutionResults;
+
+      # Final risk assessment and cleanup
+      - action: script
+        name: final_prototype_assessment
+        args:
+          code: |
+            // Calculate comprehensive risk score
+            let riskScore = 0;
+            const confirmedVulns = window.prototypePollutionResults.vulnerabilities.filter(v => v.confirmed);
+
+            confirmedVulns.forEach(vuln => {
+              switch (vuln.severity) {
+                case 'critical': riskScore += 40; break;
+                case 'high': riskScore += 30; break;
+                case 'medium': riskScore += 20; break;
+                case 'low': riskScore += 10; break;
+              }
+            });
+
+            // Additional risk factors
+            if (window.prototypePollutionResults.basic_pollution_possible) riskScore += 10;
+            if (window.prototypePollutionResults.framework_analysis.custom_merge_functions.length > 0) riskScore += 15;
+
+            window.prototypePollutionResults.risk_assessment = {
+              total_vulnerabilities: confirmedVulns.length,
+              risk_score: Math.min(riskScore, 100),
+              risk_level: riskScore > 70 ? 'Critical' :
+                         riskScore > 50 ? 'High' :
+                         riskScore > 30 ? 'Medium' : 'Low',
+              test_coverage: window.prototypePollutionResults.test_results.length,
+              frameworks_analyzed: Object.keys(window.prototypePollutionResults.framework_analysis).length,
+              recommendations: []
+            };
+
+            if (confirmedVulns.length > 0) {
+              window.prototypePollutionResults.risk_assessment.recommendations.push(
+                'Implement safe object merging using Object.assign() or spread operator',
+                'Validate and sanitize all user input before object processing',
+                'Use Map() instead of plain objects for user-controlled data',
+                'Implement Object.freeze() on critical prototypes',
+                'Add prototype pollution detection in CI/CD pipeline'
+              );
+            }
+
+            // Comprehensive cleanup - remove any remaining test pollution
+            const cleanupKeys = ['polluted', 'polluted2', 'jsonPolluted', 'jsonPolluted2',
+                               'jsonPolluted3', 'jsonPolluted4', 'mergePolluted',
+                               'jqueryPolluted', 'lodashPolluted', 'constructorPolluted',
+                               'templatePolluted', 'isAdmin', 'role'];
+
+            let cleanupErrors = [];
+            cleanupKeys.forEach(key => {
+              try {
+                if (Object.prototype.hasOwnProperty(key)) {
+                  delete Object.prototype[key];
+                }
+              } catch (e) {
+                cleanupErrors.push(`Failed to cleanup ${key}: ${e.message}`);
+              }
+            });
+
+            if (cleanupErrors.length > 0) {
+              window.prototypePollutionResults.cleanup_errors = cleanupErrors;
+            }
+
+            window.prototypePollutionResults.summary = {
+              scan_completed: true,
+              timestamp: new Date().toISOString(),
+              prototype_vulnerabilities_found: confirmedVulns.length > 0,
+              cleanup_completed: true
+            };
+
+            return window.prototypePollutionResults;
+
+    extractors:
+      - type: regex
+        name: prototype_pollution_summary
+        part: body
+        regex:
+          - '"scan_completed":\s*true'
+
+      - type: regex
+        name: confirmed_prototype_vulnerabilities
+        part: body
+        regex:
+          - '"confirmed":\s*true'
+
+    matchers:
+      - type: regex
+        name: prototype_pollution_detected
+        regex:
+          - '"prototype_vulnerabilities_found":\s*true'
+
+      - type: regex
+        name: critical_prototype_pollution
+        regex:
+          - '"severity":\s*"critical"'
+
+# Headless template for comprehensive prototype pollution detection

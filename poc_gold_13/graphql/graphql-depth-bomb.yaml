@@ -1,96 +1,116 @@
 id: graphql-depth-bomb
 info:
+  name: GraphQL Query Depth Attack Detection
   author: geeknik
+  severity: high
+  description: |
+    Detects GraphQL endpoints vulnerable to query depth attacks that can cause
+    denial of service through excessive nested queries and resource exhaustion.
+  reference:
+    - https://www.apollographql.com/blog/graphql/security/securing-your-graphql-api-from-malicious-queries/
+    - https://portswigger.net/web-security/graphql
   classification:
     cwe-id: CWE-400
-  description: 'Detects GraphQL endpoints vulnerable to query depth attacks that can
-    cause
-
-    denial of service through excessive nested queries and resource exhaustion.
-
-    '
+  tags: graphql,dos,api,depth-attack
   metadata:
     max-request: 4
-  name: GraphQL Query Depth Attack Detection
-  reference:
-  - https://www.apollographql.com/blog/graphql/security/securing-your-graphql-api-from-malicious-queries/
-  - https://portswigger.net/web-security/graphql
-  severity: high
-  tags: graphql,dos,api,depth-attack
-requests:
-- body: "{\n  \"query\": \"query DepthTest{{depth_id}} { __typename }\"\n}\n"
-  headers:
-    Content-Type: application/json
-  method: POST
-  path:
-  - '{{BaseURL}}/graphql'
-  - '{{BaseURL}}/api/graphql'
-  - '{{BaseURL}}/v1/graphql'
-  - '{{BaseURL}}/query'
-- body: "{\n  \"query\": \"query { user { posts { comments { author { posts { comments\
-    \ { author { posts { comments { author { posts { comments { text } } } } } } }\
-    \ } } } } } }\"\n}\n"
-  headers:
-    Content-Type: application/json
-  method: POST
-  path:
-  - '{{BaseURL}}/graphql'
-  - '{{BaseURL}}/api/graphql'
-  - '{{BaseURL}}/v1/graphql'
-  - '{{BaseURL}}/query'
-- body: "{\n  \"query\": \"query { node(id: 1) { ... on User { friends { friends {\
-    \ friends { friends { friends { friends { friends { friends { friends { friends\
-    \ { name } } } } } } } } } } } }\"\n}\n"
-  headers:
-    Content-Type: application/json
-  method: POST
-  path:
-  - '{{BaseURL}}/graphql'
-  - '{{BaseURL}}/api/graphql'
-  - '{{BaseURL}}/v1/graphql'
-  - '{{BaseURL}}/query'
-- body: "{\n  \"query\": \"fragment Recursive on User { name posts { comments { author\
-    \ { ...Recursive } } } } query { user { ...Recursive } }\"\n}\n"
-  extractors:
-  - part: body
-    regex:
-    - depth["\s:]+(\d+)
-    - complexity["\s:]+(\d+)
-    - cost["\s:]+(\d+)
-    type: regex
-  headers:
-    Content-Type: application/json
-  matchers:
-  - condition: or
-    part: body
-    type: word
-    words:
-    - Query depth limit exceeded
-    - max query depth
-    - query is too complex
-    - Query complexity
-    - depth limit
-    - Maximum query depth
-  - condition: and
-    dsl:
-    - duration >= 8
-    - status_code == 200
-    - contains(tolower(body), 'errors') || contains(tolower(body), 'query') || contains(tolower(body),
-      'graphql')
-    type: dsl
-  - condition: and
-    dsl:
-    - status_code == 429 || status_code == 503
-    - contains(tolower(body), 'graphql') || contains(tolower(body), 'query') || contains(tolower(body),
-      'depth') || contains(tolower(body), 'complex')
-    type: dsl
-  matchers-condition: or
-  method: POST
-  path:
-  - '{{BaseURL}}/graphql'
-  - '{{BaseURL}}/api/graphql'
-  - '{{BaseURL}}/v1/graphql'
-  - '{{BaseURL}}/query'
-  stop-at-first-match: true
+
 variables:
-  depth_id: '{{randstr}}'
+  depth_id: "{{randstr}}"
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "query": "query DepthTest{{depth_id}} { __typename }"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "query": "query { user { posts { comments { author { posts { comments { author { posts { comments { author { posts { comments { text } } } } } } } } } } } } }"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "query": "query { node(id: 1) { ... on User { friends { friends { friends { friends { friends { friends { friends { friends { friends { friends { name } } } } } } } } } } } }"
+      }
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "query": "fragment Recursive on User { name posts { comments { author { ...Recursive } } } } query { user { ...Recursive } }"
+      }
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Query depth limit exceeded"
+          - "max query depth"
+          - "query is too complex"
+          - "Query complexity"
+          - "depth limit"
+          - "Maximum query depth"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - "duration >= 8"
+          - "status_code == 200"
+          - "contains(tolower(body), 'errors') || contains(tolower(body), 'query') || contains(tolower(body), 'graphql')"
+        condition: and
+
+      - type: dsl
+        dsl:
+          - "status_code == 429 || status_code == 503"
+          - "contains(tolower(body), 'graphql') || contains(tolower(body), 'query') || contains(tolower(body), 'depth') || contains(tolower(body), 'complex')"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'depth["\s:]+(\d+)'
+          - 'complexity["\s:]+(\d+)'
+          - 'cost["\s:]+(\d+)'
