@@ -1,62 +1,56 @@
+http:
+- extractors:
+  - group: 1
+    name: version_by_generator
+    regex:
+    - (?m)https:\/\/wordpress.org\/\?v=([0-9.]+)
+    type: regex
+  - group: 1
+    name: version_by_js
+    regex:
+    - wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b
+    type: regex
+  - group: 1
+    name: version_by_css
+    regex:
+    - install\.min\.css\?ver=((\d+\.?)+)\b
+    type: regex
+  matchers:
+  - condition: or
+    regex:
+    - <generator>https?:\/\/wordpress\.org.*</generator>
+    - wp-login.php
+    - \/wp-content/themes\/
+    - \/wp-includes\/
+    - name="generator" content="wordpress
+    - <link[^>]+s\d+\.wp\.com
+    - <!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin v([\d.]+)
+      -
+    - <!--[^>]+WP-Super-Cache
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  max-redirects: 2
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  - '{{BaseURL}}/wp-admin/install.php'
+  - '{{BaseURL}}/feed/'
+  - '{{BaseURL}}/?feed=rss2'
+  redirects: true
+  stop-at-first-match: true
 id: wordpress-website-detect
-
 info:
-  name: WordPress Detect
   author: TykerDeploy
-  severity: info
   metadata:
+    category: cms
     max-request: 4
-    verified: true
+    product: wordpress
     shodan-query: http.component:"WordPress"
     vendor: wordpress
-    product: wordpress
-    category: cms
+    verified: true
+  name: WordPress Detect
+  severity: info
   tags: tech,wordpress,cms,wp
-
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/wp-admin/install.php"
-      - "{{BaseURL}}/feed/"
-      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
-
-    redirects: true
-    max-redirects: 2
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - '<generator>https?:\/\/wordpress\.org.*</generator>'
-          - 'wp-login.php'
-          - '\/wp-content/themes\/'
-          - '\/wp-includes\/'
-          - 'name="generator" content="wordpress'
-          - '<link[^>]+s\d+\.wp\.com'
-          - '<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin v([\d.]+) -'
-          - '<!--[^>]+WP-Super-Cache'
-        condition: or
-
-      - type: status
-        status:
-          - 200
-
-    extractors:
-      - type: regex
-        name: version_by_generator
-        group: 1
-        regex:
-          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
-
-      - type: regex
-        name: version_by_js
-        group: 1
-        regex:
-          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
-
-      - type: regex
-        name: version_by_css
-        group: 1
-        regex:
-          - 'install\.min\.css\?ver=((\d+\.?)+)\b'
