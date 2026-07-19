@@ -1,66 +1,72 @@
-code:
-- engine:
-  - sh
-  - bash
-  extractors:
-  - internal: true
-    json:
-    - .[].projectId
-    name: projectIds
-    type: json
-  source: 'gcloud projects list --format="json(projectId)"
-
-    '
-- engine:
-  - sh
-  - bash
-  extractors:
-  - internal: true
-    json:
-    - .[].name
-    name: perimeters
-    type: json
-  source: 'gcloud access-context-manager perimeters list --project $projectId --format="json(name)"
-
-    '
-- engine:
-  - sh
-  - bash
-  extractors:
-  - dsl:
-    - '"The VPC Service Perimeter " + perimeterName + " in project " + projectId +
-      " does not include storage.googleapis.com, leaving Cloud Storage buckets unprotected."'
-    type: dsl
-  matchers:
-  - type: word
-    words:
-    - storage.googleapis.com
-  source: 'gcloud access-context-manager perimeters describe $perimeterName --project
-    $projectId --format=json | jq -r ''.status.restrictedServices[]? // "null"''
-
-    '
-flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
-  , projectId)\n  code(2)\n  for(let perimeterName of iterate(template.perimeters)){\n\
-  \    set(\"perimeterName\", perimeterName)\n    code(3)\n  }\n}\n"
 id: gcloud-vpc-service-controls-not-configured
+
 info:
-  author: princechaddha
-  description: 'Ensure that VPC Service Controls are used to configure a security
-    perimeter around your Google Cloud Storage buckets to prevent data exfiltration
-    and enhance the security posture of your cloud environment.
-
-    '
-  impact: 'Without VPC Service Controls, sensitive data in your Google Cloud Storage
-    buckets is at a higher risk of unauthorized access and exfiltration.
-
-    '
   name: Use VPC Service Controls for Cloud Storage Buckets
-  reference:
-  - https://cloud.google.com/vpc-service-controls/docs/overview
-  remediation: 'Configure VPC Service Controls with a security perimeter that includes
-    the Cloud Storage service (storage.googleapis.com) to protect your sensitive data.
-
-    '
+  author: princechaddha
   severity: medium
+  description: |
+    Ensure that VPC Service Controls are used to configure a security perimeter around your Google Cloud Storage buckets to prevent data exfiltration and enhance the security posture of your cloud environment.
+  impact: |
+    Without VPC Service Controls, sensitive data in your Google Cloud Storage buckets is at a higher risk of unauthorized access and exfiltration.
+  remediation: |
+    Configure VPC Service Controls with a security perimeter that includes the Cloud Storage service (storage.googleapis.com) to protect your sensitive data.
+  reference:
+    - https://cloud.google.com/vpc-service-controls/docs/overview
   tags: cloud,devops,gcp,gcloud,google-cloud-storage,vpc-service-controls,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let perimeterName of iterate(template.perimeters)){
+      set("perimeterName", perimeterName)
+      code(3)
+    }
+  }
+
 self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud access-context-manager perimeters list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: perimeters
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud access-context-manager perimeters describe $perimeterName --project $projectId --format=json | jq -r '.status.restrictedServices[]? // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - 'storage.googleapis.com'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The VPC Service Perimeter " + perimeterName + " in project " + projectId + " does not include storage.googleapis.com, leaving Cloud Storage buckets unprotected."'
+# digest: 4a0a00473045022100e0c749fa7ab8e6de075a46c7c41aa9d595a2bf0a68d1ad89f7d99659a1e37d480220163aa5c74cf3a4753b51fe9968e4aa61102a960789c49d80cf5f34bfa0e9a229:922c64590222798bb761d5b6d8e72950
