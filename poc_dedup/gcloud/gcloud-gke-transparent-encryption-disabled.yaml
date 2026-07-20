@@ -1,0 +1,73 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusters
+    type: json
+  source: 'gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId
+      + " does not have inter-node transparent encryption enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - IN_TRANSIT_ENCRYPTION_DISABLED
+  source: 'gcloud container clusters describe $clusterName --location $location --project
+    $projectId --format="value(networkConfig.inTransitEncryptionConfig)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let cluster of iterate(template.clusters)){\n   \
+  \ cluster = JSON.parse(cluster)\n    set(\"clusterName\", cluster.name)\n    set(\"\
+  location\", cluster.location)\n    code(3)\n  }\n}\n"
+id: gcloud-gke-transparent-encryption-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that encryption of in-transit data for Pod communications across
+    Google Kubernetes Engine (GKE) cluster nodes is enabled with Customer-Managed
+    Encryption Keys (CMEKs). This feature, which requires GKE Dataplane V2, provides
+    additional encryption on top of the default VM NIC-level encryption using WireGuard.
+
+    '
+  impact: 'Without inter-node transparent encryption enabled, pod-to-pod traffic across
+    nodes relies solely on default VM NIC-level encryption, potentially not meeting
+    regulatory requirements for industries that need direct control over encryption
+    keys.
+
+    '
+  name: GKE Clusters Without Inter-Node Transparent Encryption
+  reference:
+  - https://cloud.google.com/kubernetes-engine/docs/how-to/encrypt-in-transit
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-inter-node-transparent-encryption.html
+  remediation: 'Enable inter-node transparent encryption for your GKE clusters using:
+
+    gcloud container clusters update CLUSTER_NAME --region=REGION --in-transit-encryption
+    inter-node-transparent
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,encryption,gcp-cloud-config
+self-contained: true

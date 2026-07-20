@@ -1,27 +1,41 @@
 id: extract-emails
 
 info:
-  name: Emails extractor
-  author: cipher387
+  name: Extract Email IDs from Response
+  author: pdteam
   severity: info
-  description: Extract emails from web page body
-  tags: osint,juicy-info
+
+
+flow: |
+  http(1)
+  for(let email of template["emails"]) {
+    set("email",email);
+    http(2);
+  }
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
 
-    matchers:
-      - type: regex
-        part: body
-        regex:
-          - '[a-zA-Z0-9-_.]+@[a-zA-Z0-9-_.]+'
     extractors:
       - type: regex
-        part: body
+        name: emails
         regex:
-          - '[a-zA-Z0-9-_.]+@[a-zA-Z0-9-_.]+'
+          - '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+        internal: true
 
-
-#url for test https://cleantalk.org/blacklists/britjaynes13@gmail.com
+  - method: GET
+    path:
+      - "{{BaseURL}}/user/{{base64(email)}}"
+  
+    matchers:
+      - type: word
+        words:
+          - "Welcome"
+    
+    extractors:
+      - type: dsl
+        name: email
+        dsl:
+          - email

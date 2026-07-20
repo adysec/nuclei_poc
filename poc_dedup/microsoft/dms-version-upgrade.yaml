@@ -1,0 +1,58 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: replications
+    type: json
+  source: 'aws dms describe-replication-instances --region $region --query "ReplicationInstances[*].ReplicationInstanceArn"
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"DMS Auto Minor Version Upgrade  " + replication + " not enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'aws dms describe-replication-instances --region $region --filters Name=replication-instance-arn,Values=$replication
+    --query "ReplicationInstances[*].AutoMinorVersionUpgrade" --output json
+
+    '
+flow: "code(1)\nfor(let ReplicationInstances of iterate(template.replications)){\n\
+  \  set(\"replication\", ReplicationInstances)\n  code(2)\n}\n"
+id: dms-version-upgrade
+info:
+  author: DhiyaneshDK
+  description: 'Ensure that your Amazon Database Migration Service (DMS) replication
+    instances have the Auto Minor Version Upgrade feature enabled in order to receive
+    automatically minor engine upgrades.
+
+    '
+  impact: 'Not enabling DMS Auto Minor Version Upgrade can lead to running outdated
+    database versions, increasing vulnerability to security risks and bugs, while
+    missing out on performance improvements and new features provided in minor updates.
+
+    '
+  name: DMS Auto Minor Version Upgrade
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/DMS/auto-minor-version-upgrade.html
+  - https://docs.aws.amazon.com/cli/latest/reference/dms/index.html
+  remediation: 'Enable DMS Auto Minor Version Upgrade to automatically apply minor
+    version updates, ensuring your database is always up-to-date with the latest security
+    patches, performance enhancements, and bug fixes.
+
+    '
+  severity: medium
+  tags: cloud,devops,aws,amazon,dms,aws-cloud-config
+self-contained: true
+variables:
+  region: us-west-2

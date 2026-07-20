@@ -1,0 +1,56 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: dbclusters
+    type: json
+  source: 'aws rds describe-db-instances --region $region --output json --query ''DBInstances[*].DBInstanceIdentifier''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - dbcluster + " RDS Publicly Accessible Enabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'true'
+  source: 'aws rds describe-db-instances --region $region --db-instance-identifier
+    $dbcluster --query ''DBInstances[*].PubliclyAccessible'' --output json
+
+    '
+flow: "code(1)\nfor(let DBClusterIdentifier of iterate(template.dbclusters)){\n  set(\"\
+  dbcluster\", DBClusterIdentifier)\n  code(2)\n}\n"
+id: rds-public-access
+info:
+  author: DhiyaneshDK
+  description: 'Check for any public-facing Amazon RDS database instances provisioned
+    within your AWS cloud account and restrict unauthorized access in order to minimize
+    security risks.
+
+    '
+  impact: 'The RDS instance is exposed to the internet, increasing the risk of unauthorized
+    access, attacks, and data breaches.
+
+    '
+  name: RDS Publicly Accessible - Enabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/RDS/rds-publicly-accessible.html
+  - http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.html
+  remediation: 'To restrict access to a publicly accessible database instance, you
+    must disable the PubliclyAccessible configuration flag, and update the security
+    group associated with the database instance.
+
+    '
+  severity: high
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+self-contained: true
+variables:
+  region: us-west-2

@@ -1,0 +1,65 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: functions
+    type: json
+  source: 'gcloud functions list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Missing labels for function: " + functionName + " in " + projectId + " project"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud functions describe $functionName --format="json(labels)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let functionDetail of iterate(template.functions)){\n\
+  \    set(\"functionName\", functionDetail)\n    code(3)\n  }\n}\n"
+id: gcloud-func-missing-labels
+info:
+  author: princechaddha
+  description: 'Ensure that user-defined labels are being used to tag, collect, and
+    organize Google Cloud functions within your Google Cloud Platform (GCP) projects.
+    User-defined labels are a lightweight and efficient way to group together related
+    or associated cloud resources.
+
+    '
+  impact: 'Not using labels can lead to challenges in managing, identifying, and organizing
+    resources, potentially increasing the complexity of operations and governance.
+
+    '
+  name: Missing User-Defined Labels in Google Cloud Functions
+  reference:
+  - https://cloud.google.com/resource-manager/docs/creating-managing-labels
+  remediation: 'Define and apply user-defined labels to all Google Cloud functions
+    to enhance resource management capabilities and improve operational efficiency.
+
+    '
+  severity: low
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+self-contained: true

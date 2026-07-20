@@ -1,0 +1,73 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId
+      + " is configured to terminate instead of migrate during maintenance events"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"onHostMaintenance": "TERMINATE"'
+  source: 'gcloud compute instances describe $instanceName --zone $zone --project
+    $projectId --format="json(scheduling.onHostMaintenance)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let instance of iterate(template.instances)){\n \
+  \   instance = JSON.parse(instance)\n    set(\"instanceName\", instance.name)\n\
+  \    set(\"zone\", instance.zone)\n    code(3)\n  }\n}\n"
+id: gcloud-vm-maintenance-terminate
+info:
+  author: princechaddha
+  description: 'Ensure that Google Cloud Compute Engine performs live migration of
+    your virtual machine instances during periodic infrastructure maintenance. The
+    virtual machine maintenance behavior determines whether the VM instances are live
+    migrated or terminated during a maintenance event. To ensure that your Google
+    Cloud VM instances are migrated to new hardware, set "On Host Maintenance" configuration
+    setting to "Migrate".
+
+    '
+  impact: 'When maintenance policy is set to terminate, VM instances will be shut
+    down during maintenance events, leading to service disruptions and potential data
+    loss.
+
+    '
+  name: VM Instance Maintenance Policy Set to Terminate
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/configure-maintenance-behavior.html
+  - https://cloud.google.com/compute/docs/instances/setting-instance-scheduling-options
+  remediation: 'Configure the maintenance behavior to "MIGRATE" using the gcloud compute
+    instances set-scheduling command or through the Google Cloud Console. This ensures
+    instances are live migrated during maintenance events.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,compute,reliability,maintenance,gcp-cloud-config
+self-contained: true

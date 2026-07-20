@@ -1,0 +1,58 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: replicationgroupids
+    type: json
+  source: 'aws elasticache describe-replication-groups --region $region --output json
+    --query ''ReplicationGroups[*].ReplicationGroupId''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - replicationgroup + " ElastiCache Redis In-Transit and At-Rest Encryption is
+      Disabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'aws elasticache describe-replication-groups --region $region --replication-group-id
+    $replicationgroup --query ''ReplicationGroups[*].[AtRestEncryptionEnabled,TransitEncryptionEnabled]
+    | []'' --output json
+
+    '
+flow: "code(1)\nfor(let ReplicationGroupId of iterate(template.replicationgroupids)){\n\
+  \  set(\"replicationgroup\", ReplicationGroupId)\n  code(2)\n}\n"
+id: cache-redis-encryption-disabled
+info:
+  author: DhiyaneshDK
+  description: 'Ensure that your Amazon ElastiCache Redis cache clusters are encrypted
+    in order to meet security and compliance requirements.
+
+    '
+  impact: 'Sensitive data transmitted or stored in Redis could be exposed, leading
+    to potential data breaches or unauthorized access.
+
+    '
+  name: ElastiCache Redis In-Transit and At-Rest Encryption - Disabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/ElastiCache/in-transit-and-at-rest-encryption.html
+  - https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/in-transit-encryption.html
+  - https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/at-rest-encryption.html
+  remediation: 'Enable in-transit and at-rest encryption in the Redis cluster settings
+    to protect sensitive data.
+
+    '
+  severity: high
+  tags: cloud,devops,aws,amazon,elasticache,aws-cloud-config
+self-contained: true
+variables:
+  region: us-west-2
