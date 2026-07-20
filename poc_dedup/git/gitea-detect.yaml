@@ -2,19 +2,22 @@ id: gitea-detect
 
 info:
   name: Gitea Detect
-  author: pikpikcu
+  author: pikpikcu,righettod
   severity: info
+  description: Gitea was detected.
+  reference:
+    - https://about.gitea.com/
+    - https://docs.gitea.com/api
   metadata:
-    max-request: 2
+    verified: true
+    max-request: 1
+    shodan-query: http.title:"Gitea"
   tags: tech,gitea
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}"
       - "{{BaseURL}}/user/login"
-
-    stop-at-first-match: true
 
     matchers-condition: and
     matchers:
@@ -22,6 +25,8 @@ http:
         part: body
         words:
           - "Powered by Gitea"
+          - 'content="Gitea'
+        condition: or
 
       - type: status
         status:
@@ -30,7 +35,10 @@ http:
     extractors:
       - type: regex
         part: body
+        group: 1
         regex:
-          - "Powered by Gitea Version: ([0-9.]+)"
-
-# digest: 4a0a00473045022061e4da87e4da41f491145d00361ed8aad1f29d7ce56ea3b48e79f63ce132a3c702210095803dc8797e964b9aa7a96f86a3edd11894df6571d12748314f6d1bcf440ead:922c64590222798bb761d5b6d8e72950
+          - "Powered by Gitea(\\s*)Version:(\\s*)([\\d.]+)"
+          - "Gitea Version: ([0-9a-z+-.~]+)"
+          - 'theme-gitea-auto.css\?v=([0-9a-z+-.~]+)'
+          - 'encodeURIComponent.{2}([0-9a-z+-.~]+).{2}'
+# digest: 4b0a004830460221008ccad5ecb7d0b4e539c8a6bd32bb462b3f344ac1be4a0be07f4c84bcea52815d022100dfcf71e53c2385f61429e410d4004d5a6a9f51da3bc40960c428f5b1063d4a4c:922c64590222798bb761d5b6d8e72950

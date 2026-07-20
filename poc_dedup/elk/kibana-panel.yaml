@@ -1,38 +1,48 @@
 id: kibana-panel
+
 info:
-  name: Kibana Panel Login (extract version if found)
+  name: Kibana Login Panel - Detect
   author: petruknisme,daffainfo,c-sh0
-  reference:
-    - https://github.com/elastic/kibana/blob/main/src/core/server/rendering/views/template.tsx#L39
   severity: info
+  description: Kibana login panel was detected.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:elastic:kibana:*:*:*:*:*:*:*:*
   metadata:
-    shodan-query: http.title:"Kibana", http.title:"Kibana Login", http.title:"Elastic"
-  tags: panel,kibana
-requests:
+    max-request: 3
+    vendor: elastic
+    product: kibana
+    shodan-query:
+      - http.title:"Kibana"
+      - http.title:"kibana"
+    fofa-query: title="kibana"
+    google-query: intitle:"kibana"
+  tags: panel,kibana,elastic
+
+http:
   - method: GET
     path:
       - "{{BaseURL}}"
       - "{{BaseURL}}/login"
       - "{{BaseURL}}/app/kibana"
-    redirects: true
-    max-redirects: 2
+
     stop-at-first-match: true
-    matchers-condition: and
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
       - type: word
         part: body
         words:
-          - '<title>Kibana</title>'
-          - '<title>Kibana Login</title>'
-          - '<title>Elastic</title>'
+          - "<title>Kibana</title>"
+          - "<title>Elastic</title>"
+          - "<title>Kibana Login</title>"
         condition: or
-    extractors:
+
       - type: regex
-        part: body
-        group: 1
+        part: header
         regex:
-          - "kbn-version.*([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})"
-          - "version&quot;:&quot;([0-9.]+)&quot;"
+          - '(?i)(Kbn-Name)'
+# digest: 4a0a004730450221009a5c6185fad0b3187a61c62a11f1468a3c7dac72784acc020f02480256f7a0430220184c0cf24fb01534374394fc302aba9548c944733c0bb971d70a5c514c55050b:922c64590222798bb761d5b6d8e72950
