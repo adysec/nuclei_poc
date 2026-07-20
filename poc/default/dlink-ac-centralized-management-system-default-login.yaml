@@ -1,50 +1,49 @@
-http:
-- attack: pitchfork
-  matchers:
-  - condition: and
-    dsl:
-    - status_code_1 == 200 && !contains(body_1,"flag=0")
-    type: dsl
-  - condition: and
-    part: header
-    type: word
-    words:
-    - Set-Cookie
-    - ac_userid
-  - condition: and
-    part: body
-    type: word
-    words:
-    - window.open
-  matchers-condition: and
-  payloads:
-    password:
-    - admin
-    username:
-    - admin
-  raw:
-  - 'POST /login.cgi  HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/x-www-form-urlencoded
-
-
-    user={{username}}&password={{password}}
-
-    '
 id: dlink-ac-centralized-management-system-default-login
-info:
-  author: SleepingBag945
-  description: 'D-Link AC Centralized Management System default login credentials
-    were discovered.
 
-    '
+info:
+  name: D-Link AC Centralized Management System - Default Login
+  author: SleepingBag945
+  severity: high
+  description: |
+    D-Link AC Centralized Management System default login credentials were discovered.
   metadata:
-    fofa-query: "title=\"AC\u96C6\u4E2D\u7BA1\u7406\u5E73\u53F0\" && body=\"D-Link\u8DEF\
-      \u7531\u5668\u7BA1\u7406\u9875\""
     max-request: 1
     verified: true
-  name: D-Link AC Centralized Management System - Default Login
-  severity: high
+    fofa-query: title="AC集中管理平台" && body="D-Link路由器管理页"
   tags: default-login,dlink
+
+http:
+  - raw:
+      - |
+        POST /login.cgi  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && !contains(body_1,"flag=0")'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "Set-Cookie"
+          - "ac_userid"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "window.open"
+        condition: and
