@@ -1,48 +1,41 @@
 id: echo-detect
+
 info:
+  name: Echo Protocol - Detect
   author: pussycat0x
-  description: 'Echo is a protocol that is used for debugging and measurement. It
-    works by sending back all the data that was received from the source. The protocol
-    works on TCP and UDP, typically on port 7.
-
-    '
-  metadata:
-    max-request: 1
-    shodan-query: port:7
-    verified: true
-  name: Echo Protocol  Detect
-  reference:
-  - https://en.wikipedia.org/wiki/Echo_Protocol
   severity: info
+  description: |
+    Echo is a protocol that is used for debugging and measurement. It works by sending back all the data that was received from the source. The protocol works on TCP and UDP, typically on port 7.
+  reference:
+    - https://en.wikipedia.org/wiki/Echo_Protocol
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "port:7"
   tags: echo,network,js,udp,discovery
+
 javascript:
-- args:
-    Host: '{{Host}}'
-    Payload: '{{randstr}}'
-    Port: 7
-  code: 'let packet = bytes.NewBuffer();
+  - pre-condition: |
+      isUDPPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = Payload
+      packet.WriteString(cmd)
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(packet.Hex());
+      const result = conn.RecvString()
+      result
 
-    const c = require("nuclei/net");
+    args:
+      Host: "{{Host}}"
+      Port: 7
+      Payload: "{{randstr}}"
 
-    const cmd = Payload
-
-    packet.WriteString(cmd)
-
-    let conn = c.Open(''udp'', `${Host}:${Port}`);
-
-    conn.SendHex(packet.Hex());
-
-    const result = conn.RecvString()
-
-    result
-
-    '
-  matchers:
-  - condition: and
-    dsl:
-    - success == true
-    - contains(response, "{{randstr}}")
-    type: dsl
-  pre-condition: 'isUDPPortOpen(Host,Port);
-
-    '
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - contains(response, "{{randstr}}")
+        condition: and
+# digest: 490a00463044022016c5698968a6c5b4956c172589e42798e8721a6c17e0c443348c2337ad68f5f302207c490e49902c961bee00855a40464c62df16e5b5b3e61f2a95a354656c57d934:922c64590222798bb761d5b6d8e72950

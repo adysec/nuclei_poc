@@ -1,32 +1,41 @@
 id: adminer-panel 2
 info:
-  author: random_robbie,meme-lord
   name: Adminer Login panel
-  reference: https://blog.sorcery.ie/posts/adminer/
+  author: random_robbie,meme-lord
   severity: info
+  reference: https://blog.sorcery.ie/posts/adminer/
   tags: panel
-requests:
-- attack: sniper
-  extractors:
-  - group: 1
-    part: body
-    regex:
-    - <span class="version">([0-9.]+)
-    type: regex
-  matchers:
-  - type: word
-    words:
-    - Login - Adminer
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /adminer/ HTTP/1.1
 
-    Host: {{Subdomains}}
+  # <= 4.2.4 can have unauthenticated RCE via SQLite driver
+  # <= 4.6.2 can have LFI via MySQL LOAD DATA LOCAL
+  # Most versions have some kind of SSRF usability
+  # Is generally handy if you find SQL creds
 
-    '
-  threads: 100
+http:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
+      - |
+        GET /adminer/ HTTP/1.1
+        Host: {{Subdomains}}
+
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        words:
+          - "Login - Adminer"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<span class="version">([0-9.]+)'
