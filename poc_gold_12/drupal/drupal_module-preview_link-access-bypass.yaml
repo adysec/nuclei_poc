@@ -1,49 +1,51 @@
-http:
-- extractors:
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - dsl:
-    - compare_versions(version, '8.x-1.0')
-    type: dsl
-  matchers:
-  - part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - status:
-    - 200
-    type: status
-  - part: body
-    type: word
-    words:
-    - preview_link
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/sites/all/modules/preview_link/preview_link.info'
-  redirects: true
+
 id: drupal_module-preview_link-access-bypass
 info:
-  author: Bishopfox
-  description: The Preview Link module enables you to generate preview links so anonymous
-    users can access unpublished revisions of content. The last release of the module
-    introduced an access bypass allowing users to present invalid tokens but still
-    access unpublished content.
-  metadata:
-    created_at: '0001-01-01T00:00:00Z'
-    fofa-query: /sites/all/modules/preview_link/
-    google-query: inurl:'/sites/all/modules/preview_link/
-    impact: medium
-    security-risk: "Moderately critical 13\u221525 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:All"
-    type: indicator
-    vulnerability: access-bypass
   name: drupal_module-preview_link-access-bypass
-  reference:
-  - https://www.drupal.org/sa-contrib-2019-004
+  author: Bishopfox
   severity: medium
+  description: "The Preview Link module enables you to generate preview links so anonymous users can access unpublished revisions of content. The last release of the module introduced an access bypass allowing users to present invalid tokens but still access unpublished content."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-004
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/preview_link/"
+    google-query: "inurl:'/sites/all/modules/preview_link/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
   tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/preview_link/preview_link.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'preview_link'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.0')
