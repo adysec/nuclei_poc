@@ -1,0 +1,35 @@
+id: linkerd-service-detect
+info:
+  name: Linkerd Service detection
+  author: dudez
+  severity: info
+  tags: tech,linkerd
+  reference: https://twitter.com/nirvana_msu/status/1084144955034165248
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Subdomains}}
+        l5d-dtab: /svc/* => /$/inet/example.com/443
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - '(?mi)^l5d-err:.*$'
+          - '(?mi)^l5d-success-class: 0.*$'
+          - '(?mi)^Via\s*?:.*?linkerd.*$'
+        part: header
+        condition: or
+      - type: regex
+        regex:
+          - '(?mi)Exceeded .*? binding timeout while resolving name'
+          - '(?mi)exceeded .*? to unspecified while dyn binding'
+        part: body
+        condition: or
