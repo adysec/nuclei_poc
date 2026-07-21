@@ -1,43 +1,45 @@
 id: ntp-enum-variables-enabled
-
 info:
-  name: NTP Enum Variables - Enabled
   author: matejsmycka
-  severity: info
-  description: |
-    Detected an NTP server that had responded to control queries exposing version, processor, and system information through enumerated NTP variables.
+  description: 'Detected an NTP server that had responded to control queries exposing
+    version, processor, and system information through enumerated NTP variables.
+
+    '
   metadata:
-    verified: true
-    shodan-query: "system: port:123"
     max-request: 1
+    shodan-query: 'system: port:123'
+    verified: true
+  name: NTP Enum Variables - Enabled
+  severity: info
   tags: dns,udp,ntp,enum,js,discovery
-
 javascript:
-  - pre-condition: |
-      isUDPPortOpen(Host,Port);
+- args:
+    Host: '{{Host}}'
+    Port: 123
+  code: 'let c = require("nuclei/net");
 
-    code: |
-      let c = require("nuclei/net");
-      let conn = c.Open('udp', `${Host}:${Port}`);
-      let packet = "d60200010000000000000000"
-      conn.SendHex(packet);
-      let resp = conn.Recv(128);
-      resp;
+    let conn = c.Open(''udp'', `${Host}:${Port}`);
 
-    args:
-      Host: "{{Host}}"
-      Port: 123
+    let packet = "d60200010000000000000000"
 
-    matchers:
-      - type: dsl
-        dsl:
-          - "success == true"
+    conn.SendHex(packet);
 
-    extractors:
-      - type: regex
-        group: 1
-        regex:
-          - "(version=\"[0-9]+\")"
-          - "(system=\"[^\"]+\")"
-          - "(processor=\"[^\"]+\")"
-# digest: 4a0a0047304502200a32346e467f15ca9e9dbfd809bdeda8112cfe233598f2921b66577a01bb1c42022100ec47fc2b509227e96920e4f2a63be2720e5605cd530b6fabf9238865763585c7:922c64590222798bb761d5b6d8e72950
+    let resp = conn.Recv(128);
+
+    resp;
+
+    '
+  extractors:
+  - group: 1
+    regex:
+    - (version="[0-9]+")
+    - (system="[^"]+")
+    - (processor="[^"]+")
+    type: regex
+  matchers:
+  - dsl:
+    - success == true
+    type: dsl
+  pre-condition: 'isUDPPortOpen(Host,Port);
+
+    '

@@ -1,38 +1,41 @@
-http:
-- extractors:
-  - group: 1
-    part: body
-    regex:
-    - (?i)/OA_HTML/cabo/oajsLibs/oafcore([A-Z0-9]+).js
-    type: regex
-  matchers:
-  - condition: and
-    dsl:
-    - status_code == 200
-    - contains_any(to_lower(body), "/oa_html/oa.jsp", "oracle uix")
-    type: dsl
-  max-redirects: 2
-  method: GET
-  path:
-  - '{{BaseURL}}/OA_HTML/AppsLogin'
-  redirects: true
 id: oracle-ebusiness-panel
+
 info:
+  name: Oracle E-Business Suite Login Panel - Detect
   author: righettod
+  severity: info
+  description: |
+    Oracle E-Business Suite login panel was detected.
+  reference:
+    - https://www.oracle.com/applications/ebusiness/
   classification:
     cpe: cpe:2.3:a:oracle:e-business_suite:*:*:*:*:*:*:*:*
-  description: 'Oracle E-Business Suite login panel was detected.
-
-    '
   metadata:
-    max-request: 1
-    product: e-business_suite
-    runzero-match: service["http.body"] matches "(?i)Oracle UIX"
-    shodan-query: http.html:"Oracle UIX"
-    vendor: oracle
     verified: true
-  name: Oracle E-Business Suite Login Panel - Detect
-  reference:
-  - https://www.oracle.com/applications/ebusiness/
-  severity: info
-  tags: panel,oracle,login,detect,discovery
+    max-request: 1
+    vendor: oracle
+    product: e-business_suite
+    shodan-query: http.html:"Oracle UIX"
+  tags: panel,oracle,login,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/OA_HTML/AppsLogin"
+
+    redirects: true
+    max-redirects: 2
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "/oa_html/oa.jsp", "oracle uix")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)/OA_HTML/cabo/oajsLibs/oafcore([A-Z0-9]+).js'
+# digest: 4a0a004730450220089fa93cd40629b9d03d8bb5c27c9eb94dbd679320d4527aaf3306e3228333090221009a7221303f60cc697a52d48b3e44d2567f0075756f2b94f05601e752c64d15ee:922c64590222798bb761d5b6d8e72950
