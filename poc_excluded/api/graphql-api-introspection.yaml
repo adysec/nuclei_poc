@@ -1,0 +1,49 @@
+id: graphql-api-introspection
+
+info:
+  name: GraphQL API Introspection
+  author: zan8in
+  severity: high
+  verified: true
+  description: |-
+    GraphQL API was detected.
+    fofa: product="GraphQL"
+  tags: tech,graphql
+  created: 2023/06/14
+
+rules:
+  r0:
+    brute:
+      mode: sniper
+      commit: winner
+      continue: false
+      p:
+        - /HyperGraphQL
+        - /___graphql
+        - /altair
+        - /api/cask/graphql-playground
+        - /api/graphql
+        - /api/graphql/v1
+        - /explorer
+        - /express-graphql
+        - /gql
+        - /graph
+        - /graph_cms
+        - /graphiql
+        - /graphql
+        - /graphql.php
+        - /graphql/console
+    request:
+      method: POST
+      path: "{{p}}"
+      headers:
+        Content-Type: application/json
+      body: |
+        {
+          "query": "query IntrospectionQuery { __schema { queryType { name } mutationType { name } subscriptionType { name } types { name kind description fields { name type { name kind } } } directives { name description locations args { name type { name kind } } } } }"
+        }
+    expression: |
+      response.status == 200 && 
+      response.headers['content-type'].contains('application/json') && 
+      (response.body.bcontains(b'__schema') || "(Introspection|INTROSPECTION|introspection).*?".bmatches(response.body) || ".*?operation not found.*?".bmatches(response.body))
+expression: r0()
