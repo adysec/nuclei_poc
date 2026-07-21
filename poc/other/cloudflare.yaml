@@ -1,33 +1,50 @@
-id: cloudflare
+id: wordpress-cloudflare
 
 info:
-  name: Cloudflare User Name Information - Detect
-  author: dwisiswant0
+  name: Cloudflare Detection
+  author: ricardomaia
   severity: info
-  description: Cloudflare user name information check was conducted.
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cvss-score: 0
-    cwe-id: CWE-200
+  reference:
+    - https://wordpress.org/plugins/cloudflare/
   metadata:
     max-request: 1
-  tags: osint,osint-tech,cloudflare
-
-self-contained: true
+    plugin_namespace: cloudflare
+    wpscan: https://wpscan.com/plugin/cloudflare
+  tags: tech,wordpress,wp-plugin,top-200
 
 http:
   - method: GET
     path:
-      - "https://community.cloudflare.com/u/{{user}}"
+      - "{{BaseURL}}/wp-content/plugins/cloudflare/readme.txt"
 
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
+    payloads:
+      last_version: helpers/wordpress/plugins/cloudflare.txt
 
-      - type: word
+    extractors:
+      - type: regex
         part: body
-        words:
-          - "- Cloudflare Community"
-# digest: 4a0a0047304502203b845f306d5d5270b55c3bcf688578479dcf2083f7242a8927fe43d862ea911c022100cb15d2395df2922f60196b960fd0d9c10613f0bee7acd74913bd546a63b2510b:922c64590222798bb761d5b6d8e72950
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100c908f5dcdb5d182fd7d18de487c71f3785bf8d824ce8455ca18245477bcc1df402210090687dce4ae99803122a39976efa763e9abb6154206fcf4d43eb22b238a5b264:922c64590222798bb761d5b6d8e72950
