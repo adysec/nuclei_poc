@@ -1,41 +1,55 @@
-http:
-- matchers:
-  - part: body
-    type: word
-    words:
-    - ListLogFilesResponse
-  - condition: and
-    part: body
-    type: word
-    words:
-    - <file>
-    - <filename>
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  raw:
-  - "POST / HTTP/1.1\nHost: {{Hostname}}\nContent-Type: text/xml; charset=UTF-8\n\
-    SOAPAction: '\"\"'\n\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<SOAP-ENV:Envelope\
-    \ xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <SOAP-ENV:Header>\n\
-    \    <sapsess:Session xmlns:sapsess=\"http://www.sap.com/webas/630/soap/features/session/\"\
-    >\n      <enableSession>true</enableSession>\n    </sapsess:Session>\n  </SOAP-ENV:Header>\n\
-    \  <SOAP-ENV:Body>\n    <ns1:ListLogFiles xmlns:ns1=\"urn:SAPControl\"/>\n  </SOAP-ENV:Body>\n\
-    </SOAP-ENV:Envelope>\n"
 id: sap-listlogfiles-disclosure
-info:
-  author: LRVT,l4rm4nd
-  description: 'Detected SAP systems where the SAP Start Service (sapstartsrv) SAPControl
-    SOAP interface exposes the ListLogFiles web method without authentication.
 
-    '
+info:
+  name: SAPControl ListLogFiles - Disclosure
+  author: LRVT,l4rm4nd
+  severity: medium
+  description: |
+    Detected SAP systems where the SAP Start Service (sapstartsrv) SAPControl SOAP interface exposes the ListLogFiles web method without authentication.
+  reference:
+    - https://learning.sap.com/courses/technical-implementation-and-operation-i-of-sap-s-4hana-and-sap-business-suite/log-and-trace-information-for-system-start-and-stop
+    - https://sapbasisinfo.com/blog/2017/01/20/sapcontrol-command-funtions-for-sap-hana/
+    - https://itsiti.com/csmon/
+    - https://www.networkintelligence.ai/blogs/sap-security-assessment-methodology-part-2-credential-less-attack-vectors/
   metadata:
     max-request: 1
-  name: SAPControl ListLogFiles - Disclosure
-  reference:
-  - https://learning.sap.com/courses/technical-implementation-and-operation-i-of-sap-s-4hana-and-sap-business-suite/log-and-trace-information-for-system-start-and-stop
-  - https://sapbasisinfo.com/blog/2017/01/20/sapcontrol-command-funtions-for-sap-hana/
-  - https://itsiti.com/csmon/
-  - https://www.networkintelligence.ai/blogs/sap-security-assessment-methodology-part-2-credential-less-attack-vectors/
-  severity: medium
   tags: misconfig,sap,sapcontrol,soap,log,disclosure
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=UTF-8
+        SOAPAction: '""'
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+          <SOAP-ENV:Header>
+            <sapsess:Session xmlns:sapsess="http://www.sap.com/webas/630/soap/features/session/">
+              <enableSession>true</enableSession>
+            </sapsess:Session>
+          </SOAP-ENV:Header>
+          <SOAP-ENV:Body>
+            <ns1:ListLogFiles xmlns:ns1="urn:SAPControl"/>
+          </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "ListLogFilesResponse"
+
+      - type: word
+        part: body
+        words:
+          - "<file>"
+          - "<filename>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100e9d29f003a870e4b8ee1e21d9c4a934bf57ac634c72d8d1408ae7dd41445839c022100b92314c8578976be4e9c772b36aecc63d0968ee1e00e32a801870fdca1549dfa:922c64590222798bb761d5b6d8e72950

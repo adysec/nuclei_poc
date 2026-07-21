@@ -1,44 +1,42 @@
-http:
-- attack: pitchfork
-  matchers:
-  - condition: and
-    dsl:
-    - status_code == 200
-    - contains(content_type, "application/json")
-    - contains_all(body, "\"code\":0", "\"message\":\"success\"", "\"token\":", "\"username\":\"admin\"")
-    type: dsl
-  payloads:
-    password:
-    - test1234
-    username:
-    - admin
-  raw:
-  - 'POST /api/admin/login HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/json
-
-
-    {"username":"{{username}}","password":"{{password}}","platform":"windows","captcha":"","captcha_id":""}
-
-    '
 id: rustdesk-webclient-default-login
-info:
-  author: 0x_Akoko
-  description: 'Detected RustDesk Web Client Admin Console was using default credentials.
 
-    '
-  metadata:
-    fofa-query: title="RustDesk API Admin"
-    max-request: 2
-    runzero-match: any(each(service["html.titles"]), {# matches "(?i)RustDesk API
-      Admin"})
-    shodan-query: title:"RustDesk API Admin"
-    verified: true
+info:
   name: RustDesk Web Client - Default login
-  reference:
-  - https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/console/
-  - https://github.com/rustdesk/rustdesk-server-pro
+  author: 0x_Akoko
   severity: high
+  description: |
+    Detected RustDesk Web Client Admin Console was using default credentials.
+  reference:
+    - https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/console/
+    - https://github.com/rustdesk/rustdesk-server-pro
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"RustDesk API Admin"
+    fofa-query: title="RustDesk API Admin"
   tags: default-login,rustdesk,remote-access
+
+http:
+  - raw:
+      - |
+        POST /api/admin/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}","platform":"windows","captcha":"","captcha_id":""}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - test1234
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"code\":0", "\"message\":\"success\"", "\"token\":", "\"username\":\"admin\"")'
+        condition: and
+# digest: 4a0a00473045022014dc4475f60c478a535cf777a85e30f7a5e8297e051c781fea1e59e1a5e99d9e02210081da5b6b8899b95a11b474686aba9845a9e7f7924fd3aa6b893001a8eb215d99:922c64590222798bb761d5b6d8e72950
