@@ -1,37 +1,33 @@
-id: drupal-user-enum-redirect 1
+id: drupal-user-enum-redirect
+
 info:
-  author: 0w4ys
   name: Drupal User Enumration [Redirect]
+  author: 0w4ys
   severity: info
   tags: drupal
-requests:
-- attack: sniper
-  extractors:
-  - part: header
-    regex:
-    - users\/\w+
-    type: regex
-  matchers:
-  - part: header
-    regex:
-    - '(?i)Location: http(s|):\/\/[\w\.\-]+(\/ar|\/en|)\/users\/\w+'
-    type: regex
-  - status:
-    - 301
-    type: status
-  matchers-condition: and
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /user/0 HTTP/1.1
 
-    Host: {{Subdomains}}
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/user/0"
+      - "{{BaseURL}}/user/1"
+      - "{{BaseURL}}/user/2"
+      - "{{BaseURL}}/user/3"
 
-    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - '(?i)Location: http(s|):\/\/[\w\.\-]+(\/ar|\/en|)\/users\/\w+'
+        part: header
 
-    Accept-Encoding: gzip, deflate
+      - type: status
+        status:
+          - 301
 
-    Accept: */*
-
-    '
-  threads: 100
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - 'users\/\w+'
