@@ -1,72 +1,66 @@
-id: gcloud-func-auto-runtime-updates-disabled
-
-info:
-  name: Automatic Runtime Security Updates Disabled in Google Cloud Functions
-  author: princechaddha
-  severity: medium
-  description: |
-    Ensure that automatic runtime security updates are enabled for your Google Cloud functions in order to keep the functions secure and protected against vulnerabilities without manual intervention.
-  impact: |
-    Having automatic runtime security updates disabled can expose Google Cloud functions to vulnerabilities which could be mitigated by timely updates.
-  remediation: |
-    Enable automatic runtime security updates for each Google Cloud function by setting the `serviceConfig.minInstanceCount` to a non-null value, ensuring functions are automatically updated with the latest security patches.
-  reference:
-    - https://cloud.google.com/functions/docs/securing/managing-security
-  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
-
-flow: |
-  code(1)
-  for(let projectId of iterate(template.projectIds)){
-    set("projectId", projectId)
-    code(2)
-    for(let functionDetail of iterate(template.functions)){
-      set("functionName", functionDetail)
-      code(3)
-    }
-  }
-
-self-contained: true
-
 code:
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud projects list --format="json(projectId)"
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
 
-    extractors:
-      - type: json
-        name: projectIds
-        internal: true
-        json:
-          - '.[].projectId'
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: functions
+    type: json
+  source: 'gcloud functions list --project $projectId --format="json(name)"
 
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud functions list --project $projectId --format="json(name)"
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Automatic Runtime Security Updates Disabled in function: " + functionName
+      + " in Project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud functions describe $functionName --format="json(serviceConfig.minInstanceCount)"
 
-    extractors:
-      - type: json
-        name: functions
-        internal: true
-        json:
-          - '.[].name'
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let functionDetail of iterate(template.functions)){\n\
+  \    set(\"functionName\", functionDetail)\n    code(3)\n  }\n}\n"
+id: gcloud-func-auto-runtime-updates-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that automatic runtime security updates are enabled for your
+    Google Cloud functions in order to keep the functions secure and protected against
+    vulnerabilities without manual intervention.
 
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud functions describe $functionName --format="json(serviceConfig.minInstanceCount)"
+    '
+  impact: 'Having automatic runtime security updates disabled can expose Google Cloud
+    functions to vulnerabilities which could be mitigated by timely updates.
 
-    matchers:
-      - type: word
-        words:
-          - 'null'
+    '
+  name: Automatic Runtime Security Updates Disabled in Google Cloud Functions
+  reference:
+  - https://cloud.google.com/functions/docs/securing/managing-security
+  remediation: 'Enable automatic runtime security updates for each Google Cloud function
+    by setting the `serviceConfig.minInstanceCount` to a non-null value, ensuring
+    functions are automatically updated with the latest security patches.
 
-    extractors:
-      - type: dsl
-        dsl:
-          - '"Automatic Runtime Security Updates Disabled in function: " + functionName + " in Project: " + projectId'
-# digest: 4b0a00483046022100f41be90788c213768a91b9c804665007a6c775591d782d20231cd9998493e0e0022100b4216a242eded9560fcb101e7f96643795aa055c7fe359c346a82eca90de74cb:922c64590222798bb761d5b6d8e72950
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+self-contained: true
