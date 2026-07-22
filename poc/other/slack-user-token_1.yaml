@@ -1,0 +1,57 @@
+id: slack-user-token
+
+info:
+  name: Slack User token disclosure
+  author: Ice3man
+  severity: high
+  reference:
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/slack.yml
+    - https://api.slack.com/methods/users.list/test
+  metadata:
+    max-request: 1
+    verified: true
+  tags: exposure,token,slack
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    extractors:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - 'xoxp-[0-9A-Za-z\\-]{74}'
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://slack.com:443
+        POST /api/users.list?pretty=1 HTTP/1.1
+        Host: slack.com
+        Origin: https://api.slack.com
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDL3VHEC7cFaxeAhK
+
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK
+        Content-Disposition: form-data; name="content"
+
+        null
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK
+        Content-Disposition: form-data; name="token"
+
+        {{token}}
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK--
+
+
+    self-contained: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains_all(body, "is_admin", "is_app_user", "is_email_confirmed")
+          - contains(content_type, "application/json")
+        condition: and

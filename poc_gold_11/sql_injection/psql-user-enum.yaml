@@ -1,39 +1,42 @@
 id: psql-user-enum
-info:
-  author: pussycat0x
-  description: 'PSQL user enumeration.
 
-    '
+info:
+  name: PostgreSQL - User Enumeration
+  author: pussycat0x
+  severity: low
+  description: |
+    PSQL user enumeration.
+  reference:
+    - https://medium.com/@netscylla/pentesters-guide-to-postgresql-hacking-59895f4f007
   metadata:
+    verified: "true"
     max-request: 1
     shodan-query: port:5432 product:"PostgreSQL"
-    verified: 'true'
-  name: PostgreSQL - User Enumeration
-  reference:
-  - https://medium.com/@netscylla/pentesters-guide-to-postgresql-hacking-59895f4f007
-  severity: low
-  tags: network,postgresql,db,unauth,enum,psql
+  tags: network,postgresql,db,unauth,enum,psql,tcp
 tcp:
-- attack: clusterbomb
-  host:
-  - '{{Hostname}}'
-  inputs:
-  - data: "{{hex_encode('\0\0\0{{str}}\0\x03\0\0user\0{{users}}\0database\0{{users}}\0\
-      application_name\0psql\0client_encoding\0UTF8\0\0')}}"
-    type: hex
-  matchers:
-  - condition: and
-    part: raw
-    type: word
-    words:
-    - client_encoding
-    - integer_datetimes
-  payloads:
-    str:
-    - J
-    - T
-    - R
-    users:
-    - postgres
-    - tst
-  port: 5432
+  - inputs:
+      - data: "{{hex_encode('\u0000\u0000\u0000{{str}}\u0000\u0003\u0000\u0000user\u0000{{users}}\u0000database\u0000{{users}}\u0000application_name\u0000psql\u0000client_encoding\u0000UTF8\u0000\u0000')}}"
+        type: hex
+
+    host:
+      - "{{Hostname}}"
+    port: 5432
+
+    attack: clusterbomb
+    payloads:
+      users:
+        - postgres
+        - tst
+      str:
+        - J
+        - T
+        - R
+
+    matchers:
+      - type: word
+        part: raw
+        words:
+          - "client_encoding"
+          - "integer_datetimes"
+        condition: and
+# digest: 4b0a004830460221008b8aeb263680ba7662e14961f3672356828722c8e4a53396e6859120c4a36d630221008255d23a60dcf27cd3fdce404f4c7d96d9f68e6f15ecdb19268d32c6aede6414:922c64590222798bb761d5b6d8e72950

