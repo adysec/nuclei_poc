@@ -1,0 +1,76 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].roleName
+    name: roleNameList
+    type: json
+  source: 'az role definition list --custom-role-only true --query ''[].{roleName:roleName}''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  matchers:
+  - condition: and
+    negative: true
+    type: word
+    words:
+    - Microsoft.Authorization/locks/read
+    - Microsoft.Authorization/locks/write
+    - Microsoft.Authorization/locks/delete
+  matchers-condition: and
+  source: 'az role definition list --name "$roleName" --query ''[*].permissions[].actions[]''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Role " + roleName + " is not assigned to any identity. Role unutilized for
+      resource lock management."'
+    type: dsl
+  matchers:
+  - negative: true
+    type: word
+    words:
+    - '[]'
+  matchers-condition: and
+  source: 'az role assignment list --role "$roleName" --query ''[*].principalName''
+    --output json
+
+    '
+flow: "code(1);\nfor (let roleName of iterate(template.roleNameList)) {\n  set(\"\
+  roleName\", roleName);\n  code(2) && code(3)\n}\n"
+id: azure-iam-role-resource-lock-unassigned
+info:
+  author: princechaddha
+  description: 'Ensure there is a custom IAM role assigned to manage resource locking
+    within each Microsoft Azure subscription. Azure resource locking is a powerful
+    protection mechanism that can prevent inadvertent modification or deletion of
+    resources. This role should have specific permissions to read, write, and delete
+    resource locks.
+
+    '
+  impact: 'Failure to assign a custom IAM role for resource locking can lead to unauthorized
+    changes or deletions of Azure resources, increasing the risk of service disruption
+    and non-compliance with security best practices.
+
+    '
+  name: Azure IAM Role for Resource Locking Not Assigned
+  reference:
+  - https://docs.microsoft.com/en-us/azure/role-based-access-control/custom-roles
+  remediation: 'Create a custom IAM role with permissions for Microsoft.Authorization/locks/read,
+    Microsoft.Authorization/locks/write, and Microsoft.Authorization/locks/delete
+    and ensure it is assigned to an identity.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,resource-lock,azure-cloud-config
+self-contained: true

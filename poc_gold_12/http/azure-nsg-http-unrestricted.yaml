@@ -1,0 +1,58 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: nsgdata
+    type: json
+  source: 'az network nsg list --query ''[*].{name:name, resourceGroup:resourceGroup}''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - nsg + " has unrestricted access on TCP port 80"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"sourceAddressPrefix": "*"'
+    - '"sourceAddressPrefix": "internet"'
+    - '"sourceAddressPrefix": "any"'
+  source: 'az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup
+    --query "[?direction==''Inbound'' && access==''Allow'' && protocol==''TCP'' &&
+    (destinationPortRange==''80'')]"
+
+    '
+flow: "code(1);\nfor (let NsgData of iterate(template.nsgdata)) {\n  NsgData = JSON.parse(NsgData)\n\
+  \  set(\"nsg\", NsgData.name)\n  set(\"resourcegroup\", NsgData.resourceGroup)\n\
+  \  code(2)\n}\n"
+id: azure-nsg-http-unrestricted
+info:
+  author: princechaddha
+  description: 'Ensure that Microsoft Azure network security groups (NSGs) do not
+    allow unrestricted access on TCP port 80 to protect against attackers using brute
+    force methods to gain access to Azure virtual machines associated with these NSGs.
+
+    '
+  impact: 'Allowing unrestricted access on TCP port 80 can expose virtual machines
+    to potential brute force attacks, increasing the risk of unauthorized access.
+
+    '
+  name: Unrestricted TCP Port 80 Access in Azure NSGs
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  remediation: 'Modify NSG rules to restrict access on TCP port 80. Ensure that only
+    known IPs are allowed, or implement additional authentication methods to protect
+    against unauthorized access.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+self-contained: true

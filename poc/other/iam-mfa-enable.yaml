@@ -1,0 +1,42 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: users
+    type: json
+  source: 'aws iam list-users --query ''Users[*].UserName''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"MFA is no enabled for IAM User " + user'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  source: 'aws iam list-mfa-devices --user-name $user --query ''MFADevices''
+
+    '
+flow: "code(1)\nfor(let UserName of iterate(template.users)){\n  set(\"user\", UserName)\n\
+  \  code(2)\n}\n"
+id: iam-mfa-enable
+info:
+  author: princechaddha
+  description: 'Verifies that Multi-Factor Authentication (MFA) is enabled for all
+    IAM users with console access in AWS
+
+    '
+  name: MFA not enabled for AWS IAM Console User
+  reference:
+  - https://docs.aws.amazon.com/cli/latest/reference/iam/list-mfa-devices.html
+  severity: high
+  tags: cloud,devops,aws,amazon,iam,aws-cloud-config
+self-contained: true

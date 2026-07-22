@@ -1,0 +1,55 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: vmList
+    type: json
+  source: 'az vm list --query ''[?(tags.web_tier_tag == "web_tier_tag_value")].{"Id":id}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - ids + " in " + " is not encrypted"
+    type: dsl
+  matchers:
+  - part: stderr
+    type: word
+    words:
+    - Azure Disk Encryption is not enabled
+  matchers-condition: and
+  source: 'az vm encryption show --ids "$ids" --query ''disks''
+
+    '
+flow: "code(1);\nfor (let VmData of iterate(template.vmList)) {\n  VmData = JSON.parse(VmData);\n\
+  \  set(\"ids\", VmData.Id);\n  code(2);\n}\n"
+id: azure-vm-web-tier-disk-unencrypted
+info:
+  author: princechaddha
+  description: 'Ensure that all the disk volumes attached to the Microsoft Azure virtual
+    machines (VMs) launched within the web tier are encrypted to meet security and
+    compliance requirements. This rule assumes all Azure cloud resources in the web
+    tier are tagged with <web_tier_tag>:<web_tier_tag_value>. Tags must be configured
+    on the Cloud Conformity dashboard prior to running this check.
+
+    '
+  impact: 'Unencrypted disk volumes can lead to data breaches and non-compliance with
+    security standards, exposing sensitive information.
+
+    '
+  name: Azure VM Web-Tier Disk Volumes Not Encrypted
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-machines/linux/encrypt-disks
+  remediation: 'Enable encryption for all disk volumes attached to VMs within the
+    Azure web tier to enhance data security and comply with regulatory requirements.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,azure-vm,azure-cloud-config
+self-contained: true

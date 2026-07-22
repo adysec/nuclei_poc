@@ -1,0 +1,61 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: alertList
+    type: json
+  source: 'az monitor activity-log alert list --output json --query ''[?(enabled==`true`)].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - id + " does not have the correct alert configuration for Create/Update/Delete
+      SQL Server Firewall Rule events"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"field": "operationName"'
+  - negative: true
+    type: word
+    words:
+    - Microsoft.Sql/servers/firewallRules/write
+  matchers-condition: and
+  source: 'az monitor activity-log alert show --ids "$id" --query ''condition''
+
+    '
+flow: "code(1);\nfor (let AlertData of iterate(template.alertList)) {\n  set(\"id\"\
+  , AlertData);\n  code(2);\n}\n"
+id: azure-sql-fw-rule-unalerted
+info:
+  author: princechaddha
+  description: "Ensure that an Azure activity log alert is fired whenever \u201CCreate\u201D\
+    , \u201CUpdate\u201D or \u201CDelete SQL Server Firewall Rule\u201D events are\
+    \ triggered in your Microsoft Azure cloud account. Activity log alerts get activated\
+    \ when a new activity log event that matches the condition specified in the alert\
+    \ occurs. In this case, the condition required for the alert is 'Whenever the\
+    \ Administrative Activity Log \"Create/Update/Delete server firewall rule (Microsoft.Sql/servers/firewallRules)\"\
+    \ has \"any\" level, with \"any\" status and event is initiated by \"any\"'.\n"
+  impact: 'Not having alerts for Create, Update, or Delete SQL Server Firewall Rule
+    events can allow unauthorized changes to go unnoticed, leading to potential security
+    vulnerabilities in database access management.
+
+    '
+  name: Azure SQL Server Firewall Rule Create/Update/Delete Alert Not Configured
+  reference:
+  - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  remediation: 'Configure activity log alerts to monitor "Create, Update, or Delete
+    SQL Server Firewall Rule" events by setting the alert condition to "Microsoft.Sql/servers/firewallRules/write"
+    and attaching an action group to handle notifications.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,sql-server,azure-cloud-config
+self-contained: true

@@ -1,0 +1,53 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: storageAccounts
+    type: json
+  source: 'az storage account list --query ''[*].{"Name":name}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " does not have trusted Microsoft services access enabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - None
+  source: 'az storage account show --name "$name" --query ''networkRuleSet.bypass''
+    --output json
+
+    '
+flow: "code(1);\nfor (let StorageAccountData of iterate(template.storageAccounts))\
+  \ {\n  StorageAccountData = JSON.parse(StorageAccountData);\n  set(\"name\", StorageAccountData.Name);\n\
+  \  code(2);\n}\n"
+id: azure-storage-trusted-access-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that "Allow trusted Microsoft services to access this storage
+    account" exception is enabled within your Azure Storage account configuration
+    settings to grant access to trusted cloud services.
+
+    '
+  impact: 'Not allowing trusted Microsoft services to access the storage account can
+    restrict functionality and impact service continuity.
+
+    '
+  name: Azure Storage Trusted Microsoft Services Access Disabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security
+  remediation: 'Enable the "Allow trusted Microsoft services to access this storage
+    account" exception in the Azure portal under Storage account settings.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,storage,azure-cloud-config
+self-contained: true

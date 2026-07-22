@@ -1,0 +1,54 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: VpcId
+    type: json
+  source: 'aws ec2 describe-vpcs --region $region --query ''Vpcs[*].VpcId'' --output
+    json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Flow Logs feature is not enabled for the VPC " + vpc'
+    type: dsl
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - '[]'
+  source: 'aws ec2 describe-flow-logs --region $region --filter "Name=resource-id,Values=$vpc"
+
+    '
+flow: "code(1)\nfor(let VpcIds of template.VpcId){\n  set(\"vpc\", VpcIds)\n  code(2)\n\
+  }\n"
+id: vpc-flowlogs-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensures Amazon VPC Flow Logs are enabled for tracking network traffic
+    to and from VPCs, aiding in security and troubleshooting.
+
+    '
+  impact: 'Without VPC Flow Logs, detecting abnormal traffic patterns or breaches
+    becomes difficult, increasing risk of undetected threats.
+
+    '
+  name: VPC Flow Logs Not Enabled
+  reference:
+  - https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html
+  remediation: 'Enable VPC Flow Logs in the AWS Management Console under the VPC dashboard
+    to collect data on IP traffic going to and from network interfaces in your VPC.
+
+    '
+  severity: low
+  tags: cloud,devops,aws,amazon,vpc,aws-cloud-config
+self-contained: true
+variables:
+  region: us-east-1

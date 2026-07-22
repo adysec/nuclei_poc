@@ -1,0 +1,56 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: roleList
+    type: json
+  source: 'az role definition list --custom-role-only true --query ''[].{roleName:roleName}''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - roleName + " is a custom owner role with excessive permissions"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - roleName
+  matchers-condition: and
+  source: 'az role definition list --name "$roleName" --output json --query ''[?(assignableScopes
+    == `/` || assignableScopes == `/subscriptions/` && actions == `*`)].roleName''
+
+    '
+flow: "code(1);\nfor (let RoleData of iterate(template.roleList)) {\n  set(\"roleName\"\
+  , RoleData);\n  code(2);\n}\n"
+id: azure-custom-owner-role-unrestricted
+info:
+  author: princechaddha
+  description: 'Ensure that there are no custom subscription owner roles available
+    in your Azure account in order to adhere to cloud security best practices and
+    implement the principle of least privilege - the practice of providing every user
+    the minimal amount of access required to perform its tasks.
+
+    '
+  impact: 'Having custom owner roles can provide excessive permissions that exceed
+    the requirements of the users, potentially leading to security vulnerabilities.
+
+    '
+  name: Azure Custom Owner Role Available
+  reference:
+  - https://docs.microsoft.com/en-us/azure/role-based-access-control/custom-roles
+  remediation: 'Remove any custom owner roles or modify their permissions to align
+    with the principle of least privilege, ensuring users have only the necessary
+    access rights to perform their duties.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,role-management,azure-cloud-config
+self-contained: true

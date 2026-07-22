@@ -1,0 +1,56 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: topics
+    type: json
+  source: 'aws sns list-topics --query ''Topics[*].TopicArn''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The SNS topic " + topicArn + " is publicly accessible via Policy"'
+    type: dsl
+  matchers:
+  - part: body
+    type: word
+    words:
+    - '"Effect":"Allow"'
+  - part: body
+    type: word
+    words:
+    - '"Principal":{"AWS":"*"}'
+  - negative: true
+    part: body
+    regex:
+    - '"Condition"'
+    type: regex
+  matchers-condition: and
+  source: 'aws sns get-topic-attributes --topic-arn $topicArn --query Attributes.Policy
+    --output text
+
+    '
+flow: "code(1)\nfor (let topicArn of iterate(template.topics)) {\n  set(\"topicArn\"\
+  , topicArn)\n  code(2)\n}\n"
+id: sns-topic-public-accessible
+info:
+  author: Ritesh_Gohil(#L4stPL4Y3R)
+  description: 'This template checks if Amazon SNS topics are configured to prevent
+    public access via topic policies.
+
+    '
+  metadata:
+    max-request: 2
+  name: Public Access of SNS Topics via Policy
+  reference:
+  - https://docs.aws.amazon.com/sns/latest/api/API_GetTopicAttributes.html
+  severity: high
+  tags: cloud,devops,aws,amazon,sns,aws-cloud-config
+self-contained: true

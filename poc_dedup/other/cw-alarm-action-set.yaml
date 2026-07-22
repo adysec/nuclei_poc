@@ -1,0 +1,55 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: alarms
+    type: json
+  source: 'aws cloudwatch describe-alarms --region $region --query ''MetricAlarms[].AlarmName''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The Amazon CloudWatch " + alarm +" is not configured with any actions for
+      the ALARM state."'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  source: 'aws cloudwatch describe-alarms --region $region --alarm-names "$alarm"
+    --query ''MetricAlarms[*].AlarmActions[]'' --output json
+
+    '
+flow: "code(1)\nfor(let AlarmName of iterate(template.alarms)){\n  set(\"alarm\",\
+  \ AlarmName)\n  code(2)\n}\n"
+id: cw-alarm-action-set
+info:
+  author: princechaddha
+  description: 'Ensure Amazon CloudWatch alarms have actions configured for the ALARM
+    state to automate response to incidents.
+
+    '
+  impact: 'Without actions, CloudWatch alarms may not trigger automated incident response
+    or notifications, potentially delaying mitigation.
+
+    '
+  name: CloudWatch Alarm Action Not Set
+  reference:
+  - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html
+  remediation: 'Configure at least one action for each CloudWatch alarm to ensure
+    timely response to monitored issues.
+
+    '
+  severity: medium
+  tags: cloud,devops,aws,amazon,cloudwatch,aws-cloud-config
+self-contained: true
+variables:
+  region: us-east-1

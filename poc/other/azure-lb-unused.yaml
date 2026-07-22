@@ -1,0 +1,57 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: balancerList
+    type: json
+  source: 'az network lb list --output json --query ''[*].{"Name":name,"ResourceGroup":resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " is unused with no backend instances"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  matchers-condition: and
+  source: 'az network lb show --name "$name" --resource-group "$resourceGroup" --query
+    ''backendAddressPools[*].backendIpConfigurations[*].id | []''
+
+    '
+flow: "code(1);\nfor (let BalancerData of iterate(template.balancerList)) {\n  BalancerData\
+  \ = JSON.parse(BalancerData);\n  set(\"name\", BalancerData.Name);\n  set(\"resourceGroup\"\
+  , BalancerData.ResourceGroup);\n  code(2);\n}\n"
+id: azure-lb-unused
+info:
+  author: princechaddha
+  description: 'Identify any unused load balancers available within your Azure cloud
+    account and delete them in order to eliminate unnecessary costs and meet compliance
+    requirements when it comes to cloud resource management. A Microsoft Azure load
+    balancer is considered unused when it doesn''t have any associated backend pool
+    instances. The backend pool instances can be individual virtual machines or instances
+    running within a virtual machine scale set.
+
+    '
+  impact: 'Unused load balancers incur unnecessary costs and complicate compliance
+    and resource management.
+
+    '
+  name: Azure Unused Load Balancer Check
+  reference:
+  - https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview
+  remediation: 'Review and remove unused load balancers that do not have any backend
+    pool instances.
+
+    '
+  severity: low
+  tags: cloud,devops,azure,microsoft,load-balancer,azure-cloud-config
+self-contained: true

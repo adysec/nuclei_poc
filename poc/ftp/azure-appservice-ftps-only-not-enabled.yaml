@@ -1,0 +1,52 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: webAppIdList
+    type: json
+  source: 'az webapp list --output json --query ''[*].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - id + " does not enforce FTPS-only access"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - AllAllowed
+  source: 'az webapp config show --ids $id --query ''ftpsState'' --output json
+
+    '
+flow: "code(1);\nfor (let WebAppId of iterate(template.webAppIdList)) {\n  set(\"\
+  id\", WebAppId);\n  code(2);\n}\n"
+id: azure-appservice-ftps-only-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that your Azure App Services web applications enforce FTPS-only
+    access to encrypt FTP traffic. FTPS (Secure FTP) is used to enhance security for
+    your Azure web application as it adds an extra layer of security to the FTP protocol,
+    and help you to comply with the industry standards and regulations.
+
+    '
+  impact: 'Enabling FTPS-only access enhances the security by encrypting data transfer,
+    thus reducing the risk of data interception and compliance violations.
+
+    '
+  name: Azure App Service FTPS-Only Access Not Enabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/app-service/configure-ftp
+  remediation: 'Configure the Azure App Services to enforce FTPS-only access in the
+    Azure portal or use Azure CLI commands to modify the FTPS settings.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+self-contained: true

@@ -1,0 +1,54 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: amis
+    type: json
+  source: 'aws ec2 describe-images --region $region --owners self --output json --query
+    ''Images[*].ImageId'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - ami + " AMI is publically shared"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'true'
+  source: 'aws ec2 describe-images --region $region --image-ids $ami --owners self
+    --query ''Images[*].Public''
+
+    '
+flow: "code(1)\nfor(let AmiName of iterate(template.amis)){\n  set(\"ami\", AmiName)\n\
+  \  code(2)\n}\n"
+id: publicly-shared-ami
+info:
+  author: princechaddha
+  description: 'Checks if Amazon Machine Images (AMIs) are publicly shared, potentially
+    exposing sensitive data.
+
+    '
+  impact: 'Public sharing of AMIs can lead to unauthorized access and compromise of
+    sensitive information contained within these images.
+
+    '
+  name: Publicly Shared AMI
+  reference:
+  - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sharingamis-explicit.html
+  remediation: 'Restrict AMI sharing to specific, trusted AWS accounts and ensure
+    they are not publicly accessible.
+
+    '
+  severity: medium
+  tags: cloud,devops,aws,amazon,ami,aws-cloud-config
+self-contained: true
+variables:
+  region: us-east-1

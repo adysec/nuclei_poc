@@ -1,0 +1,62 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: policyAssignmentList
+    type: json
+  source: 'az policy assignment list --output json --query ''[*].{"name":displayName,"policyDefinitionId":policyDefinitionId}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Policy " + name + " not enforcing allowed resource types"'
+    type: dsl
+  matchers:
+  - part: stderr
+    type: word
+    words:
+    - Audit virtual machines without disaster recovery configured
+  matchers-condition: and
+  source: 'az policy definition show --name "$name" --query ''displayName'' --output
+    json
+
+    '
+flow: "code(1);\nfor (let AssignmentData of iterate(template.policyAssignmentList))\
+  \ {\n  AssignmentData = JSON.parse(AssignmentData);\n  set(\"name\", AssignmentData.name);\n\
+  \  set(\"policyDefinitionId\", AssignmentData.policyDefinitionId);\n  code(2);\n\
+  }\n"
+id: azure-policy-not-allowed-types-unassigned
+info:
+  author: princechaddha
+  description: 'Ensure that a "Not Allowed Resource Types" policy is assigned to your
+    Azure subscriptions in order to deny deploying restricted resources within your
+    Azure cloud account for security and compliance purposes. Microsoft Azure Policy
+    service allows you to enforce organizational standards and assess cloud compliance
+    at-scale. The "Not Allowed Resource Types" policy assignment must use the built-in
+    policy definition which enables you to specify the cloud resource types that your
+    organization cannot deploy.
+
+    '
+  impact: 'Failure to assign the "Not Allowed Resource Types" policy can result in
+    unauthorized resource deployment, potentially violating compliance and security
+    policies.
+
+    '
+  name: Azure Policy - Not Allowed Resource Types Policy Assignment Not in Use
+  reference:
+  - https://docs.microsoft.com/en-us/azure/governance/policy/concepts/definition-structure
+  remediation: 'Assign the "Not Allowed Resource Types" policy to your Azure subscriptions
+    to ensure compliance with corporate standards and prevent unauthorized resource
+    deployment.
+
+    '
+  severity: medium
+  tags: cloud,devops,azure,microsoft,azure-policy,azure-cloud-config
+self-contained: true

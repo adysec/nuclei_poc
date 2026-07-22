@@ -1,0 +1,54 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: snapshots
+    type: json
+  source: 'aws rds describe-reserved-db-instances --region $region --output json --query
+    ''ReservedDBInstances[*].ReservedDBInstanceId''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"RDS Reserved Instance purchase has failed for " + db'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - payment-failed
+  source: 'aws rds describe-reserved-db-instances --region $region --reserved-db-instance-id
+    $db --query ''ReservedDBInstances[*].State''
+
+    '
+flow: "code(1)\nfor(let DBInstances of iterate(template.instances)){\n  set(\"db\"\
+  , DBInstances)\n  code(2)\n}\n"
+id: rds-ri-payment-fail
+info:
+  author: princechaddha
+  description: 'Identifies failed RDS Reserved Instance purchases due to payment failures,
+    affecting potential cost savings.
+
+    '
+  impact: 'Prevents utilization of reserved instance discounts, potentially leading
+    to higher operational costs.
+
+    '
+  name: RDS RI Payment Failure
+  reference:
+  - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithReservedDBInstances.html
+  remediation: 'Review the payment methods on file and retry the reservation purchase
+    for RDS instances to secure discounted rates.
+
+    '
+  severity: high
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+self-contained: true
+variables:
+  region: ap-northeast-1
