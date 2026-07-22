@@ -1,20 +1,43 @@
+# gap: connect-proxy-enabled
 id: connect-proxy-enabled
+
 info:
-  author: panch0r3d
-  name: proxy via connect method
+  name: HTTP CONNECT Method Enabled (Open Proxy)
+  author: TyrusRC
   severity: medium
-requests:
-- matchers:
-  - status:
-    - 200
-    type: status
-  - type: word
-    words:
-    - Example Domain
-  matchers-condition: and
-  raw:
-  - 'CONNECT www.example.com HTTP/1.1
+  description: |
+    Sends a raw HTTP CONNECT www.example.com:80 request followed by a
+    GET / over the established tunnel. If the target relays the
+    upstream response body ("Example Domain" / "This domain is for
+    use in illustrative examples"), it confirms the server is acting
+    as an open HTTP proxy and can be abused to pivot, exfiltrate, or
+    bypass IP-based access controls.
+  reference:
+    - https://github.com/panch0r3d/nuclei-templates/blob/master/connect-proxy.yaml
+    - https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6
+  tags: custom,misconfig,proxy,open-proxy,connect
 
-    Content-Type: text/plain
+http:
+  - raw:
+      - |
+        CONNECT www.example.com:80 HTTP/1.1
+        Host: www.example.com:80
+        User-Agent: Mozilla/5.0
+        Proxy-Connection: keep-alive
 
-    '
+        GET / HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "Example Domain"
+          - "This domain is for use in illustrative examples"

