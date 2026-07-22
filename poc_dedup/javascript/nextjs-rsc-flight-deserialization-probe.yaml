@@ -1,0 +1,69 @@
+# gap: nextjs-rsc-flight-deserialization-probe
+id: nextjs-rsc-flight-deserialization-probe
+
+info:
+  name: Next.js RSC Flight Payload Deserialization (CVE-2025-66478 / CVE-2025-55182)
+  author: TyrusRC
+  severity: critical
+  description: |
+    Detects unpatched Next.js App-Router servers vulnerable to
+    React Server Component "Flight" payload deserialization,
+    disclosed December 2025 as CVE-2025-66478 (Next.js) and
+    CVE-2025-55182 (React). The bug allows unauthenticated RCE
+    via a crafted Flight envelope sent to a Server Action route.
+
+    Probe sends a benign Flight reference token
+    (`["$1:a:a"]`) with `Next-Action: probe` to the root route.
+    Vulnerable servers raise an internal deserialization error
+    whose response body carries the Flight error-frame
+    fingerprint `E{"digest"` — the format the Flight protocol
+    uses to wire-encode a server error. Patched / hardened
+    servers respond with HTTP 400 / 405 / sanitized JSON
+    without that token, so the body marker is the high-fidelity
+    signal.
+
+    Class detection — keys on the Flight error-frame format,
+    not a version banner; remains valid until the wire format
+    changes.
+  reference:
+    - https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components
+    - https://unit42.paloaltonetworks.com/cve-2025-55182-react-and-cve-2025-66478-next/
+    - https://phoenix.security/react-nextjs-cve-2025-5518/
+  tags: custom,vulnerabilities,nextjs,react,rsc,rce,cve,cve-2025-66478,cve-2025-55182,cwe-502
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/plain;charset=UTF-8
+        Next-Action: nuclei-{{rand_text_alpha(12)}}
+        Accept: text/x-component
+
+        ["$1:a:a"]
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+          - 200
+      - type: word
+        part: body
+        # Flight protocol error-frame marker — unique to React's
+        # serialize/deserialize wire format.
+        words:
+          - 'E{"digest"'
+
+    extractors:
+      - type: regex
+        part: body
+        name: flight-digest
+        regex:
+          - 'E\{"digest"\s*:\s*"([^"]+)"'
+        group: 1
+      - type: kval
+        part: header
+        kval:
+          - "X-Powered-By"
+          - "Server"
