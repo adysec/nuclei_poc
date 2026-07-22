@@ -5,37 +5,36 @@ info:
   author: geeknik
   severity: info
 
-http:
+requests:
   - method: GET
     path:
       - "{{BaseURL}}"
 
     matchers-condition: and
     matchers:
+      - type: status
+        status:
+          - 200
       - type: word
         part: header
         words:
           - "text/html"
+      # Match only actual href/src attribute values pointing to document files,
+      # not incidental mentions of extensions in page text or comments.
       - type: regex
+        part: body
         regex:
-          - '\b([a-zA-Z0-9_\\.\-\(\):])+\.(xls[x]?)\b'
-          - '\b([a-zA-Z0-9_\\.\-\(\):])+\.(doc[x]?)\b'
-          - '\b([a-zA-Z0-9_\\.\-\(\):])+\.(csv)\b'
+          - "href\\s*=\\s*[\"'][^\"']*\\.xlsx?[\"']"
+          - "href\\s*=\\s*[\"'][^\"']*\\.docx?[\"']"
+          - "href\\s*=\\s*[\"'][^\"']*\\.csv[\"']"
+          - "src\\s*=\\s*[\"'][^\"']*\\.xlsx?[\"']"
+          - "src\\s*=\\s*[\"'][^\"']*\\.docx?[\"']"
         condition: or
 
     extractors:
       - type: regex
         part: body
-        name: public_xls
+        name: public_document_links
         regex:
-          - '\b([a-zA-Z0-9_\\.\-\(\):])+\.(xls[x]?)\b'
-      - type: regex
-        part: body
-        name: public_doc
-        regex:
-          - '\b([a-zA-Z0-9_\\.\-\(\):])+\.(doc[x]?)\b'
-      - type: regex
-        part: body
-        name: public_csv
-        regex:
-          - '\b([a-zA-Z0-9_\\.\-\(\):])+\.(csv)\b'
+          - "(?:href|src)\\s*=\\s*[\"']([^\"']*\\.(?:xlsx?|docx?|csv))[\"']"
+        group: 1
