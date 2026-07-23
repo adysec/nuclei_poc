@@ -1,0 +1,38 @@
+code:
+- args:
+  - -ExecutionPolicy
+  - Bypass
+  engine:
+  - powershell
+  - powershell.exe
+  extractors:
+  - regex:
+    - '.+ : .+'
+    type: regex
+  pattern: '*.ps1'
+  pre-condition: 'IsWindows();
+
+    '
+  source: "# Get services using WMI\n$services = Get-WmiObject -class Win32_Service\
+    \ -Property Name, DisplayName, PathName, StartMode | Where {$_.PathName -notlike\
+    \ \"C:\\Windows*\" -and $_.PathName -notlike '\"*'} | select Name,DisplayName,StartMode,PathName\n\
+    \nforeach ($service in $services) {\n  $path = $service.PathName\n  if ($path\
+    \ -match ' ') {\n    $binaryPath = $path.Split(\"/\")[0]\n    if (Test-Path \"\
+    $binaryPath\") {\n      Write-Output \"$($service.Name) : $path\"\n    }\n  }\n\
+    }\n"
+id: unquoted-service-paths
+info:
+  author: domwhewell-sage
+  description: 'Detects windows services with unquoted paths that contain spaces.
+    This misconfiguration can lead to local privilege escalation via execution of
+    a malicious binary placed in the path.
+
+    '
+  metadata:
+    verified: true
+  name: Unquoted Service Paths
+  reference:
+  - https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#unquoted-service-paths
+  severity: high
+  tags: code,services,windows,windows-audit
+self-contained: true

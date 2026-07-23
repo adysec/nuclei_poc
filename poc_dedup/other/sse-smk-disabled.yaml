@@ -1,0 +1,63 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    name: bucketname
+    regex:
+    - oss://([a-zA-Z0-9-]+)
+    type: regex
+  source: 'ossutil ls -s --region $region
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    name: KmsID
+    regex:
+    - 'KMSMasterKeyID: ([a-z0-9-]+)'
+    type: regex
+  source: 'ossutil bucket-encryption --method get $bucket
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - KmsID + " SSE with service-managed key Disable"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'AliasName": "alias/acs/rds'
+  source: 'aliyun kms ListAliasesByKeyId --KeyId $KmsID
+
+    '
+flow: "code(1)\nfor (let BucketName of iterate(template.bucketname)) {\n  set(\"bucket\"\
+  , BucketName)\n  code(2)\n  for (let KMSMasterKeyID of iterate(template.KmsID))\
+  \ {\n    set(\"KmsID\", KMSMasterKeyID)\n    code(3)\n  }\n}\n"
+id: sse-smk-disabled
+info:
+  author: ritikchaddha
+  description: 'Ensure that Server-Side Encryption (SSE) is using customer-managed
+    keys (CMKs) instead of service-managed keys to protect your OSS data at rest.
+    SSE with customer-managed keys (also known as Bring Your Own Key - BYOK) enables
+    you to have full control over the encryption and decryption process and meet strict
+    compliance requirements.
+
+    '
+  metadata:
+    max-request: 1
+    verified: true
+  name: Server-Side Encryption with Service Managed Key - Disabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-OSS/enable-sse-with-service-key.html
+  severity: high
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,oss
+self-contained: true
+variables:
+  region: cn-hangzhou

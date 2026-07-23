@@ -1,28 +1,37 @@
 id: adminer-panel7
 info:
-  author: random_robbie,meme-lord
   name: Adminer Login panel
-  reference: https://blog.sorcery.ie/posts/adminer/
+  author: random_robbie,meme-lord
   severity: info
+  reference: https://blog.sorcery.ie/posts/adminer/
   tags: panel
+
+  # <= 4.2.4 can have unauthenticated RCE via SQLite driver
+  # <= 4.6.2 can have LFI via MySQL LOAD DATA LOCAL
+  # Most versions have some kind of SSRF usability
+  # Is generally handy if you find SQL creds
+
+
 requests:
-- extractors:
-  - group: 1
-    part: body
-    regex:
-    - <span class="version">([0-9.]+)
-    type: regex
-  matchers:
-  - type: word
-    words:
-    - Login - Adminer
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  raw:
-  - 'GET /wp-content/plugins/adminer/adminer.php HTTP/1.1
+  - raw:
+      - |
+        GET /wp-content/plugins/adminer/adminer.php HTTP/1.1
+        Host: {{Hostname}}
 
-    Host: {{Hostname}}
+    matchers-condition: and
+    matchers:
 
-    '
+      - type: word
+        words:
+          - "Login - Adminer"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<span class="version">([0-9.]+)'

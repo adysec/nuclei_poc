@@ -1,0 +1,64 @@
+http:
+- matchers:
+  - status:
+    - 200
+    type: status
+  - condition: and
+    part: body
+    type: word
+    words:
+    - node_modules
+  - condition: or
+    part: body
+    type: word
+    words:
+    - .*
+    - '*~'
+    - '*.swp'
+    - '*.log'
+    - '*.md'
+    - .git
+  - negative: true
+    part: body
+    type: word
+    words:
+    - <html
+    - <body
+    - <!DOCTYPE
+    - <script
+    - <?php
+  - condition: and
+    dsl:
+    - len(body) > 20 && len(body) < 5000
+    - content_type != "text/html"
+    - contains(body, "\n")
+    - '!contains(tolower(body), "error")'
+    - '!contains(tolower(body), "not found")'
+    type: dsl
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/.npmignore'
+  - '{{BaseURL}}/node_modules/.npmignore'
+  - '{{BaseURL}}/src/.npmignore'
+  - '{{BaseURL}}/api/.npmignore'
+  - '{{BaseURL}}/backend/.npmignore'
+  stop-at-first-match: true
+id: npmignore-disclosure
+info:
+  author: 0x_Akoko
+  description: 'Detected NPM .npmignore configuration file, potentially exposing excluded
+    files and project structure information.
+
+    '
+  metadata:
+    fofa-query: body=".npmignore"
+    max-request: 5
+    shodan-query: http.html:".npmignore"
+    verified: true
+  name: NPM .npmignore File Disclosure
+  reference:
+  - https://docs.npmjs.com/cli/v9/using-npm/developers#keeping-files-out-of-your-package
+  - https://docs.npmjs.com/cli/v9/configuring-npm/npmignore
+  severity: info
+  tags: exposure,npm,config,node

