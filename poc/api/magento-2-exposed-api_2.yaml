@@ -1,48 +1,51 @@
-id: magento-2-exposed-api 2
+id: magento-2-exposed-api
+
 info:
-  author: TechbrunchFR
-  description: The API in Magento 2 can be accessed by the world without providing
-    credentials. Through the API information like storefront, (hidden) products including
-    prices are exposed.
   name: Exposed Magento 2 API
-  reference: https://support.hypernode.com/en/ecommerce/magento-2/how-to-protect-the-magento-2-api
+  author: TechbrunchFR
   severity: info
+  description: The API in Magento 2 can be accessed by the world without providing credentials. Through the API information like storefront, (hidden) products including prices are exposed.
+  reference:
+    - https://support.hypernode.com/en/ecommerce/magento-2/how-to-protect-the-magento-2-api
+  classification:
+    cpe: cpe:2.3:a:magento:magento:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 3
+    vendor: magento
+    product: magento
+    shodan-query: http.component:"Magento"
   tags: magento
-requests:
-- attack: sniper
-  matchers:
-  - condition: and
-    dsl:
-    - contains(body, "searchCriteria")
-    - contains(body, "parameters")
-    - contains(body, "message")
-    - contains(tolower(all_headers), "application/json")
-    type: dsl
-  - condition: and
-    dsl:
-    - contains(body, "secure_base_link_url")
-    - contains(body, "timezone")
-    - contains(tolower(all_headers), "application/json")
-    - status_code == 200
-    type: dsl
-  - condition: and
-    dsl:
-    - contains(body, "name")
-    - contains(body, "website_id")
-    - contains(tolower(all_headers), "application/json")
-    - status_code == 200
-    type: dsl
-  matchers-condition: or
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /rest/V1/store/storeConfigs HTTP/1.1
 
-    Host: {{Subdomains}}
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/rest/V1/products'
+      - '{{BaseURL}}/rest/V1/store/storeConfigs'
+      - '{{BaseURL}}/rest/V1/store/storeViews'
 
-    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "searchCriteria")'
+          - 'contains(body, "parameters")'
+          - 'contains(body, "message")'
+          - 'contains(tolower(header), "application/json")'
+        condition: and
 
-    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+      - type: dsl
+        dsl:
+          - 'contains(body, "secure_base_link_url")'
+          - 'contains(body, "timezone")'
+          - 'contains(tolower(header), "application/json")'
+          - 'status_code == 200'
+        condition: and
 
-    '
-  threads: 100
+      - type: dsl
+        dsl:
+          - 'contains(body, "name")'
+          - 'contains(body, "website_id")'
+          - 'contains(tolower(header), "application/json")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4a0a00473045022100b1adea1874f5175aa2a64de3860415324b7df344c5889077115f1d50c430485202200db51bfea750993197cce9eb2e52bc1d07fef9159296a6d83f0e4be369b72aad:922c64590222798bb761d5b6d8e72950

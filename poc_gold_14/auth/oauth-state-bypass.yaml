@@ -31,33 +31,24 @@ requests:
     redirects: true
     max-redirects: 3
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - "!contains(toLower(location), 'state=')"
-          - "status_code == 302"
-        condition: and
-
       - type: regex
         part: header
         regex:
           - 'Location:.*[?&]code='
+      - type: dsl
+        dsl:
+          - "status_code == 302"
+          - "!contains(tolower(location), 'state=') || contains(tolower(location), 'state=predictable123') || contains(location, 'state=&') || ends_with(location, 'state=')"
         condition: and
-
-      - type: word
-        part: header
-        words:
-          - "state=predictable123"
-          - "state="
-        condition: or
 
     extractors:
       - type: regex
         part: header
         name: oauth_flow
         regex:
-          - 'Location:\s*([^s]+)'
+          - 'Location:\s*([^\s]+)'
 
       - type: regex
         part: header

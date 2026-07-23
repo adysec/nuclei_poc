@@ -1,0 +1,54 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: serverList
+    type: json
+  source: 'az postgres server list --output json --query ''[*].{"Name":name,"ResourceGroup":resourceGroup}''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - name + " in " + resourceGroup + " has Storage Auto-Growth disabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"Disabled"'
+  matchers-condition: and
+  source: 'az postgres server show --name "$name" --resource-group "$resourceGroup"
+    --output json --query ''storageProfile.storageAutogrow''
+
+    '
+flow: "code(1);\nfor (let ServerData of iterate(template.serverList)) {\n  ServerData\
+  \ = JSON.parse(ServerData);\n  set(\"name\", ServerData.Name);\n  set(\"resourceGroup\"\
+  , ServerData.ResourceGroup);\n  code(2);\n}\n"
+id: azure-postgresql-storage-autogrow-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that Storage Auto-Growth feature is enabled for your production
+    Azure PostgreSQL database servers. Storage auto-growth prevents your PostgreSQL
+    servers from running out of storage and becoming read-only.
+
+    '
+  impact: 'Failing to enable Storage Auto-Growth can lead to PostgreSQL servers running
+    out of space, becoming read-only, and disrupting database services.
+
+    '
+  name: Azure PostgreSQL Storage Auto-Growth Disabled
+  reference:
+  - https://docs.microsoft.com/en-us/azure/postgresql/concepts-storage
+  remediation: 'Enable the Storage Auto-Growth feature on your Azure PostgreSQL servers
+    to prevent potential disruptions and ensure continuous database operation.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+self-contained: true

@@ -1,36 +1,57 @@
-id: hongdian-default-login 2
+id: hongdian-default-login
+
 info:
-  author: gy741
   name: Hongdian Default Login
+  author: gy741
   severity: high
+  description: Hongdian default login information was detected.
+  reference:
+    - https://ssd-disclosure.com/ssd-advisory-hongdian-h8922-multiple-vulnerabilities/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
   tags: hongdian,default-login
-requests:
-- attack: sniper
-  matchers:
-  - part: header
-    type: word
-    words:
-    - text/html
-  - part: body
-    type: word
-    words:
-    - status_main.cgi
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /api/proxy/tcp HTTP/1.1
 
-    Host: {{Subdomains}}
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
 
-    Authorization: Basic YWRtaW46YWRtaW4=
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
 
-    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+    payloads:
+      username:
+        - guest
+        - admin
+      password:
+        - guest
+        - admin
+    attack: pitchfork
 
-    Accept-Encoding: gzip, deflate
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "text/html"
+        part: header
 
-    '
-  threads: 100
+      - type: word
+        words:
+          - "status_main.cgi"
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/03/10

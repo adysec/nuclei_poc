@@ -1,41 +1,37 @@
 id: dockerfile-hidden-disclosure
-
 info:
-  name: Dockerfile - Detect
-  author: dhiyaneshDk
+  name: Dockerfile Hidden Disclosure
+  author:
+  - l0ne1y
+  description: |-
+    Docker Dockerfile 敏感信息泄露
+    Docker中的Dockerfile存在信息泄露，攻击者可利用此漏洞获取Docker关键配置信息。
   severity: medium
-  description: Dockerfile was detected.
-  reference:
-    - https://github.com/detectify/ugly-duckling/blob/master/modules/crowdsourced/dockerfile-hidden-disclosure.json
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
-    cvss-score: 5.3
-    cwe-id: CWE-200
-  metadata:
-    max-request: 3
-  tags: exposure,config
+  remediation: |2-
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/.dockerfile"
-      - "{{BaseURL}}/.Dockerfile"
-      - "{{BaseURL}}/Dockerfile"
+    官方修复方案：
+    升级系统至无漏洞版本，或于官网下载安全补丁
+    https://www.docker.com/get-started/
 
-    matchers-condition: and
-    matchers:
-      - type: regex
-        regex:
-          - '^(?:FROM(?:CACHE)?|RUN|ADD|WORKDIR|ENV|EXPOSE|\#)\s+[ -~]+'
-        part: body
-
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: header
-        words:
-          - "text/html"
-        negative: true
-# digest: 4a0a0047304502210095ae3dacbd5c021aa3c02830f97a8e4bad151e2496333dfc398683299125e30402200bf0c6403846ff67e69d9974c7d4ba502b4a43861a695702dc0730781a0878ac:922c64590222798bb761d5b6d8e72950
+    临时修复方案：
+    1.去除页面、cookie或缓存中涉及的敏感信息或删除泄露信息页面
+    2.正确配置服务器以防止未经授权的访问、目录列表等信息。
+requests:
+- matchers:
+  - type: regex
+    part: body
+    regex:
+    - ^(?:FROM(?:CACHE)?|RUN|ADD|WORKDIR|ENV|EXPOSE|\#)\s+[ -~]+
+  - type: status
+    status:
+    - 200
+  - type: word
+    part: header
+    negative: true
+    words:
+    - text/html
+  matchers-condition: and
+  path:
+  - '{{BaseURL}}/.dockerfile'
+  - '{{BaseURL}}/.Dockerfile'
+  method: GET
