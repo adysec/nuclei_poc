@@ -1,0 +1,54 @@
+
+id: drupal_module-hosting_https-access-bypass
+info:
+  name: drupal_module-hosting_https-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "Aegir is a Web hosting control panel program that provides a Drupal-based graphical interface designed to simplify deploying, managing and upgrading an entire network of Drupal, Wordpress and CiviCRM Web sites. The Hosting HTTPS module is a commonly used piece of the Aegir platform. This module doesnt sufficiently shield multi-site installations. This vulnerability is mitigated by the fact that the server must be using Apache and must host multiple sites on a common platform. An attacker must have a knowledge about used filenames and the server."
+  reference:
+    - https://www.drupal.org/sa-contrib-2019-003
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/hosting_https/"
+    google-query: "inurl:'/sites/all/modules/hosting_https/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/hosting_https/hosting_https.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'hosting_https'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-3.160')
+         - compare_versions(version, '7.x-3.150')
+         - compare_versions(version, '7.x-3.140')
+         - compare_versions(version, '7.x-3.130')

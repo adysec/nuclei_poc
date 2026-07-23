@@ -6,15 +6,26 @@ info:
   severity: info
 
 variables:
-  a1: "{{base64('hello')}}"
+  a1: "value"
+  a2: "{{base64('{{Host}}')}}"
 
-headless:
-  - steps:
-      - args:
-          url: "{{BaseURL}}"
-        action: navigate
-      - action: waitload
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{FQDN}}
+        Test: {{a1}}
+        Another: {{a2}}
+        Email: {{ username }}
+    payloads:
+      username:
+        - jon.doe@{{ FQDN }}
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
       - type: word
-        words:
-          - "{{a1}}"
+        condition: and
+        words: 
+          - "value"
+          - "MTI3LjAuMC4x" # 127.0.0.1
+          - "jon.doe@127.0.0.1"

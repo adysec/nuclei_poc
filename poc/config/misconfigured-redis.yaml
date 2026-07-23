@@ -1,0 +1,32 @@
+id: misconfigured-redis
+info:
+  author: Charles D. Robert W.
+  description: Redis server without any required authentication was discovered.
+  metadata:
+    max-request: 2
+  name: Redis Server - Unauthenticated Access
+  reference:
+  - https://redis.io/topics/security
+  severity: high
+  tags: network,redis,unauth
+tcp:
+- host:
+  - '{{Host}}:6379'
+  inputs:
+  - data: "KEYS *\r\n"
+  - data: "info\r\n"
+  matchers:
+  - name: misconfigured redis
+    type: word
+    words:
+    - redis_version
+  - name: possibly compromised
+    type: word
+    words:
+    - backup
+  - negative: true
+    type: word
+    words:
+    - redis_mode:sentinel
+  matchers-condition: or
+  read-size: 2048
