@@ -1,45 +1,48 @@
 id: pigeonhole-sieve-detect
-
 info:
-  name: Pigeonhole Sieve Service - Detect
   author: pussycat0x
-  severity: info
-  description: |
-      Pigeonhole Sieve is Dovecot’s plugin that implements the Sieve mail filtering language, allowing server-side email filtering at delivery. It adds extensions and ManageSieve support for user-friendly rule management.  metadata:
+  description: "Pigeonhole Sieve is Dovecot\u2019s plugin that implements the Sieve\
+    \ mail filtering language, allowing server-side email filtering at delivery. It\
+    \ adds extensions and ManageSieve support for user-friendly rule management. \
+    \ metadata:\n"
   metadata:
-    verified: true
     shodan-query: product:"Dovecot Pigeonhole sieve"
+    verified: true
+  name: Pigeonhole Sieve Service - Detect
+  severity: info
   tags: sieve,network,js,tcp,detect,discovery
-
 javascript:
+- args:
+    Host: '{{Host}}'
+    Port: 4190
+  code: 'let packet = bytes.NewBuffer();
 
-  - pre-condition: |
-      isPortOpen(Host,Port);
+    const c = require("nuclei/net");
 
-    code: |
-      let packet = bytes.NewBuffer();
-      const c = require("nuclei/net");
-      const cmd = "00000000"
-      packet.WriteString(cmd)
-      let conn = c.Open('tcp', `${Host}:${Port}`);
-      conn.SendHex(packet.Hex());
-      const result = conn.RecvString();
-      Export(result);
+    const cmd = "00000000"
 
-    args:
-      Host: "{{Host}}"
-      Port: 4190
+    packet.WriteString(cmd)
 
-    matchers:
-      - type: dsl
-        dsl:
-          - "success == true"
-          - contains_all(response, "SIEVE","IMPLEMENTATION")
-        condition: and
+    let conn = c.Open(''tcp'', `${Host}:${Port}`);
 
-    extractors:
-      - type: regex
-        name: version
-        regex:
-          - 'VERSION([ "0-9.]+)'
-# digest: 490a0046304402202aaee1c4b50153a0c62f6574e0e481df436ddfa9de8df495eb3ac67ce381615202206f40616c18ab2ffceabe6bb75a4613ffdbd88972a4692893178b55dc5cc80031:922c64590222798bb761d5b6d8e72950
+    conn.SendHex(packet.Hex());
+
+    const result = conn.RecvString();
+
+    Export(result);
+
+    '
+  extractors:
+  - name: version
+    regex:
+    - VERSION([ "0-9.]+)
+    type: regex
+  matchers:
+  - condition: and
+    dsl:
+    - success == true
+    - contains_all(response, "SIEVE","IMPLEMENTATION")
+    type: dsl
+  pre-condition: 'isPortOpen(Host,Port);
+
+    '
