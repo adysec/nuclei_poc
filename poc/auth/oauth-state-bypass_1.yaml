@@ -1,0 +1,66 @@
+id: oauth-state-bypass
+info:
+  name: OAuth State Parameter Bypass Detection
+  author: geeknik
+  severity: high
+  description: |
+    Detects OAuth implementations vulnerable to CSRF attacks through missing,
+    predictable, or reusable state parameters in OAuth authorization flows.
+  reference:
+    - https://portswigger.net/web-security/oauth
+    - https://datatracker.ietf.org/doc/html/rfc6749#section-10.12
+  classification:
+    cwe-id: CWE-352
+  tags: oauth,csrf,authentication,bypass
+  metadata:
+    max-request: 5
+
+variables:
+  redirect_uri: "https://example.com/callback"
+  client_id: "test_client_{{randstr}}"
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}"
+      - "{{BaseURL}}/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}&state="
+      - "{{BaseURL}}/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}&state=predictable123"
+      - "{{BaseURL}}/auth/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}"
+      - "{{BaseURL}}/oauth2/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}"
+
+    redirects: true
+    max-redirects: 3
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - "!contains(toLower(location), 'state=')"
+          - "status_code == 302"
+        condition: and
+
+      - type: regex
+        part: header
+        regex:
+          - 'Location:.*[?&]code='
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "state=predictable123"
+          - "state="
+        condition: or
+
+    extractors:
+      - type: regex
+        part: header
+        name: oauth_flow
+        regex:
+          - 'Location:\s*([^s]+)'
+
+      - type: regex
+        part: header
+        regex:
+          - '[?&]state=([^&]+)'
+          - '[?&]code=([^&]+)'
