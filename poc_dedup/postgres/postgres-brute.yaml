@@ -1,43 +1,44 @@
 id: postgres-brute
 info:
-  name: Brute Force Postgres
   author: Ice3man
-  severity: high
   metadata:
-    shodan-query: "port:5432"
-
+    shodan-query: port:5432
+  name: Brute Force Postgres
+  severity: high
 javascript:
-  - pre-condition: |
-      var m = require("nuclei/postgres");
-      var c = m.PGClient();
-      c.IsPostgres(Host, Port);
+- args:
+    Host: '{{Host}}'
+    Pass: '{{passwords}}'
+    Port: '5432'
+    User: '{{usernames}}'
+  attack: clusterbomb
+  code: 'var m = require("nuclei/postgres");
 
-    code: |
-      var m = require("nuclei/postgres");
-      var c = m.PGClient();
-      c.Connect(Host, Port, User, Pass);
-  
-    args:
-      Host: "{{Host}}"
-      Port: "5432"
-      User: "{{usernames}}"
-      Pass: "{{passwords}}"
+    var c = m.PGClient();
 
-    payloads:
-      usernames:
-        - "postgres"
-        - "admin"
-      passwords:
-        - "password"
-        - "secret"
-        - "admin"
-        - "postgres"
-    attack: clusterbomb
-    stop-at-first-match: true
-    
-    matchers:
-      - type: dsl
-        dsl:
-          - "response == true"
-          - "success == true"
-        condition: and
+    c.Connect(Host, Port, User, Pass);
+
+    '
+  matchers:
+  - condition: and
+    dsl:
+    - response == true
+    - success == true
+    type: dsl
+  payloads:
+    passwords:
+    - password
+    - secret
+    - admin
+    - postgres
+    usernames:
+    - postgres
+    - admin
+  pre-condition: 'var m = require("nuclei/postgres");
+
+    var c = m.PGClient();
+
+    c.IsPostgres(Host, Port);
+
+    '
+  stop-at-first-match: true

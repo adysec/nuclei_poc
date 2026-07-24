@@ -10,15 +10,25 @@ info:
 requests:
   - method: GET
     path:
-       - '{{BaseURL}}{{payload}}'
+       - '{{BaseURL}}'
 
     payloads:
-       payload: 
-             - '<A%20HREF="http://bing.com/">25</A>'
+       injection: 
+             - '''"><img src=https://bit.ly/3rI7qfr>'
+             - '''"><A HREF="http://bing.com/">25</A>'
 
-    matchers-condition: and
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
       - type: word
-        words:
-          - '<A HREF="http://bing.com/">25</A>'
         part: body
+        words:
+          - '<img src=https://bit.ly/3rI7qfr>'
+          - '<A HREF="http://bing.com/">25</A>'

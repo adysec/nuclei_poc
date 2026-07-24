@@ -1,15 +1,24 @@
-id: general-tokens
+id: generic-tokens
 
 info:
-  name: General Tokens
-  author: nadino
-  severity: medium
+  name: Generic Tokens
+  author: nadino,geeknik
+  severity: info
+  tags: exposure,token
 
 requests:
-  - method: GET
-    path:
-      - '{{BaseURL}}'
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
 
+    raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
     matchers-condition: and
     matchers:
       - type: dsl
@@ -20,6 +29,16 @@ requests:
           - regex("SECRET[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
           - regex("AUTHORIZATION[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
           - regex("PASSWORD[\\-|_|A-Z0-9]*(\'|\")?(:|=)(\'|\")?[\\-|_|A-Z0-9]{10}",replace(toupper(body),"",""))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)key(up|down|press|boardnavigation)'
+          - '(?i)password(lessauth|requirementsashtmllist|emailnotfoundmessage|label|errormessage|message)'
+          - '(?i)keys_(close|previous|next|zoom|play_pause)'
+        condition: or
+        negative: true
+
     extractors:
       - type: regex
         part: body
