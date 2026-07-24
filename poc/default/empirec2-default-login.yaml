@@ -1,57 +1,75 @@
-id: empirec2-default-login
-
-info:
-  name: Empire C2 / Starkiller Interface - Default Login
-  author: parzival
-  severity: high
-  description: |
-    Empire C2 / Starkiller Default Administrator Credentials Discovered.
-  reference:
-    - https://github.com/BC-SECURITY/Empire
-    - https://github.com/BC-SECURITY/empire-docs/blob/main/restful-api/README.md
-  metadata:
-    max-request: 1
-    verified: true
-  tags: default-login,empire
-
 http:
-  - raw:
-      - |
-        POST /token HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoZwyedGcQU4FrcFV
-        Accept: application/json, text/plain, */*
+- attack: pitchfork
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - access_token
+    - '{"token":".*"}'
+  - part: header
+    type: word
+    words:
+    - application/json
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    password:
+    - password123
+    username:
+    - empireadmin
+  raw:
+  - 'POST /token HTTP/1.1
 
-        ------WebKitFormBoundaryoZwyedGcQU4FrcFV
-        Content-Disposition: form-data; name="username"
+    Host: {{Hostname}}
 
-        {{username}}
-        ------WebKitFormBoundaryoZwyedGcQU4FrcFV
-        Content-Disposition: form-data; name="password"
+    Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoZwyedGcQU4FrcFV
 
-        {{password}}
-        ------WebKitFormBoundaryoZwyedGcQU4FrcFV--
+    Accept: application/json, text/plain, */*
 
-    attack: pitchfork
-    payloads:
-      username:
-        - empireadmin
-      password:
-        - 'password123'
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - 'access_token'
-          - 'token_type'
+    ------WebKitFormBoundaryoZwyedGcQU4FrcFV
 
-      - type: word
-        part: header
-        words:
-          - application/json
+    Content-Disposition: form-data; name="username"
 
-      - type: status
-        status:
-          - 200
+
+    {{username}}
+
+    ------WebKitFormBoundaryoZwyedGcQU4FrcFV
+
+    Content-Disposition: form-data; name="password"
+
+
+    {{password}}
+
+    ------WebKitFormBoundaryoZwyedGcQU4FrcFV--
+
+    '
+  - 'POST /api/admin/login HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"username":"{{user}}","password":"{{pass}}"}
+
+    '
+  stop-at-first-match: true
+id: empirec2-default-login
+info:
+  author: clem9669,parzival
+  description: 'Empire C2 / Starkiller Default Administrator Credentials Discovered.
+
+    '
+  metadata:
+    max-request: 2
+    verified: true
+  name: Empire C2 / Starkiller Interface - Default Login
+  reference:
+  - https://github.com/BC-SECURITY/Empire
+  - https://github.com/BC-SECURITY/empire-docs/blob/main/restful-api/README.md
+  severity: high
+  tags: default-login,empire,c2,intrusive

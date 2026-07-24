@@ -1,32 +1,27 @@
-id: wpconfig-aws-keys 2
+id: wpconfig-aws-keys
+
 info:
-  author: r12w4n
   name: AWS S3 keys Leak
+  author: r12w4n
   severity: high
-  tags: aws,s3,wordpress,disclosure
-requests:
-- attack: sniper
-  matchers:
-  - condition: and
-    part: body
-    type: word
-    words:
-    - access-key-id
-    - secret-access-key
-    - DB_NAME
-    - DB_PASSWORD
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /%c0 HTTP/1.1
+  description: AWS S3 keys are exposed.
+  metadata:
+    max-request: 2
+  tags: aws,s3,wordpress,disclosure,exposure
 
-    Host: {{Subdomains}}
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-config.php-backup'
+      - "{{BaseURL}}/%c0"
 
-    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-
-    Accept-Encoding: gzip, deflate
-
-    Accept: */*
-
-    '
-  threads: 100
+    matchers:
+      - type: word
+        words:
+          - 'access-key-id'
+          - 'secret-access-key'
+          - 'DB_NAME'
+          - 'DB_PASSWORD'
+        condition: and
+        part: body
+# digest: 490a0046304402201bf8cbbedfbd367460058545793477f4d1232ff036595806080c7be54edb9ef90220228289872b7dde96169fd36ff27bcc9d0fa801eebe5332039ec102bddbff032e:922c64590222798bb761d5b6d8e72950

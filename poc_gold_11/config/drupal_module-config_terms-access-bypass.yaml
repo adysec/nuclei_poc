@@ -1,0 +1,56 @@
+
+id: drupal_module-config_terms-access-bypass
+info:
+  name: drupal_module-config_terms-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to create and manage a version of taxonomy based on configuration entities instead of content.  This allows the terms, vocabularies, and their structure to be exported, imported, and managed as site configuration. The module doesnt sufficiently check access for the edit and delete operations. Users with access content permission can edit or delete any term. The edit form may expose term data that users could not otherwise see, since there is no term view route by default. This vulnerability is slightly mitigated by the fact that an attacker must have a role with the permission access content, so may not be accessible to anonymous users on all sites."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-047
+  metadata:
+    security-risk: "Critical 15∕25 AC:Basic/A:User/CI:Some/II:Some/E:Proof/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/config_terms/"
+    google-query: "inurl:'/sites/all/modules/config_terms/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/config_terms/config_terms.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'config_terms'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.5')
+         - compare_versions(version, '8.x-1.4')
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

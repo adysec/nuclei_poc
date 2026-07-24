@@ -1,0 +1,51 @@
+
+id: drupal_module-entityqueue_taxonomy-sql-injection
+info:
+  name: drupal_module-entityqueue_taxonomy-sql-injection
+  author: Bishopfox
+  severity: medium
+  description: "This module enables you to create an entityqueue based on a taxonomy. The module did not properly use Drupals database API when querying the database with user supplied values, allowing an attacker to send a specially crafted request to modify the query or potentially perform additional queries. This vulnerability is mitigated by the fact that an attacker must have a role with the administer entity queue taxonomy permission."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-052
+  metadata:
+    security-risk: "Critical 17∕25 AC:Basic/A:Admin/CI:All/II:All/E:Theoretical/TD:All"
+    vulnerability: "sql-injection"
+    fofa-query: "/sites/all/modules/entityqueue_taxonomy/"
+    google-query: "inurl:'/sites/all/modules/entityqueue_taxonomy/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/entityqueue_taxonomy/entityqueue_taxonomy.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'entityqueue_taxonomy'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

