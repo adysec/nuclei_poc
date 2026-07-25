@@ -1,27 +1,35 @@
-http:
-- matchers:
-  - status:
-    - 200
-    type: status
-  - part: body
-    type: word
-    words:
-    - schema.org/Person
-  matchers-condition: and
-  method: GET
-  path:
-  - https://{{user}}.smugmug.com
 id: smugmug
+
 info:
+  name: SmugMug User Name Information - Detect
   author: dwisiswant0
+  severity: info
+  description: SmugMug user name information check was conducted.
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
     cvss-score: 0
     cwe-id: CWE-200
-  description: SmugMug user name information check was conducted.
   metadata:
     max-request: 1
-  name: SmugMug User Name Information - Detect
-  severity: info
   tags: osint,osint-images,smugmug
+
 self-contained: true
+
+variables:
+  - valid_username: "{{user | regex_search('^[^\\.]+$')}}"
+
+http:
+  - method: GET
+    path:
+      - "https://{{valid_username}}.smugmug.com"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "schema.org/Person"

