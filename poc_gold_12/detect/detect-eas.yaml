@@ -1,37 +1,40 @@
-flow: http(1) && http(2)
-http:
-- matchers:
-  - dsl:
-    - status_code != 401
-    internal: true
-    type: dsl
-  method: GET
-  path:
-  - '{{BaseURL}}/{{rand_base(10)}}/'
-- matchers:
-  - status:
-    - 401
-    type: status
-  - case-insensitive: true
-    part: header
-    type: word
-    words:
-    - 'WWW-Authenticate: Basic'
-  matchers-condition: and
-  method: GET
-  path:
-  - '{{BaseURL}}/Microsoft-Server-ActiveSync/'
 id: detect-eas
-info:
-  author: haones
-  description: 'EAS endpoint can be used for password sparying attacks and user enumeration
-    in certain configurations. It is recommended to monitor bruteforcing attempts
-    on this endpoint.
 
-    '
+info:
   name: Detect Exchange Active Sync (EAS)
-  reference:
-  - https://tij.me/blog/harvesting-active-directory-credentials-via-http-request-smuggling/
-  - https://learn.microsoft.com/en-us/microsoft-365/enterprise/configure-exchange-server-for-hybrid-modern-authentication?view=o365-worldwide
+  description: |
+    EAS endpoint can be used for password sparying attacks and user enumeration in certain configurations. It is recommended to monitor bruteforcing attempts on this endpoint.
+  author: haones
   severity: medium
+  reference:
+    - https://tij.me/blog/harvesting-active-directory-credentials-via-http-request-smuggling/
+    - https://learn.microsoft.com/en-us/microsoft-365/enterprise/configure-exchange-server-for-hybrid-modern-authentication?view=o365-worldwide
   tags: misc,windows
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path: 
+      - "{{BaseURL}}/{{rand_base(10)}}/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code != 401'
+        internal: true
+
+  - method: GET
+    path:   
+      - "{{BaseURL}}/Microsoft-Server-ActiveSync/"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 401
+      - type: word
+        words:
+          - "WWW-Authenticate: Basic"
+        part: header
+        case-insensitive: true
