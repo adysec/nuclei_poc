@@ -1,0 +1,44 @@
+http:
+- extractors:
+  - part: header
+    regex:
+    - (?mi)^(x-amz-meta-s3cmd-attrs:\s*\S.+)$
+    type: regex
+  host-redirects: true
+  matchers:
+  - part: header
+    regex:
+    - (?mi)^x-amz-meta-s3cmd-attrs:\s*\S.+$
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  max-redirects: 2
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: s3-username-disclosure
+info:
+  author: DhiyaneshDK
+  description: 'Detected exposure of the x-amz-meta-s3cmd-attrs header in S3 objects,
+    which can disclose sensitive information including the username (uname), user
+    ID (uid), group name (gname), and group ID (gid) of the user who uploaded the
+    file using s3cmd.
+
+    '
+  metadata:
+    max-request: 1
+    runzero-match: service["http.head.xAmzMetaS3cmdAttrs"] != ""
+    shodan-query: x-amz-meta-s3cmd-attrs
+  name: x-amz-meta-s3cmd-attrs Header Username Disclosure
+  reference:
+  - https://github.com/s3tools/s3cmd/issues/1173
+  - https://hackerone.com/reports/819146
+  - https://medium.com/@jonathanbouman/how-s3cmd-discloses-your-linux-username-to-the-world-b9e4d79cb9e3
+  remediation: 'Use s3cmd with --no-preserve flag or set preserve_attrs = False in
+    s3cmd configuration to prevent storing filesystem attributes in S3 object metadata.
+
+    '
+  severity: low
+  tags: s3,aws,exposure,misconfig,header

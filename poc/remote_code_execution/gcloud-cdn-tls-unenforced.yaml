@@ -1,0 +1,78 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: services
+    type: json
+  source: 'gcloud compute url-maps list --project $projectId --format="json(name,defaultService)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: forwardingRules
+    type: json
+  source: 'gcloud compute forwarding-rules list --project $projectId
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"HTTP traffic allowed without SSL/TLS on service: " + serviceName + " in Project:
+      " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 80-80
+  source: 'gcloud compute forwarding-rules describe $forwardingRules --global --format="value(portRange)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let service of iterate(template.services)){\n   \
+  \ set(\"serviceName\", service)\n    code(3)\n    code(4)\n  }\n}\n"
+id: gcloud-cdn-tls-unenforced
+info:
+  author: princechaddha
+  description: 'Ensure that Google Cloud CDN backend service origins are using SSL/TLS
+    certificates to enforce HTTPS in order to manage encrypted traffic. This helps
+    to protect the integrity and confidentiality of the transmitted information.
+
+    '
+  impact: 'If SSL/TLS certificates are not enforced, the integrity and confidentiality
+    of the transmitted information through Cloud CDN can be compromised, leading to
+    potential data leaks and security breaches.
+
+    '
+  name: Unenforced SSL/TLS on Cloud CDN Backend Service Origins
+  reference:
+  - https://cloud.google.com/cdn/docs/using-https
+  remediation: 'Configure SSL/TLS certificates for your Cloud CDN backend service
+    origins to enforce HTTPS and ensure that all communications are securely encrypted.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,cloud-cdn,gcp-cloud-config
+self-contained: true

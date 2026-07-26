@@ -1,0 +1,53 @@
+http:
+- extractors:
+  - name: db_provider
+    part: body
+    regex:
+    - provider\s*=\s*"([^"]+)"
+    type: regex
+  - name: db_url
+    part: body
+    regex:
+    - url\s*=\s*(env\([^)]+\)|"[^"]+")
+    - (?i)postgre(sql|s)?:\/\/[^"\n]+
+    - (?i)mysql:\/\/[^"\n]+
+    - (?i)mongodb:\/\/[^"\n]+
+    type: regex
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - generator
+    - 'datasource '
+    - provider =
+    - 'model '
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/schema.prisma'
+  - '{{BaseURL}}/prisma/schema.prisma'
+  - '{{BaseURL}}/src/prisma/schema.prisma'
+  - '{{BaseURL}}/db/schema.prisma'
+  - '{{BaseURL}}/.prisma/schema.prisma'
+  stop-at-first-match: true
+id: prisma-schema-exposure
+info:
+  author: "Umut \xD6ZEN"
+  description: 'Prisma is a modern ORM extremely popular in the Node.js and TypeScript
+    (Next.js/Express) ecosystems. Developers often accidentally expose the `prisma/`
+    folder in web directories during deployments or Docker builds. This template checks
+    for the exposure of the `schema.prisma` file, which typically contains the complete
+    internal database table definitions, architectures, and the database connection
+    strings (URLs) pointing to AWS RDS, PostgreSQL, or SQLite databases.
+
+    '
+  metadata:
+    max-requests: 5
+    verified: true
+  name: Exposed Prisma Database Schema - Exposure
+  severity: medium
+  tags: config,custom,database,exposure,prisma

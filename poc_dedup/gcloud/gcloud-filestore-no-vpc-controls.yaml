@@ -1,0 +1,75 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: perimeters
+    type: json
+  source: 'gcloud access-context-manager perimeters list --project $projectId --format="json"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Project " + projectId + " does not have VPC Service Controls configured to
+      protect Filestore instances"'
+    type: dsl
+  matchers:
+  - negative: true
+    type: word
+    words:
+    - file.googleapis.com
+  - type: word
+    words:
+    - restrictedServices
+  matchers-condition: and
+  source: 'gcloud access-context-manager perimeters describe $perimeterName --format="json(status.restrictedServices)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let perimeter of iterate(template.perimeters)){\n\
+  \    set(\"perimeterName\", perimeter.name)\n    code(3)\n  }\n}\n"
+id: gcloud-filestore-no-vpc-controls
+info:
+  author: princechaddha
+  description: 'Ensure that VPC Service Controls are used to configure a security
+    perimeter around your Google Cloud Filestore instances. VPC Service Controls is
+    a powerful security tool that allows you to restrict access to your cloud resources,
+    including Filestore instances, to specific networks and clients. This helps prevent
+    data exfiltration and enhances the security posture of your cloud environment.
+
+    '
+  impact: 'Without VPC Service Controls, Filestore instances may be vulnerable to
+    unauthorized access and data exfiltration, as there is no security perimeter controlling
+    data flow between resources.
+
+    '
+  name: Filestore Instance Not Protected by VPC Service Controls
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/use-vpc-service-controls.html
+  - https://cloud.google.com/vpc-service-controls/docs/supported-products
+  remediation: 'Configure VPC Service Controls perimeter to protect your Filestore
+    instances by including the Cloud Filestore API (file.googleapis.com) in the restricted
+    services list and adding your project to the perimeter''s protected resources.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,filestore,security,networking,vpc,gcp-cloud-config
+self-contained: true

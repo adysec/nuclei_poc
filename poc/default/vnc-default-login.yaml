@@ -1,0 +1,44 @@
+id: vnc-default-login
+info:
+  author: pussycat0x
+  description: 'The VNC service had been accessed using easily guessed credentials.Weak
+    credentials allowed unauthorized access to the VNC service.
+
+    '
+  metadata:
+    shodan-query: product:"vnc"
+    verified: true
+  name: VNC Default Login
+  severity: high
+  tags: js,network,vnc,default-login
+javascript:
+- args:
+    Host: '{{Host}}'
+    Password: '{{passwords}}'
+    Port: 5900
+  code: 'var vnc = require(''nuclei/vnc'');
+
+    var client = new vnc.VNCClient();
+
+    var resp = client.Connect(Host, Port, Password);
+
+    resp;
+
+    '
+  matchers:
+  - condition: and
+    dsl:
+    - success == true
+    - response == true
+    type: dsl
+  payloads:
+    passwords:
+    - password123
+    - mysecret
+    - password
+    - admin
+    - iamadmin
+  pre-condition: 'isPortOpen(Host,Port);
+
+    '
+  stop-at-first-match: true

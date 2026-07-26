@@ -1,0 +1,81 @@
+flow: http(1) && http(2) && http(3)
+http:
+- matchers:
+  - status:
+    - 200
+    type: status
+  - condition: or
+    part: header
+    type: word
+    words:
+    - 'Server: SDC Server'
+    - 'Server: WebServer/1.0.0'
+  - part: body
+    type: word
+    words:
+    - cmcc-login
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- body: 'action=LoginState&glToken=null&stChannelId=101&channelId=101&para=
+
+    '
+  matchers:
+  - internal: true
+    status:
+    - 200
+    type: status
+  - internal: true
+    part: body
+    type: word
+    words:
+    - LOGIN_NORMAL
+  matchers-condition: and
+  method: POST
+  path:
+  - '{{BaseURL}}/cgi-bin/main.cgi'
+- body: 'action=WebTransterToRestLogout&url=GET+%2FSDCAPI%2FV1.0%2FCustomization%2FElement%0D%0A%0D%0A
+
+    '
+  extractors:
+  - json:
+    - .brandInfoObject.version
+    name: version
+    type: json
+  - json:
+    - .brandInfoObject.model
+    name: model
+    type: json
+  matchers:
+  - status:
+    - 200
+    type: status
+  - part: body
+    type: word
+    words:
+    - '"brand": "HoloSens SDC"'
+  matchers-condition: and
+  method: POST
+  path:
+  - '{{BaseURL}}/cgi-bin/main.cgi'
+id: huawei-holosense-panel
+info:
+  author: darses
+  description: 'Huawei HoloSens SDC login panel was detected.
+
+    '
+  metadata:
+    fofa-query:
+    - '"Server: SDC Server" && protocol="https"'
+    - '"Server: WebServer/1.0.0" && port="1443"'
+    max-requests: 3
+    product: holosense_sdc
+    shodan-query:
+    - 'Server: SDC Server'
+    - http.html_hash:-968212412
+    vendor: huawei
+    verified: true
+  name: Huawei HoloSens SDC - Panel
+  severity: info
+  tags: detect,huawei,holosens,panel
