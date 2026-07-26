@@ -1,0 +1,59 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: orgIds
+    type: json
+  source: 'gcloud organizations list --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Organization " + orgId + " has not restricted public IP access for Cloud SQL
+      instances, allowing databases to be exposed to the internet"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '{}'
+  source: 'gcloud alpha resource-manager org-policies describe sql.restrictPublicIp
+    --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    '
+flow: "code(1)\nfor(let orgId of iterate(template.orgIds)){\n  set(\"orgId\", orgId)\n\
+  \  code(2)\n}\n"
+id: gcloud-org-sql-public-ip
+info:
+  author: princechaddha
+  description: 'Ensure that "Restrict Public IP access on Cloud SQL instances" policy
+    is enforced for your Google Cloud organizations. Due to strict security and compliance
+    regulations, you can''t allow GCP members to configure security-critical database
+    instances with public IPs. For highly sensitive workloads, the access to the SQL
+    database instances can be made only through private IP addresses or Google Cloud
+    SQL Proxy.
+
+    '
+  impact: 'Without restricting public IP access, Cloud SQL instances can be configured
+    with public IP addresses, potentially exposing sensitive databases to unauthorized
+    access from the internet.
+
+    '
+  name: Public IP Access for Cloud SQL Instances Not Restricted
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/restrict-public-ip-access-at-organization-level.html
+  - https://cloud.google.com/sql/docs/mysql/configure-ip
+  remediation: 'Enable the "Restrict Public IP access on Cloud SQL instances" policy
+    at the organization level using the ''gcloud alpha resource-manager org-policies
+    enable-enforce'' command with the sql.restrictPublicIp constraint.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,sql,networking,gcp-cloud-config
+self-contained: true

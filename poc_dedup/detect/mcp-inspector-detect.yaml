@@ -1,0 +1,51 @@
+flow: http(1) && http(2)
+http:
+- extractors:
+  - group: 1
+    internal: true
+    name: js
+    part: body
+    regex:
+    - src="([^"]+\.js)"
+    type: regex
+  host-redirects: true
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body,"<title>MCP Inspector")
+    internal: true
+    type: dsl
+  max-redirects: 2
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- extractors:
+  - group: 1
+    name: version
+    part: body
+    regex:
+    - const\s+version\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)
+    type: regex
+  matchers:
+  - dsl:
+    - status_code == 200
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}{{js}}'
+id: mcp-inspector-detect
+info:
+  author: pussycat0x
+  description: 'MCP Inspector was a debugging tool used to inspect and test MCP servers,
+    including their resources, prompts, and tools.
+
+    '
+  metadata:
+    fofa-query: title="MCP Inspector"
+    verified: true
+  name: MCP Inspector Detect
+  reference:
+  - https://github.com/modelcontextprotocol/inspector
+  severity: info
+  tags: tech,mcp,anthropic,discovery,ai
