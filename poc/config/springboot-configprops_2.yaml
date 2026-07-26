@@ -1,43 +1,42 @@
-id: springboot-configprops 2
+id: springboot-configprops
+
 info:
-  author: that_juan_,dwisiswant0,wdahlenb
-  description: Sensitive environment variables may not be masked
   name: Detect Springboot Configprops Actuator
+  author: that_juan_,dwisiswant0,wdahlenb
   severity: low
-  tags: springboot,disclosure
-requests:
-- attack: sniper
-  matchers:
-  - condition: and
-    part: body
-    type: word
-    words:
-    - org.springframework.boot.actuate
-    - beans
-    - contexts
-  - status:
-    - 200
-    type: status
-  - condition: or
-    part: header
-    type: word
-    words:
-    - application/json
-    - application/vnd.spring-boot.actuator
-    - application/vnd.spring-boot.actuator.v1+json
-  matchers-condition: and
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /actuator/configprops HTTP/1.1
+  description: Sensitive environment variables may not be masked
+  metadata:
+    max-request: 2
+  tags: springboot,exposure,misconfig
 
-    Host: {{Subdomains}}
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/configprops"
+      - "{{BaseURL}}/actuator/configprops"
 
-    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+    stop-at-first-match: true
 
-    Accept-Encoding: gzip, deflate
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "org.springframework.boot.actuate"
+          - "beans"
+          - "context"
+        condition: and
 
-    Accept: */*
+      - type: status
+        status:
+          - 200
 
-    '
-  threads: 100
+      - type: word
+        words:
+          - "application/json"
+          - "application/vnd.spring-boot.actuator"
+          - "application/vnd.spring-boot.actuator.v1+json"
+        condition: or
+        part: header
+
+# digest: 4b0a00483046022100de778671099362e7bbae4ff422611ac686cee397df849b5a0c387a101eefe9da0221009c18715f4ab99ccbebcba20781c366e03b634a4c9364a72d44c1b98fa3ba45b4:922c64590222798bb761d5b6d8e72950
