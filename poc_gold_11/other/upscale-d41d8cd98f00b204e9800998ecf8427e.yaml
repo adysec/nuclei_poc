@@ -1,51 +1,56 @@
-http:
-- extractors:
-  - group: 1
-    internal: true
-    name: version
-    part: body
-    regex:
-    - '(?mi)Version: ([0-9.]+)'
-    type: regex
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - '(?mi)Version: ([0-9.]+)'
-    type: regex
-  matchers:
-  - status:
-    - 200
-    type: status
-  - part: body
-    type: word
-    words:
-    - upscale
-  - dsl:
-    - compare_versions(version, '*')
-    type: dsl
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/wp-content/themes/upscale/style.css'
-  redirects: true
 id: upscale-d41d8cd98f00b204e9800998ecf8427e
+
 info:
+  name: "Upscale (Unknown Versions) - Cross-Site Scripting"
   author: topscoder
+  severity: high
+  description: "The upscale theme for WordPress is vulnerable to Cross-Site Scripting due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts that execute in a victim's browser."
+  reference:
+
   classification:
-    cve-id: null
-    cvss-metrics: null
-    cvss-score: null
-  description: The upscale theme for WordPress is vulnerable to Cross-Site Scripting
-    due to insufficient input sanitization and output escaping. This makes it possible
-    for unauthenticated attackers to inject arbitrary web scripts that execute in
-    a victim's browser.
+    cvss-metrics:
+    cvss-score:
+    cve-id:
   metadata:
-    fofa-query: wp-content/unknown/upscale/
+    fofa-query: "wp-content/unknown/upscale/"
     google-query: inurl:"/wp-content/unknown/upscale/"
     shodan-query: 'vuln:'
-  name: Upscale (Unknown Versions) - Cross-Site Scripting
-  reference: null
-  severity: high
   tags: cve,wordpress,wp-theme,upscale,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/upscale/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "upscale"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '*')
