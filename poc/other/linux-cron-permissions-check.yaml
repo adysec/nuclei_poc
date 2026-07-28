@@ -1,0 +1,32 @@
+code:
+- engine:
+  - bash
+  matchers:
+  - part: response
+    type: word
+    words:
+    - '[WARN] /etc/cron.allow misconfigured'
+    - '[WARN] /etc/cron.deny misconfigured'
+  source: "result=\"\"\n\ncheck_file() {\n  file=$1\n  if [ -f \"$file\" ]; then\n\
+    \    owner=$(stat -c \"%u\" \"$file\")   # numeric UID\n    perm=$(stat -c \"\
+    %a\" \"$file\")   # permissions\n    if [ \"$owner\" -ne 0 ] || [ \"$perm\" -ne\
+    \ 640 ]; then\n      result+=\"[WARN] $file misconfigured\\n\"\n    fi\n  fi\n\
+    }\n\ncheck_file /etc/cron.allow\ncheck_file /etc/cron.deny\n\nif [ -n \"$result\"\
+    \ ]; then\n  echo -e \"$result\"\nelse\n  if [ ! -f /etc/cron.allow ] && [ ! -f\
+    \ /etc/cron.deny ]; then\n    echo \"[OK] no cron access files found (default\
+    \ safe behavior)\"\n  else\n    echo \"[OK] cron files properly configured\"\n\
+    \  fi\nfi\n"
+id: linux-cron-permissions-check
+info:
+  author: songyaeji
+  description: '/etc/cron.allow and /etc/cron.deny (if present) were required to be
+    owned by root (UID 0) with strict 640 permissions.If neither file existed, only
+    the root user could use cron, which was considered the safe default behavior.
+
+    '
+  name: Cron Access File Ownership & Permissions
+  reference:
+  - https://isms.kisa.or.kr
+  severity: high
+  tags: local,linux,audit,kisa,compliance
+self-contained: true

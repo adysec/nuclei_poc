@@ -1,0 +1,49 @@
+code:
+- args:
+  - -ExecutionPolicy
+  - Bypass
+  engine:
+  - powershell
+  - powershell.exe
+  extractors:
+  - regex:
+    - .+ the service binary at .+
+    type: regex
+  matchers:
+  - type: word
+    words:
+    - the service binary at
+  pattern: '*.ps1'
+  pre-condition: 'IsWindows();
+
+    '
+  source: "$services = Get-WmiObject -Class Win32_Service -Property Name, DisplayName,\
+    \ PathName, StartMode, StartName |\n  Where-Object { $_.PathName -and $_.PathName\
+    \ -notlike 'C:\\Windows\\*' }\n\nforeach ($service in $services) {\n  $rawPath\
+    \ = $service.PathName.Trim()\n\n  # Extract binary path: handle quoted and unquoted\
+    \ paths with arguments\n  if ($rawPath.StartsWith('\"')) {\n    $binaryPath =\
+    \ ($rawPath -split '\"')[1]\n  } else {\n    $binaryPath = ($rawPath -split '\
+    \ (?=-)')[0].Trim()\n    if (-not (Test-Path $binaryPath -ErrorAction SilentlyContinue))\
+    \ {\n      $binaryPath = ($rawPath -split '\\.exe')[0] + '.exe'\n    }\n  }\n\n\
+    \  if (-not (Test-Path $binaryPath -ErrorAction SilentlyContinue)) { continue\
+    \ }\n\n  $acl = Get-Acl $binaryPath -ErrorAction SilentlyContinue\n  if (-not\
+    \ $acl) { continue }\n\n  foreach ($access in $acl.Access) {\n    $rights = $access.FileSystemRights.ToString()\n\
+    \    $identity = $access.IdentityReference.ToString()\n\n    if ($rights -match\
+    \ \"Write|FullControl|Modify\" -and\n        $identity -notmatch \"NT AUTHORITY\\\
+    \\SYSTEM|BUILTIN\\\\Administrators|NT AUTHORITY\\\\LOCAL SERVICE|NT AUTHORITY\\\
+    \\NETWORK SERVICE|TrustedInstaller\") {\n      Write-Output \"$identity can $rights\
+    \ the service binary at $binaryPath for service '$($service.Name)' running as\
+    \ '$($service.StartName)' on '$($service.StartMode)' mode\"\n    }\n  }\n}\n"
+id: weak-service-binary-permissions
+info:
+  author: domwhewell-sage
+  description: 'Detects weak Windows service binary permissions that could allow non-administrative
+    users to modify the service binary, potentially leading to local privilege escalation.
+
+    '
+  name: Weak Service Binary Permissions
+  reference:
+  - https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#modify-service-binary-path
+  severity: high
+  tags: code,privesc,services,windows,windows-audit
+self-contained: true

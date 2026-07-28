@@ -1,0 +1,61 @@
+code:
+- engine:
+  - bash
+  source: "if [ -f \"/etc/xinetd.d/echo\" ] && grep -iq 'disable[[:space:]]*=[[:space:]]*no'\
+    \ \"/etc/xinetd.d/echo\"; then\n  echo \"[VULNERABLE] echo service is enabled\
+    \ in /etc/xinetd.d/echo\"\nelse\n  echo \"[SAFE] echo service is disabled or not\
+    \ present\"\nfi\n"
+- engine:
+  - bash
+  source: "if [ -f \"/etc/xinetd.d/discard\" ] && grep -iq 'disable[[:space:]]*=[[:space:]]*no'\
+    \ \"/etc/xinetd.d/discard\"; then\n  echo \"[VULNERABLE] discard service is enabled\
+    \ in /etc/xinetd.d/discard\"\nelse\n  echo \"[SAFE] discard service is disabled\
+    \ or not present\"\nfi\n"
+- engine:
+  - bash
+  source: "if [ -f \"/etc/xinetd.d/daytime\" ] && grep -iq 'disable[[:space:]]*=[[:space:]]*no'\
+    \ \"/etc/xinetd.d/daytime\"; then\n  echo \"[VULNERABLE] daytime service is enabled\
+    \ in /etc/xinetd.d/daytime\"\nelse\n  echo \"[SAFE] daytime service is disabled\
+    \ or not present\"\nfi\n"
+- engine:
+  - bash
+  matchers:
+  - name: echo
+    part: code_1_response
+    type: word
+    words:
+    - '[VULNERABLE]'
+  - name: daytime
+    part: code_2_response
+    type: word
+    words:
+    - '[VULNERABLE]'
+  - name: chargen
+    part: code_3_response
+    type: word
+    words:
+    - '[VULNERABLE]'
+  - name: discard
+    part: code_4_response
+    type: word
+    words:
+    - '[VULNERABLE]'
+  source: "if [ -f \"/etc/xinetd.d/chargen\" ] && grep -iq 'disable[[:space:]]*=[[:space:]]*no'\
+    \ \"/etc/xinetd.d/chargen\"; then\n  echo \"[VULNERABLE] chargen service is enabled\
+    \ in /etc/xinetd.d/chargen\"\nelse\n  echo \"[SAFE] chargen service is disabled\
+    \ or not present\"\nfi\n"
+id: linux-legacy-services-enabled
+info:
+  author: songyaeji
+  description: 'Services such as echo, discard, daytime, and chargen were enabled
+    on the system, allowing attackers to exploit them to extract system information
+    or launch denial-of-service (DoS) attacks.These legacy services were required
+    to be disabled unless explicitly needed.
+
+    '
+  name: DoS Vulnerable Service Enabled
+  reference:
+  - https://isms.kisa.or.kr
+  severity: high
+  tags: local,linux,audit,kisa,compliance
+self-contained: true

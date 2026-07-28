@@ -1,0 +1,54 @@
+http:
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - instrumentationKey:"([0-9a-z-]+)"
+    - <InstrumentationKey>(.*)</InstrumentationKey>
+    - APPINSIGHTS_INSTRUMENTATIONKEY=([a-z0-9-]+)
+    - 'InstrumentationKey": "([0-9a-z-]+)"'
+    type: regex
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - InstrumentationKey
+    - instrumentationKey
+    - APPINSIGHTS_INSTRUMENTATIONKEY
+    - <InstrumentationKey>
+  - condition: or
+    part: body
+    regex:
+    - instrumentationKey:"([0-9a-z-]+)"
+    - <InstrumentationKey>(.*)</InstrumentationKey>
+    - APPINSIGHTS_INSTRUMENTATIONKEY=([a-z0-9-]+)
+    - 'InstrumentationKey": "([0-9a-z-]+)"'
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  - '{{BaseURL}}/appsettings.json'
+  stop-at-first-match: true
+id: azure-instrumentation-key-exposure
+info:
+  author: pussycat0x
+  description: 'Detected exposed Azure Application Insights Instrumentation Keys (classic
+    ikey format) in HTTP responses, which allowed anyone to send telemetry data and,
+    in some older configurations, could enable read access via undocumented or legacy
+    APIs.
+
+    '
+  metadata:
+    max-request: 2
+    verified: true
+  name: Azure Instrumentation Key - Exposure
+  reference:
+  - https://learn.microsoft.com/en-us/azure/azure-monitor/app/connection-strings
+  - http://www.medic-consulting.com/2016/07/10/Share-Asp-Net-Core-appsettings-json-with-Service-Fabric-Microservices/
+  severity: medium
+  tags: exposure,azure,instrumentation,appinsights,token
