@@ -1,41 +1,22 @@
-http:
-- matchers:
-  - condition: or
-    part: body
-    regex:
-    - jdbc:[a-z:]+://[A-Za-z0-9\.\-_:;=/@?,&]+
-    - ((?i)password|pwd|pass|secretkey)=
-    type: regex
-  - condition: or
-    part: header
-    type: word
-    words:
-    - text/plain
-    - bytes
-  - negative: true
-    part: header
-    type: word
-    words:
-    - text/html
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  method: GET
-  path:
-  - '{{BaseURL}}/config.properties'
-  - '{{BaseURL}}/config.properties.bak'
-  - '{{BaseURL}}/ui_config.properties'
-  stop-at-first-match: true
 id: config-properties
+
 info:
-  author: j4vaovo,DhiyaneshDK
-  description: Config Properties were exposed.
-  metadata:
-    max-request: 3
-    verified: true
-  name: Config Properties Exposure
-  reference:
-  - https://twitter.com/win3zz/status/1657624974851702784/photo/1
-  severity: high
-  tags: exposure,config,properties
+  name: config.properties Disclosure
+  author: SirBugs
+  severity: medium
+  description: This Template checks disclosing secret information via /config.properties
+  tags: config, secrets, leaks
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/config.properties'
+    matchers:
+      - type: word
+        part: body
+        condition: or
+        words:
+          - '#/home'
+          - 'ttfDir='
+          - '.mysql.'
+          - 'SELECT * FROM'

