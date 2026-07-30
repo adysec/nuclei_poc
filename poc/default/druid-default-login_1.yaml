@@ -1,44 +1,35 @@
-id: druid-default-login
-
+id: druid-default-login 1
 info:
-  name: Apache Druid Default Login
   author: pikpikcu
+  name: Druid Default Login
   severity: high
-  description: Apache Druid default login information (admin/admin) was discovered.
-  classification:
-    cwe-id: CWE-798
-  tags: druid,default-login
+  tags: 'druid,default-login
 
-http:
-  - raw:
-      - |
-        POST /druid/submitLogin HTTP/1.1
-        Host: {{Hostname}}
 
-        loginUsername={{username}}&loginPassword={{password}}
+    - "{{BaseURL}}/submitLogin"'
+requests:
+- attack: sniper
+  matchers:
+  - status:
+    - 200
+    type: status
+  - regex:
+    - ^success$
+    type: regex
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'POST /druid/submitLogin HTTP/1.1
 
-      - |
-        POST /submitLogin HTTP/1.1
-        Host: {{Hostname}}
+    Host: {{Subdomains}}
 
-        loginUsername={{username}}&loginPassword={{password}}
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-    payloads:
-      username:
-        - admin
-      password:
-        - admin
-    attack: pitchfork
+    Accept-Encoding: gzip, deflate
 
-    matchers-condition: and
-    matchers:
 
-      - type: status
-        status:
-          - 200
+    loginUsername=admin&loginPassword=admin
 
-      - type: regex
-        regex:
-          - "^success$"
-
-# Enhanced by mp on 2022/03/03
+    '
+  threads: 100
