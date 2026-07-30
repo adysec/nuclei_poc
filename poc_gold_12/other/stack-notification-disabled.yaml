@@ -1,58 +1,58 @@
-id: stack-notification-disabled
-
-info:
-  name: CloudFormation Stack Notification - Disabled
-  author: DhiyaneshDK
-  severity: medium
-  description: |
-    Ensure that your Amazon CloudFormation stacks are using SNS topics to send notifications when important events occur.
-  impact: |
-    Disabling CloudFormation Stack Notifications can lead to reduced visibility into stack events and errors, delaying the detection of issues and hindering effective monitoring of changes and deployments in the cloud environment.
-  remediation: |
-    Enable CloudFormation Stack Notifications by configuring SNS (Simple Notification Service) topics for your CloudFormation stack. This will ensure real-time alerts on stack events, including updates, errors, and resource creation, providing better monitoring and visibility.
-  reference:
-    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFormation/cloudformation-stack-notification.html
-    - http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-stack.html
-  tags: cloud,devops,aws,amazon,cloudformation,aws-cloud-config
-
-variables:
-  region: "us-west-2"
-
-flow: |
-  code(1)
-  for(let StackSummaries of iterate(template.stacksummaries)){
-    set("stacksummary", StackSummaries)
-    code(2)
-  }
-
-self-contained: true
-
 code:
-  - engine:
-      - sh
-      - bash
-    source: |
-      aws cloudformation list-stacks --region $region --stack-status-filter CREATE_COMPLETE --output json --query 'StackSummaries[*].StackName'
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: stacksummaries
+    type: json
+  source: 'aws cloudformation list-stacks --region $region --stack-status-filter CREATE_COMPLETE
+    --output json --query ''StackSummaries[*].StackName''
 
-    extractors:
-      - type: json
-        name: stacksummaries
-        internal: true
-        json:
-          - '.[]'
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"CloudFormation Stack Notification " + stacksummary + " is Disabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  source: 'aws cloudformation describe-stacks --region $region --stack-name $stacksummary
+    --query ''Stacks[*].NotificationARNs[]''
 
-  - engine:
-      - sh
-      - bash
-    source: |
-        aws cloudformation describe-stacks --region $region --stack-name $stacksummary --query 'Stacks[*].NotificationARNs[]'
+    '
+flow: "code(1)\nfor(let StackSummaries of iterate(template.stacksummaries)){\n  set(\"\
+  stacksummary\", StackSummaries)\n  code(2)\n}\n"
+id: stack-notification-disabled
+info:
+  author: DhiyaneshDK
+  description: 'Ensure that your Amazon CloudFormation stacks are using SNS topics
+    to send notifications when important events occur.
 
-    matchers:
-      - type: word
-        words:
-          - '[]'
+    '
+  impact: 'Disabling CloudFormation Stack Notifications can lead to reduced visibility
+    into stack events and errors, delaying the detection of issues and hindering effective
+    monitoring of changes and deployments in the cloud environment.
 
-    extractors:
-      - type: dsl
-        dsl:
-          - '"CloudFormation Stack Notification " + stacksummary + " is Disabled"'
+    '
+  name: CloudFormation Stack Notification - Disabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFormation/cloudformation-stack-notification.html
+  - http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-stack.html
+  remediation: 'Enable CloudFormation Stack Notifications by configuring SNS (Simple
+    Notification Service) topics for your CloudFormation stack. This will ensure real-time
+    alerts on stack events, including updates, errors, and resource creation, providing
+    better monitoring and visibility.
+
+    '
+  severity: medium
+  tags: cloud,devops,aws,amazon,cloudformation,aws-cloud-config
+self-contained: true
+variables:
+  region: us-west-2

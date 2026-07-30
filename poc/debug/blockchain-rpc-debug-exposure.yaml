@@ -1,0 +1,67 @@
+http:
+- matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"jsonrpc"'
+    - '"error"'
+    - missing value for required argument
+  - negative: true
+    part: body
+    type: word
+    words:
+    - does not exist
+    - not available
+    - not found
+    - not supported
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'POST / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/json
+
+
+    {"jsonrpc":"2.0","method":"debug_traceTransaction","params":[],"id":1}
+
+    '
+id: blockchain-rpc-debug-exposure
+info:
+  author: 0xBassia
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:L
+    cvss-score: 6.5
+    cwe-id: CWE-200
+  description: 'The blockchain RPC endpoint has debug-level tracing methods enabled
+    (debug_traceTransaction, debug_traceBlockByNumber, trace_block, trace_filter).
+    These methods return complete EVM execution traces including opcodes, stack values,
+    and memory contents, enabling smart contract reverse engineering and targeted
+    attacks.
+
+    '
+  impact: 'An attacker can reconstruct the logic of unverified smart contracts, analyze
+    internal call flows, and simulate transactions. Combined with txpool access, this
+    enables sophisticated MEV strategies. Heavy trace calls can also cause resource
+    exhaustion on the RPC node.
+
+    '
+  metadata:
+    max-request: 1
+    shodan-query: jsonrpc
+    verified: true
+  name: Blockchain RPC Debug Trace Methods - Exposure
+  reference:
+  - https://geth.ethereum.org/docs/developers/dapp-developer/native
+  - https://github.com/ledgerwatch/erigon
+  remediation: 'Disable all debug_* and trace_* namespace methods on public RPC endpoints.
+    If needed for developer tooling, expose them on a separate rate-limited endpoint
+    requiring API key authentication.
+
+    '
+  severity: medium
+  tags: blockchain,debug,misconfig,rpc,trace,web3

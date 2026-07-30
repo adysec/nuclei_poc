@@ -1,0 +1,68 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: sqlInstances
+    type: json
+  source: 'gcloud sql instances list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"High Availability is not enabled for Cloud SQL instance: " + sqlInstance +
+      " in project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - ZONAL
+  source: 'gcloud sql instances describe $sqlInstance --format="value(settings.availabilityType)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let sqlInstance of iterate(template.sqlInstances)){\n\
+  \    set(\"sqlInstance\", sqlInstance)\n    code(3)\n  }\n}\n"
+id: gcloud-sql-ha-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that all your production and mission-critical Google Cloud
+    SQL database instances are configured for High Availability (HA) and automatic
+    failover support. Configuring HA ensures database reliability and minimizes downtime
+    in the event of an outage.
+
+    '
+  impact: 'Cloud SQL database instances not configured with High Availability (HA)
+    lack automatic failover support, which can lead to extended downtime and potential
+    data accessibility issues during outages.
+
+    '
+  name: High Availability Not Enabled for Cloud SQL Database Instances
+  reference:
+  - https://cloud.google.com/sql/docs/mysql/high-availability
+  remediation: 'Update the configuration of your Google Cloud SQL database instances
+    to use High Availability (REGIONAL) instead of the default ZONAL configuration
+    to enable automatic failover and ensure minimal downtime.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,gcp-cloud-config
+self-contained: true

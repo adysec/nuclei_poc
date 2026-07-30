@@ -1,0 +1,82 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: urlMaps
+    type: json
+  source: 'gcloud compute url-maps list --project $projectId --format="json(name,defaultService)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: forwardingRules
+    type: json
+  source: 'gcloud compute forwarding-rules list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"SSL/TLS not enforced on Cloud CDN backend bucket origin: " + defaultService
+      + " via URL map: " + urlMapName + " in Project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 80-80
+  source: 'gcloud compute forwarding-rules describe $forwardingRuleName --project
+    $projectId --global --format="value(portRange)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let urlMap of iterate(template.urlMaps)){\n    set(\"\
+  urlMapName\", urlMap.name)\n    set(\"defaultService\", urlMap.defaultService)\n\
+  \    code(3)\n    for(let forwardingRule of iterate(template.forwardingRules)){\n\
+  \      set(\"forwardingRuleName\", forwardingRule)\n      code(4)\n    }\n  }\n\
+  }\n"
+id: gcloud-cdn-ssl-enforcement
+info:
+  author: princechaddha
+  description: 'Ensure that Google Cloud CDN backend bucket origins enforce HTTPS
+    using SSL/TLS certificates in order to handle encrypted traffic. This helps to
+    protect the integrity and confidentiality of the transmitted information.
+
+    '
+  impact: 'Not enforcing HTTPS can expose data to interception or alteration during
+    transmission, compromising data confidentiality and integrity.
+
+    '
+  name: Cloud CDN SSL/TLS Not Enforced
+  reference:
+  - https://cloud.google.com/cdn/docs/using-https
+  remediation: 'Configure SSL/TLS certificates for Cloud CDN backend bucket origins
+    and ensure all traffic is served over HTTPS by adjusting the forwarding rules
+    and url-maps.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,cloud-cdn,gcp-cloud-config
+self-contained: true

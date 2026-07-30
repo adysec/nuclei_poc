@@ -1,0 +1,50 @@
+code:
+- args:
+  - -ExecutionPolicy
+  - Bypass
+  engine:
+  - powershell
+  - powershell.exe
+  matchers:
+  - type: word
+    words:
+    - SAM_ACCESS_VULNERABLE
+  pattern: '*.ps1'
+  pre-condition: 'IsWindows();
+
+    '
+  source: "$samPath = \"$env:SystemRoot\\system32\\config\\SAM\"\nif (-Not (Test-Path\
+    \ $samPath)) {\n    \"SAM_FILE_NOT_FOUND\"\n    exit\n}\n# Retrieve the ACL for\
+    \ the SAM file\n$acl = Get-Acl $samPath\n# Define allowed identities (variations\
+    \ may exist)\n$allowed = @(\"BUILTIN\\Administrators\", \"Administrators\", \"\
+    NT AUTHORITY\\SYSTEM\", \"SYSTEM\")\n$vulnerable = $false\nforeach ($ace in $acl.Access)\
+    \ {\n    $account = $ace.IdentityReference.ToString()\n    if ($allowed -notcontains\
+    \ $account) {\n        $vulnerable = $true\n        break\n    }\n}\nif ($vulnerable)\
+    \ {\n    \"SAM_ACCESS_VULNERABLE\"\n} else {\n    \"SAM_ACCESS_COMPLIANT\"\n}\n"
+id: sam-file-access-control
+info:
+  author: nukunga[SungHyunJeon]
+  description: 'Ensure the SAM file (%SystemRoot%\system32\config\SAM) is secured
+    so that only the Administrators and SYSTEM groups have full access.The presence
+    of permissions for any other users or groups represents a potential security vulnerability.
+
+    '
+  impact: 'If users or groups besides Administrators and SYSTEM have access to the
+    SAM file, attackers could exploit this to obtain sensitive password data, raising
+    the risk of password-based attacks.
+
+    '
+  name: SAM File Access Control Check
+  reference:
+  - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  remediation: 'Revoke any permissions assigned to users or groups other than Administrators
+    and SYSTEM by:
+
+    - Running the command: > cacls %systemroot%\system32\config\SAM /remove:g [UserOrGroup]
+
+    - Or by adjusting the permissions through File Explorer.
+
+    '
+  severity: medium
+  tags: sam,account-management,code,windows-audit,kisa
+self-contained: true

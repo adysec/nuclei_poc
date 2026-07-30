@@ -1,0 +1,66 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: buckets
+    type: json
+  source: 'gsutil ls -p $projectId | jq -R . | jq -s .
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The bucket " + bucketName + " in project " + projectId + " does not have a
+      sufficient retention period configured or the retention policy is unlocked."'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - no Retention Policy
+  source: 'gsutil retention get $bucketName
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let bucketName of iterate(template.buckets)){\n \
+  \   set(\"bucketName\", bucketName)\n    code(3)\n  }\n}\n"
+id: gcloud-insufficient-data-retention-period
+info:
+  author: princechaddha
+  description: 'Ensure that the objects stored within your Google Cloud Storage buckets
+    have a sufficient data retention period configured to meet security and compliance
+    requirements. Retention policies prevent the deletion or modification of objects
+    for a specified duration.
+
+    '
+  impact: 'Insufficient retention periods can lead to data being prematurely deleted,
+    resulting in potential security, compliance, and operational risks.
+
+    '
+  name: Check for Sufficient Data Retention Period for Cloud Storage Buckets
+  reference:
+  - https://cloud.google.com/storage/docs/bucket-lock
+  remediation: 'Configure a sufficient data retention period for your Google Cloud
+    Storage buckets based on your organization''s security and compliance policies.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-storage,retention,security,compliance,gcp-cloud-config
+self-contained: true

@@ -1,0 +1,66 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: functions
+    type: json
+  source: 'gcloud functions list --project $projectId --format="json(name, region)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Missing Dead Letter Topic for function: " + functionName + " in Project: "
+      + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud functions describe $functionName --format="json(eventTrigger.pubsubTopic)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let functionDetail of iterate(template.functions)){\n\
+  \    set(\"functionName\", functionDetail)\n    code(3)\n  }\n}\n"
+id: gcloud-func-pubsub-dlt-missing
+info:
+  author: princechaddha
+  description: 'Ensure that Google Cloud functions triggered by Pub/Sub have a Dead-Letter
+    Topic (DLT) configured to handle undeliverable messages. To achieve this, configure
+    your Pub/Sub subscriptions with a maximum number of delivery attempts. If a message
+    cannot be delivered, it will be sent to the designated Dead-Letter Topic (DLT).
+
+    '
+  impact: 'Not having a Dead-Letter Topic for Pub/Sub-triggered functions can result
+    in lost messages and unhandled failures, affecting the reliability of your application.
+
+    '
+  name: Configure Dead Lettering for Pub/Sub-Triggered Functions
+  reference:
+  - https://cloud.google.com/functions/docs/calling/pubsub#retry
+  remediation: 'Configure a Dead-Letter Topic for each Pub/Sub-triggered function
+    by setting up the necessary Pub/Sub subscription settings.
+
+    '
+  severity: low
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+self-contained: true

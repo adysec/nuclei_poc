@@ -1,0 +1,100 @@
+flow: http(1) && http(2)
+http:
+- body: "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"initialize\",\n  \"params\":\
+    \ {},\n  \"id\": 1\n}\n"
+  extractors:
+  - group: 1
+    internal: true
+    name: sessionID
+    part: header
+    regex:
+    - Mcp-Session-Id:\s*([A-Za-z0-9]+)
+    type: regex
+  headers:
+    Accept: application/json, text/event-stream
+    Content-Type: application/json
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - sessionID != ''
+    type: dsl
+  method: POST
+  path:
+  - '{{BaseURL}}'
+  - '{{BaseURL}}/mcp/'
+- attack: pitchfork
+  body: "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"{{method}}\",\n  \"params\":\
+    \ {},\n  \"id\": 1\n}\n"
+  extractors:
+  - part: body
+    regex:
+    - '"name"\s*:\s*"([^"]+)"'
+    type: regex
+  headers:
+    Accept: application/json, text/event-stream
+    Content-Type: application/json
+    Mcp-Session-Id: '{{sessionID}}'
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - jsonrpc
+    - result
+  - part: body
+    regex:
+    - '"available_tools"\s*:\s*\['
+    - '"name"\s*:\s*"get_tools"'
+    - '"server_status"\s*:\s*\{'
+    - '"observatories_by_type"'
+    - '"parameters"\s*:\s*\{'
+    - '"tools"\s*:\s*\[.*?\]'
+    - '"resources"\s*:\s*\[.*?\]'
+    - '"prompts"\s*:\s*\[.*?\]'
+    type: regex
+  matchers-condition: and
+  method: POST
+  path:
+  - '{{BaseURL}}'
+  - '{{BaseURL}}/mcp/'
+  payloads:
+    method:
+    - rpc.discover
+    - rpc.describe
+    - rpc.listTools
+    - tools/list
+    - resources/list
+    - prompts/list
+    - tool.status
+    - tool.help
+    - tool.version
+    - tool.list
+id: exposed-mcp-server
+info:
+  author: ivan_wallarm
+  description: 'Detects exposed Machine Control Protocol (MCP) servers through JSON-RPC
+    2.0 API endpoints.
+
+    MCP servers often provide administrative access to AI tools, LLM systems, or other
+    automation infrastructure.
+
+    Exposed MCP interfaces can lead to unauthorized access, information disclosure,
+    and potential system compromise.
+
+    This template tests multiple detection methods including tools/list, rpc.discover,
+    resources/list, and prompts/list.
+
+    '
+  metadata:
+    max-request: 10
+    runzero-match: any(each(service["html.bodies"]), {# matches "(?i)get requires
+      an active session"})
+    verified: true
+  name: Exposed MCP JSON-RPC 2.0 API Detection
+  reference:
+  - https://jsonrpc.org/specification
+  - https://github.com/anthropics/anthropic-tools/tree/main/mcp
+  - https://lab.wallarm.com/wallarm-research-nuclei-template-counter-threats-targeting-llm-apps/
+  severity: unknown
+  tags: ai,api,devtools,discovery,exposure,jsonrpc,llm,mcp

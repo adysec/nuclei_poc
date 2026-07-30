@@ -1,0 +1,87 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusters
+    type: json
+  source: 'gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: nodePools
+    type: json
+  source: 'gcloud container node-pools list --cluster $clusterName --location $location
+    --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Node pool " + nodePoolName + " in GKE cluster " + clusterName + " (" + location
+      + ") of project " + projectId + " does not have Integrity Monitoring enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'shieldedInstanceConfig: {}'
+    - 'null'
+  source: 'gcloud container node-pools describe $nodePoolName --cluster $clusterName
+    --location $location --project $projectId --format="yaml(config.shieldedInstanceConfig.enableIntegrityMonitoring)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let cluster of iterate(template.clusters)){\n   \
+  \ cluster = JSON.parse(cluster)\n    set(\"clusterName\", cluster.name)\n    set(\"\
+  location\", cluster.location)\n    code(3)\n    for(let nodePool of iterate(template.nodePools)){\n\
+  \      nodePool = JSON.parse(nodePool)\n      set(\"nodePoolName\", nodePool.name)\n\
+  \      code(4)\n    }\n  }\n}\n"
+id: gcloud-gke-integrity-monitoring-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that Integrity Monitoring is enabled for your Google Kubernetes
+    Engine (GKE) cluster nodes to monitor and automatically check the runtime boot
+    integrity using Google Cloud Monitoring service. This feature helps verify that
+    the boot loader and other measured components remain untampered.
+
+    '
+  impact: 'Without Integrity Monitoring enabled, there is no automated verification
+    of boot integrity for cluster nodes, making it harder to detect potential tampering
+    or compromises of the boot components.
+
+    '
+  name: GKE Node Pools Without Integrity Monitoring
+  reference:
+  - https://cloud.google.com/kubernetes-engine/docs/how-to/shielded-gke-nodes
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-integrity-monitoring.html
+  remediation: 'Re-create your node pools with Integrity Monitoring enabled using:
+
+    gcloud container node-pools create POOL_NAME --cluster=CLUSTER_NAME --shielded-integrity-monitoring
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,monitoring,gcp-cloud-config
+self-contained: true

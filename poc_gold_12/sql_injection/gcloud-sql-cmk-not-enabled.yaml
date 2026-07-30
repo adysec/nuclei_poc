@@ -1,0 +1,70 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: sqlInstances
+    type: json
+  source: 'gcloud sql instances list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Cloud SQL instance " + sqlInstance + " in project " + projectId + " is not
+      encrypted with a Customer-Managed Key (CMK)"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud sql instances describe $sqlInstance --format="json(diskEncryptionConfiguration.kmsKeyName)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let sqlInstance of iterate(template.sqlInstances)){\n\
+  \    set(\"sqlInstance\", sqlInstance)\n    code(3)\n  }\n}\n"
+id: gcloud-sql-cmk-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that your Google Cloud SQL database instances are encrypted
+    with Customer-Managed Keys (CMKs) in order to have a fine control over your data
+    encryption and decryption process. You can create and manage your own Customer-Managed
+    Keys (CMKs) with Cloud Key Management Service (Cloud KMS). Cloud KMS provides
+    secure and efficient encryption key management, controlled key rotation, and revocation
+    mechanisms.
+
+    '
+  impact: 'Not encrypting Google Cloud SQL database instances with Customer-Managed
+    Keys (CMKs) can result in reduced security, lack of control over encryption keys,
+    and potential regulatory compliance issues.
+
+    '
+  name: Cloud SQL Instance Encryption with Customer-Managed Keys Not Enabled
+  reference:
+  - https://cloud.google.com/sql/docs/mysql/configure-cmek
+  remediation: 'Configure Cloud SQL instances to use Customer-Managed Keys (CMKs)
+    for encryption by enabling encryption with Cloud KMS and specifying a key for
+    each database instance.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,gcp-cloud-config
+self-contained: true
