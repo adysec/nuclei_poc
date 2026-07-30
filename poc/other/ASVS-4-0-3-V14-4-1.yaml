@@ -1,0 +1,63 @@
+id: ASVS-4-0-3-V14-4-1
+
+info:
+  name: ASVS 14.4.1 Check
+  author: Hamed Salimian
+  severity: low
+  classification:
+    cwe-id: CWE-173
+  reference:
+    - https://github.com/OWASP/ASVS/issues/710
+  tags: asvs,14.4.1
+  description: |
+    Verify that every HTTP response contains a Content-Type header. Also specify a safe character set (e.g., UTF-8, ISO-8859-1) if the content types are text/*, /+xml and application/xml. Content must match with the provided Content-Type header.
+http:
+  - raw:
+      - |
+        GET {{BaseURL}} HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+        Accept: */*
+
+    extractors:
+      - type: kval
+        name: "Content-Type"
+        part: header
+        kval:
+          - Content_Type
+      - type: regex
+        name: "HTML meta charset"
+        regex:
+          - (?i)<meta\s+charset\s*=\s*["'](utf-?8|iso-?8859-?1)["']\s*\/?>
+        part: body
+      - type: regex
+        name: "XML declaration encoding"
+        regex:
+          - (?i)<\?xml\s+version\s*=\s*["'][0-9.]*["']\s+encoding\s*=\s*["'](utf-?8|utf-?16|iso-?8859-?1)["']\s*\?>
+        part: body
+
+    matchers-condition: and
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        name: "Content-Type header"
+        negative: true
+        regex:
+          - (?i)Content-Type:\s+text/(\w+);\s+charset=(utf-?8|iso-?8859?-1)
+          - (?i)Content-Type:\s+(application/xml|\+xml);\s+charset=(utf-?8|utf-?16)
+        part: header
+
+      - type: regex
+        name: "HTML meta charset"
+        negative: true
+        regex:
+          - (?i)<meta\s+charset\s*=\s*["'](utf-?8|iso-?8859-?1)["']\s*\/?>
+        part: body
+
+      - type: regex
+        name: "XML declaration encoding"
+        negative: true
+        regex:
+          - (?i)<\?xml\s+version\s*=\s*["'][0-9.]*["']\s+encoding\s*=\s*["'](utf-?8|utf-?16|iso-?8859-?1)["']\s*\?>
+        part: body

