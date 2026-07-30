@@ -1,52 +1,55 @@
-code:
-- engine:
-  - sh
-  - bash
-  extractors:
-  - internal: true
-    json:
-    - .[]
-    name: vmList
-    type: json
-  source: 'az vm list --query ''[*].{"id":id}''
-
-    '
-- engine:
-  - sh
-  - bash
-  extractors:
-  - dsl:
-    - ids + " does not have a system-assigned managed identity enabled"
-    type: dsl
-  matchers:
-  - type: word
-    words:
-    - '"IdentityConfig": null'
-  matchers-condition: and
-  source: 'az vm show --ids "$ids" --query ''{"IdentityConfig": identity}''
-
-    '
-flow: "code(1);\nfor (let VMData of iterate(template.vmList)) {\n  VMData = JSON.parse(VMData);\n\
-  \  set(\"ids\", VMData.id);\n  code(2);\n}\n"
 id: azure-vm-managed-identity-unassigned
 info:
-  author: princechaddha
-  description: 'Ensure that your Microsoft Azure virtual machines (VMs) have system-assigned
-    managed identities enabled in order to allow secure virtual machine access to
-    Azure resources such as key vaults and storage accounts.
-
-    '
-  impact: 'VMs without system-assigned managed identities may have inadequate security
-    configurations, increasing the risk of unauthorized access to Azure resources.
-
-    '
   name: Azure VM Managed Identity Not Assigned
-  reference:
-  - https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview
-  remediation: 'Enable system-assigned managed identities on all Azure VMs to ensure
-    secure access to other Azure services.
-
-    '
+  author: princechaddha
   severity: medium
+  description: |
+    Ensure that your Microsoft Azure virtual machines (VMs) have system-assigned managed identities enabled in order to allow secure virtual machine access to Azure resources such as key vaults and storage accounts.
+  impact: |
+    VMs without system-assigned managed identities may have inadequate security configurations, increasing the risk of unauthorized access to Azure resources.
+  remediation: |
+    Enable system-assigned managed identities on all Azure VMs to ensure secure access to other Azure services.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview
   tags: cloud,devops,azure,microsoft,vm,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VMData of iterate(template.vmList)) {
+    VMData = JSON.parse(VMData);
+    set("ids", VMData.id);
+    code(2);
+  }
+
 self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm show --ids "$ids" --query '{"IdentityConfig": identity}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"IdentityConfig": null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " does not have a system-assigned managed identity enabled"'
+# digest: 4b0a00483046022100f838ee478e2c86d9cae920a109e4851448c3503ce13a7daa96fd40d3382f612f022100d5187686c3847d84bcbcb650515e43561c9c0939e42c08c40db43479532c14f1:922c64590222798bb761d5b6d8e72950

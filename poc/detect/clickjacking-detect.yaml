@@ -1,30 +1,37 @@
-headless:
-- matchers:
-  - part: body
-    type: word
-    words:
-    - 'true'
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitload
-  - action: script
-    args:
-      code: "() => {\n  var headers = document.getElementsByTagName('head')[0].childNodes;\n\
-        \  var result = false;\n  headers.forEach(function(header) {\n    if (header.name\
-        \ === 'X-Frame-Options' && header.content !== 'DENY') {\n      result = true;\n\
-        \    }\n  });\n  return result;\n}\n"
-      hook: true
-  stop-at-first-match: true
 id: clickjacking-detect
-info:
-  author: geeknik
-  description: 'This template detects potential Clickjacking vulnerabilities. An attacker
-    can trick a user into clicking on a concealed link, which can lead to unauthorized
-    actions.
 
-    '
+info:
   name: Clickjacking - Detect
+  author: geeknik
   severity: low
+  description: |
+    This template detects potential Clickjacking vulnerabilities. An attacker can trick a user into clicking on a concealed link, which can lead to unauthorized actions.
   tags: clickjacking,headless
+
+headless:
+  - steps:
+      - args:
+          url: '{{BaseURL}}'
+        action: navigate
+      - action: waitload
+      - action: script
+        args:
+          hook: true
+          code: |
+            () => {
+              var headers = document.getElementsByTagName('head')[0].childNodes;
+              var result = false;
+              headers.forEach(function(header) {
+                if (header.name === 'X-Frame-Options' && header.content !== 'DENY') {
+                  result = true;
+                }
+              });
+              return result;
+            }
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "true"

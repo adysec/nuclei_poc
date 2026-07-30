@@ -1,0 +1,36 @@
+id: thanos-prometheus-disclosure
+
+info:
+  name: Thanos Prometheus Setup - disclosure
+  author: DhiyaneshDk,righettod
+  severity: high
+  verified: true
+  description: |
+    Thanos graph endpoint was detected.
+    shodan: title:"Thanos | Highly available Prometheus setup"
+    fofa: icon_hash="29632872"
+  reference:
+    - https://thanos.io/
+    - https://github.com/thanos-io/thanos
+  tags: thanos,prometheus,disclosure
+
+rules:
+  r0:
+    brute:
+      p:
+        - /graph
+        - /classic/graph
+    request:
+      method: GET
+      path: "{{p}}"
+    expression: |
+      response.status == 200 &&
+      ((
+      response.body.bcontains(b"THANOS_COMPONENT") && 
+      response.body.bcontains(b"THANOS_QUERY_URL")
+      ) ||
+      (
+      response.body.bcontains(b'<title>Thanos')  &&
+      response.body.bcontains(b"href=\"/classic/\">Thanos</a>")
+      ))
+expression: r0()
