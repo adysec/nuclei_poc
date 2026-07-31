@@ -1,45 +1,46 @@
-id: sonarqube-cloud-token
+flow: http(1) && http(2)
+http:
+- matchers:
+  - internal: true
+    name: token
+    part: body
+    regex:
+    - \b[a-fA-F\d]{40}\b
+    type: regex
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- disable-path-automerge: true
+  extractors:
+  - dsl:
+    - token
+    type: dsl
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, 'valid') && contains(body, 'true')
+    - contains(content_type, "application/json")
+    type: dsl
+  raw:
+  - '@Host: https://sonarcloud.io:443
 
+    GET /api/authentication/validate HTTP/1.1
+
+    Host: sonarcloud.io
+
+    Authorization: Basic {{base64(token + '':'')}}
+
+    '
+id: sonarqube-cloud-token
 info:
-  name: SonarQube Cloud Token Disclosure
   author: DhiyaneshDk
-  severity: high
-  reference:
-    - https://sonarcloud.io/web_api/api/authentication
-    - https://docs.sonarsource.com/sonarqube/latest/user-guide/user-account/generating-and-using-tokens/#types-of-tokens
   metadata:
     max-request: 1
     verified: true
-  tags: exposure,token,sonarqube
-
-flow: http(1) && http(2)
-
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-
-    extractors:
-      - type: regex
-        part: body
-        name: token
-        regex:
-          - '\b[a-fA-F\d]{40}\b'
-        internal: true
-
-  - raw:
-      - |
-        @Host: https://sonarcloud.io:443
-        GET /api/authentication/validate HTTP/1.1
-        Host: sonarcloud.io
-        Authorization: Basic {{base64(token + ':')}}
-
-    self-contained: true
-
-    matchers:
-      - type: dsl
-        dsl:
-          - status_code == 200
-          - contains(body, 'valid') && contains(body, 'true')
-          - contains(content_type, "application/json")
-        condition: and
+  name: SonarQube Cloud Token Disclosure
+  reference:
+  - https://sonarcloud.io/web_api/api/authentication
+  - https://docs.sonarsource.com/sonarqube/latest/user-guide/user-account/generating-and-using-tokens/#types-of-tokens
+  severity: high
+  tags: exposure,sonarqube,token,vuln

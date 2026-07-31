@@ -1,0 +1,33 @@
+id: fuzz-open-redirect
+
+info:
+  name: Basic Open Redirect Detection
+  author: your_name
+  severity: medium
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{path_fuzz}}"
+    payloads:
+      redirect:
+        - "http://evil.com"
+        - "//evil.com"
+        - "/\\evil.com"
+    stop-at-first-match: true
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{redirect}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 301
+          - 302
+      - type: word
+        part: header
+        words:
+          - "Location: http://evil.com"
