@@ -1,337 +1,691 @@
-headless:
-- extractors:
-  - name: framework_vuln_summary
-    part: body
-    regex:
-    - '"scan_completed":\s*true'
-    type: regex
-  - name: confirmed_framework_vulns
-    part: body
-    regex:
-    - '"runtime_vulnerabilities_confirmed":\s*true'
-    type: regex
-  matchers:
-  - name: framework_vulnerabilities_detected
-    regex:
-    - '"framework_vulnerabilities_found":\s*true'
-    type: regex
-  - name: critical_framework_vulnerabilities
-    regex:
-    - '"risk_level":\s*"Critical"'
-    type: regex
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitload
-  - action: script
-    args:
-      code: "window.frameworkVulnResults = {\n  detected_frameworks: {},\n  vulnerabilities:\
-        \ [],\n  version_analysis: {},\n  configuration_issues: [],\n  test_results:\
-        \ [],\n  risk_assessment: {}\n};\n\n// Framework detection with version extraction\n\
-        const frameworks = {\n  jquery: {\n    detection: () => typeof $ !== 'undefined'\
-        \ && $.fn && $.fn.jquery,\n    version: () => $.fn.jquery,\n    global_var:\
-        \ '$',\n    vulnerable_versions: {\n      '1.0.0-1.6.4': ['CVE-2011-4969 (XSS\
-        \ via location.hash)'],\n      '1.0.0-1.8.3': ['CVE-2012-6708 (Selector interpretation)'],\n\
-        \      '1.0.0-2.1.4': ['CVE-2015-9251 (XSS via HTML strings)'],\n      '1.0.0-2.2.4':\
-        \ ['CVE-2016-10707 (XSS in jQuery.extend)'],\n      '3.0.0-3.4.1': ['CVE-2019-11358\
-        \ (Prototype pollution)'],\n      '3.0.0-3.5.0': ['CVE-2020-11022 (XSS in\
-        \ jQuery.htmlPrefilter)'],\n      '3.0.0-3.5.1': ['CVE-2020-11023 (XSS via\
-        \ HTML containing elements)']\n    }\n  },\n  angular: {\n    detection: ()\
-        \ => typeof angular !== 'undefined',\n    version: () => angular.version ?\
-        \ angular.version.full : null,\n    global_var: 'angular',\n    vulnerable_versions:\
-        \ {\n      '1.0.0-1.2.32': ['CVE-2017-1000451 (Angular Expression injection)'],\n\
-        \      '1.0.0-1.5.11': ['CVE-2016-10744 (Open redirect via $sanitize)'],\n\
-        \      '1.0.0-1.6.9': ['CVE-2018-6341 (ReDoS in $sanitize)'],\n      '1.0.0-1.7.8':\
-        \ ['CVE-2019-10768 (Prototype pollution)']\n    }\n  },\n  react: {\n    detection:\
-        \ () => typeof React !== 'undefined',\n    version: () => React.version,\n\
-        \    global_var: 'React',\n    vulnerable_versions: {\n      '0.0.0-16.0.1':\
-        \ ['CVE-2018-6341 (XSS via user-supplied attribute names)'],\n      '16.0.0-16.13.1':\
-        \ ['CVE-2019-16769 (XSS in SSR via href)'],\n      '0.0.0-16.13.1': ['CVE-2020-15168\
-        \ (XSS in react-dom)']\n    }\n  },\n  vue: {\n    detection: () => typeof\
-        \ Vue !== 'undefined',\n    version: () => Vue.version,\n    global_var: 'Vue',\n\
-        \    vulnerable_versions: {\n      '2.0.0-2.6.11': ['CVE-2019-20149 (XSS via\
-        \ template compilation)'],\n      '2.0.0-2.6.12': ['CVE-2020-15168 (Template\
-        \ injection)']\n    }\n  },\n  lodash: {\n    detection: () => typeof _ !==\
-        \ 'undefined' && _.VERSION,\n    version: () => _.VERSION,\n    global_var:\
-        \ '_',\n    vulnerable_versions: {\n      '1.0.0-4.17.11': ['CVE-2018-16487\
-        \ (Prototype pollution)'],\n      '1.0.0-4.17.15': ['CVE-2019-1010266 (ReDoS\
-        \ in trim functions)'],\n      '1.0.0-4.17.19': ['CVE-2020-8203 (Prototype\
-        \ pollution in zipObjectDeep)']\n    }\n  },\n  axios: {\n    detection: ()\
-        \ => typeof axios !== 'undefined',\n    version: () => axios.VERSION || (axios.defaults\
-        \ && axios.defaults.adapter && 'detected'),\n    global_var: 'axios',\n  \
-        \  vulnerable_versions: {\n      '0.0.0-0.18.1': ['CVE-2019-10742 (SSRF via\
-        \ redirect)'],\n      '0.0.0-0.21.1': ['CVE-2020-28168 (Request forgery via\
-        \ redirect)']\n    }\n  },\n  moment: {\n    detection: () => typeof moment\
-        \ !== 'undefined',\n    version: () => moment.version,\n    global_var: 'moment',\n\
-        \    vulnerable_versions: {\n      '2.0.0-2.19.2': ['CVE-2017-18214 (ReDoS\
-        \ in RFC 2822 parsing)'],\n      '2.0.0-2.29.1': ['CVE-2022-24785 (Path traversal\
-        \ in moment.locale)']\n    }\n  },\n  bootstrap: {\n    detection: () => typeof\
-        \ bootstrap !== 'undefined' ||\n               document.querySelector('.bootstrap,\
-        \ [class*=\"bootstrap\"]') !== null,\n    version: () => {\n      if (typeof\
-        \ bootstrap !== 'undefined' && bootstrap.Tooltip) {\n        return bootstrap.Tooltip.VERSION;\n\
-        \      }\n      return 'detected';\n    },\n    global_var: 'bootstrap',\n\
-        \    vulnerable_versions: {\n      '3.0.0-3.4.1': ['CVE-2016-10735 (XSS in\
-        \ data-target attribute)'],\n      '3.0.0-4.1.2': ['CVE-2018-14040 (XSS in\
-        \ Collapse)'],\n      '4.0.0-4.1.2': ['CVE-2018-14041 (XSS in data-container)'],\n\
-        \      '4.0.0-4.3.1': ['CVE-2019-8331 (XSS in tooltip/popover)']\n    }\n\
-        \  },\n  d3: {\n    detection: () => typeof d3 !== 'undefined',\n    version:\
-        \ () => d3.version,\n    global_var: 'd3',\n    vulnerable_versions: {\n \
-        \     '3.0.0-3.5.17': ['CVE-2021-23648 (Prototype pollution)'],\n      '4.0.0-7.0.0':\
-        \ ['Various XSS issues in data binding']\n    }\n  }\n};\n\n// Detect frameworks\
-        \ and versions\nObject.keys(frameworks).forEach(frameworkName => {\n  const\
-        \ framework = frameworks[frameworkName];\n  try {\n    if (framework.detection())\
-        \ {\n      const version = framework.version();\n      window.frameworkVulnResults.detected_frameworks[frameworkName]\
-        \ = {\n        detected: true,\n        version: version,\n        global_variable:\
-        \ framework.global_var,\n        vulnerable_versions: framework.vulnerable_versions\n\
-        \      };\n\n      // Check for known vulnerabilities\n      if (version &&\
-        \ version !== 'detected') {\n        Object.keys(framework.vulnerable_versions).forEach(versionRange\
-        \ => {\n          if (isVersionInRange(version, versionRange)) {\n       \
-        \     framework.vulnerable_versions[versionRange].forEach(vuln => {\n    \
-        \          window.frameworkVulnResults.vulnerabilities.push({\n          \
-        \      framework: frameworkName,\n                version: version,\n    \
-        \            vulnerability: vuln,\n                version_range: versionRange,\n\
-        \                severity: getSeverityFromCVE(vuln),\n                type:\
-        \ 'known_vulnerability'\n              });\n            });\n          }\n\
-        \        });\n      }\n    }\n  } catch (e) {\n    window.frameworkVulnResults.test_results.push(`${frameworkName}_detection_error:\
-        \ ${e.message}`);\n  }\n});\n\n// Helper function to check version ranges\n\
-        function isVersionInRange(version, range) {\n  try {\n    const [minVersion,\
-        \ maxVersion] = range.split('-');\n    return compareVersions(version, minVersion)\
-        \ >= 0 &&\n           compareVersions(version, maxVersion) <= 0;\n  } catch\
-        \ (e) {\n    return false;\n  }\n}\n\n// Simple version comparison\nfunction\
-        \ compareVersions(v1, v2) {\n  const parts1 = v1.split('.').map(n => parseInt(n)\
-        \ || 0);\n  const parts2 = v2.split('.').map(n => parseInt(n) || 0);\n\n \
-        \ for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {\n   \
-        \ const part1 = parts1[i] || 0;\n    const part2 = parts2[i] || 0;\n\n   \
-        \ if (part1 > part2) return 1;\n    if (part1 < part2) return -1;\n  }\n \
-        \ return 0;\n}\n\n// Get severity from CVE description\nfunction getSeverityFromCVE(vuln)\
-        \ {\n  if (vuln.includes('XSS') || vuln.includes('injection')) return 'high';\n\
-        \  if (vuln.includes('pollution') || vuln.includes('SSRF')) return 'medium';\n\
-        \  if (vuln.includes('ReDoS') || vuln.includes('DoS')) return 'medium';\n\
-        \  return 'low';\n}\n\nreturn window.frameworkVulnResults;\n"
-    name: initialize_framework_scanner
-  - action: script
-    args:
-      code: "window.frameworkVulnResults.test_results.push('jquery_vulnerability_tests');\n\
-        \nif (window.frameworkVulnResults.detected_frameworks.jquery) {\n  const jqVersion\
-        \ = window.frameworkVulnResults.detected_frameworks.jquery.version;\n\n  //\
-        \ Test for prototype pollution (CVE-2019-11358)\n  try {\n    window.jqueryPrototypeTest\
-        \ = false;\n    const maliciousObj = JSON.parse('{\"__proto__\": {\"jqueryPolluted\"\
-        : true}}');\n    $.extend(true, {}, maliciousObj);\n\n    if (({}).jqueryPolluted\
-        \ === true) {\n      window.frameworkVulnResults.vulnerabilities.push({\n\
-        \        framework: 'jquery',\n        version: jqVersion,\n        vulnerability:\
-        \ 'CVE-2019-11358 - Prototype pollution via $.extend',\n        severity:\
-        \ 'high',\n        type: 'runtime_confirmed',\n        confirmed: true,\n\
-        \        test: 'prototype_pollution'\n      });\n      window.jqueryPrototypeTest\
-        \ = true;\n    }\n\n    // Clean up\n    delete Object.prototype.jqueryPolluted;\n\
-        \  } catch (e) {\n    window.frameworkVulnResults.test_results.push('jquery_prototype_test_error:\
-        \ ' + e.message);\n  }\n\n  // Test for XSS via HTML parsing (CVE-2020-11022)\n\
-        \  try {\n    window.jqueryXSSTest = false;\n    const testHtml = '<option><iframe></select><img\
-        \ src=x onerror=window.jqueryXSSTest=true>';\n    const parsed = $(testHtml);\n\
-        \n    // Check if malicious content was parsed\n    setTimeout(() => {\n \
-        \     if (window.jqueryXSSTest === true ||\n          parsed.find('img').length\
-        \ > 0 ||\n          parsed.html().includes('onerror')) {\n        window.frameworkVulnResults.vulnerabilities.push({\n\
-        \          framework: 'jquery',\n          version: jqVersion,\n         \
-        \ vulnerability: 'CVE-2020-11022 - XSS via HTML parsing',\n          severity:\
-        \ 'high',\n          type: 'runtime_confirmed',\n          confirmed: window.jqueryXSSTest\
-        \ === true,\n          test: 'html_parsing_xss'\n        });\n      }\n  \
-        \  }, 100);\n  } catch (e) {\n    window.frameworkVulnResults.test_results.push('jquery_xss_test_error:\
-        \ ' + e.message);\n  }\n\n  // Test for unsafe selector usage\n  try {\n \
-        \   const unsafeSelector = location.hash || '#test';\n    if (unsafeSelector.includes('<')\
-        \ || unsafeSelector.includes('script')) {\n      window.frameworkVulnResults.configuration_issues.push({\n\
-        \        framework: 'jquery',\n        issue: 'unsafe_selector_usage',\n \
-        \       description: 'Application uses location.hash directly in jQuery selectors',\n\
-        \        severity: 'medium',\n        example: '$(location.hash) can lead\
-        \ to XSS'\n      });\n    }\n  } catch (e) {\n    window.frameworkVulnResults.test_results.push('jquery_selector_test_error:\
-        \ ' + e.message);\n  }\n}\n\nreturn window.frameworkVulnResults;\n"
-    name: test_jquery_vulnerabilities
-  - action: script
-    args:
-      code: "window.frameworkVulnResults.test_results.push('angular_vulnerability_tests');\n\
-        \nif (window.frameworkVulnResults.detected_frameworks.angular) {\n  const\
-        \ ngVersion = window.frameworkVulnResults.detected_frameworks.angular.version;\n\
-        \n  // Test for Angular Expression injection\n  try {\n    window.angularExprTest\
-        \ = false;\n\n    // Look for ng-bind or similar directives that might be\
-        \ vulnerable\n    const ngElements = document.querySelectorAll('[ng-bind],\
-        \ [ng-bind-html], [ng-bind-unsafe]');\n    if (ngElements.length > 0) {\n\
-        \      window.frameworkVulnResults.configuration_issues.push({\n        framework:\
-        \ 'angular',\n        issue: 'expression_injection_risk',\n        description:\
-        \ 'Found Angular binding directives that may be vulnerable to expression injection',\n\
-        \        severity: 'high',\n        count: ngElements.length,\n        example:\
-        \ 'ng-bind with user input can execute arbitrary expressions'\n      });\n\
-        \    }\n\n    // Test for bypassSecurityTrust usage (if available)\n    if\
-        \ (typeof angular !== 'undefined' && angular.element) {\n      try {\n   \
-        \     const rootScope = angular.element(document.body).scope();\n        if\
-        \ (rootScope && rootScope.$root) {\n          // Check for dangerous trust\
-        \ bypasses in scope\n          const scopeKeys = Object.keys(rootScope);\n\
-        \          scopeKeys.forEach(key => {\n            if (typeof rootScope[key]\
-        \ === 'string' &&\n                rootScope[key].includes('<script>')) {\n\
-        \              window.frameworkVulnResults.configuration_issues.push({\n \
-        \               framework: 'angular',\n                issue: 'unsafe_html_binding',\n\
-        \                description: 'Scope contains potentially unsafe HTML content',\n\
-        \                severity: 'high',\n                scope_key: key\n     \
-        \         });\n            }\n          });\n        }\n      } catch (e)\
-        \ {\n        // Continue testing\n      }\n    }\n\n  } catch (e) {\n    window.frameworkVulnResults.test_results.push('angular_expression_test_error:\
-        \ ' + e.message);\n  }\n\n  // Test for CSP bypass via Angular\n  try {\n\
-        \    const cspMeta = document.querySelector('meta[http-equiv=\"Content-Security-Policy\"\
-        ]');\n    if (cspMeta && cspMeta.content.includes('unsafe-eval')) {\n    \
-        \  window.frameworkVulnResults.configuration_issues.push({\n        framework:\
-        \ 'angular',\n        issue: 'csp_unsafe_eval',\n        description: 'CSP\
-        \ allows unsafe-eval which enables Angular expression evaluation',\n     \
-        \   severity: 'medium',\n        recommendation: 'Use Angular CSP mode or\
-        \ remove unsafe-eval'\n      });\n    }\n  } catch (e) {\n    window.frameworkVulnResults.test_results.push('angular_csp_test_error:\
-        \ ' + e.message);\n  }\n}\n\nreturn window.frameworkVulnResults;\n"
-    name: test_angular_vulnerabilities
-  - action: script
-    args:
-      code: "window.frameworkVulnResults.test_results.push('react_vulnerability_tests');\n\
-        \nif (window.frameworkVulnResults.detected_frameworks.react) {\n  const reactVersion\
-        \ = window.frameworkVulnResults.detected_frameworks.react.version;\n\n  //\
-        \ Test for dangerouslySetInnerHTML usage\n  try {\n    const reactElements\
-        \ = document.querySelectorAll('[data-reactroot], [data-reactid]');\n    if\
-        \ (reactElements.length > 0) {\n      // Check page content for dangerous\
-        \ patterns\n      const pageContent = document.documentElement.outerHTML;\n\
-        \      if (pageContent.includes('dangerouslySetInnerHTML') ||\n          pageContent.includes('__html'))\
-        \ {\n        window.frameworkVulnResults.configuration_issues.push({\n   \
-        \       framework: 'react',\n          issue: 'dangerous_inner_html_usage',\n\
-        \          description: 'Application uses dangerouslySetInnerHTML which can\
-        \ lead to XSS',\n          severity: 'high',\n          recommendation: 'Sanitize\
-        \ HTML content before using dangerouslySetInnerHTML'\n        });\n      }\n\
-        \    }\n\n    // Test for href JavaScript execution\n    const jsHrefs = document.querySelectorAll('a[href^=\"\
-        javascript:\"]');\n    if (jsHrefs.length > 0) {\n      window.frameworkVulnResults.configuration_issues.push({\n\
-        \        framework: 'react',\n        issue: 'javascript_href_usage',\n  \
-        \      description: 'Found javascript: URLs which React may not properly sanitize',\n\
-        \        severity: 'medium',\n        count: jsHrefs.length\n      });\n \
-        \   }\n\n  } catch (e) {\n    window.frameworkVulnResults.test_results.push('react_dangerous_html_test_error:\
-        \ ' + e.message);\n  }\n\n  // Test for React DevTools exposure\n  try {\n\
-        \    if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {\n      window.frameworkVulnResults.configuration_issues.push({\n\
-        \        framework: 'react',\n        issue: 'react_devtools_exposed',\n \
-        \       description: 'React DevTools are enabled in production',\n       \
-        \ severity: 'low',\n        recommendation: 'Disable React DevTools in production\
-        \ builds'\n      });\n    }\n  } catch (e) {\n    window.frameworkVulnResults.test_results.push('react_devtools_test_error:\
-        \ ' + e.message);\n  }\n}\n\nreturn window.frameworkVulnResults;\n"
-    name: test_react_vulnerabilities
-  - action: script
-    args:
-      code: "window.frameworkVulnResults.test_results.push('lodash_vulnerability_tests');\n\
-        \nif (window.frameworkVulnResults.detected_frameworks.lodash) {\n  const lodashVersion\
-        \ = window.frameworkVulnResults.detected_frameworks.lodash.version;\n\n  //\
-        \ Test for prototype pollution vulnerabilities\n  try {\n    window.lodashPrototypeTest\
-        \ = false;\n\n    // Test merge function (CVE-2018-16487)\n    const maliciousPayload\
-        \ = JSON.parse('{\"__proto__\": {\"lodashPolluted\": true}}');\n    _.merge({},\
-        \ maliciousPayload);\n\n    if (({}).lodashPolluted === true) {\n      window.frameworkVulnResults.vulnerabilities.push({\n\
-        \        framework: 'lodash',\n        version: lodashVersion,\n        vulnerability:\
-        \ 'CVE-2018-16487 - Prototype pollution via _.merge',\n        severity: 'high',\n\
-        \        type: 'runtime_confirmed',\n        confirmed: true,\n        test:\
-        \ 'merge_prototype_pollution'\n      });\n      window.lodashPrototypeTest\
-        \ = true;\n    }\n\n    // Clean up\n    delete Object.prototype.lodashPolluted;\n\
-        \n    // Test zipObjectDeep function (CVE-2020-8203)\n    if (typeof _.zipObjectDeep\
-        \ === 'function') {\n      try {\n        const keys = ['__proto__.zipPolluted'];\n\
-        \        const values = [true];\n        _.zipObjectDeep(keys, values);\n\n\
-        \        if (({}).zipPolluted === true) {\n          window.frameworkVulnResults.vulnerabilities.push({\n\
-        \            framework: 'lodash',\n            version: lodashVersion,\n \
-        \           vulnerability: 'CVE-2020-8203 - Prototype pollution via _.zipObjectDeep',\n\
-        \            severity: 'high',\n            type: 'runtime_confirmed',\n \
-        \           confirmed: true,\n            test: 'zipObjectDeep_prototype_pollution'\n\
-        \          });\n        }\n\n        // Clean up\n        delete Object.prototype.zipPolluted;\n\
-        \      } catch (e) {\n        // Function might not exist in older versions\n\
-        \      }\n    }\n\n  } catch (e) {\n    window.frameworkVulnResults.test_results.push('lodash_prototype_test_error:\
-        \ ' + e.message);\n  }\n\n  // Test template function vulnerabilities\n  try\
-        \ {\n    if (typeof _.template === 'function') {\n      // Check if template\
-        \ function is used with user input\n      const pageContent = document.documentElement.outerHTML;\n\
-        \      if (pageContent.includes('_.template') || pageContent.includes('template('))\
-        \ {\n        window.frameworkVulnResults.configuration_issues.push({\n   \
-        \       framework: 'lodash',\n          issue: 'template_function_usage',\n\
-        \          description: 'Lodash template function detected - potential template\
-        \ injection risk',\n          severity: 'medium',\n          recommendation:\
-        \ 'Validate and sanitize all template input'\n        });\n      }\n    }\n\
-        \  } catch (e) {\n    window.frameworkVulnResults.test_results.push('lodash_template_test_error:\
-        \ ' + e.message);\n  }\n}\n\nreturn window.frameworkVulnResults;\n"
-    name: test_lodash_vulnerabilities
-  - action: script
-    args:
-      code: "window.frameworkVulnResults.test_results.push('general_js_security_tests');\n\
-        \n// Test for eval usage\ntry {\n  const pageContent = document.documentElement.outerHTML;\n\
-        \  const scripts = Array.from(document.scripts);\n\n  let evalUsageFound =\
-        \ false;\n  scripts.forEach((script, index) => {\n    if (script.textContent\
-        \ && script.textContent.includes('eval(')) {\n      evalUsageFound = true;\n\
-        \      window.frameworkVulnResults.configuration_issues.push({\n        framework:\
-        \ 'general',\n        issue: 'eval_usage',\n        description: 'eval() function\
-        \ usage detected in script',\n        severity: 'high',\n        script_index:\
-        \ index,\n        recommendation: 'Replace eval() with safer alternatives'\n\
-        \      });\n    }\n  });\n\n  // Test for Function constructor usage\n  if\
-        \ (pageContent.includes('Function(') || pageContent.includes('new Function'))\
-        \ {\n    window.frameworkVulnResults.configuration_issues.push({\n      framework:\
-        \ 'general',\n      issue: 'function_constructor_usage',\n      description:\
-        \ 'Function constructor usage detected',\n      severity: 'medium',\n    \
-        \  recommendation: 'Avoid dynamic code generation'\n    });\n  }\n\n} catch\
-        \ (e) {\n  window.frameworkVulnResults.test_results.push('general_eval_test_error:\
-        \ ' + e.message);\n}\n\n// Test for insecure random number generation\ntry\
-        \ {\n  const mathRandomUsage = document.documentElement.outerHTML.includes('Math.random');\n\
-        \  if (mathRandomUsage) {\n    window.frameworkVulnResults.configuration_issues.push({\n\
-        \      framework: 'general',\n      issue: 'weak_random_generation',\n   \
-        \   description: 'Math.random() usage detected - not cryptographically secure',\n\
-        \      severity: 'low',\n      recommendation: 'Use crypto.getRandomValues()\
-        \ for security-sensitive randomness'\n    });\n  }\n} catch (e) {\n  window.frameworkVulnResults.test_results.push('general_random_test_error:\
-        \ ' + e.message);\n}\n\nreturn window.frameworkVulnResults;\n"
-    name: test_general_js_security
-  - action: script
-    args:
-      code: "// Calculate comprehensive framework vulnerability risk score\nlet riskScore\
-        \ = 0;\n\n// Count high-risk vulnerabilities\nconst confirmedVulns = window.frameworkVulnResults.vulnerabilities.filter(v\
-        \ => v.type === 'runtime_confirmed');\nconst knownVulns = window.frameworkVulnResults.vulnerabilities;\n\
-        const configIssues = window.frameworkVulnResults.configuration_issues;\n\n\
-        knownVulns.forEach(vuln => {\n  switch (vuln.severity) {\n    case 'critical':\
-        \ riskScore += 35; break;\n    case 'high': riskScore += 25; break;\n    case\
-        \ 'medium': riskScore += 15; break;\n    case 'low': riskScore += 5; break;\n\
-        \  }\n});\n\nconfigIssues.forEach(issue => {\n  switch (issue.severity) {\n\
-        \    case 'high': riskScore += 20; break;\n    case 'medium': riskScore +=\
-        \ 10; break;\n    case 'low': riskScore += 5; break;\n  }\n});\n\n// Additional\
-        \ risk for multiple vulnerable frameworks\nconst vulnerableFrameworks = Object.keys(window.frameworkVulnResults.detected_frameworks).length;\n\
-        riskScore += vulnerableFrameworks * 3;\n\nwindow.frameworkVulnResults.risk_assessment\
-        \ = {\n  total_vulnerabilities: knownVulns.length,\n  confirmed_vulnerabilities:\
-        \ confirmedVulns.length,\n  configuration_issues: configIssues.length,\n \
-        \ frameworks_detected: vulnerableFrameworks,\n  risk_score: Math.min(riskScore,\
-        \ 100),\n  risk_level: riskScore > 70 ? 'Critical' :\n             riskScore\
-        \ > 50 ? 'High' :\n             riskScore > 30 ? 'Medium' : 'Low',\n  recommendations:\
-        \ []\n};\n\n// Generate specific recommendations\nif (confirmedVulns.length\
-        \ > 0) {\n  window.frameworkVulnResults.risk_assessment.recommendations.push(\n\
-        \    'Update vulnerable JavaScript frameworks to latest versions',\n    'Implement\
-        \ Subresource Integrity (SRI) for all external scripts',\n    'Regular security\
-        \ scanning of JavaScript dependencies'\n  );\n}\n\nif (configIssues.some(issue\
-        \ => issue.issue.includes('eval'))) {\n  window.frameworkVulnResults.risk_assessment.recommendations.push(\n\
-        \    'Eliminate eval() and Function constructor usage',\n    'Implement Content\
-        \ Security Policy to prevent code injection'\n  );\n}\n\nif (configIssues.some(issue\
-        \ => issue.issue.includes('prototype'))) {\n  window.frameworkVulnResults.risk_assessment.recommendations.push(\n\
-        \    'Implement prototype pollution protection',\n    'Use Map objects instead\
-        \ of plain objects for dynamic data'\n  );\n}\n\nif (vulnerableFrameworks\
-        \ > 3) {\n  window.frameworkVulnResults.risk_assessment.recommendations.push(\n\
-        \    'Reduce JavaScript framework dependencies',\n    'Implement automated\
-        \ dependency vulnerability scanning'\n  );\n}\n\nwindow.frameworkVulnResults.summary\
-        \ = {\n  scan_completed: true,\n  timestamp: new Date().toISOString(),\n \
-        \ framework_vulnerabilities_found: knownVulns.length > 0,\n  runtime_vulnerabilities_confirmed:\
-        \ confirmedVulns.length > 0,\n  frameworks_analyzed: vulnerableFrameworks,\n\
-        \  comprehensive_testing_completed: true\n};\n\nreturn window.frameworkVulnResults;\n"
-    name: final_framework_assessment
 id: headless-js-framework-vuln
+
 info:
-  author: geeknik
-  description: 'Comprehensive JavaScript framework vulnerability scanner using Headless
-    Protocol
-
-    for detecting known security issues in popular JavaScript frameworks and libraries.
-
-    This template performs version detection, CVE mapping, configuration analysis,
-
-    and runtime vulnerability testing across React, Angular, Vue.js, jQuery, Lodash,
-
-    Axios, and other common frameworks while maintaining defensive research principles.
-
-    '
   name: JavaScript Framework Vulnerability Scanner
-  reference:
-  - https://snyk.io/vuln/
-  - https://nvd.nist.gov/vuln/search
-  - https://github.com/RetireJS/retire.js
+  author: geeknik
   severity: high
+  description: |
+    Comprehensive JavaScript framework vulnerability scanner using Headless Protocol
+    for detecting known security issues in popular JavaScript frameworks and libraries.
+    This template performs version detection, CVE mapping, configuration analysis,
+    and runtime vulnerability testing across React, Angular, Vue.js, jQuery, Lodash,
+    Axios, and other common frameworks while maintaining defensive research principles.
+  reference:
+    - https://snyk.io/vuln/
+    - https://nvd.nist.gov/vuln/search
+    - https://github.com/RetireJS/retire.js
   tags: javascript,frameworks,vulnerabilities,cve,headless,defensive
+
+headless:
+  - steps:
+      # Navigate to target page
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      # Wait for page to fully load
+      - action: waitload
+
+      # Initialize framework vulnerability scanner
+      - action: script
+        name: initialize_framework_scanner
+        args:
+          code: |
+            window.frameworkVulnResults = {
+              detected_frameworks: {},
+              vulnerabilities: [],
+              version_analysis: {},
+              configuration_issues: [],
+              test_results: [],
+              risk_assessment: {}
+            };
+
+            // Framework detection with version extraction
+            const frameworks = {
+              jquery: {
+                detection: () => typeof $ !== 'undefined' && $.fn && $.fn.jquery,
+                version: () => $.fn.jquery,
+                global_var: '$',
+                vulnerable_versions: {
+                  '1.0.0-1.6.4': ['CVE-2011-4969 (XSS via location.hash)'],
+                  '1.0.0-1.8.3': ['CVE-2012-6708 (Selector interpretation)'],
+                  '1.0.0-2.1.4': ['CVE-2015-9251 (XSS via HTML strings)'],
+                  '1.0.0-2.2.4': ['CVE-2016-10707 (XSS in jQuery.extend)'],
+                  '3.0.0-3.4.1': ['CVE-2019-11358 (Prototype pollution)'],
+                  '3.0.0-3.5.0': ['CVE-2020-11022 (XSS in jQuery.htmlPrefilter)'],
+                  '3.0.0-3.5.1': ['CVE-2020-11023 (XSS via HTML containing elements)']
+                }
+              },
+              angular: {
+                detection: () => typeof angular !== 'undefined',
+                version: () => angular.version ? angular.version.full : null,
+                global_var: 'angular',
+                vulnerable_versions: {
+                  '1.0.0-1.2.32': ['CVE-2017-1000451 (Angular Expression injection)'],
+                  '1.0.0-1.5.11': ['CVE-2016-10744 (Open redirect via $sanitize)'],
+                  '1.0.0-1.6.9': ['CVE-2018-6341 (ReDoS in $sanitize)'],
+                  '1.0.0-1.7.8': ['CVE-2019-10768 (Prototype pollution)']
+                }
+              },
+              react: {
+                detection: () => typeof React !== 'undefined',
+                version: () => React.version,
+                global_var: 'React',
+                vulnerable_versions: {
+                  '0.0.0-16.0.1': ['CVE-2018-6341 (XSS via user-supplied attribute names)'],
+                  '16.0.0-16.13.1': ['CVE-2019-16769 (XSS in SSR via href)'],
+                  '0.0.0-16.13.1': ['CVE-2020-15168 (XSS in react-dom)']
+                }
+              },
+              vue: {
+                detection: () => typeof Vue !== 'undefined',
+                version: () => Vue.version,
+                global_var: 'Vue',
+                vulnerable_versions: {
+                  '2.0.0-2.6.11': ['CVE-2019-20149 (XSS via template compilation)'],
+                  '2.0.0-2.6.12': ['CVE-2020-15168 (Template injection)']
+                }
+              },
+              lodash: {
+                detection: () => typeof _ !== 'undefined' && _.VERSION,
+                version: () => _.VERSION,
+                global_var: '_',
+                vulnerable_versions: {
+                  '1.0.0-4.17.11': ['CVE-2018-16487 (Prototype pollution)'],
+                  '1.0.0-4.17.15': ['CVE-2019-1010266 (ReDoS in trim functions)'],
+                  '1.0.0-4.17.19': ['CVE-2020-8203 (Prototype pollution in zipObjectDeep)']
+                }
+              },
+              axios: {
+                detection: () => typeof axios !== 'undefined',
+                version: () => axios.VERSION || (axios.defaults && axios.defaults.adapter && 'detected'),
+                global_var: 'axios',
+                vulnerable_versions: {
+                  '0.0.0-0.18.1': ['CVE-2019-10742 (SSRF via redirect)'],
+                  '0.0.0-0.21.1': ['CVE-2020-28168 (Request forgery via redirect)']
+                }
+              },
+              moment: {
+                detection: () => typeof moment !== 'undefined',
+                version: () => moment.version,
+                global_var: 'moment',
+                vulnerable_versions: {
+                  '2.0.0-2.19.2': ['CVE-2017-18214 (ReDoS in RFC 2822 parsing)'],
+                  '2.0.0-2.29.1': ['CVE-2022-24785 (Path traversal in moment.locale)']
+                }
+              },
+              bootstrap: {
+                detection: () => typeof bootstrap !== 'undefined' ||
+                           document.querySelector('.bootstrap, [class*="bootstrap"]') !== null,
+                version: () => {
+                  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    return bootstrap.Tooltip.VERSION;
+                  }
+                  return 'detected';
+                },
+                global_var: 'bootstrap',
+                vulnerable_versions: {
+                  '3.0.0-3.4.1': ['CVE-2016-10735 (XSS in data-target attribute)'],
+                  '3.0.0-4.1.2': ['CVE-2018-14040 (XSS in Collapse)'],
+                  '4.0.0-4.1.2': ['CVE-2018-14041 (XSS in data-container)'],
+                  '4.0.0-4.3.1': ['CVE-2019-8331 (XSS in tooltip/popover)']
+                }
+              },
+              d3: {
+                detection: () => typeof d3 !== 'undefined',
+                version: () => d3.version,
+                global_var: 'd3',
+                vulnerable_versions: {
+                  '3.0.0-3.5.17': ['CVE-2021-23648 (Prototype pollution)'],
+                  '4.0.0-7.0.0': ['Various XSS issues in data binding']
+                }
+              }
+            };
+
+            // Detect frameworks and versions
+            Object.keys(frameworks).forEach(frameworkName => {
+              const framework = frameworks[frameworkName];
+              try {
+                if (framework.detection()) {
+                  const version = framework.version();
+                  window.frameworkVulnResults.detected_frameworks[frameworkName] = {
+                    detected: true,
+                    version: version,
+                    global_variable: framework.global_var,
+                    vulnerable_versions: framework.vulnerable_versions
+                  };
+
+                  // Check for known vulnerabilities
+                  if (version && version !== 'detected') {
+                    Object.keys(framework.vulnerable_versions).forEach(versionRange => {
+                      if (isVersionInRange(version, versionRange)) {
+                        framework.vulnerable_versions[versionRange].forEach(vuln => {
+                          window.frameworkVulnResults.vulnerabilities.push({
+                            framework: frameworkName,
+                            version: version,
+                            vulnerability: vuln,
+                            version_range: versionRange,
+                            severity: getSeverityFromCVE(vuln),
+                            type: 'known_vulnerability'
+                          });
+                        });
+                      }
+                    });
+                  }
+                }
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push(`${frameworkName}_detection_error: ${e.message}`);
+              }
+            });
+
+            // Helper function to check version ranges
+            function isVersionInRange(version, range) {
+              try {
+                const [minVersion, maxVersion] = range.split('-');
+                return compareVersions(version, minVersion) >= 0 &&
+                       compareVersions(version, maxVersion) <= 0;
+              } catch (e) {
+                return false;
+              }
+            }
+
+            // Simple version comparison
+            function compareVersions(v1, v2) {
+              const parts1 = v1.split('.').map(n => parseInt(n) || 0);
+              const parts2 = v2.split('.').map(n => parseInt(n) || 0);
+
+              for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+                const part1 = parts1[i] || 0;
+                const part2 = parts2[i] || 0;
+
+                if (part1 > part2) return 1;
+                if (part1 < part2) return -1;
+              }
+              return 0;
+            }
+
+            // Get severity from CVE description
+            function getSeverityFromCVE(vuln) {
+              if (vuln.includes('XSS') || vuln.includes('injection')) return 'high';
+              if (vuln.includes('pollution') || vuln.includes('SSRF')) return 'medium';
+              if (vuln.includes('ReDoS') || vuln.includes('DoS')) return 'medium';
+              return 'low';
+            }
+
+            return window.frameworkVulnResults;
+
+      # Test jQuery-specific vulnerabilities
+      - action: script
+        name: test_jquery_vulnerabilities
+        args:
+          code: |
+            window.frameworkVulnResults.test_results.push('jquery_vulnerability_tests');
+
+            if (window.frameworkVulnResults.detected_frameworks.jquery) {
+              const jqVersion = window.frameworkVulnResults.detected_frameworks.jquery.version;
+
+              // Test for prototype pollution (CVE-2019-11358)
+              try {
+                window.jqueryPrototypeTest = false;
+                const maliciousObj = JSON.parse('{"__proto__": {"jqueryPolluted": true}}');
+                $.extend(true, {}, maliciousObj);
+
+                if (({}).jqueryPolluted === true) {
+                  window.frameworkVulnResults.vulnerabilities.push({
+                    framework: 'jquery',
+                    version: jqVersion,
+                    vulnerability: 'CVE-2019-11358 - Prototype pollution via $.extend',
+                    severity: 'high',
+                    type: 'runtime_confirmed',
+                    confirmed: true,
+                    test: 'prototype_pollution'
+                  });
+                  window.jqueryPrototypeTest = true;
+                }
+
+                // Clean up
+                delete Object.prototype.jqueryPolluted;
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('jquery_prototype_test_error: ' + e.message);
+              }
+
+              // Test for XSS via HTML parsing (CVE-2020-11022)
+              try {
+                window.jqueryXSSTest = false;
+                const testHtml = '<option><iframe></select><img src=x onerror=window.jqueryXSSTest=true>';
+                const parsed = $(testHtml);
+
+                // Check if malicious content was parsed
+                setTimeout(() => {
+                  if (window.jqueryXSSTest === true ||
+                      parsed.find('img').length > 0 ||
+                      parsed.html().includes('onerror')) {
+                    window.frameworkVulnResults.vulnerabilities.push({
+                      framework: 'jquery',
+                      version: jqVersion,
+                      vulnerability: 'CVE-2020-11022 - XSS via HTML parsing',
+                      severity: 'high',
+                      type: 'runtime_confirmed',
+                      confirmed: window.jqueryXSSTest === true,
+                      test: 'html_parsing_xss'
+                    });
+                  }
+                }, 100);
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('jquery_xss_test_error: ' + e.message);
+              }
+
+              // Test for unsafe selector usage
+              try {
+                const unsafeSelector = location.hash || '#test';
+                if (unsafeSelector.includes('<') || unsafeSelector.includes('script')) {
+                  window.frameworkVulnResults.configuration_issues.push({
+                    framework: 'jquery',
+                    issue: 'unsafe_selector_usage',
+                    description: 'Application uses location.hash directly in jQuery selectors',
+                    severity: 'medium',
+                    example: '$(location.hash) can lead to XSS'
+                  });
+                }
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('jquery_selector_test_error: ' + e.message);
+              }
+            }
+
+            return window.frameworkVulnResults;
+
+      # Test Angular-specific vulnerabilities
+      - action: script
+        name: test_angular_vulnerabilities
+        args:
+          code: |
+            window.frameworkVulnResults.test_results.push('angular_vulnerability_tests');
+
+            if (window.frameworkVulnResults.detected_frameworks.angular) {
+              const ngVersion = window.frameworkVulnResults.detected_frameworks.angular.version;
+
+              // Test for Angular Expression injection
+              try {
+                window.angularExprTest = false;
+
+                // Look for ng-bind or similar directives that might be vulnerable
+                const ngElements = document.querySelectorAll('[ng-bind], [ng-bind-html], [ng-bind-unsafe]');
+                if (ngElements.length > 0) {
+                  window.frameworkVulnResults.configuration_issues.push({
+                    framework: 'angular',
+                    issue: 'expression_injection_risk',
+                    description: 'Found Angular binding directives that may be vulnerable to expression injection',
+                    severity: 'high',
+                    count: ngElements.length,
+                    example: 'ng-bind with user input can execute arbitrary expressions'
+                  });
+                }
+
+                // Test for bypassSecurityTrust usage (if available)
+                if (typeof angular !== 'undefined' && angular.element) {
+                  try {
+                    const rootScope = angular.element(document.body).scope();
+                    if (rootScope && rootScope.$root) {
+                      // Check for dangerous trust bypasses in scope
+                      const scopeKeys = Object.keys(rootScope);
+                      scopeKeys.forEach(key => {
+                        if (typeof rootScope[key] === 'string' &&
+                            rootScope[key].includes('<script>')) {
+                          window.frameworkVulnResults.configuration_issues.push({
+                            framework: 'angular',
+                            issue: 'unsafe_html_binding',
+                            description: 'Scope contains potentially unsafe HTML content',
+                            severity: 'high',
+                            scope_key: key
+                          });
+                        }
+                      });
+                    }
+                  } catch (e) {
+                    // Continue testing
+                  }
+                }
+
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('angular_expression_test_error: ' + e.message);
+              }
+
+              // Test for CSP bypass via Angular
+              try {
+                const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+                if (cspMeta && cspMeta.content.includes('unsafe-eval')) {
+                  window.frameworkVulnResults.configuration_issues.push({
+                    framework: 'angular',
+                    issue: 'csp_unsafe_eval',
+                    description: 'CSP allows unsafe-eval which enables Angular expression evaluation',
+                    severity: 'medium',
+                    recommendation: 'Use Angular CSP mode or remove unsafe-eval'
+                  });
+                }
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('angular_csp_test_error: ' + e.message);
+              }
+            }
+
+            return window.frameworkVulnResults;
+
+      # Test React-specific vulnerabilities
+      - action: script
+        name: test_react_vulnerabilities
+        args:
+          code: |
+            window.frameworkVulnResults.test_results.push('react_vulnerability_tests');
+
+            if (window.frameworkVulnResults.detected_frameworks.react) {
+              const reactVersion = window.frameworkVulnResults.detected_frameworks.react.version;
+
+              // Test for dangerouslySetInnerHTML usage
+              try {
+                const reactElements = document.querySelectorAll('[data-reactroot], [data-reactid]');
+                if (reactElements.length > 0) {
+                  // Check page content for dangerous patterns
+                  const pageContent = document.documentElement.outerHTML;
+                  if (pageContent.includes('dangerouslySetInnerHTML') ||
+                      pageContent.includes('__html')) {
+                    window.frameworkVulnResults.configuration_issues.push({
+                      framework: 'react',
+                      issue: 'dangerous_inner_html_usage',
+                      description: 'Application uses dangerouslySetInnerHTML which can lead to XSS',
+                      severity: 'high',
+                      recommendation: 'Sanitize HTML content before using dangerouslySetInnerHTML'
+                    });
+                  }
+                }
+
+                // Test for href JavaScript execution
+                const jsHrefs = document.querySelectorAll('a[href^="javascript:"]');
+                if (jsHrefs.length > 0) {
+                  window.frameworkVulnResults.configuration_issues.push({
+                    framework: 'react',
+                    issue: 'javascript_href_usage',
+                    description: 'Found javascript: URLs which React may not properly sanitize',
+                    severity: 'medium',
+                    count: jsHrefs.length
+                  });
+                }
+
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('react_dangerous_html_test_error: ' + e.message);
+              }
+
+              // Test for React DevTools exposure
+              try {
+                if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                  window.frameworkVulnResults.configuration_issues.push({
+                    framework: 'react',
+                    issue: 'react_devtools_exposed',
+                    description: 'React DevTools are enabled in production',
+                    severity: 'low',
+                    recommendation: 'Disable React DevTools in production builds'
+                  });
+                }
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('react_devtools_test_error: ' + e.message);
+              }
+            }
+
+            return window.frameworkVulnResults;
+
+      # Test Lodash-specific vulnerabilities
+      - action: script
+        name: test_lodash_vulnerabilities
+        args:
+          code: |
+            window.frameworkVulnResults.test_results.push('lodash_vulnerability_tests');
+
+            if (window.frameworkVulnResults.detected_frameworks.lodash) {
+              const lodashVersion = window.frameworkVulnResults.detected_frameworks.lodash.version;
+
+              // Test for prototype pollution vulnerabilities
+              try {
+                window.lodashPrototypeTest = false;
+
+                // Test merge function (CVE-2018-16487)
+                const maliciousPayload = JSON.parse('{"__proto__": {"lodashPolluted": true}}');
+                _.merge({}, maliciousPayload);
+
+                if (({}).lodashPolluted === true) {
+                  window.frameworkVulnResults.vulnerabilities.push({
+                    framework: 'lodash',
+                    version: lodashVersion,
+                    vulnerability: 'CVE-2018-16487 - Prototype pollution via _.merge',
+                    severity: 'high',
+                    type: 'runtime_confirmed',
+                    confirmed: true,
+                    test: 'merge_prototype_pollution'
+                  });
+                  window.lodashPrototypeTest = true;
+                }
+
+                // Clean up
+                delete Object.prototype.lodashPolluted;
+
+                // Test zipObjectDeep function (CVE-2020-8203)
+                if (typeof _.zipObjectDeep === 'function') {
+                  try {
+                    const keys = ['__proto__.zipPolluted'];
+                    const values = [true];
+                    _.zipObjectDeep(keys, values);
+
+                    if (({}).zipPolluted === true) {
+                      window.frameworkVulnResults.vulnerabilities.push({
+                        framework: 'lodash',
+                        version: lodashVersion,
+                        vulnerability: 'CVE-2020-8203 - Prototype pollution via _.zipObjectDeep',
+                        severity: 'high',
+                        type: 'runtime_confirmed',
+                        confirmed: true,
+                        test: 'zipObjectDeep_prototype_pollution'
+                      });
+                    }
+
+                    // Clean up
+                    delete Object.prototype.zipPolluted;
+                  } catch (e) {
+                    // Function might not exist in older versions
+                  }
+                }
+
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('lodash_prototype_test_error: ' + e.message);
+              }
+
+              // Test template function vulnerabilities
+              try {
+                if (typeof _.template === 'function') {
+                  // Check if template function is used with user input
+                  const pageContent = document.documentElement.outerHTML;
+                  if (pageContent.includes('_.template') || pageContent.includes('template(')) {
+                    window.frameworkVulnResults.configuration_issues.push({
+                      framework: 'lodash',
+                      issue: 'template_function_usage',
+                      description: 'Lodash template function detected - potential template injection risk',
+                      severity: 'medium',
+                      recommendation: 'Validate and sanitize all template input'
+                    });
+                  }
+                }
+              } catch (e) {
+                window.frameworkVulnResults.test_results.push('lodash_template_test_error: ' + e.message);
+              }
+            }
+
+            return window.frameworkVulnResults;
+
+      # Test general JavaScript security issues
+      - action: script
+        name: test_general_js_security
+        args:
+          code: |
+            window.frameworkVulnResults.test_results.push('general_js_security_tests');
+
+            // Test for eval usage
+            try {
+              const pageContent = document.documentElement.outerHTML;
+              const scripts = Array.from(document.scripts);
+
+              let evalUsageFound = false;
+              scripts.forEach((script, index) => {
+                if (script.textContent && script.textContent.includes('eval(')) {
+                  evalUsageFound = true;
+                  window.frameworkVulnResults.configuration_issues.push({
+                    framework: 'general',
+                    issue: 'eval_usage',
+                    description: 'eval() function usage detected in script',
+                    severity: 'high',
+                    script_index: index,
+                    recommendation: 'Replace eval() with safer alternatives'
+                  });
+                }
+              });
+
+              // Test for Function constructor usage
+              if (pageContent.includes('Function(') || pageContent.includes('new Function')) {
+                window.frameworkVulnResults.configuration_issues.push({
+                  framework: 'general',
+                  issue: 'function_constructor_usage',
+                  description: 'Function constructor usage detected',
+                  severity: 'medium',
+                  recommendation: 'Avoid dynamic code generation'
+                });
+              }
+
+            } catch (e) {
+              window.frameworkVulnResults.test_results.push('general_eval_test_error: ' + e.message);
+            }
+
+            // Test for insecure random number generation
+            try {
+              const mathRandomUsage = document.documentElement.outerHTML.includes('Math.random');
+              if (mathRandomUsage) {
+                window.frameworkVulnResults.configuration_issues.push({
+                  framework: 'general',
+                  issue: 'weak_random_generation',
+                  description: 'Math.random() usage detected - not cryptographically secure',
+                  severity: 'low',
+                  recommendation: 'Use crypto.getRandomValues() for security-sensitive randomness'
+                });
+              }
+            } catch (e) {
+              window.frameworkVulnResults.test_results.push('general_random_test_error: ' + e.message);
+            }
+
+            return window.frameworkVulnResults;
+
+      # Final framework vulnerability assessment
+      - action: script
+        name: final_framework_assessment
+        args:
+          code: |
+            // Calculate comprehensive framework vulnerability risk score
+            let riskScore = 0;
+
+            // Count high-risk vulnerabilities
+            const confirmedVulns = window.frameworkVulnResults.vulnerabilities.filter(v => v.type === 'runtime_confirmed');
+            const knownVulns = window.frameworkVulnResults.vulnerabilities;
+            const configIssues = window.frameworkVulnResults.configuration_issues;
+
+            knownVulns.forEach(vuln => {
+              switch (vuln.severity) {
+                case 'critical': riskScore += 35; break;
+                case 'high': riskScore += 25; break;
+                case 'medium': riskScore += 15; break;
+                case 'low': riskScore += 5; break;
+              }
+            });
+
+            configIssues.forEach(issue => {
+              switch (issue.severity) {
+                case 'high': riskScore += 20; break;
+                case 'medium': riskScore += 10; break;
+                case 'low': riskScore += 5; break;
+              }
+            });
+
+            // Additional risk for multiple vulnerable frameworks
+            const vulnerableFrameworks = Object.keys(window.frameworkVulnResults.detected_frameworks).length;
+            riskScore += vulnerableFrameworks * 3;
+
+            window.frameworkVulnResults.risk_assessment = {
+              total_vulnerabilities: knownVulns.length,
+              confirmed_vulnerabilities: confirmedVulns.length,
+              configuration_issues: configIssues.length,
+              frameworks_detected: vulnerableFrameworks,
+              risk_score: Math.min(riskScore, 100),
+              risk_level: riskScore > 70 ? 'Critical' :
+                         riskScore > 50 ? 'High' :
+                         riskScore > 30 ? 'Medium' : 'Low',
+              recommendations: []
+            };
+
+            // Generate specific recommendations
+            if (confirmedVulns.length > 0) {
+              window.frameworkVulnResults.risk_assessment.recommendations.push(
+                'Update vulnerable JavaScript frameworks to latest versions',
+                'Implement Subresource Integrity (SRI) for all external scripts',
+                'Regular security scanning of JavaScript dependencies'
+              );
+            }
+
+            if (configIssues.some(issue => issue.issue.includes('eval'))) {
+              window.frameworkVulnResults.risk_assessment.recommendations.push(
+                'Eliminate eval() and Function constructor usage',
+                'Implement Content Security Policy to prevent code injection'
+              );
+            }
+
+            if (configIssues.some(issue => issue.issue.includes('prototype'))) {
+              window.frameworkVulnResults.risk_assessment.recommendations.push(
+                'Implement prototype pollution protection',
+                'Use Map objects instead of plain objects for dynamic data'
+              );
+            }
+
+            if (vulnerableFrameworks > 3) {
+              window.frameworkVulnResults.risk_assessment.recommendations.push(
+                'Reduce JavaScript framework dependencies',
+                'Implement automated dependency vulnerability scanning'
+              );
+            }
+
+            window.frameworkVulnResults.summary = {
+              scan_completed: true,
+              timestamp: new Date().toISOString(),
+              framework_vulnerabilities_found: knownVulns.length > 0,
+              runtime_vulnerabilities_confirmed: confirmedVulns.length > 0,
+              frameworks_analyzed: vulnerableFrameworks,
+              comprehensive_testing_completed: true
+            };
+
+            return window.frameworkVulnResults;
+
+    extractors:
+      - type: regex
+        name: framework_vuln_summary
+        part: body
+        regex:
+          - '"scan_completed":\s*true'
+
+      - type: regex
+        name: confirmed_framework_vulns
+        part: body
+        regex:
+          - '"runtime_vulnerabilities_confirmed":\s*true'
+
+    matchers:
+      - type: regex
+        name: framework_vulnerabilities_detected
+        regex:
+          - '"framework_vulnerabilities_found":\s*true'
+
+      - type: regex
+        name: critical_framework_vulnerabilities
+        regex:
+          - '"risk_level":\s*"Critical"'
+
+# Headless template for comprehensive JavaScript framework vulnerability scanning

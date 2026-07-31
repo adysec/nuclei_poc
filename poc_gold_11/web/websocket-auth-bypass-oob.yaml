@@ -1,97 +1,125 @@
 id: websocket-auth-bypass-oob
+
 info:
+  name: WebSocket Authentication Bypass External Callback OOB
   author: geeknik
+  severity: high
+  description: |
+    Detects WebSocket authentication mechanisms that can be bypassed through external
+    callback URLs, JWT validation endpoints, OAuth redirects, or authentication
+    delegation to external services that can be controlled by an attacker.
+  reference:
+    - https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/04-Authentication_Testing/
+    - https://tools.ietf.org/html/rfc6455#section-10
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:N
     cvss-score: 9.3
     cwe-id: CWE-287
-  description: 'Detects WebSocket authentication mechanisms that can be bypassed through
-    external
-
-    callback URLs, JWT validation endpoints, OAuth redirects, or authentication
-
-    delegation to external services that can be controlled by an attacker.
-
-    '
-  name: WebSocket Authentication Bypass External Callback OOB
-  reference:
-  - https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking
-  - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/04-Authentication_Testing/
-  - https://tools.ietf.org/html/rfc6455#section-10
-  severity: high
   tags: websocket,oob,auth-bypass,jwt,oauth,delegation
+
 variables:
-  callback_url: '{{interactsh-url}}'
-  ws_base: '{{replace(replace(BaseURL, ''https://'', ''wss://''), ''http://'', ''ws://'')}}'
+  callback_url: "{{interactsh-url}}"
+  ws_base: "{{replace(replace(BaseURL, 'https://', 'wss://'), 'http://', 'ws://')}}"
+
 websocket:
-- address: '{{ws_base}}{{ws_path}}'
-  inputs:
-  - data: "{\n  \"type\": \"auth\",\n  \"auth_type\": \"external\",\n  \"validation_url\"\
-      : \"{{callback_url}}/validate\",\n  \"callback_url\": \"{{callback_url}}/auth-success\"\
-      \n}\n"
-  - data: "{\n  \"action\": \"jwt_auth\",\n  \"jwt_issuer\": \"{{callback_url}}\"\
-      ,\n  \"validation_endpoint\": \"{{callback_url}}/jwt/validate\",\n  \"jwks_uri\"\
-      : \"{{callback_url}}/.well-known/jwks.json\"\n}\n"
-  - data: "{\n  \"command\": \"oauth_setup\",\n  \"oauth_provider\": \"{{callback_url}}\"\
-      ,\n  \"authorization_url\": \"{{callback_url}}/oauth/authorize\",\n  \"token_url\"\
-      : \"{{callback_url}}/oauth/token\",\n  \"redirect_uri\": \"{{callback_url}}/oauth/callback\"\
-      \n}\n"
-  matchers:
-  - condition: or
-    part: interactsh_protocol
-    type: word
-    words:
-    - http
-    - dns
-  - condition: or
-    part: interactsh_request
-    type: word
-    words:
-    - validate
-    - auth-success
-    - jwt/validate
-    - oauth/authorize
-    - oauth/token
-    - oauth/callback
-  matchers-condition: and
-  payloads:
-    ws_path:
-    - /ws
-    - /websocket
-    - /socket.io/
-    - /api/ws
-- address: '{{ws_base}}{{ws_path}}'
-  inputs:
-  - data: "{\n  \"type\": \"delegate_auth\",\n  \"auth_delegate\": \"{{callback_url}}/auth\"\
-      ,\n  \"user_info_url\": \"{{callback_url}}/userinfo\",\n  \"trust_external\"\
-      : true,\n  \"callback_on_success\": \"{{callback_url}}/authenticated\"\n}\n"
-  - data: "{\n  \"action\": \"saml_auth\",\n  \"saml_idp\": \"{{callback_url}}\",\n\
-      \  \"sso_url\": \"{{callback_url}}/saml/sso\",\n  \"metadata_url\": \"{{callback_url}}/saml/metadata\"\
-      ,\n  \"acs_url\": \"{{callback_url}}/saml/acs\"\n}\n"
-  - data: "{\n  \"command\": \"bypass_auth\",\n  \"external_validator\": \"{{callback_url}}/bypass\"\
-      ,\n  \"callback_url\": \"{{callback_url}}/bypassed\"\n}\n"
-  matchers:
-  - condition: or
-    part: interactsh_protocol
-    type: word
-    words:
-    - http
-    - dns
-  - condition: or
-    part: interactsh_request
-    type: word
-    words:
-    - auth
-    - userinfo
-    - authenticated
-    - saml/sso
-    - saml/metadata
-    - saml/acs
-    - bypass
-    - bypassed
-  matchers-condition: and
-  payloads:
-    ws_path:
-    - /ws/auth
-    - /websocket/authenticate
-    - /api/ws/login
+  - address: "{{ws_base}}{{ws_path}}"
+    payloads:
+      ws_path:
+        - "/ws"
+        - "/websocket"
+        - "/socket.io/"
+        - "/api/ws"
+
+    inputs:
+      - data: |
+          {
+            "type": "auth",
+            "auth_type": "external",
+            "validation_url": "{{callback_url}}/validate",
+            "callback_url": "{{callback_url}}/auth-success"
+          }
+      - data: |
+          {
+            "action": "jwt_auth",
+            "jwt_issuer": "{{callback_url}}",
+            "validation_endpoint": "{{callback_url}}/jwt/validate",
+            "jwks_uri": "{{callback_url}}/.well-known/jwks.json"
+          }
+      - data: |
+          {
+            "command": "oauth_setup",
+            "oauth_provider": "{{callback_url}}",
+            "authorization_url": "{{callback_url}}/oauth/authorize",
+            "token_url": "{{callback_url}}/oauth/token",
+            "redirect_uri": "{{callback_url}}/oauth/callback"
+          }
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "validate"
+          - "auth-success"
+          - "jwt/validate"
+          - "oauth/authorize"
+          - "oauth/token"
+          - "oauth/callback"
+        condition: or
+
+  - address: "{{ws_base}}{{ws_path}}"
+    payloads:
+      ws_path:
+        - "/ws/auth"
+        - "/websocket/authenticate"
+        - "/api/ws/login"
+
+    inputs:
+      - data: |
+          {
+            "type": "delegate_auth",
+            "auth_delegate": "{{callback_url}}/auth",
+            "user_info_url": "{{callback_url}}/userinfo",
+            "trust_external": true,
+            "callback_on_success": "{{callback_url}}/authenticated"
+          }
+      - data: |
+          {
+            "action": "saml_auth",
+            "saml_idp": "{{callback_url}}",
+            "sso_url": "{{callback_url}}/saml/sso",
+            "metadata_url": "{{callback_url}}/saml/metadata",
+            "acs_url": "{{callback_url}}/saml/acs"
+          }
+      - data: |
+          {
+            "command": "bypass_auth",
+            "external_validator": "{{callback_url}}/bypass",
+            "callback_url": "{{callback_url}}/bypassed"
+          }
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "auth"
+          - "userinfo"
+          - "authenticated"
+          - "saml/sso"
+          - "saml/metadata"
+          - "saml/acs"
+          - "bypass"
+          - "bypassed"
+        condition: or
