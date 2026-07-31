@@ -4,7 +4,11 @@ info:
   name: AWS bucket with Object listing
   author: pdteam
   severity: low
-  reference: https://mikey96.medium.com/cloud-based-storage-misconfigurations-critical-bounties-361647f78a29
+  description: Object listing is enabled in AWS bucket.
+  reference:
+    - https://mikey96.medium.com/cloud-based-storage-misconfigurations-critical-bounties-361647f78a29
+  metadata:
+    max-request: 1
   tags: aws,misconfig,bucket
 
 http:
@@ -13,17 +17,26 @@ http:
       - "{{BaseURL}}"
 
     max-size: 1000
+
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - '<ListBucketResult xmlns='
-        part: body
 
       - type: word
+        part: header
         words:
           - application/xml
+
+      - type: word
         part: header
+        words:
+          - "x-goog-metageneration"
+          - "x-goog-generation"
+        case-insensitive: true
+        negative: true
 
     extractors:
       - type: regex
@@ -31,3 +44,4 @@ http:
         group: 1
         regex:
           - '<Name>([a-z0-9-._]+)'
+# digest: 4a0a00473045022100b4e7ee7ca74a63f236707271d9219e6a4c1e204e12e3e8bb2d3714a64fa9e5a8022068ee95e033478df3256a2323cf1d05917f9d857f58146001422a1b7861ce02a3:922c64590222798bb761d5b6d8e72950

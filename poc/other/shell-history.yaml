@@ -5,12 +5,11 @@ info:
   author: pentest_swissky,geeknik
   severity: low
   description: Discover history for bash, ksh, sh, and zsh
-  tags: misconfig
-  metadata:
-    max-request: 4
+  tags: config
 
 http:
   - method: GET
+    redirects: true
     max-redirects: 1
     path:
       - "{{BaseURL}}/.bash_history"
@@ -22,6 +21,7 @@ http:
     matchers:
       - type: word
         words:
+          - "ls"
           - "mkdir "
           - "chmod "
           - "mv "
@@ -31,13 +31,14 @@ http:
           - "sudo "
           - "cd "
           - "cp "
-          - "ps aux"
-          - "ls "
-          - "logout"
+          - "ps aux "
         condition: or
 
+      - type: status
+        status:
+          - 200
+
       - type: word
-        part: response
         words:
           - "<?xml"
           - "<env"
@@ -46,9 +47,5 @@ http:
           - "application/xml"
           - "html>"
           - "text/html"
-          - "image/"
+        part: all
         negative: true
-
-      - type: status
-        status:
-          - 200
