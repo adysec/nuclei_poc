@@ -1,0 +1,23 @@
+expression: r0() && r1()
+id: h2-database-web-console-unauthorized-access
+info:
+  author: jujumanman (https://github.com/jujumanman)
+  description: 'fofa: H2-Console'
+  name: H2 Database Web Console Unauthorized Access
+  severity: high
+  verified: true
+rules:
+  r0:
+    expression: response.status == 200 && response.body.bcontains(b"Welcome to H2")
+    output:
+      search: '"location.href = ''(?P<token>.+?)''".bsubmatch(response.body)'
+      token: search["token"]
+    request:
+      follow_redirects: true
+      method: GET
+      path: /h2-console
+  r1:
+    expression: response.status == 200 && response.body.bcontains(b"Generic H2")
+    request:
+      method: GET
+      path: /h2-console/{{token}}
