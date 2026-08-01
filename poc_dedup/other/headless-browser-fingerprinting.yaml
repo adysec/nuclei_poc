@@ -1,255 +1,550 @@
-headless:
-- extractors:
-  - name: fingerprinting_summary
-    part: body
-    regex:
-    - '"scan_completed":\s*true'
-    type: regex
-  - name: confirmed_fingerprinting
-    part: body
-    regex:
-    - '"fingerprinting_detected":\s*true'
-    type: regex
-  matchers:
-  - name: fingerprinting_detected
-    regex:
-    - '"fingerprinting_detected":\s*true'
-    type: regex
-  - name: high_risk_fingerprinting
-    regex:
-    - '"risk_level":\s*"(Critical|High)"'
-    type: regex
-  - name: canvas_fingerprinting
-    regex:
-    - '"canvas_fingerprinting_detected":\s*true'
-    type: regex
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitload
-  - action: script
-    args:
-      code: "window.fingerprintingResults = {\n  canvas_fingerprinting: [],\n  webgl_fingerprinting:\
-        \ [],\n  audio_fingerprinting: [],\n  device_fingerprinting: [],\n  screen_fingerprinting:\
-        \ [],\n  font_fingerprinting: [],\n  timezone_fingerprinting: [],\n  webrtc_fingerprinting:\
-        \ [],\n  battery_fingerprinting: [],\n  behavioral_tracking: [],\n  detected_techniques:\
-        \ [],\n  risk_assessment: {},\n  test_results: []\n};\n\n// Hook Canvas API\
-        \ for fingerprinting detection\nvar originalGetContext = HTMLCanvasElement.prototype.getContext;\n\
-        HTMLCanvasElement.prototype.getContext = function(type) {\n  window.fingerprintingResults.test_results.push('canvas_getContext_called:\
-        \ ' + type);\n\n  if (type === '2d' || type === 'webgl' || type === 'webgl2')\
-        \ {\n    window.fingerprintingResults.canvas_fingerprinting.push({\n     \
-        \ type: 'canvas_context_request',\n      context_type: type,\n      timestamp:\
-        \ Date.now(),\n      detected: true\n    });\n  }\n\n  return originalGetContext.call(this,\
-        \ type);\n};\n\n// Hook Canvas toDataURL for fingerprinting detection\nvar\
-        \ originalToDataURL = HTMLCanvasElement.prototype.toDataURL;\nHTMLCanvasElement.prototype.toDataURL\
-        \ = function() {\n  window.fingerprintingResults.canvas_fingerprinting.push({\n\
-        \    type: 'canvas_data_extraction',\n    method: 'toDataURL',\n    timestamp:\
-        \ Date.now(),\n    detected: true,\n    severity: 'high'\n  });\n\n  window.fingerprintingResults.test_results.push('canvas_toDataURL_called');\n\
-        \  return originalToDataURL.apply(this, arguments);\n};\n\n// Hook Canvas\
-        \ getImageData for fingerprinting detection\nvar originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;\n\
-        CanvasRenderingContext2D.prototype.getImageData = function() {\n  window.fingerprintingResults.canvas_fingerprinting.push({\n\
-        \    type: 'canvas_data_extraction',\n    method: 'getImageData',\n    timestamp:\
-        \ Date.now(),\n    detected: true,\n    severity: 'high'\n  });\n\n  window.fingerprintingResults.test_results.push('canvas_getImageData_called');\n\
-        \  return originalGetImageData.apply(this, arguments);\n};\n\n// Hook WebGL\
-        \ parameter extraction\nif (typeof WebGLRenderingContext !== 'undefined')\
-        \ {\n  var originalGetParameter = WebGLRenderingContext.prototype.getParameter;\n\
-        \  WebGLRenderingContext.prototype.getParameter = function(pname) {\n    window.fingerprintingResults.webgl_fingerprinting.push({\n\
-        \      type: 'webgl_parameter_request',\n      parameter: pname,\n      timestamp:\
-        \ Date.now(),\n      detected: true\n    });\n\n    window.fingerprintingResults.test_results.push('webgl_getParameter_called:\
-        \ ' + pname);\n    return originalGetParameter.call(this, pname);\n  };\n\
-        }\n\n// Hook AudioContext for audio fingerprinting detection\nif (typeof AudioContext\
-        \ !== 'undefined' || typeof webkitAudioContext !== 'undefined') {\n  var OriginalAudioContext\
-        \ = window.AudioContext || window.webkitAudioContext;\n  window.AudioContext\
-        \ = window.webkitAudioContext = function() {\n    window.fingerprintingResults.audio_fingerprinting.push({\n\
-        \      type: 'audio_context_creation',\n      timestamp: Date.now(),\n   \
-        \   detected: true,\n      severity: 'medium'\n    });\n\n    window.fingerprintingResults.test_results.push('AudioContext_created');\n\
-        \    return new OriginalAudioContext();\n  };\n}\n\n// Hook navigator properties\
-        \ access\nvar navigatorProps = ['userAgent', 'platform', 'languages', 'hardwareConcurrency',\
-        \ 'deviceMemory'];\nfor (var i = 0; i < navigatorProps.length; i++) {\n  var\
-        \ prop = navigatorProps[i];\n  if (navigator[prop] !== undefined) {\n    try\
-        \ {\n      Object.defineProperty(navigator, prop, {\n        get: function(propName)\
-        \ {\n          return function() {\n            window.fingerprintingResults.device_fingerprinting.push({\n\
-        \              type: 'navigator_property_access',\n              property:\
-        \ propName,\n              timestamp: Date.now(),\n              detected:\
-        \ true\n            });\n\n            window.fingerprintingResults.test_results.push('navigator_'\
-        \ + propName + '_accessed');\n            return navigator[propName];\n  \
-        \        };\n        }(prop),\n        configurable: true\n      });\n   \
-        \ } catch (e) {\n      // Some properties might not be configurable\n    \
-        \  window.fingerprintingResults.test_results.push('navigator_' + prop + '_hook_failed:\
-        \ ' + e.message);\n    }\n  }\n}\n\n// Hook screen properties access\nvar\
-        \ screenProps = ['width', 'height', 'colorDepth', 'pixelDepth'];\nfor (var\
-        \ j = 0; j < screenProps.length; j++) {\n  var screenProp = screenProps[j];\n\
-        \  try {\n    Object.defineProperty(screen, screenProp, {\n      get: function(propName)\
-        \ {\n        return function() {\n          window.fingerprintingResults.screen_fingerprinting.push({\n\
-        \            type: 'screen_property_access',\n            property: propName,\n\
-        \            timestamp: Date.now(),\n            detected: true\n        \
-        \  });\n\n          window.fingerprintingResults.test_results.push('screen_'\
-        \ + propName + '_accessed');\n          return screen[propName];\n       \
-        \ };\n      }(screenProp),\n      configurable: true\n    });\n  } catch (e)\
-        \ {\n    window.fingerprintingResults.test_results.push('screen_' + screenProp\
-        \ + '_hook_failed: ' + e.message);\n  }\n}\n\nreturn window.fingerprintingResults;\n"
-    name: initialize_fingerprinting_detection
-  - action: script
-    args:
-      code: "window.fingerprintingResults.test_results.push('font_fingerprinting_detection');\n\
-        \ntry {\n  // Look for font detection scripts\n  var scripts = document.getElementsByTagName('script');\n\
-        \  for (var i = 0; i < scripts.length; i++) {\n    var script = scripts[i];\n\
-        \    if (script.textContent) {\n      var content = script.textContent;\n\n\
-        \      // Check for common font fingerprinting patterns\n      var fontPatterns\
-        \ = [\n        /document\\.fonts/gi,\n        /FontFace/gi,\n        /measureText/gi,\n\
-        \        /getComputedStyle.*font/gi,\n        /font.*family.*serif/gi\n  \
-        \    ];\n\n      for (var j = 0; j < fontPatterns.length; j++) {\n       \
-        \ var pattern = fontPatterns[j];\n        if (pattern.test(content)) {\n \
-        \         window.fingerprintingResults.font_fingerprinting.push({\n      \
-        \      type: 'font_detection_script',\n            pattern: pattern.toString(),\n\
-        \            script_index: i,\n            detected: true,\n            severity:\
-        \ 'medium'\n          });\n        }\n      }\n    }\n  }\n\n  // Test for\
-        \ canvas font measurement technique\n  var canvas = document.createElement('canvas');\n\
-        \  var ctx = canvas.getContext('2d');\n  if (ctx) {\n    var testText = 'Fingerprinting\
-        \ Test';\n    var fonts = ['Arial', 'Verdana', 'Times New Roman', 'Courier\
-        \ New'];\n\n    for (var k = 0; k < fonts.length; k++) {\n      var font =\
-        \ fonts[k];\n      ctx.font = '14px ' + font;\n      var metrics = ctx.measureText(testText);\n\
-        \n      if (metrics.width) {\n        window.fingerprintingResults.font_fingerprinting.push({\n\
-        \          type: 'canvas_font_measurement',\n          font: font,\n     \
-        \     width: metrics.width,\n          detected: true,\n          severity:\
-        \ 'low'\n        });\n      }\n    }\n  }\n\n} catch (e) {\n  window.fingerprintingResults.test_results.push('font_fingerprinting_error:\
-        \ ' + e.message);\n}\n\nreturn window.fingerprintingResults;\n"
-    name: detect_font_fingerprinting
-  - action: script
-    args:
-      code: "window.fingerprintingResults.test_results.push('timezone_fingerprinting_detection');\n\
-        \ntry {\n  // Check for timezone detection attempts\n  var timezoneTests =\
-        \ [\n    function() {\n      return new Date().getTimezoneOffset();\n    },\n\
-        \    function() {\n      return Intl.DateTimeFormat().resolvedOptions().timeZone;\n\
-        \    },\n    function() {\n      return new Date().toString();\n    }\n  ];\n\
-        \n  for (var i = 0; i < timezoneTests.length; i++) {\n    try {\n      var\
-        \ result = timezoneTests[i]();\n      window.fingerprintingResults.timezone_fingerprinting.push({\n\
-        \        type: 'timezone_detection',\n        method: i === 0 ? 'getTimezoneOffset'\
-        \ :\n                i === 1 ? 'Intl.DateTimeFormat' : 'Date.toString',\n\
-        \        result: result,\n        detected: true,\n        severity: 'low'\n\
-        \      });\n    } catch (e) {\n      window.fingerprintingResults.test_results.push('timezone_test_'\
-        \ + i + '_error: ' + e.message);\n    }\n  }\n\n  // Check for locale fingerprinting\n\
-        \  if (typeof navigator.languages !== 'undefined') {\n    window.fingerprintingResults.timezone_fingerprinting.push({\n\
-        \      type: 'language_detection',\n      languages: navigator.languages,\n\
-        \      detected: true,\n      severity: 'low'\n    });\n  }\n\n} catch (e)\
-        \ {\n  window.fingerprintingResults.test_results.push('timezone_fingerprinting_error:\
-        \ ' + e.message);\n}\n\nreturn window.fingerprintingResults;\n"
-    name: detect_timezone_fingerprinting
-  - action: script
-    args:
-      code: "window.fingerprintingResults.test_results.push('webrtc_fingerprinting_detection');\n\
-        \ntry {\n  // Check if WebRTC is being used for fingerprinting\n  if (typeof\
-        \ RTCPeerConnection !== 'undefined' ||\n      typeof webkitRTCPeerConnection\
-        \ !== 'undefined' ||\n      typeof mozRTCPeerConnection !== 'undefined') {\n\
-        \n    window.fingerprintingResults.webrtc_fingerprinting.push({\n      type:\
-        \ 'webrtc_available',\n      detected: true,\n      severity: 'medium'\n \
-        \   });\n\n    // Hook RTCPeerConnection creation\n    var OriginalRTCPeerConnection\
-        \ = window.RTCPeerConnection ||\n                                   window.webkitRTCPeerConnection\
-        \ ||\n                                   window.mozRTCPeerConnection;\n\n\
-        \    if (OriginalRTCPeerConnection) {\n      window.RTCPeerConnection = window.webkitRTCPeerConnection\
-        \ = window.mozRTCPeerConnection = function() {\n        window.fingerprintingResults.webrtc_fingerprinting.push({\n\
-        \          type: 'webrtc_connection_attempt',\n          timestamp: Date.now(),\n\
-        \          detected: true,\n          severity: 'high'\n        });\n\n  \
-        \      return new OriginalRTCPeerConnection(arguments[0]);\n      };\n   \
-        \ }\n  }\n\n  // Check for media device enumeration\n  if (navigator.mediaDevices\
-        \ && navigator.mediaDevices.enumerateDevices) {\n    navigator.mediaDevices.enumerateDevices().then(function(devices)\
-        \ {\n      window.fingerprintingResults.webrtc_fingerprinting.push({\n   \
-        \     type: 'media_device_enumeration',\n        device_count: devices.length,\n\
-        \        detected: true,\n        severity: 'high'\n      });\n    }).catch(function(e)\
-        \ {\n      window.fingerprintingResults.test_results.push('media_enumeration_error:\
-        \ ' + e.message);\n    });\n  }\n\n} catch (e) {\n  window.fingerprintingResults.test_results.push('webrtc_fingerprinting_error:\
-        \ ' + e.message);\n}\n\nreturn window.fingerprintingResults;\n"
-    name: detect_webrtc_fingerprinting
-  - action: script
-    args:
-      code: "window.fingerprintingResults.test_results.push('battery_fingerprinting_detection');\n\
-        \ntry {\n  // Check for battery API usage (deprecated but still detectable)\n\
-        \  if (navigator.battery || navigator.getBattery) {\n    window.fingerprintingResults.battery_fingerprinting.push({\n\
-        \      type: 'battery_api_access',\n      detected: true,\n      severity:\
-        \ 'medium'\n    });\n\n    if (navigator.getBattery) {\n      navigator.getBattery().then(function(battery)\
-        \ {\n        window.fingerprintingResults.battery_fingerprinting.push({\n\
-        \          type: 'battery_info_access',\n          level: battery.level,\n\
-        \          charging: battery.charging,\n          detected: true,\n      \
-        \    severity: 'high'\n        });\n      }).catch(function(e) {\n       \
-        \ window.fingerprintingResults.test_results.push('battery_access_error: '\
-        \ + e.message);\n      });\n    }\n  }\n\n} catch (e) {\n  window.fingerprintingResults.test_results.push('battery_fingerprinting_error:\
-        \ ' + e.message);\n}\n\nreturn window.fingerprintingResults;\n"
-    name: detect_battery_fingerprinting
-  - action: script
-    args:
-      code: "window.fingerprintingResults.test_results.push('behavioral_tracking_detection');\n\
-        \ntry {\n  // Hook mouse movement tracking\n  var originalAddEventListener\
-        \ = EventTarget.prototype.addEventListener;\n  EventTarget.prototype.addEventListener\
-        \ = function(type, listener, options) {\n    if (type === 'mousemove' || type\
-        \ === 'mousedown' || type === 'mouseup' ||\n        type === 'click' || type\
-        \ === 'keydown' || type === 'keyup') {\n      window.fingerprintingResults.behavioral_tracking.push({\n\
-        \        type: 'event_listener_registration',\n        event_type: type,\n\
-        \        timestamp: Date.now(),\n        detected: true,\n        severity:\
-        \ 'low'\n      });\n    }\n    return originalAddEventListener.call(this,\
-        \ type, listener, options);\n  };\n\n  // Check for timing-based fingerprinting\n\
-        \  var performanceAPIs = ['performance.now', 'Date.now', 'performance.timing'];\n\
-        \  for (var i = 0; i < performanceAPIs.length; i++) {\n    var api = performanceAPIs[i];\n\
-        \    if (eval('typeof ' + api) !== 'undefined') {\n      window.fingerprintingResults.behavioral_tracking.push({\n\
-        \        type: 'timing_api_available',\n        api: api,\n        detected:\
-        \ true,\n        severity: 'low'\n      });\n    }\n  }\n\n} catch (e) {\n\
-        \  window.fingerprintingResults.test_results.push('behavioral_tracking_error:\
-        \ ' + e.message);\n}\n\nreturn window.fingerprintingResults;\n"
-    name: detect_behavioral_tracking
-  - action: script
-    args:
-      code: "// Calculate comprehensive fingerprinting risk score\nvar riskScore =\
-        \ 0;\nvar detectedTechniques = [];\n\n// Count fingerprinting techniques\n\
-        var categories = [\n  'canvas_fingerprinting',\n  'webgl_fingerprinting',\n\
-        \  'audio_fingerprinting',\n  'device_fingerprinting',\n  'screen_fingerprinting',\n\
-        \  'font_fingerprinting',\n  'timezone_fingerprinting',\n  'webrtc_fingerprinting',\n\
-        \  'battery_fingerprinting',\n  'behavioral_tracking'\n];\n\nvar totalDetections\
-        \ = 0;\nfor (var i = 0; i < categories.length; i++) {\n  var category = categories[i];\n\
-        \  var detections = window.fingerprintingResults[category];\n  if (detections\
-        \ && detections.length > 0) {\n    detectedTechniques.push(category);\n  \
-        \  totalDetections += detections.length;\n\n    // Calculate risk based on\
-        \ severity\n    for (var j = 0; j < detections.length; j++) {\n      var detection\
-        \ = detections[j];\n      switch (detection.severity) {\n        case 'high':\
-        \ riskScore += 20; break;\n        case 'medium': riskScore += 10; break;\n\
-        \        case 'low': riskScore += 5; break;\n        default: riskScore +=\
-        \ 5; break;\n      }\n    }\n  }\n}\n\nwindow.fingerprintingResults.detected_techniques\
-        \ = detectedTechniques;\n\nwindow.fingerprintingResults.risk_assessment =\
-        \ {\n  total_detections: totalDetections,\n  techniques_detected: detectedTechniques.length,\n\
-        \  risk_score: Math.min(riskScore, 100),\n  risk_level: riskScore > 80 ? 'Critical'\
-        \ :\n             riskScore > 60 ? 'High' :\n             riskScore > 40 ?\
-        \ 'Medium' : 'Low',\n  privacy_impact: riskScore > 60 ? 'Severe' :\n     \
-        \            riskScore > 40 ? 'High' :\n                 riskScore > 20 ?\
-        \ 'Medium' : 'Low',\n  test_coverage: window.fingerprintingResults.test_results.length\n\
-        };\n\nwindow.fingerprintingResults.summary = {\n  scan_completed: true,\n\
-        \  timestamp: new Date().toISOString(),\n  fingerprinting_detected: detectedTechniques.length\
-        \ > 0,\n  high_risk_techniques: riskScore > 60,\n  canvas_fingerprinting_detected:\
-        \ window.fingerprintingResults.canvas_fingerprinting.length > 0,\n  webgl_fingerprinting_detected:\
-        \ window.fingerprintingResults.webgl_fingerprinting.length > 0,\n  audio_fingerprinting_detected:\
-        \ window.fingerprintingResults.audio_fingerprinting.length > 0,\n  comprehensive_testing_completed:\
-        \ true\n};\n\nreturn window.fingerprintingResults;\n"
-    name: final_fingerprinting_assessment
 id: headless-browser-fingerprinting
+
 info:
-  author: geeknik
-  description: 'Advanced browser fingerprinting detection using Headless Protocol
-    to identify
-
-    techniques used to track users through device characteristics, browser features,
-
-    and behavioral patterns. This template detects Canvas fingerprinting, WebGL
-
-    fingerprinting, AudioContext fingerprinting, device enumeration, screen
-
-    fingerprinting, and other tracking mechanisms while maintaining defensive
-
-    research principles for privacy protection analysis.
-
-    '
   name: Client-Side Browser Fingerprinting Detector
-  reference:
-  - https://pixelprivacy.com/resources/browser-fingerprinting/
-  - https://browserleaks.com/
-  - https://amiunique.org/
-  - https://coveryourtracks.eff.org/
+  author: geeknik
   severity: medium
+  description: |
+    Advanced browser fingerprinting detection using Headless Protocol to identify
+    techniques used to track users through device characteristics, browser features,
+    and behavioral patterns. This template detects Canvas fingerprinting, WebGL
+    fingerprinting, AudioContext fingerprinting, device enumeration, screen
+    fingerprinting, and other tracking mechanisms while maintaining defensive
+    research principles for privacy protection analysis.
+  reference:
+    - https://pixelprivacy.com/resources/browser-fingerprinting/
+    - https://browserleaks.com/
+    - https://amiunique.org/
+    - https://coveryourtracks.eff.org/
   tags: fingerprinting,privacy,tracking,canvas,webgl,audio,headless,defensive
+
+headless:
+  - steps:
+      # Navigate to target page
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      # Wait for page to fully load
+      - action: waitload
+
+      # Initialize browser fingerprinting detection framework
+      - action: script
+        name: initialize_fingerprinting_detection
+        args:
+          code: |
+            window.fingerprintingResults = {
+              canvas_fingerprinting: [],
+              webgl_fingerprinting: [],
+              audio_fingerprinting: [],
+              device_fingerprinting: [],
+              screen_fingerprinting: [],
+              font_fingerprinting: [],
+              timezone_fingerprinting: [],
+              webrtc_fingerprinting: [],
+              battery_fingerprinting: [],
+              behavioral_tracking: [],
+              detected_techniques: [],
+              risk_assessment: {},
+              test_results: []
+            };
+
+            // Hook Canvas API for fingerprinting detection
+            var originalGetContext = HTMLCanvasElement.prototype.getContext;
+            HTMLCanvasElement.prototype.getContext = function(type) {
+              window.fingerprintingResults.test_results.push('canvas_getContext_called: ' + type);
+
+              if (type === '2d' || type === 'webgl' || type === 'webgl2') {
+                window.fingerprintingResults.canvas_fingerprinting.push({
+                  type: 'canvas_context_request',
+                  context_type: type,
+                  timestamp: Date.now(),
+                  detected: true
+                });
+              }
+
+              return originalGetContext.call(this, type);
+            };
+
+            // Hook Canvas toDataURL for fingerprinting detection
+            var originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+            HTMLCanvasElement.prototype.toDataURL = function() {
+              window.fingerprintingResults.canvas_fingerprinting.push({
+                type: 'canvas_data_extraction',
+                method: 'toDataURL',
+                timestamp: Date.now(),
+                detected: true,
+                severity: 'high'
+              });
+
+              window.fingerprintingResults.test_results.push('canvas_toDataURL_called');
+              return originalToDataURL.apply(this, arguments);
+            };
+
+            // Hook Canvas getImageData for fingerprinting detection
+            var originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+            CanvasRenderingContext2D.prototype.getImageData = function() {
+              window.fingerprintingResults.canvas_fingerprinting.push({
+                type: 'canvas_data_extraction',
+                method: 'getImageData',
+                timestamp: Date.now(),
+                detected: true,
+                severity: 'high'
+              });
+
+              window.fingerprintingResults.test_results.push('canvas_getImageData_called');
+              return originalGetImageData.apply(this, arguments);
+            };
+
+            // Hook WebGL parameter extraction
+            if (typeof WebGLRenderingContext !== 'undefined') {
+              var originalGetParameter = WebGLRenderingContext.prototype.getParameter;
+              WebGLRenderingContext.prototype.getParameter = function(pname) {
+                window.fingerprintingResults.webgl_fingerprinting.push({
+                  type: 'webgl_parameter_request',
+                  parameter: pname,
+                  timestamp: Date.now(),
+                  detected: true
+                });
+
+                window.fingerprintingResults.test_results.push('webgl_getParameter_called: ' + pname);
+                return originalGetParameter.call(this, pname);
+              };
+            }
+
+            // Hook AudioContext for audio fingerprinting detection
+            if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+              var OriginalAudioContext = window.AudioContext || window.webkitAudioContext;
+              window.AudioContext = window.webkitAudioContext = function() {
+                window.fingerprintingResults.audio_fingerprinting.push({
+                  type: 'audio_context_creation',
+                  timestamp: Date.now(),
+                  detected: true,
+                  severity: 'medium'
+                });
+
+                window.fingerprintingResults.test_results.push('AudioContext_created');
+                return new OriginalAudioContext();
+              };
+            }
+
+            // Hook navigator properties access
+            var navigatorProps = ['userAgent', 'platform', 'languages', 'hardwareConcurrency', 'deviceMemory'];
+            for (var i = 0; i < navigatorProps.length; i++) {
+              var prop = navigatorProps[i];
+              if (navigator[prop] !== undefined) {
+                try {
+                  Object.defineProperty(navigator, prop, {
+                    get: function(propName) {
+                      return function() {
+                        window.fingerprintingResults.device_fingerprinting.push({
+                          type: 'navigator_property_access',
+                          property: propName,
+                          timestamp: Date.now(),
+                          detected: true
+                        });
+
+                        window.fingerprintingResults.test_results.push('navigator_' + propName + '_accessed');
+                        return navigator[propName];
+                      };
+                    }(prop),
+                    configurable: true
+                  });
+                } catch (e) {
+                  // Some properties might not be configurable
+                  window.fingerprintingResults.test_results.push('navigator_' + prop + '_hook_failed: ' + e.message);
+                }
+              }
+            }
+
+            // Hook screen properties access
+            var screenProps = ['width', 'height', 'colorDepth', 'pixelDepth'];
+            for (var j = 0; j < screenProps.length; j++) {
+              var screenProp = screenProps[j];
+              try {
+                Object.defineProperty(screen, screenProp, {
+                  get: function(propName) {
+                    return function() {
+                      window.fingerprintingResults.screen_fingerprinting.push({
+                        type: 'screen_property_access',
+                        property: propName,
+                        timestamp: Date.now(),
+                        detected: true
+                      });
+
+                      window.fingerprintingResults.test_results.push('screen_' + propName + '_accessed');
+                      return screen[propName];
+                    };
+                  }(screenProp),
+                  configurable: true
+                });
+              } catch (e) {
+                window.fingerprintingResults.test_results.push('screen_' + screenProp + '_hook_failed: ' + e.message);
+              }
+            }
+
+            return window.fingerprintingResults;
+
+      # Test for font fingerprinting techniques
+      - action: script
+        name: detect_font_fingerprinting
+        args:
+          code: |
+            window.fingerprintingResults.test_results.push('font_fingerprinting_detection');
+
+            try {
+              // Look for font detection scripts
+              var scripts = document.getElementsByTagName('script');
+              for (var i = 0; i < scripts.length; i++) {
+                var script = scripts[i];
+                if (script.textContent) {
+                  var content = script.textContent;
+
+                  // Check for common font fingerprinting patterns
+                  var fontPatterns = [
+                    /document\.fonts/gi,
+                    /FontFace/gi,
+                    /measureText/gi,
+                    /getComputedStyle.*font/gi,
+                    /font.*family.*serif/gi
+                  ];
+
+                  for (var j = 0; j < fontPatterns.length; j++) {
+                    var pattern = fontPatterns[j];
+                    if (pattern.test(content)) {
+                      window.fingerprintingResults.font_fingerprinting.push({
+                        type: 'font_detection_script',
+                        pattern: pattern.toString(),
+                        script_index: i,
+                        detected: true,
+                        severity: 'medium'
+                      });
+                    }
+                  }
+                }
+              }
+
+              // Test for canvas font measurement technique
+              var canvas = document.createElement('canvas');
+              var ctx = canvas.getContext('2d');
+              if (ctx) {
+                var testText = 'Fingerprinting Test';
+                var fonts = ['Arial', 'Verdana', 'Times New Roman', 'Courier New'];
+
+                for (var k = 0; k < fonts.length; k++) {
+                  var font = fonts[k];
+                  ctx.font = '14px ' + font;
+                  var metrics = ctx.measureText(testText);
+
+                  if (metrics.width) {
+                    window.fingerprintingResults.font_fingerprinting.push({
+                      type: 'canvas_font_measurement',
+                      font: font,
+                      width: metrics.width,
+                      detected: true,
+                      severity: 'low'
+                    });
+                  }
+                }
+              }
+
+            } catch (e) {
+              window.fingerprintingResults.test_results.push('font_fingerprinting_error: ' + e.message);
+            }
+
+            return window.fingerprintingResults;
+
+      # Test for timezone and locale fingerprinting
+      - action: script
+        name: detect_timezone_fingerprinting
+        args:
+          code: |
+            window.fingerprintingResults.test_results.push('timezone_fingerprinting_detection');
+
+            try {
+              // Check for timezone detection attempts
+              var timezoneTests = [
+                function() {
+                  return new Date().getTimezoneOffset();
+                },
+                function() {
+                  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+                },
+                function() {
+                  return new Date().toString();
+                }
+              ];
+
+              for (var i = 0; i < timezoneTests.length; i++) {
+                try {
+                  var result = timezoneTests[i]();
+                  window.fingerprintingResults.timezone_fingerprinting.push({
+                    type: 'timezone_detection',
+                    method: i === 0 ? 'getTimezoneOffset' :
+                            i === 1 ? 'Intl.DateTimeFormat' : 'Date.toString',
+                    result: result,
+                    detected: true,
+                    severity: 'low'
+                  });
+                } catch (e) {
+                  window.fingerprintingResults.test_results.push('timezone_test_' + i + '_error: ' + e.message);
+                }
+              }
+
+              // Check for locale fingerprinting
+              if (typeof navigator.languages !== 'undefined') {
+                window.fingerprintingResults.timezone_fingerprinting.push({
+                  type: 'language_detection',
+                  languages: navigator.languages,
+                  detected: true,
+                  severity: 'low'
+                });
+              }
+
+            } catch (e) {
+              window.fingerprintingResults.test_results.push('timezone_fingerprinting_error: ' + e.message);
+            }
+
+            return window.fingerprintingResults;
+
+      # Test for WebRTC fingerprinting
+      - action: script
+        name: detect_webrtc_fingerprinting
+        args:
+          code: |
+            window.fingerprintingResults.test_results.push('webrtc_fingerprinting_detection');
+
+            try {
+              // Check if WebRTC is being used for fingerprinting
+              if (typeof RTCPeerConnection !== 'undefined' ||
+                  typeof webkitRTCPeerConnection !== 'undefined' ||
+                  typeof mozRTCPeerConnection !== 'undefined') {
+
+                window.fingerprintingResults.webrtc_fingerprinting.push({
+                  type: 'webrtc_available',
+                  detected: true,
+                  severity: 'medium'
+                });
+
+                // Hook RTCPeerConnection creation
+                var OriginalRTCPeerConnection = window.RTCPeerConnection ||
+                                               window.webkitRTCPeerConnection ||
+                                               window.mozRTCPeerConnection;
+
+                if (OriginalRTCPeerConnection) {
+                  window.RTCPeerConnection = window.webkitRTCPeerConnection = window.mozRTCPeerConnection = function() {
+                    window.fingerprintingResults.webrtc_fingerprinting.push({
+                      type: 'webrtc_connection_attempt',
+                      timestamp: Date.now(),
+                      detected: true,
+                      severity: 'high'
+                    });
+
+                    return new OriginalRTCPeerConnection(arguments[0]);
+                  };
+                }
+              }
+
+              // Check for media device enumeration
+              if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                navigator.mediaDevices.enumerateDevices().then(function(devices) {
+                  window.fingerprintingResults.webrtc_fingerprinting.push({
+                    type: 'media_device_enumeration',
+                    device_count: devices.length,
+                    detected: true,
+                    severity: 'high'
+                  });
+                }).catch(function(e) {
+                  window.fingerprintingResults.test_results.push('media_enumeration_error: ' + e.message);
+                });
+              }
+
+            } catch (e) {
+              window.fingerprintingResults.test_results.push('webrtc_fingerprinting_error: ' + e.message);
+            }
+
+            return window.fingerprintingResults;
+
+      # Test for battery fingerprinting
+      - action: script
+        name: detect_battery_fingerprinting
+        args:
+          code: |
+            window.fingerprintingResults.test_results.push('battery_fingerprinting_detection');
+
+            try {
+              // Check for battery API usage (deprecated but still detectable)
+              if (navigator.battery || navigator.getBattery) {
+                window.fingerprintingResults.battery_fingerprinting.push({
+                  type: 'battery_api_access',
+                  detected: true,
+                  severity: 'medium'
+                });
+
+                if (navigator.getBattery) {
+                  navigator.getBattery().then(function(battery) {
+                    window.fingerprintingResults.battery_fingerprinting.push({
+                      type: 'battery_info_access',
+                      level: battery.level,
+                      charging: battery.charging,
+                      detected: true,
+                      severity: 'high'
+                    });
+                  }).catch(function(e) {
+                    window.fingerprintingResults.test_results.push('battery_access_error: ' + e.message);
+                  });
+                }
+              }
+
+            } catch (e) {
+              window.fingerprintingResults.test_results.push('battery_fingerprinting_error: ' + e.message);
+            }
+
+            return window.fingerprintingResults;
+
+      # Detect behavioral tracking patterns
+      - action: script
+        name: detect_behavioral_tracking
+        args:
+          code: |
+            window.fingerprintingResults.test_results.push('behavioral_tracking_detection');
+
+            try {
+              // Hook mouse movement tracking
+              var originalAddEventListener = EventTarget.prototype.addEventListener;
+              EventTarget.prototype.addEventListener = function(type, listener, options) {
+                if (type === 'mousemove' || type === 'mousedown' || type === 'mouseup' ||
+                    type === 'click' || type === 'keydown' || type === 'keyup') {
+                  window.fingerprintingResults.behavioral_tracking.push({
+                    type: 'event_listener_registration',
+                    event_type: type,
+                    timestamp: Date.now(),
+                    detected: true,
+                    severity: 'low'
+                  });
+                }
+                return originalAddEventListener.call(this, type, listener, options);
+              };
+
+              // Check for timing-based fingerprinting
+              var performanceAPIs = ['performance.now', 'Date.now', 'performance.timing'];
+              for (var i = 0; i < performanceAPIs.length; i++) {
+                var api = performanceAPIs[i];
+                if (eval('typeof ' + api) !== 'undefined') {
+                  window.fingerprintingResults.behavioral_tracking.push({
+                    type: 'timing_api_available',
+                    api: api,
+                    detected: true,
+                    severity: 'low'
+                  });
+                }
+              }
+
+            } catch (e) {
+              window.fingerprintingResults.test_results.push('behavioral_tracking_error: ' + e.message);
+            }
+
+            return window.fingerprintingResults;
+
+      # Final fingerprinting assessment
+      - action: script
+        name: final_fingerprinting_assessment
+        args:
+          code: |
+            // Calculate comprehensive fingerprinting risk score
+            var riskScore = 0;
+            var detectedTechniques = [];
+
+            // Count fingerprinting techniques
+            var categories = [
+              'canvas_fingerprinting',
+              'webgl_fingerprinting',
+              'audio_fingerprinting',
+              'device_fingerprinting',
+              'screen_fingerprinting',
+              'font_fingerprinting',
+              'timezone_fingerprinting',
+              'webrtc_fingerprinting',
+              'battery_fingerprinting',
+              'behavioral_tracking'
+            ];
+
+            var totalDetections = 0;
+            for (var i = 0; i < categories.length; i++) {
+              var category = categories[i];
+              var detections = window.fingerprintingResults[category];
+              if (detections && detections.length > 0) {
+                detectedTechniques.push(category);
+                totalDetections += detections.length;
+
+                // Calculate risk based on severity
+                for (var j = 0; j < detections.length; j++) {
+                  var detection = detections[j];
+                  switch (detection.severity) {
+                    case 'high': riskScore += 20; break;
+                    case 'medium': riskScore += 10; break;
+                    case 'low': riskScore += 5; break;
+                    default: riskScore += 5; break;
+                  }
+                }
+              }
+            }
+
+            window.fingerprintingResults.detected_techniques = detectedTechniques;
+
+            window.fingerprintingResults.risk_assessment = {
+              total_detections: totalDetections,
+              techniques_detected: detectedTechniques.length,
+              risk_score: Math.min(riskScore, 100),
+              risk_level: riskScore > 80 ? 'Critical' :
+                         riskScore > 60 ? 'High' :
+                         riskScore > 40 ? 'Medium' : 'Low',
+              privacy_impact: riskScore > 60 ? 'Severe' :
+                             riskScore > 40 ? 'High' :
+                             riskScore > 20 ? 'Medium' : 'Low',
+              test_coverage: window.fingerprintingResults.test_results.length
+            };
+
+            window.fingerprintingResults.summary = {
+              scan_completed: true,
+              timestamp: new Date().toISOString(),
+              fingerprinting_detected: detectedTechniques.length > 0,
+              high_risk_techniques: riskScore > 60,
+              canvas_fingerprinting_detected: window.fingerprintingResults.canvas_fingerprinting.length > 0,
+              webgl_fingerprinting_detected: window.fingerprintingResults.webgl_fingerprinting.length > 0,
+              audio_fingerprinting_detected: window.fingerprintingResults.audio_fingerprinting.length > 0,
+              comprehensive_testing_completed: true
+            };
+
+            return window.fingerprintingResults;
+
+    extractors:
+      - type: regex
+        name: fingerprinting_summary
+        part: body
+        regex:
+          - '"scan_completed":\s*true'
+
+      - type: regex
+        name: confirmed_fingerprinting
+        part: body
+        regex:
+          - '"fingerprinting_detected":\s*true'
+
+    matchers:
+      - type: regex
+        name: fingerprinting_detected
+        regex:
+          - '"fingerprinting_detected":\s*true'
+
+      - type: regex
+        name: high_risk_fingerprinting
+        regex:
+          - '"risk_level":\s*"(Critical|High)"'
+
+      - type: regex
+        name: canvas_fingerprinting
+        regex:
+          - '"canvas_fingerprinting_detected":\s*true'
+
+# Headless template for comprehensive browser fingerprinting detection

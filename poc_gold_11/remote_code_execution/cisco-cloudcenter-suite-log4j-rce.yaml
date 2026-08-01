@@ -15,12 +15,12 @@ info:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
     cvss-score: 10
     cve-id: CVE-2021-44228
-    cwe-id: CWE-77
+    cwe-id: CWE-77,CWE-502
   metadata:
     max-request: 1
     shodan-query: title:"CloudCenter Suite"
     fofa-query: title="CloudCenter Suite"
-  tags: cve,cve2021,jndi,log4j,rce,oast,cloudcenter,cisco,kev
+  tags: cve,cve2021,jndi,log4j,rce,oast,cloudcenter,cisco,kev,vuln
 variables:
   rand1: '{{rand_int(111, 999)}}'
   rand2: '{{rand_int(111, 999)}}'
@@ -39,32 +39,34 @@ http:
     matchers-condition: and
     matchers:
       - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
-        words:
-          - "dns"
-
-      - type: word
         part: header
         words:
           - 'X-RateLimit-Limit-suite-gateway_suite-auth'
 
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
       - type: regex
         part: interactsh_request
         regex:
-
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
 
     extractors:
       - type: kval
         kval:
-
+          - interactsh_ip
 
       - type: regex
+        part: interactsh_request
         group: 2
         regex:
-        part: interactsh_request
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
 
       - type: regex
+        part: interactsh_request
         group: 1
         regex:
-        part: interactsh_request
-# digest: 490a0046304402204e5c4bf14db31e83a180ee8011d815277cbd6fe7d5f1a35dfdfc752dd006ec4c02205300af3af61398fde0b2fcb756d91c5fad13f89e126d902194e1c93340e56355:922c64590222798bb761d5b6d8e72950
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 490a00463044022000878629eb417ee6ddfb15eb75778bdbb97cc131c09534e35fe6445ec81abf8f022049f2204350b0749810b288ebf95cd95242ba7b83d7f9cffef8b995b9b896bc82:922c64590222798bb761d5b6d8e72950
