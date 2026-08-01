@@ -1,32 +1,38 @@
-id: dockercfg-config
-
+id: dockercfg-config 1
 info:
-  name: Detect .dockercfg
   author: geeknik
-  severity: high
   description: Docker registry authentication data
+  name: Detect .dockercfg
+  severity: high
   tags: docker,exposure,config
+requests:
+- attack: sniper
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - '"email":'
+    - '"auth":'
+  - part: header
+    type: word
+    words:
+    - text/plain
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'GET /.dockercfg HTTP/1.1
 
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/.dockercfg"
-      - "{{BaseURL}}/.docker/config.json"
+    Host: {{Subdomains}}
 
-    matchers-condition: and
-    matchers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
 
-      - type: word
-        words:
-          - '"email":'
-          - '"auth":'
-        condition: and
+    Accept-Encoding: gzip, deflate
 
-      - type: word
-        part: header
-        words:
-          - "text/plain"
+    Accept: */*
 
-      - type: status
-        status:
-          - 200
+    '
+  threads: 100
