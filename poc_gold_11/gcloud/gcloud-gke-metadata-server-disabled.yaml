@@ -1,0 +1,86 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusters
+    type: json
+  source: 'gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: nodePools
+    type: json
+  source: 'gcloud container node-pools list --cluster $clusterName --location $location
+    --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Node pool " + nodePoolName + " in GKE cluster " + clusterName + " (" + location
+      + ") of project " + projectId + " does not have GKE Metadata Server enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - GCE_METADATA
+  source: 'gcloud container node-pools describe $nodePoolName --cluster $clusterName
+    --location $location --project $projectId --format="value(config.workloadMetadataConfig)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let cluster of iterate(template.clusters)){\n   \
+  \ cluster = JSON.parse(cluster)\n    set(\"clusterName\", cluster.name)\n    set(\"\
+  location\", cluster.location)\n    code(3)\n    for(let nodePool of iterate(template.nodePools)){\n\
+  \      nodePool = JSON.parse(nodePool)\n      set(\"nodePoolName\", nodePool.name)\n\
+  \      code(4)\n    }\n  }\n}\n"
+id: gcloud-gke-metadata-server-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that GKE Metadata Server is enabled for your Google Kubernetes
+    Engine (GKE) cluster nodes to enhance security by restricting workload access
+    to sensitive instance information. The GKE Metadata Server feature requires Workload
+    Identity for improved authentication and authorization.
+
+    '
+  impact: 'Without GKE Metadata Server enabled, pods have unrestricted access to the
+    node''s underlying metadata server, which contains sensitive information including
+    kubelet credentials and VM instance identity tokens.
+
+    '
+  name: GKE Clusters Without Metadata Server Enabled
+  reference:
+  - https://cloud.google.com/kubernetes-engine/docs/how-to/protecting-cluster-metadata
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-metadata-server.html
+  remediation: 'Enable GKE Metadata Server for your cluster node pools using:
+
+    gcloud container node-pools update POOL_NAME --cluster=CLUSTER_NAME --workload-metadata-from-node=GKE_METADATA
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,metadata,gcp-cloud-config
+self-contained: true

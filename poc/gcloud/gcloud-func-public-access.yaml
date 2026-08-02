@@ -1,0 +1,71 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: functions
+    type: json
+  source: 'gcloud functions list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Publicly Accessible Function: " + functionName + " in " + projectId + " project"'
+    type: dsl
+  matchers:
+  - condition: or
+    type: word
+    words:
+    - allUsers
+    - allAuthenticatedUsers
+  source: 'gcloud functions get-iam-policy $functionName --project $projectId --format=json
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let functionDetail of iterate(template.functions)){\n\
+  \    set(\"functionName\", functionDetail)\n    code(3)\n  }\n}\n"
+id: gcloud-func-public-access
+info:
+  author: princechaddha
+  description: 'Identify any publicly accessible Google Cloud functions within your
+    GCP account and update their IAM policy to protect against unauthorized users
+    sending requests to invoke these functions. To deny access from anonymous and
+    public users, remove the bindings for allUsers and allAuthenticatedUsers members
+    from your function''s IAM policy. The allUsers member represents any user on the
+    Internet, while allAuthenticatedUsers represents any user or service account that
+    can sign into Google Cloud Platform (GCP) with a Google account.
+
+    '
+  impact: 'Allowing public access to Google Cloud functions can lead to unauthorized
+    use and potential security breaches.
+
+    '
+  name: Publicly Accessible Google Cloud Functions
+  reference:
+  - https://cloud.google.com/functions/docs/securing/managing-access-iam
+  remediation: 'Update the IAM policies of your Google Cloud functions to remove allUsers
+    and allAuthenticatedUsers from the bindings to ensure that the functions are not
+    publicly accessible.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+self-contained: true

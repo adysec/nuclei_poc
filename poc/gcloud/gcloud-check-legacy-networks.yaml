@@ -1,0 +1,52 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Legacy network found in project " + projectId + ": " + name'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - LEGACY
+  source: 'gcloud compute networks list --project $projectId --format="json(name,subnetMode)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n}\n"
+id: gcloud-check-legacy-networks
+info:
+  author: princechaddha
+  description: 'Ensure that your Google Cloud Platform (GCP) projects are not using
+    legacy networks. Legacy networks are no longer recommended for production environments
+    as they do not support advanced networking features. It is strongly advised to
+    use Virtual Private Cloud (VPC) networks instead.
+
+    '
+  impact: 'Using legacy networks limits access to advanced networking features and
+    can hinder scalability and security.
+
+    '
+  name: Check for Legacy Networks
+  reference:
+  - https://cloud.google.com/vpc/docs/vpc
+  remediation: 'Migrate your GCP project from legacy networks to Virtual Private Cloud
+    (VPC) networks to utilize the latest networking capabilities.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,vpc,networking,security,gcp-cloud-config
+self-contained: true

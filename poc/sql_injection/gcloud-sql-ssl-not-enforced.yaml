@@ -1,0 +1,67 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: sqlInstances
+    type: json
+  source: 'gcloud sql instances list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"SSL/TLS Not Enforced for incoming connections on Cloud SQL instance " + sqlInstance
+      + " in project " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - ALLOW_UNENCRYPTED_AND_ENCRYPTED
+  source: 'gcloud sql instances describe $sqlInstance --format="json(settings.ipConfiguration.sslMode)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let sqlInstance of iterate(template.sqlInstances)){\n\
+  \    set(\"sqlInstance\", sqlInstance)\n    code(3)\n  }\n}\n"
+id: gcloud-sql-ssl-not-enforced
+info:
+  author: princechaddha
+  description: 'Enforce all incoming connections to your Cloud SQL database instances
+    to use SSL/TLS only. If the SSL/TLS protocol is not enforced for all Cloud SQL
+    connections, clients without a valid certificate are allowed to connect to the
+    database, leading to potential security vulnerabilities.
+
+    '
+  impact: 'Without SSL/TLS enforcement, Cloud SQL database connections are vulnerable
+    to eavesdropping, tampering, and impersonation attacks, posing a significant security
+    risk.
+
+    '
+  name: SSL/TLS Not Enforced for Cloud SQL Incoming Connections
+  reference:
+  - https://cloud.google.com/sql/docs/mysql/configure-ssl-instance
+  remediation: 'Enable SSL/TLS for all incoming connections to your Cloud SQL instances.
+    Update the SSL_MODE configuration to allow only encrypted connections.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,gcp-cloud-config
+self-contained: true

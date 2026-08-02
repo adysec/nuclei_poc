@@ -1,0 +1,80 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: networks
+    type: json
+  source: 'gcloud compute networks list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: firewallRules
+    type: json
+  source: 'gcloud compute firewall-rules list --filter network=$networkName --sort-by
+    priority --format="json(name,disabled,direction,sourceRanges,allowed[].ports)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let networkName of iterate(template.networks)){\n\
+  \    set(\"networkName\", networkName)\n    code(3)\n    set(\"firewallRules\",\
+  \ template.firewallRules)\n    javascript(1)\n  }\n}\n"
+id: gcloud-unrestricted-smtp-access
+info:
+  author: princechaddha
+  description: 'Ensure that Google Cloud VPC network firewall rules do not allow unrestricted
+    access (0.0.0.0/0 on TCP port 25). Restrict access to trusted IP addresses or
+    ranges to reduce the risk of security threats for the SMTP server instances associated
+    with these firewall rules.
+
+    '
+  impact: 'Allowing unrestricted access to TCP port 25 exposes SMTP servers to potential
+    brute-force or unauthorized access attacks.
+
+    '
+  name: Check for Unrestricted SMTP Access
+  reference:
+  - https://cloud.google.com/vpc/docs/firewalls
+  remediation: 'Update your VPC firewall rules to allow SMTP traffic only from trusted
+    IP addresses or ranges.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,vpc,firewall,security,smtp,gcp-cloud-config
+javascript:
+- code: "let firewallRules = template.firewallRules;\nif (typeof firewallRules ===\
+    \ \"string\") {\n  firewallRules = JSON.parse(firewallRules);\n}\n\nlet insecureRules\
+    \ = [];\nfor (let rule of firewallRules) {\n  if (\n    rule.disabled === false\
+    \ &&\n    rule.direction === \"INGRESS\" &&\n    Array.isArray(rule.sourceRanges)\
+    \ && rule.sourceRanges.includes(\"0.0.0.0/0\") &&\n    Array.isArray(rule.allowed)\
+    \ &&\n    rule.allowed.some(allowed =>\n      Array.isArray(allowed.ports) &&\n\
+    \      (allowed.ports.includes(\"25\"))\n    )\n  ) {\n    insecureRules.push(rule.name);\n\
+    \  }\n}\n\nif (insecureRules.length > 0) {\n  Export(`The firewall rules in network\
+    \ ${template.networkName} of project ${template.projectId} allow unrestricted\
+    \ SMTP access: ${insecureRules.join(\", \")}`);\n}\n"
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+self-contained: true

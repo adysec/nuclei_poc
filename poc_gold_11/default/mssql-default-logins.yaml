@@ -1,0 +1,47 @@
+id: mssql-default-logins
+info:
+  author: Ice3man543,tarunKoyalwar
+  description: 'A MSSQL service was accessed with easily guessed credentials.
+
+    '
+  metadata:
+    max-request: 7
+    shodan-query: port:1433
+  name: Microsoft Sql - Default Logins
+  severity: high
+  tags: js,mssql,default-login,network
+javascript:
+- args:
+    Host: '{{Host}}'
+    Pass: '{{passwords}}'
+    Port: '1433'
+    User: '{{usernames}}'
+  attack: clusterbomb
+  code: 'var m = require("nuclei/mssql");
+
+    var c = m.MSSQLClient();
+
+    c.Connect(Host,Port,User,Pass)
+
+    '
+  matchers:
+  - condition: and
+    dsl:
+    - response == true
+    - success == true
+    type: dsl
+  payloads:
+    passwords:
+    - SqlServer0
+    - SqlServer2021
+    usernames:
+    - sa
+    - root
+    - admin
+  pre-condition: 'var m = require("nuclei/mssql");
+
+    var c = m.MSSQLClient();
+
+    c.IsMssql(Host, Port);
+
+    '

@@ -1,0 +1,87 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .disks[].deviceName
+    name: disks
+    type: json
+  source: 'gcloud compute instances describe $instanceName --zone $zone --project
+    $projectId --format="json(disks[].deviceName)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Disk " + diskName + " attached to instance " + instanceName + " in zone "
+      + zone + " of project " + projectId + " is not encrypted with a Customer-Managed
+      Key (CMK)"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud compute disks describe $diskName --zone $zone --project $projectId
+    --format="json(diskEncryptionKey.kmsKeyName)" | jq ''. // "null"''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let instance of iterate(template.instances)){\n \
+  \   instance = JSON.parse(instance)\n    set(\"instanceName\", instance.name)\n\
+  \    set(\"zone\", instance.zone)\n    code(3)\n    for(let disk of iterate(template.disks)){\n\
+  \      set(\"diskName\", disk)\n      code(4)\n    }\n  }\n}\n"
+id: gcloud-vm-disk-cmk-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that the persistent disks attached to your Google Compute Engine
+    instances are encrypted with Customer-Managed Keys (CMKs) in order to have a fine
+    control over your sensitive data encryption and decryption process. You can create
+    and manage your own Customer-Managed Keys (CMKs) with Cloud Key Management Service
+    (Cloud KMS). Cloud KMS provides secure and efficient encryption key management,
+    controlled key rotation, and revocation mechanisms.
+
+    '
+  impact: 'Without CMK encryption, you have limited control over the encryption keys
+    used to protect your VM disk data, potentially exposing sensitive information
+    to unauthorized access.
+
+    '
+  name: Virtual Machine Disk Encryption with Customer-Managed Keys Not Enabled
+  reference:
+  - https://cloud.google.com/compute/docs/disks/customer-managed-encryption
+  remediation: 'Configure your Compute Engine persistent disks to use Customer-Managed
+    Keys (CMKs) for encryption by specifying a Cloud KMS key during disk creation
+    or by updating existing disks.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,compute,encryption,cmk,security,gcp-cloud-config
+self-contained: true

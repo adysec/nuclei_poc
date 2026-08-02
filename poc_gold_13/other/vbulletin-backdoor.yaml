@@ -1,0 +1,50 @@
+flow: http(1) && http(2)
+http:
+- matchers:
+  - condition: or
+    internal: true
+    part: body
+    type: word
+    words:
+    - content="vBulletin
+    - id="vbulletin_css
+    - clientscript/vbulletin
+    - vBulletin_init
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- host-redirects: true
+  matchers:
+  - condition: and
+    dsl:
+    - contains(body, '{{md5(num)}}')
+    - status_code == 200
+    type: dsl
+  max-redirects: 3
+  method: GET
+  path:
+  - '{{BaseURL}}/faq.php?cmd=echo%20-n%20{{num}}|md5sum'
+  - '{{BaseURL}}/forum.php?x=shell_exec&y=echo%20-n%20{{num}}|md5sum'
+  - '{{BaseURL}}/{{paths}}/faq.php?cmd=echo%20-n%20{{num}}|md5sum'
+  - '{{BaseURL}}/{{paths}}/forum.php?x=shell_exec&y=echo%20-n%20{{num}}|md5sum'
+  payloads:
+    paths:
+    - boards
+    - board
+    - forum
+    - forums
+    - vb
+  stop-at-first-match: true
+id: vbulletin-backdoor
+info:
+  author: MaStErCho
+  metadata:
+    max-request: 21
+  name: vBulletin Backdoor - Detect
+  reference:
+  - https://github.com/OWASP/vbscan
+  - https://blog.sucuri.net/2017/01/vbulletin-malware-hackers-compete-backdoor-control.html
+  severity: high
+  tags: backdoor,php,vbulletin,rce
+variables:
+  num: '999999999'

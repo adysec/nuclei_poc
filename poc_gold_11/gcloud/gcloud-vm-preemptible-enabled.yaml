@@ -1,0 +1,72 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId
+      + " is configured as preemptible and may not be suitable for production workloads"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'true'
+  source: 'gcloud compute instances describe $instanceName --zone $zone --project
+    $projectId --format="json(scheduling.preemptible)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let instance of iterate(template.instances)){\n \
+  \   instance = JSON.parse(instance)\n    set(\"instanceName\", instance.name)\n\
+  \    set(\"zone\", instance.zone)\n    code(3)\n  }\n}\n"
+id: gcloud-vm-preemptible-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that your Google Cloud Platform (GCP) projects are not using
+    preemptible virtual machine instances for production and business-critical applications.
+    A preemptible virtual machine (VM) is an instance that you can create and run
+    at a much lower price than normal instances but it can be terminated sooner due
+    to system demands.
+
+    '
+  impact: 'Preemptible VM instances can be terminated at any time to free up resources
+    for standard VM instances, making them unsuitable for production workloads and
+    potentially causing service disruptions.
+
+    '
+  name: VM Instance Preemptibility Not Disabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/disable-preemptibility.html
+  - https://cloud.google.com/compute/docs/instances/preemptible
+  remediation: 'Re-create your VM instances with preemptibility disabled. Note that
+    you cannot disable preemptibility on an existing instance - you must create a
+    new instance without the preemptible option.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,compute,reliability,preemptible,gcp-cloud-config
+self-contained: true

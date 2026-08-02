@@ -1,0 +1,82 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: httpsProxies
+    type: json
+  source: 'gcloud compute target-https-proxies list --project $projectId --format="json(name,sslPolicy)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: sslProxies
+    type: json
+  source: 'gcloud compute target-ssl-proxies list --project $projectId --format="json(name,sslPolicy)"
+
+    '
+- engine:
+  - sh
+  - bash
+  matchers:
+  - type: word
+    words:
+    - TLS_1_0
+    - TLS_RSA_WITH_AES_128_GCM_SHA256
+    - TLS_RSA_WITH_AES_256_GCM_SHA384
+    - TLS_RSA_WITH_AES_128_CBC_SHA
+    - TLS_RSA_WITH_AES_256_CBC_SHA
+    - TLS_RSA_WITH_3DES_EDE_CBC_SHA
+  - dsl:
+    - '"Insecure SSL Policy Detected in Proxy: " + sslPolicy + " in Project: " + projectId'
+    type: dsl
+  source: 'gcloud compute ssl-policies describe $sslPolicy --format="json(minTlsVersion,profile,enabledFeatures)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let proxy of iterate(template.httpsProxies)){\n \
+  \   set(\"sslPolicy\", proxy.sslPolicy)\n    code(4)\n  }\n  code(3)\n  for(let\
+  \ proxy of iterate(template.sslProxies)){\n    set(\"sslPolicy\", proxy.sslPolicy)\n\
+  \    code(4)\n  }\n}\n"
+id: gcloud-ssl-policy-insecure-ciphers
+info:
+  author: princechaddha
+  description: 'This check scans SSL policies of Google Cloud HTTPS and SSL Proxy
+    load balancers to identify insecure cipher suites. It ensures SSL policies use
+    TLS 1.2 with secure profiles and exclude weak ciphers.
+
+    '
+  impact: 'Insecure cipher suites can lead to vulnerabilities, allowing attackers
+    to decrypt or intercept data.
+
+    '
+  name: Insecure SSL Cipher Suites in GCP Load Balancers
+  reference:
+  - https://cloud.google.com/load-balancing/docs/ssl-policies
+  remediation: 'Ensure SSL policies use MODERN or RESTRICTED profiles, or a secure
+    CUSTOM profile without weak ciphers.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-load-balancing,gcp-cloud-config
+self-contained: true

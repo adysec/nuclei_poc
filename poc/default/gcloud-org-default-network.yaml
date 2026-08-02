@@ -1,0 +1,59 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: orgIds
+    type: json
+  source: 'gcloud organizations list --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Organization " + orgId + " has not disabled automatic default network creation,
+      allowing potential insecure network configurations"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '{}'
+  source: 'gcloud alpha resource-manager org-policies describe compute.skipDefaultNetworkCreation
+    --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    '
+flow: "code(1)\nfor(let orgId of iterate(template.orgIds)){\n  set(\"orgId\", orgId)\n\
+  \  code(2)\n}\n"
+id: gcloud-org-default-network
+info:
+  author: princechaddha
+  description: 'Ensure that "Skip Default Network Creation" constraint policy is enforced
+    for your Google Cloud Platform (GCP) organizations in order to follow security
+    best practices and meet networking requirements. Once enabled, this constraint
+    skips the creation of the default Virtual Private Cloud (VPC) network and related
+    resources during Google Cloud project creation.
+
+    '
+  impact: 'By default, a default network and supporting resources are automatically
+    created when you launch a new Google Cloud project. The default VPC comes with
+    predefined, over-permissive firewall rules that are not included in audit logging,
+    potentially creating security risks.
+
+    '
+  name: Default Network Creation Not Disabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/disable-default-network-creation.html
+  - https://cloud.google.com/vpc/docs/vpc-network-overview
+  remediation: 'Enable the "Skip Default Network Creation" policy at the organization
+    level using the ''gcloud alpha resource-manager org-policies enable-enforce''
+    command with the compute.skipDefaultNetworkCreation constraint.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,networking,vpc,gcp-cloud-config
+self-contained: true
