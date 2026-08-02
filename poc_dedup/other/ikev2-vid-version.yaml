@@ -1,0 +1,216 @@
+id: ikev2-vid-version
+info:
+  author: pussycat0x
+  description: 'Detected valid IKEv1 VPN group names by sending Aggressive Mode probes
+    with different IDi values. Extracts vendor, version, and capability details from
+    IKEv2 Vendor ID and Notify payloads using a single unauthenticated exchange.
+
+    '
+  metadata:
+    fofa-query: port="500" && protocol="isakmp"
+    max-request: 1
+    shodan-query: port:500 product:IKE
+    verified: true
+  name: IKEv2 Deep Vendor ID Version - Detection
+  reference:
+  - https://www.rfc-editor.org/rfc/rfc7296#section-3.12
+  - https://hacktricks.wiki/en/network-services-pentesting/ipsec-ike-vpn-pentesting.html
+  - https://www.iana.org/assignments/ikev2-parameters
+  severity: info
+  tags: enum,ike,ikev2,ipsec,js,network,udp,vpn
+javascript:
+- args:
+    Host: '{{Host}}'
+    Port: '500'
+  code: "let c = require(\"nuclei/net\");\nlet conn = c.Open('udp', `${Host}:${Port}`);\n\
+    conn.SetTimeout(10);\n\n// Proven IKEv2 SA_INIT packet (500 bytes, 2 proposals)\n\
+    let packet =\n  \"deadbeefc0decafe\" +\n  \"0000000000000000\" +\n  \"2120220800000000000001f4\"\
+    \ +\n  \"220000ac\" +\n  \"0200005001010008\" +\n  \"0300000c01000014800e0100\"\
+    \ +\n  \"0300000c01000014800e0080\" +\n  \"0300000802000005\" +\n  \"0300000802000007\"\
+    \ +\n  \"0300000803000000\" +\n  \"0300000804000014\" +\n  \"0300000804000013\"\
+    \ +\n  \"000000080400000e\" +\n  \"0000005802010009\" +\n  \"0300000c0100000c800e0100\"\
+    \ +\n  \"0300000c0100000c800e0080\" +\n  \"0300000801000003\" +\n  \"0300000802000005\"\
+    \ +\n  \"0300000802000002\" +\n  \"030000080300000c\" +\n  \"0300000803000002\"\
+    \ +\n  \"030000080400000e\" +\n  \"0000000804000002\" +\n  \"28000108000e0000\"\
+    \ +\n  \"000102030405060708090a0b0c0d0e0f\" +\n  \"101112131415161718191a1b1c1d1e1f\"\
+    \ +\n  \"202122232425262728292a2b2c2d2e2f\" +\n  \"303132333435363738393a3b3c3d3e3f\"\
+    \ +\n  \"404142434445464748494a4b4c4d4e4f\" +\n  \"505152535455565758595a5b5c5d5e5f\"\
+    \ +\n  \"606162636465666768696a6b6c6d6e6f\" +\n  \"707172737475767778797a7b7c7d7e7f\"\
+    \ +\n  \"808182838485868788898a8b8c8d8e8f\" +\n  \"909192939495969798999a9b9c9d9e9f\"\
+    \ +\n  \"a0a1a2a3a4a5a6a7a8a9aaabacadaeaf\" +\n  \"b0b1b2b3b4b5b6b7b8b9babbbcbdbebf\"\
+    \ +\n  \"c0c1c2c3c4c5c6c7c8c9cacbcccdcecf\" +\n  \"d0d1d2d3d4d5d6d7d8d9dadbdcdddedf\"\
+    \ +\n  \"e0e1e2e3e4e5e6e7e8e9eaebecedeeef\" +\n  \"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff\"\
+    \ +\n  \"00000024\" +\n  \"4142434445464748494a4b4c4d4e4f50\" +\n  \"5152535455565758595a414243444546\"\
+    ;\n\nconn.SendHex(packet);\nlet raw = conn.Recv(4096);\nlet hexBuf = bytes.NewBuffer();\n\
+    hexBuf.Write(raw);\nlet resp = hexBuf.Hex();\n\n// --- Helper functions ---\n\
+    function hb(h, o) { return parseInt(h.substring(o*2, o*2+2), 16); }\nfunction\
+    \ hu16(h, o) { return parseInt(h.substring(o*2, o*2+4), 16); }\nfunction hs(h,\
+    \ s, e) { return h.substring(s*2, e*2); }\n\nfunction hexToBytes(hex) {\n  var\
+    \ arr = [];\n  for (var i = 0; i < hex.length; i += 2) {\n    arr.push(parseInt(hex.substring(i,\
+    \ i+2), 16));\n  }\n  return arr;\n}\n\n// Extract printable ASCII sequences (>=\
+    \ 4 chars) from hex data\nfunction extractAscii(hex) {\n  var bts = hexToBytes(hex);\n\
+    \  var sequences = [];\n  var cur = \"\";\n  for (var i = 0; i < bts.length; i++)\
+    \ {\n    if (bts[i] >= 0x20 && bts[i] <= 0x7e) {\n      cur = cur + String.fromCharCode(bts[i]);\n\
+    \    } else {\n      if (cur.length >= 4) sequences.push(cur);\n      cur = \"\
+    \";\n    }\n  }\n  if (cur.length >= 4) sequences.push(cur);\n  return sequences;\n\
+    }\n\n// Manual base64 decode (no regex, goja-safe)\nfunction b64decode(str) {\n\
+    \  var chars = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\"\
+    ;\n  var out = \"\";\n  var clean = \"\";\n  for (var ci = 0; ci < str.length;\
+    \ ci++) {\n    var ch = str.charAt(ci);\n    if (ch != ' ' && ch != '=' && ch\
+    \ != '\\n' && ch != '\\r') clean += ch;\n  }\n  var bits = 0;\n  var val = 0;\n\
+    \  for (var i = 0; i < clean.length; i++) {\n    var idx = chars.indexOf(clean.charAt(i));\n\
+    \    if (idx < 0) continue;\n    val = (val << 6) | idx;\n    bits += 6;\n   \
+    \ if (bits >= 8) {\n      bits -= 8;\n      var code = (val >> bits) & 0xFF;\n\
+    \      if (code > 0) out += String.fromCharCode(code);\n      val = val & ((1\
+    \ << bits) - 1);\n    }\n  }\n  return out;\n}\n\nvar raw_len = resp.length /\
+    \ 2;\nvar resp_spi = hs(resp, 8, 16);\nvar vb = hb(resp, 17);\nvar ike_ver = ((vb\
+    \ >> 4) & 0x0f) + \".\" + (vb & 0x0f);\n\n// --- VID database (25+ known hashes)\
+    \ ---\nvar vid_db = {\n  \"afcad71368a1f1c96b8696fc77570100\": \"Dead Peer Detection\
+    \ v1.0\",\n  \"4a131c81070358455c5728f20e95452f\": \"RFC 3947 NAT-T\",\n  \"90cb80913ebb696e086381b5ec427b1f\"\
+    : \"draft-ietf-ipsec-nat-t-ike-02\",\n  \"cd60464335df21f87cfdb2fc68b6a448\":\
+    \ \"draft-ietf-ipsec-nat-t-ike-00\",\n  \"4485152d18b6bbcd0be8a8469579ddcc\":\
+    \ \"draft-ietf-ipsec-nat-t-ike-05\",\n  \"7d9419a65310ca6f2c179d9215529d56\":\
+    \ \"draft-ietf-ipsec-nat-t-ike-03\",\n  \"4048b7d56ebce88525e7de7f00d6c2d3\":\
+    \ \"IKE Fragmentation\",\n  \"26244d38eddb61b3172a36e3d0cfb819\": \"StrongSwan\"\
+    ,\n  \"4865617274426561745f4e6f74696679\": \"Heartbeat Notify\",\n  \"c61baca1f1a60cc10800000000000000\"\
+    : \"Cisco IOS VPN (UNITY)\",\n  \"12f5f28c457168a9702d9fe274cc0100\": \"Cisco\
+    \ IOS VPN (UNITY) v1.0\",\n  \"1f07f70eaa6514d3b0fa96542a500300\": \"Cisco VPN\
+    \ Concentrator\",\n  \"09002689dfd6b712\": \"XAUTH (Cisco)\",\n  \"1e2b516905991c7d7c96fcbfb587e461\"\
+    : \"MS NT5 ISAKMPOAKLEY (Windows)\",\n  \"fb1de3cdf341b7ea16b7e5be0855f120\":\
+    \ \"MS-Negotiation Discovery Capable\",\n  \"e3a5966a76379fe707228231e5ce8652\"\
+    : \"MS-MamieExists\",\n  \"4d1e0e136deafa34c4f3ea9f02ec7285\": \"Openswan\",\n\
+    \  \"8299031757a36082c6a621de00000000\": \"KAME racoon\",\n  \"6105c422e76847e43f968480ed93a5a0\"\
+    : \"Cisco Delete Reason\",\n  \"7f50cc4ebf04c2d01d23e668e0168aab\": \"Juniper\
+    \ Netscreen\",\n  \"166f932d55eb64d8e4df4fd37e2308c0\": \"Juniper SSG\",\n  \"\
+    69936c6ff1cfa12e5add7c7f13fb58e4\": \"SonicWall\",\n  \"326f5b937d3efde4ba4332920612f1a8\"\
+    : \"Fortinet FortiGate\",\n  \"a03d6b85e0e0cdca8094e2cd7cb8524c\": \"Check Point\
+    \ VPN\"\n};\n\n// Known notify types\nvar notify_names = {\n  \"5\": \"INVALID_SPI\"\
+    , \"7\": \"INVALID_SYNTAX\",\n  \"14\": \"NO_PROPOSAL_CHOSEN\", \"17\": \"INVALID_KE_PAYLOAD\"\
+    ,\n  \"24\": \"AUTHENTICATION_FAILED\",\n  \"16384\": \"INITIAL_CONTACT\",\n \
+    \ \"16388\": \"NAT_DETECTION_SOURCE_IP\",\n  \"16389\": \"NAT_DETECTION_DESTINATION_IP\"\
+    ,\n  \"16390\": \"COOKIE\",\n  \"16396\": \"MOBIKE_SUPPORTED\",\n  \"16430\":\
+    \ \"FRAGMENTATION_SUPPORTED\",\n  \"16431\": \"SIGNATURE_HASH_ALGORITHMS\"\n};\n\
+    \n// IKEv2 payload type names\nvar pnames = {\n  \"33\": \"SA\", \"34\": \"KE\"\
+    , \"35\": \"IDi\", \"36\": \"IDr\",\n  \"37\": \"CERT\", \"38\": \"CERTREQ\",\
+    \ \"39\": \"AUTH\",\n  \"40\": \"Nonce\", \"41\": \"Notify\", \"42\": \"Delete\"\
+    ,\n  \"43\": \"VendorID\", \"44\": \"TSi\", \"45\": \"TSr\",\n  \"46\": \"Encrypted\"\
+    , \"48\": \"EAP\", \"53\": \"SKF\"\n};\n\nvar vendor_ids = [];\nvar vendor_names_arr\
+    \ = [];\nvar notifies = [];\nvar chain = [];\nvar ascii_strings = [];\nvar identified_product\
+    \ = \"Unknown\";\nvar identified_version = \"\";\nvar watchguard_ver = \"\";\n\
+    var strongswan_ver = \"\";\n\n// --- Walk IKEv2 payload chain ---\nvar np = hb(resp,\
+    \ 16);\nvar off = 28;\nvar itr = 0;\n\nwhile (np != 0 && off + 4 <= raw_len &&\
+    \ itr < 60) {\n  itr++;\n  var ct = np;\n  var cn = pnames[ct.toString()] || (\"\
+    Type_\" + ct);\n\n  np = hb(resp, off);\n  var pl = hu16(resp, off + 2);\n\n \
+    \ if (pl < 4 || off + pl > raw_len) {\n    chain.push(cn + \"(TRUNC)\");\n   \
+    \ break;\n  }\n  chain.push(cn);\n  if (ct == 43 && pl > 4) {\n    var vid_start\
+    \ = off + 4;\n    var vid_len = pl - 4;\n    if (vid_start + vid_len <= raw_len)\
+    \ {\n      var vid_hex = hs(resp, vid_start, vid_start + vid_len);\n      var\
+    \ vid_name = vid_db[vid_hex] || \"Unknown_VID\";\n      var vid_version = \"\"\
+    ;\n      var matched = (vid_db[vid_hex] != undefined);\n\n      // (A) StrongSwan\
+    \ prefix detection (882fe56d40069dd2...)\n      if (!matched && vid_hex.substring(0,\
+    \ 16) == \"882fe56d40069dd2\") {\n        vid_name = \"StrongSwan\";\n       \
+    \ matched = true;\n        if (vid_len > 16) {\n          var svBytes = hexToBytes(vid_hex.substring(32));\n\
+    \          var svParts = [];\n          for (var sv = 0; sv < svBytes.length;\
+    \ sv++) {\n            svParts.push(svBytes[sv].toString());\n          }\n  \
+    \        strongswan_ver = svParts.join(\".\");\n          vid_version = strongswan_ver;\n\
+    \        }\n      }\n\n      // (B) Cisco Unity prefix match\n      if (!matched\
+    \ && vid_hex.substring(0, 16) == \"c61baca1f1a60cc1\") {\n        vid_name = \"\
+    Cisco IOS VPN (UNITY)\";\n        matched = true;\n      }\n\n      // (C) KAME\
+    \ racoon prefix match\n      if (!matched && vid_hex.substring(0, 16) == \"8299031757a36082\"\
+    ) {\n        vid_name = \"KAME racoon\";\n        matched = true;\n      }\n\n\
+    \      // (D) IKE Fragmentation with version suffix\n      if (!matched && vid_hex.substring(0,\
+    \ 16) == \"4048b7d56ebce885\") {\n        vid_name = \"IKE Fragmentation\";\n\
+    \        matched = true;\n      }\n\n      // (E) WatchGuard Detection: 32-byte\
+    \ hash + base64 tail\n      // The base64 decodes to \"VN=12.11.3 BN=719894\"\n\
+    \      if (vid_len > 32) {\n        var tail_hex = vid_hex.substring(64);\n  \
+    \      var tail_bytes = hexToBytes(tail_hex);\n        var tail_str = \"\";\n\
+    \        var all_b64 = true;\n        for (var tb = 0; tb < tail_bytes.length;\
+    \ tb++) {\n          var tch = tail_bytes[tb];\n          if ((tch >= 65 && tch\
+    \ <= 90) || (tch >= 97 && tch <= 122) ||\n              (tch >= 48 && tch <= 57)\
+    \ || tch == 43 || tch == 47 || tch == 61) {\n            tail_str += String.fromCharCode(tch);\n\
+    \          } else {\n            all_b64 = false;\n            break;\n      \
+    \    }\n        }\n        if (all_b64 && tail_str.length >= 8) {\n          var\
+    \ decoded = b64decode(tail_str);\n          if (decoded.indexOf(\"VN=\") >= 0\
+    \ || decoded.indexOf(\"BN=\") >= 0) {\n            watchguard_ver = decoded;\n\
+    \            vid_name = \"WatchGuard Fireware OS\";\n            matched = true;\n\
+    \            var vnIdx = decoded.indexOf(\"VN=\");\n            if (vnIdx >= 0)\
+    \ {\n              var vnEnd = decoded.indexOf(\" \", vnIdx);\n              if\
+    \ (vnEnd < 0) vnEnd = decoded.length;\n              vid_version = decoded.substring(vnIdx\
+    \ + 3, vnEnd);\n              identified_version = vid_version;\n            }\n\
+    \          }\n        }\n      }\n\n      // (F) ASCII string extraction from\
+    \ any VID\n      var ascii_seqs = extractAscii(vid_hex);\n      for (var ai =\
+    \ 0; ai < ascii_seqs.length; ai++) {\n        ascii_strings.push(ascii_seqs[ai]);\n\
+    \        // Try to identify vendor from embedded ASCII\n        if (!matched)\
+    \ {\n          var sl = ascii_seqs[ai].toLowerCase();\n          if (sl.indexOf(\"\
+    watchguard\") >= 0) { vid_name = \"WatchGuard\"; matched = true; }\n         \
+    \ else if (sl.indexOf(\"strongswan\") >= 0) { vid_name = \"StrongSwan\"; matched\
+    \ = true; }\n          else if (sl.indexOf(\"openswan\") >= 0) { vid_name = \"\
+    Openswan\"; matched = true; }\n          else if (sl.indexOf(\"libreswan\") >=\
+    \ 0) { vid_name = \"Libreswan\"; matched = true; }\n          else if (sl.indexOf(\"\
+    cisco\") >= 0) { vid_name = \"Cisco\"; matched = true; }\n          else if (sl.indexOf(\"\
+    juniper\") >= 0) { vid_name = \"Juniper\"; matched = true; }\n          else if\
+    \ (sl.indexOf(\"fortinet\") >= 0) { vid_name = \"FortiGate\"; matched = true;\
+    \ }\n          else if (sl.indexOf(\"sonicwall\") >= 0) { vid_name = \"SonicWall\"\
+    ; matched = true; }\n        }\n      }\n\n      // Build VID entry string\n \
+    \     var entry = vid_hex + \"=\" + vid_name;\n      if (vid_version.length >\
+    \ 0) entry += \"(\" + vid_version + \")\";\n      vendor_ids.push(entry);\n  \
+    \    vendor_names_arr.push(vid_name);\n\n      // Update identified product (priority\
+    \ order)\n      if (vid_name.indexOf(\"WatchGuard\") >= 0) identified_product\
+    \ = \"WatchGuard\";\n      else if (vid_name.indexOf(\"StrongSwan\") >= 0 && identified_product\
+    \ == \"Unknown\") identified_product = \"StrongSwan\";\n      else if (vid_name.indexOf(\"\
+    Cisco\") >= 0 && identified_product == \"Unknown\") identified_product = \"Cisco\"\
+    ;\n      else if (vid_name.indexOf(\"Windows\") >= 0 && identified_product ==\
+    \ \"Unknown\") identified_product = \"Microsoft_Windows\";\n      else if (vid_name.indexOf(\"\
+    Openswan\") >= 0 && identified_product == \"Unknown\") identified_product = \"\
+    Openswan\";\n      else if (vid_name.indexOf(\"Libreswan\") >= 0 && identified_product\
+    \ == \"Unknown\") identified_product = \"Libreswan\";\n      else if (vid_name.indexOf(\"\
+    racoon\") >= 0 && identified_product == \"Unknown\") identified_product = \"KAME_racoon\"\
+    ;\n      else if (vid_name.indexOf(\"Juniper\") >= 0 && identified_product ==\
+    \ \"Unknown\") identified_product = \"Juniper\";\n      else if (vid_name.indexOf(\"\
+    FortiGate\") >= 0 && identified_product == \"Unknown\") identified_product = \"\
+    FortiGate\";\n      else if (vid_name.indexOf(\"SonicWall\") >= 0 && identified_product\
+    \ == \"Unknown\") identified_product = \"SonicWall\";\n      else if (vid_name.indexOf(\"\
+    Check Point\") >= 0 && identified_product == \"Unknown\") identified_product =\
+    \ \"Check_Point\";\n    }\n  }\n\n  // =============================================\n\
+    \  // Notify payload (type 41) - Decode\n  // =============================================\n\
+    \  if (ct == 41 && pl >= 8) {\n    var spi_sz = hb(resp, off + 5);\n    var ntype\
+    \ = hu16(resp, off + 6);\n    var nname = notify_names[ntype.toString()] || (\"\
+    NOTIFY_\" + ntype);\n\n    var nd_start = off + 8 + spi_sz;\n    var nd_len =\
+    \ pl - 8 - spi_sz;\n    var ndata = \"\";\n    if (nd_len > 0 && nd_start + nd_len\
+    \ <= raw_len) {\n      ndata = hs(resp, nd_start, nd_start + nd_len);\n\n    \
+    \  // Decode SIGNATURE_HASH_ALGORITHMS notify data\n      if (ntype == 16431 &&\
+    \ nd_len >= 2) {\n        var alg_strs = [];\n        var alg_map = {\"1\":\"\
+    SHA1\",\"2\":\"SHA2-256\",\"3\":\"SHA2-384\",\"4\":\"SHA2-512\",\"5\":\"IDENTITY\"\
+    };\n        for (var ao = 0; ao < nd_len; ao += 2) {\n          var alg = hu16(resp,\
+    \ nd_start + ao);\n          alg_strs.push(alg_map[alg.toString()] || (\"ALG_\"\
+    \ + alg));\n        }\n        ndata = alg_strs.join(\",\");\n      }\n\n    \
+    \  if (ndata.length > 48) ndata = ndata.substring(0, 48) + \"...\";\n    }\n\n\
+    \    var nentry = nname;\n    if (ndata.length > 0) nentry += \"[\" + ndata +\
+    \ \"]\";\n    notifies.push(nentry);\n  }\n\n  off += pl;\n}\n\n// --- Build pipe-delimited\
+    \ output string ---\nvar out = \"IKE_VERSION:\" + ike_ver;\nout += \"|SPI:\" +\
+    \ resp_spi;\nout += \"|VENDOR_PRODUCT:\" + identified_product;\nif (identified_version.length\
+    \ > 0) {\n  out += \"|VENDOR_VERSION:\" + identified_version;\n}\nout += \"|CHAIN:\"\
+    \ + chain.join(\"->\");\nout += \"|VID_COUNT:\" + vendor_ids.length;\nif (vendor_ids.length\
+    \ > 0) {\n  out += \"|VIDS:\" + vendor_ids.join(\";\");\n  out += \"|VID_NAMES:\"\
+    \ + vendor_names_arr.join(\",\");\n}\nif (notifies.length > 0) {\n  out += \"\
+    |NOTIFIES:\" + notifies.join(\";\");\n}\nif (watchguard_ver.length > 0) {\n  out\
+    \ += \"|WATCHGUARD_VERSION:\" + watchguard_ver;\n}\nif (strongswan_ver.length\
+    \ > 0) {\n  out += \"|STRONGSWAN_VERSION:\" + strongswan_ver;\n}\nif (ascii_strings.length\
+    \ > 0) {\n  out += \"|ASCII_STRINGS:\" + ascii_strings.join(\";\");\n}\nout +=\
+    \ \"|BYTES:\" + raw_len;\nout;\n"
+  extractors:
+  - group: 1
+    name: vendor_product
+    regex:
+    - VENDOR_PRODUCT:([^|]+)
+    type: regex
+  matchers:
+  - condition: and
+    dsl:
+    - success == true
+    - contains(response, 'IKE_VERSION:2.')
+    type: dsl
+  matchers-condition: and
+  pre-condition: 'isUDPPortOpen(Host, Port);
+
+    '

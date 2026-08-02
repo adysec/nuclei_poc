@@ -1,0 +1,84 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: urlMaps
+    type: json
+  source: 'gcloud compute url-maps list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[] | {name, urlMap, sslCertificates}
+    name: targetProxies
+    type: json
+  source: 'gcloud compute target-https-proxies list --project $projectId --global
+    --format="json(name,urlMap,sslCertificates)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"ALB with non-managed SSL certificate: " + urlMap + ", Proxy: " + targetProxy
+      + ", Certificate: " + sslCertificate + ", Project: " + projectId'
+    type: dsl
+  matchers:
+  - part: body
+    type: word
+    words:
+    - NOT_FOUND
+  source: 'gcloud certificate-manager certificates describe $sslCertificate --project
+    $projectId
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let urlMap of iterate(template.urlMaps)){\n    set(\"\
+  urlMap\", urlMap)\n    code(3)\n    let filteredProxies = template.targetProxies.filter(proxy\
+  \ => proxy.urlMap === urlMap)\n    for(let proxy of filteredProxies){\n      proxy\
+  \ = JSON.parse(proxy)\n      set(\"targetProxy\", proxy.name)\n      set(\"sslCertificate\"\
+  , proxy.sslCertificates[0])\n      code(4)\n    }\n  }\n}\n"
+id: gcloud-alb-ssl-google-managed
+info:
+  author: princechaddha
+  description: 'Ensure that your external Application Load Balancers (ALBs) are configured
+    to use Google-managed SSL certificates instead of self-signed certificates in
+    order to avoid triggering browser warnings and adding distrust for users visiting
+    your site.
+
+    '
+  impact: 'Using self-signed certificates can lead to browser warnings, which can
+    deter users from visiting your site and reduce the trustworthiness of your service.
+
+    '
+  name: Use Google-Managed SSL Certificates for Application Load Balancers
+  reference:
+  - https://cloud.google.com/load-balancing/docs/ssl-certificates
+  remediation: 'Configure your Application Load Balancers to use Google-managed SSL
+    certificates to ensure trust and proper security standards.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,google-cloud-load-balancing,gcp-cloud-config
+self-contained: true

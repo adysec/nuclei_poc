@@ -1,0 +1,68 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: topics
+    type: json
+  source: 'gcloud pubsub topics list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Dead Letter Topic not enabled for Pub/Sub subscription: " + pubsubTopic +
+      " in project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud pubsub subscriptions describe $pubsubTopic --format="json(deadLetterPolicy.deadLetterTopic)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let topicName of iterate(template.topics)){\n   \
+  \ set(\"pubsubTopic\", topicName)\n    code(3)\n  }\n}\n"
+id: gcloud-pubsub-deadletter-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that each Google Cloud Pub/Sub subscription is configured to
+    use a dead-letter topic (DLQ) to capture undeliverable messages. Pub/Sub subscriptions
+    allow for a maximum number of delivery attempts. Messages that cannot be delivered
+    after the maximum attempts are sent to the dead-letter topic, ensuring they can
+    be reviewed and handled appropriately.
+
+    '
+  impact: 'Subscriptions without a dead-letter topic may result in loss of undeliverable
+    messages, leading to potential data loss and reduced message reliability.
+
+    '
+  name: Dead Letter Topic Not Enabled for Google Pub/Sub Subscriptions
+  reference:
+  - https://cloud.google.com/pubsub/docs/dead-letter-topics
+  remediation: 'Configure a dead-letter topic for all Google Cloud Pub/Sub subscriptions
+    to capture undeliverable messages. This ensures messages can be retained and addressed
+    later.
+
+    '
+  severity: low
+  tags: cloud,devops,gcp,gcloud,google-cloud-pubsub,gcp-cloud-config
+self-contained: true

@@ -1,0 +1,71 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'gcloud filestore instances list --project $projectId --format="json"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Filestore instance " + instanceName + " in project " + projectId + " has unrestricted
+      client access and is not limited to specific IP addresses"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud filestore instances describe $instanceName --format="json(fileShares[].nfsExportOptions)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let instance of iterate(template.instances)){\n \
+  \   instance = JSON.parse(instance)\n    set(\"instanceName\", instance.name)\n\
+  \    code(3)\n  }\n}\n"
+id: gcloud-filestore-unrestricted-access
+info:
+  author: princechaddha
+  description: 'Ensure that client access to your Google Cloud Filestore instances
+    is limited to specific (trusted) IP addresses or IP address ranges in order to
+    protect your data against unauthorized access. By default, Filestore instances
+    provide full (root-level read/write) access to all clients within the same Google
+    Cloud project and VPC network.
+
+    '
+  impact: 'Granting untrusted clients access exposes Filestore instance data to unapproved
+    access, modification, or deletion. Without IP-based access rules, any client in
+    the same project and VPC can access the instance.
+
+    '
+  name: Filestore Instance Client Access Not Restricted by IP
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/restrict-client-access.html
+  - https://cloud.google.com/filestore/docs/access-control
+  remediation: 'Configure IP-based access rules for your Filestore instances to restrict
+    access to specific IP addresses or ranges. Once configured, any IP address or
+    range not explicitly allowed will be denied access.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,filestore,security,networking,access-control,gcp-cloud-config
+self-contained: true

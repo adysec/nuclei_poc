@@ -1,0 +1,80 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: managedZones
+    type: json
+  source: 'gcloud dns managed-zones list --project $projectId --format="json(name,visibility)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - '{type: .type, rrdatas: .rrdatas[]}'
+    name: recordSets
+    type: json
+  source: 'gcloud dns record-sets list --zone=$managedZone --format="json(type,rrdatas)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Dangling DNS Record: Type: " + recordType + " Data: " + recordData + " in
+      Zone: " + managedZone + " of Project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - RESERVED
+  source: 'gcloud compute addresses list --filter "addressType~EXTERNAL" --format="json(name,status,address)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let managedZone of iterate(template.managedZones)){\n\
+  \    set(\"managedZone\", managedZone)\n    code(3)\n    for(let recordSet of iterate(template.recordSets)){\n\
+  \      recordSet = JSON.parse(recordSet)\n      set(\"recordType\", recordSet.type)\n\
+  \      set(\"recordData\", recordSet.rrdatas)\n      code(4)\n    }\n  }\n}\n"
+id: gcloud-dns-dangling-records
+info:
+  author: princechaddha
+  description: 'Ensure that dangling DNS records are removed from your public Cloud
+    DNS zones in order to maintain the integrity and authenticity of your domains/subdomains
+    and to protect against domain hijacking.
+
+    '
+  impact: 'Dangling DNS records can lead to domain hijacking and misrouting of traffic,
+    compromising the security and reliability of your domain infrastructure.
+
+    '
+  name: Dangling DNS Records Check
+  reference:
+  - https://cloud.google.com/dns/docs
+  remediation: 'Regularly audit your DNS records and associated IP addresses. Remove
+    any DNS records that point to IP addresses no longer reserved under your Google
+    Cloud account.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,dns,gcp-cloud-config,discovery
+self-contained: true

@@ -1,0 +1,72 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId
+      + " does not have automatic restart enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'gcloud compute instances describe $instanceName --zone $zone --project
+    $projectId --format="json(scheduling.automaticRestart)" | jq ''. // "false"''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let instance of iterate(template.instances)){\n \
+  \   instance = JSON.parse(instance)\n    set(\"instanceName\", instance.name)\n\
+  \    set(\"zone\", instance.zone)\n    code(3)\n  }\n}\n"
+id: gcloud-vm-automatic-restart-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that Google Cloud Compute Engine service restarts automatically
+    your virtual machine instances when they are terminated due to non-user initiated
+    reasons such as maintenance events, hardware, and software failures. The Automatic
+    Restart feature configures the virtual machine restart behavior when an instance
+    crashes or it is terminated by the system.
+
+    '
+  impact: 'Without automatic restart enabled, VM instances that crash or are terminated
+    due to system events will not automatically recover, potentially leading to extended
+    service disruptions.
+
+    '
+  name: VM Instance Automatic Restart Not Enabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/enable-automatic-restart.html
+  - https://cloud.google.com/compute/docs/instances/setting-instance-scheduling-options
+  remediation: 'Enable automatic restart for your VM instances. Note that this behavior
+    does not affect any terminations initiated by the user, such as when the instance
+    is taken offline through a user action like calling sudo shutdown.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,compute,reliability,automatic-restart,gcp-cloud-config
+self-contained: true
