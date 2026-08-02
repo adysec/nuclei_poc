@@ -1,0 +1,129 @@
+name: Sync templates from nuclei-templates
+
+on:
+  schedule:
+    # Mondays at 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-templates
+  cancel-in-progress: false
+
+env:
+  UPSTREAM: https://github.com/projectdiscovery/nuclei-templates.git
+  AUTHOR: daffainfo
+  # Refuse to sync if fewer than this many templates match. Guards against a
+  # broken clone or grep silently wiping the repo.
+  MIN_TEMPLATES: 800
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v4
+
+      - name: Clone upstream
+        run: |
+          git clone --depth 1 "$UPSTREAM" "$RUNNER_TEMP/upstream"
+          echo "UPSTREAM_SHA=$(git -C "$RUNNER_TEMP/upstream" rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Select templates authored by ${{ env.AUTHOR }}
+        run: |
+          cd "$RUNNER_TEMP/upstream"
+          grep -rlE "^[[:space:]]*author:.*${AUTHOR}" --include='*.yaml' . \
+            | sed 's|^\./||' | sort > "$RUNNER_TEMP/matches.txt"
+
+          count=$(wc -l < "$RUNNER_TEMP/matches.txt")
+          echo "Matched $count templates at upstream $UPSTREAM_SHA"
+
+          if [ "$count" -lt "$MIN_TEMPLATES" ]; then
+            echo "::error::Only $count templates matched (floor: $MIN_TEMPLATES). Aborting instead of rewriting the repo."
+            exit 1
+          fi
+          echo "MATCH_COUNT=$count" >> "$GITHUB_ENV"
+
+      - name: Rebuild template tree
+        run: |
+          # Drop the current tree so upstream deletions and renames propagate.
+          git ls-files -z '*.yaml' ':!:.github/**' | xargs -0 -r git rm -q --
+
+          while IFS= read -r rel; do
+            mkdir -p "$(dirname "$rel")"
+            cp "$RUNNER_TEMP/upstream/$rel" "$rel"
+          done < "$RUNNER_TEMP/matches.txt"
+
+          find . -type d -empty -not -path './.git/*' -delete
+
+      - name: Sanity-check templates
+        run: |
+          python3 -c 'import yaml' 2>/dev/null || pip install --quiet pyyaml
+          python3 - <<'PY'
+          import glob, os, yaml
+          author = os.environ['AUTHOR']
+          unparsed, unattributed = [], []
+          files = [f for f in glob.glob('**/*.yaml', recursive=True)
+                   if not f.startswith('.github/')]
+          for f in files:
+              try:
+                  doc = yaml.safe_load(open(f, encoding='utf-8'))
+              except Exception as e:
+                  unparsed.append(f'{f}: {type(e).__name__}')
+                  continue
+              if not isinstance(doc, dict) or author not in str(
+                      (doc.get('info') or {}).get('author', '')):
+                  unattributed.append(f)
+
+          print(f'Checked {len(files)} templates')
+          for label, bad in (('unparseable', unparsed), ('missing author', unattributed)):
+              for f in bad[:20]:
+                  print(f'::warning file={f}::{label}: {f}')
+              if bad:
+                  print(f'{len(bad)} {label}')
+
+          # Individual bad templates are upstream's problem and must not wedge the
+          # mirror, but a systemic failure means the copy itself went wrong.
+          if len(unparsed) + len(unattributed) > len(files) // 20:
+              raise SystemExit('too many bad templates - copy looks broken')
+          PY
+
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Already in sync with upstream $UPSTREAM_SHA - nothing to commit."
+            echo "In sync with upstream \`$UPSTREAM_SHA\` ($MATCH_COUNT templates). No changes." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          status=$(git diff --cached --name-status)
+          added=$(echo "$status" | grep -c '^A' || true)
+          removed=$(echo "$status" | grep -c '^D' || true)
+          changed=$(echo "$status" | grep -c '^M' || true)
+
+          git commit -q -F - <<EOF
+          Sync with nuclei-templates @ $UPSTREAM_SHA
+
+          $MATCH_COUNT templates authored by $AUTHOR.
+          $added added, $removed removed, $changed updated.
+          EOF
+
+          git push
+
+          {
+            echo "Synced with upstream \`$UPSTREAM_SHA\`."
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Templates | $MATCH_COUNT |"
+            echo "| Added | $added |"
+            echo "| Removed | $removed |"
+            echo "| Updated | $changed |"
+          } >> "$GITHUB_STEP_SUMMARY"
