@@ -1,257 +1,566 @@
-headless:
-- extractors:
-  - name: clickjacking_summary
-    part: body
-    regex:
-    - '"scan_completed":\s*true'
-    type: regex
-  - name: confirmed_clickjacking
-    part: body
-    regex:
-    - '"clickjacking_vulnerable":\s*true'
-    type: regex
-  matchers:
-  - name: clickjacking_detected
-    regex:
-    - '"clickjacking_vulnerable":\s*true'
-    type: regex
-  - name: high_risk_clickjacking
-    regex:
-    - '"risk_level":\s*"(Critical|High)"'
-    type: regex
-  - name: frame_embedding_possible
-    regex:
-    - '"frame_embedding_possible":\s*true'
-    type: regex
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitload
-  - action: script
-    args:
-      code: "window.clickjackingResults = {\n  frame_security: {\n    x_frame_options:\
-        \ null,\n    csp_frame_ancestors: null,\n    frame_busting_scripts: [],\n\
-        \    vulnerable_to_framing: false\n  },\n  iframe_tests: [],\n  overlay_detection:\
-        \ [],\n  interaction_hijacking: [],\n  frame_navigation: [],\n  security_headers:\
-        \ {},\n  vulnerabilities: [],\n  test_results: [],\n  risk_assessment: {}\n\
-        };\n\n// Analyze response headers for frame security\nwindow.clickjackingResults.test_results.push('analyzing_frame_security_headers');\n\
-        \n// Check if page is already framed\nvar isFramed = window.self !== window.top;\n\
-        window.clickjackingResults.frame_security.currently_framed = isFramed;\n\n\
-        if (isFramed) {\n  window.clickjackingResults.vulnerabilities.push({\n   \
-        \ type: 'page_successfully_framed',\n    severity: 'high',\n    description:\
-        \ 'Page is currently loaded within a frame',\n    confirmed: true\n  });\n\
-        }\n\n// Hook frame-related JavaScript APIs\nvar originalCreateElement = document.createElement;\n\
-        document.createElement = function(tagName) {\n  if (tagName && tagName.toLowerCase()\
-        \ === 'iframe') {\n    window.clickjackingResults.iframe_tests.push({\n  \
-        \    type: 'iframe_creation_attempt',\n      timestamp: Date.now(),\n    \
-        \  stack: new Error().stack\n    });\n  }\n  return originalCreateElement.call(this,\
-        \ tagName);\n};\n\n// Detect frame-busting scripts\nvar scripts = document.getElementsByTagName('script');\n\
-        for (var i = 0; i < scripts.length; i++) {\n  var script = scripts[i];\n \
-        \ if (script.textContent) {\n    var content = script.textContent;\n\n   \
-        \ // Common frame-busting patterns\n    var frameBustingPatterns = [\n   \
-        \   /if\\s*\\(\\s*top\\s*[!=]=\\s*self\\s*\\)/gi,\n      /if\\s*\\(\\s*self\\\
-        s*[!=]=\\s*top\\s*\\)/gi,\n      /if\\s*\\(\\s*window\\s*[!=]=\\s*parent\\\
-        s*\\)/gi,\n      /if\\s*\\(\\s*parent\\s*[!=]=\\s*window\\s*\\)/gi,\n    \
-        \  /top\\.location\\s*=\\s*self\\.location/gi,\n      /top\\.location\\s*=\\\
-        s*window\\.location/gi,\n      /window\\.top\\.location/gi,\n      /parent\\\
-        .location/gi\n    ];\n\n    for (var j = 0; j < frameBustingPatterns.length;\
-        \ j++) {\n      var pattern = frameBustingPatterns[j];\n      if (pattern.test(content))\
-        \ {\n        window.clickjackingResults.frame_security.frame_busting_scripts.push({\n\
-        \          pattern: pattern.toString(),\n          script_index: i,\n    \
-        \      detected: true\n        });\n      }\n    }\n  }\n}\n\nreturn window.clickjackingResults;\n"
-    name: initialize_clickjacking_detection
-  - action: script
-    args:
-      code: "window.clickjackingResults.test_results.push('testing_iframe_embedding');\n\
-        \ntry {\n  // Create test iframe\n  var testIframe = document.createElement('iframe');\n\
-        \  testIframe.style.width = '100px';\n  testIframe.style.height = '100px';\n\
-        \  testIframe.style.position = 'absolute';\n  testIframe.style.top = '-1000px';\n\
-        \  testIframe.style.left = '-1000px';\n  testIframe.src = window.location.href;\n\
-        \n  // Track iframe loading\n  var iframeLoaded = false;\n  var iframeError\
-        \ = false;\n\n  testIframe.onload = function() {\n    iframeLoaded = true;\n\
-        \    window.clickjackingResults.iframe_tests.push({\n      type: 'iframe_load_success',\n\
-        \      url: window.location.href,\n      timestamp: Date.now(),\n      vulnerable:\
-        \ true\n    });\n\n    // Check if iframe content is accessible\n    try {\n\
-        \      var iframeDoc = testIframe.contentDocument || testIframe.contentWindow.document;\n\
-        \      if (iframeDoc) {\n        window.clickjackingResults.iframe_tests.push({\n\
-        \          type: 'iframe_content_accessible',\n          vulnerable: true,\n\
-        \          severity: 'high'\n        });\n      }\n    } catch (e) {\n   \
-        \   window.clickjackingResults.iframe_tests.push({\n        type: 'iframe_content_blocked',\n\
-        \        error: e.message,\n        security_mechanism: 'same_origin_policy'\n\
-        \      });\n    }\n  };\n\n  testIframe.onerror = function() {\n    iframeError\
-        \ = true;\n    window.clickjackingResults.iframe_tests.push({\n      type:\
-        \ 'iframe_load_error',\n      url: window.location.href,\n      timestamp:\
-        \ Date.now(),\n      protected: true\n    });\n  };\n\n  // Add iframe to\
-        \ document\n  document.body.appendChild(testIframe);\n\n  // Check loading\
-        \ status after timeout\n  setTimeout(function() {\n    if (!iframeLoaded &&\
-        \ !iframeError) {\n      window.clickjackingResults.iframe_tests.push({\n\
-        \        type: 'iframe_load_timeout',\n        url: window.location.href,\n\
-        \        possible_protection: true\n      });\n    }\n\n    // Clean up test\
-        \ iframe\n    try {\n      document.body.removeChild(testIframe);\n    } catch\
-        \ (e) {\n      // Iframe might already be removed\n    }\n  }, 3000);\n\n\
-        } catch (e) {\n  window.clickjackingResults.test_results.push('iframe_embedding_test_error:\
-        \ ' + e.message);\n}\n\nreturn window.clickjackingResults;\n"
-    name: test_iframe_embedding
-  - action: script
-    args:
-      code: "window.clickjackingResults.test_results.push('detecting_transparent_overlays');\n\
-        \ntry {\n  // Create transparent overlay for testing\n  var overlay = document.createElement('div');\n\
-        \  overlay.style.position = 'fixed';\n  overlay.style.top = '0';\n  overlay.style.left\
-        \ = '0';\n  overlay.style.width = '100%';\n  overlay.style.height = '100%';\n\
-        \  overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';\n  overlay.style.zIndex\
-        \ = '999999';\n  overlay.style.pointerEvents = 'auto';\n  overlay.id = 'clickjacking-test-overlay';\n\
-        \n  document.body.appendChild(overlay);\n\n  // Test if overlay intercepts\
-        \ clicks\n  var clickIntercepted = false;\n  overlay.onclick = function()\
-        \ {\n    clickIntercepted = true;\n    window.clickjackingResults.overlay_detection.push({\n\
-        \      type: 'transparent_overlay_click_interception',\n      detected: true,\n\
-        \      severity: 'high'\n    });\n  };\n\n  // Simulate click on overlay\n\
-        \  var clickEvent = new MouseEvent('click', {\n    bubbles: true,\n    cancelable:\
-        \ true,\n    view: window\n  });\n  overlay.dispatchEvent(clickEvent);\n\n\
-        \  // Check for existing suspicious overlays\n  var allElements = document.querySelectorAll('*');\n\
-        \  var suspiciousOverlays = 0;\n\n  for (var i = 0; i < allElements.length;\
-        \ i++) {\n    var element = allElements[i];\n    var styles = window.getComputedStyle(element);\n\
-        \n    // Check for potentially malicious overlay characteristics\n    if (styles.position\
-        \ === 'fixed' || styles.position === 'absolute') {\n      var opacity = parseFloat(styles.opacity);\n\
-        \      var zIndex = parseInt(styles.zIndex);\n\n      if ((opacity < 0.1 ||\
-        \ styles.visibility === 'hidden') &&\n          zIndex > 1000 &&\n       \
-        \   (styles.width === '100%' || parseInt(styles.width) > 500) &&\n       \
-        \   (styles.height === '100%' || parseInt(styles.height) > 500)) {\n\n   \
-        \     suspiciousOverlays++;\n        window.clickjackingResults.overlay_detection.push({\n\
-        \          type: 'suspicious_transparent_overlay',\n          element: element.tagName\
-        \ + (element.id ? '#' + element.id : '') +\n                  (element.className\
-        \ ? '.' + element.className : ''),\n          opacity: opacity,\n        \
-        \  zIndex: zIndex,\n          width: styles.width,\n          height: styles.height,\n\
-        \          severity: 'medium'\n        });\n      }\n    }\n  }\n\n  // Clean\
-        \ up test overlay\n  setTimeout(function() {\n    try {\n      document.body.removeChild(overlay);\n\
-        \    } catch (e) {\n      // Overlay might already be removed\n    }\n  },\
-        \ 1000);\n\n} catch (e) {\n  window.clickjackingResults.test_results.push('transparent_overlay_detection_error:\
-        \ ' + e.message);\n}\n\nreturn window.clickjackingResults;\n"
-    name: detect_transparent_overlays
-  - action: script
-    args:
-      code: "window.clickjackingResults.test_results.push('testing_interaction_hijacking');\n\
-        \ntry {\n  // Hook click events to detect potential hijacking\n  var originalAddEventListener\
-        \ = EventTarget.prototype.addEventListener;\n  var clickListenerCount = 0;\n\
-        \n  EventTarget.prototype.addEventListener = function(type, listener, options)\
-        \ {\n    if (type === 'click') {\n      clickListenerCount++;\n      window.clickjackingResults.interaction_hijacking.push({\n\
-        \        type: 'click_listener_registration',\n        element: this.tagName\
-        \ || 'unknown',\n        count: clickListenerCount\n      });\n    }\n   \
-        \ return originalAddEventListener.call(this, type, listener, options);\n \
-        \ };\n\n  // Test for elements with suspicious positioning\n  var clickableElements\
-        \ = document.querySelectorAll('button, input[type=\"submit\"], a, [onclick]');\n\
-        \  for (var i = 0; i < clickableElements.length; i++) {\n    var element =\
-        \ clickableElements[i];\n    var rect = element.getBoundingClientRect();\n\
-        \    var styles = window.getComputedStyle(element);\n\n    // Check for elements\
-        \ that might be overlaid\n    if (rect.width > 0 && rect.height > 0) {\n \
-        \     var elementAtPoint = document.elementFromPoint(\n        rect.left +\
-        \ rect.width / 2,\n        rect.top + rect.height / 2\n      );\n\n      if\
-        \ (elementAtPoint && elementAtPoint !== element) {\n        window.clickjackingResults.interaction_hijacking.push({\n\
-        \          type: 'element_overlay_detected',\n          target_element: element.tagName\
-        \ + (element.id ? '#' + element.id : ''),\n          overlaying_element: elementAtPoint.tagName\
-        \ + (elementAtPoint.id ? '#' + elementAtPoint.id : ''),\n          severity:\
-        \ 'high'\n        });\n      }\n    }\n  }\n\n  // Test for cursor style manipulation\n\
-        \  var elementsWithCursorPointer = document.querySelectorAll('[style*=\"cursor\"\
-        ]');\n  for (var j = 0; j < elementsWithCursorPointer.length; j++) {\n   \
-        \ var cursorElement = elementsWithCursorPointer[j];\n    var cursorStyles\
-        \ = window.getComputedStyle(cursorElement);\n\n    if (cursorStyles.cursor\
-        \ === 'pointer' &&\n        (cursorStyles.opacity === '0' || cursorStyles.visibility\
-        \ === 'hidden')) {\n      window.clickjackingResults.interaction_hijacking.push({\n\
-        \        type: 'hidden_clickable_element',\n        element: cursorElement.tagName\
-        \ + (cursorElement.id ? '#' + cursorElement.id : ''),\n        cursor: cursorStyles.cursor,\n\
-        \        opacity: cursorStyles.opacity,\n        visibility: cursorStyles.visibility,\n\
-        \        severity: 'high'\n      });\n    }\n  }\n\n} catch (e) {\n  window.clickjackingResults.test_results.push('interaction_hijacking_test_error:\
-        \ ' + e.message);\n}\n\nreturn window.clickjackingResults;\n"
-    name: test_interaction_hijacking
-  - action: script
-    args:
-      code: "window.clickjackingResults.test_results.push('testing_frame_navigation');\n\
-        \ntry {\n  // Test various frame navigation methods\n  var navigationMethods\
-        \ = [\n    {\n      name: 'top_location_href',\n      test: function() {\n\
-        \        try {\n          return typeof window.top.location.href === 'string';\n\
-        \        } catch (e) {\n          return false;\n        }\n      }\n    },\n\
-        \    {\n      name: 'parent_location_href',\n      test: function() {\n  \
-        \      try {\n          return typeof window.parent.location.href === 'string';\n\
-        \        } catch (e) {\n          return false;\n        }\n      }\n    },\n\
-        \    {\n      name: 'top_location_replace',\n      test: function() {\n  \
-        \      try {\n          return typeof window.top.location.replace === 'function';\n\
-        \        } catch (e) {\n          return false;\n        }\n      }\n    }\n\
-        \  ];\n\n  for (var i = 0; i < navigationMethods.length; i++) {\n    var method\
-        \ = navigationMethods[i];\n    var accessible = method.test();\n\n    window.clickjackingResults.frame_navigation.push({\n\
-        \      method: method.name,\n      accessible: accessible,\n      security_risk:\
-        \ accessible ? 'high' : 'low'\n    });\n\n    if (accessible) {\n      window.clickjackingResults.vulnerabilities.push({\n\
-        \        type: 'frame_navigation_accessible',\n        method: method.name,\n\
-        \        severity: 'medium',\n        description: 'Frame navigation method\
-        \ is accessible, indicating weak frame busting',\n        confirmed: true\n\
-        \      });\n    }\n  }\n\n  // Test for double-framing vulnerability\n  try\
-        \ {\n    if (window.top !== window.self && window.parent !== window.self)\
-        \ {\n      window.clickjackingResults.vulnerabilities.push({\n        type:\
-        \ 'double_framing_detected',\n        severity: 'high',\n        description:\
-        \ 'Page is double-framed, frame busting may be bypassable',\n        confirmed:\
-        \ true\n      });\n    }\n  } catch (e) {\n    window.clickjackingResults.test_results.push('double_framing_test_error:\
-        \ ' + e.message);\n  }\n\n} catch (e) {\n  window.clickjackingResults.test_results.push('frame_navigation_test_error:\
-        \ ' + e.message);\n}\n\nreturn window.clickjackingResults;\n"
-    name: test_frame_navigation
-  - action: script
-    args:
-      code: "// Calculate comprehensive clickjacking risk score\nvar riskScore = 0;\n\
-        var vulnerabilities = window.clickjackingResults.vulnerabilities;\n\n// Score\
-        \ vulnerabilities\nfor (var i = 0; i < vulnerabilities.length; i++) {\n  var\
-        \ vuln = vulnerabilities[i];\n  switch (vuln.severity) {\n    case 'critical':\
-        \ riskScore += 35; break;\n    case 'high': riskScore += 25; break;\n    case\
-        \ 'medium': riskScore += 15; break;\n    case 'low': riskScore += 5; break;\n\
-        \  }\n}\n\n// Additional risk factors\nvar frameBustingScripts = window.clickjackingResults.frame_security.frame_busting_scripts.length;\n\
-        var iframeTests = window.clickjackingResults.iframe_tests.length;\nvar overlayDetections\
-        \ = window.clickjackingResults.overlay_detection.length;\nvar interactionHijacking\
-        \ = window.clickjackingResults.interaction_hijacking.length;\n\n// Adjust\
-        \ score based on protection mechanisms\nif (frameBustingScripts > 0) {\n \
-        \ riskScore -= 10; // Frame busting provides some protection\n}\n\n// Check\
-        \ if successfully framed\nvar successfullyFramed = false;\nfor (var j = 0;\
-        \ j < window.clickjackingResults.iframe_tests.length; j++) {\n  if (window.clickjackingResults.iframe_tests[j].type\
-        \ === 'iframe_load_success') {\n    successfullyFramed = true;\n    riskScore\
-        \ += 20;\n    break;\n  }\n}\n\nwindow.clickjackingResults.risk_assessment\
-        \ = {\n  total_vulnerabilities: vulnerabilities.length,\n  successfully_framed:\
-        \ successfullyFramed,\n  frame_busting_scripts: frameBustingScripts,\n  overlay_detections:\
-        \ overlayDetections,\n  interaction_hijacking_risks: interactionHijacking,\n\
-        \  risk_score: Math.min(riskScore, 100),\n  risk_level: riskScore > 70 ? 'Critical'\
-        \ :\n             riskScore > 50 ? 'High' :\n             riskScore > 30 ?\
-        \ 'Medium' : 'Low',\n  test_coverage: window.clickjackingResults.test_results.length,\n\
-        \  recommendations: []\n};\n\n// Generate recommendations\nif (successfullyFramed)\
-        \ {\n  window.clickjackingResults.risk_assessment.recommendations.push(\n\
-        \    'Implement X-Frame-Options: DENY or SAMEORIGIN header',\n    'Add Content-Security-Policy\
-        \ frame-ancestors directive',\n    'Consider implementing frame-busting JavaScript\
-        \ as defense in depth'\n  );\n}\n\nif (overlayDetections > 0) {\n  window.clickjackingResults.risk_assessment.recommendations.push(\n\
-        \    'Review transparent overlay elements for malicious intent',\n    'Implement\
-        \ click-through protection mechanisms'\n  );\n}\n\nif (interactionHijacking\
-        \ > 0) {\n  window.clickjackingResults.risk_assessment.recommendations.push(\n\
-        \    'Audit element positioning and click event handlers',\n    'Implement\
-        \ interaction confirmation for sensitive actions'\n  );\n}\n\nwindow.clickjackingResults.summary\
-        \ = {\n  scan_completed: true,\n  timestamp: new Date().toISOString(),\n \
-        \ clickjacking_vulnerable: successfullyFramed || riskScore > 30,\n  frame_embedding_possible:\
-        \ successfullyFramed,\n  overlay_attacks_detected: overlayDetections > 0,\n\
-        \  interaction_hijacking_possible: interactionHijacking > 0,\n  comprehensive_testing_completed:\
-        \ true\n};\n\nreturn window.clickjackingResults;\n"
-    name: final_clickjacking_assessment
 id: headless-clickjacking
+
 info:
-  author: geeknik
-  description: 'Advanced clickjacking vulnerability detection using Headless Protocol
-    for
-
-    comprehensive frame security analysis. This template performs frame embedding
-
-    tests, X-Frame-Options validation, Content Security Policy analysis, transparent
-
-    overlay detection, and iframe sandboxing assessment while maintaining defensive
-
-    research principles for UI redressing attack vector identification.
-
-    '
   name: Advanced Clickjacking Detection Scanner
-  reference:
-  - https://owasp.org/www-community/attacks/Clickjacking
-  - https://portswigger.net/web-security/clickjacking
-  - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
-  - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors
+  author: geeknik
   severity: medium
+  description: |
+    Advanced clickjacking vulnerability detection using Headless Protocol for
+    comprehensive frame security analysis. This template performs frame embedding
+    tests, X-Frame-Options validation, Content Security Policy analysis, transparent
+    overlay detection, and iframe sandboxing assessment while maintaining defensive
+    research principles for UI redressing attack vector identification.
+  reference:
+    - https://owasp.org/www-community/attacks/Clickjacking
+    - https://portswigger.net/web-security/clickjacking
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors
   tags: clickjacking,frame,iframe,ui-redressing,x-frame-options,csp,headless,defensive
+
+headless:
+  - steps:
+      # Navigate to target page
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      # Wait for page to fully load
+      - action: waitload
+
+      # Initialize clickjacking detection framework
+      - action: script
+        name: initialize_clickjacking_detection
+        args:
+          code: |
+            window.clickjackingResults = {
+              frame_security: {
+                x_frame_options: null,
+                csp_frame_ancestors: null,
+                frame_busting_scripts: [],
+                vulnerable_to_framing: false
+              },
+              iframe_tests: [],
+              overlay_detection: [],
+              interaction_hijacking: [],
+              frame_navigation: [],
+              security_headers: {},
+              vulnerabilities: [],
+              test_results: [],
+              risk_assessment: {}
+            };
+
+            // Analyze response headers for frame security
+            window.clickjackingResults.test_results.push('analyzing_frame_security_headers');
+
+            // Check if page is already framed
+            var isFramed = window.self !== window.top;
+            window.clickjackingResults.frame_security.currently_framed = isFramed;
+
+            if (isFramed) {
+              window.clickjackingResults.vulnerabilities.push({
+                type: 'page_successfully_framed',
+                severity: 'high',
+                description: 'Page is currently loaded within a frame',
+                confirmed: true
+              });
+            }
+
+            // Hook frame-related JavaScript APIs
+            var originalCreateElement = document.createElement;
+            document.createElement = function(tagName) {
+              if (tagName && tagName.toLowerCase() === 'iframe') {
+                window.clickjackingResults.iframe_tests.push({
+                  type: 'iframe_creation_attempt',
+                  timestamp: Date.now(),
+                  stack: new Error().stack
+                });
+              }
+              return originalCreateElement.call(this, tagName);
+            };
+
+            // Detect frame-busting scripts
+            var scripts = document.getElementsByTagName('script');
+            for (var i = 0; i < scripts.length; i++) {
+              var script = scripts[i];
+              if (script.textContent) {
+                var content = script.textContent;
+
+                // Common frame-busting patterns
+                var frameBustingPatterns = [
+                  /if\s*\(\s*top\s*[!=]=\s*self\s*\)/gi,
+                  /if\s*\(\s*self\s*[!=]=\s*top\s*\)/gi,
+                  /if\s*\(\s*window\s*[!=]=\s*parent\s*\)/gi,
+                  /if\s*\(\s*parent\s*[!=]=\s*window\s*\)/gi,
+                  /top\.location\s*=\s*self\.location/gi,
+                  /top\.location\s*=\s*window\.location/gi,
+                  /window\.top\.location/gi,
+                  /parent\.location/gi
+                ];
+
+                for (var j = 0; j < frameBustingPatterns.length; j++) {
+                  var pattern = frameBustingPatterns[j];
+                  if (pattern.test(content)) {
+                    window.clickjackingResults.frame_security.frame_busting_scripts.push({
+                      pattern: pattern.toString(),
+                      script_index: i,
+                      detected: true
+                    });
+                  }
+                }
+              }
+            }
+
+            return window.clickjackingResults;
+
+      # Test iframe embedding capability
+      - action: script
+        name: test_iframe_embedding
+        args:
+          code: |
+            window.clickjackingResults.test_results.push('testing_iframe_embedding');
+
+            try {
+              // Create test iframe
+              var testIframe = document.createElement('iframe');
+              testIframe.style.width = '100px';
+              testIframe.style.height = '100px';
+              testIframe.style.position = 'absolute';
+              testIframe.style.top = '-1000px';
+              testIframe.style.left = '-1000px';
+              testIframe.src = window.location.href;
+
+              // Track iframe loading
+              var iframeLoaded = false;
+              var iframeError = false;
+
+              testIframe.onload = function() {
+                iframeLoaded = true;
+                window.clickjackingResults.iframe_tests.push({
+                  type: 'iframe_load_success',
+                  url: window.location.href,
+                  timestamp: Date.now(),
+                  vulnerable: true
+                });
+
+                // Check if iframe content is accessible
+                try {
+                  var iframeDoc = testIframe.contentDocument || testIframe.contentWindow.document;
+                  if (iframeDoc) {
+                    window.clickjackingResults.iframe_tests.push({
+                      type: 'iframe_content_accessible',
+                      vulnerable: true,
+                      severity: 'high'
+                    });
+                  }
+                } catch (e) {
+                  window.clickjackingResults.iframe_tests.push({
+                    type: 'iframe_content_blocked',
+                    error: e.message,
+                    security_mechanism: 'same_origin_policy'
+                  });
+                }
+              };
+
+              testIframe.onerror = function() {
+                iframeError = true;
+                window.clickjackingResults.iframe_tests.push({
+                  type: 'iframe_load_error',
+                  url: window.location.href,
+                  timestamp: Date.now(),
+                  protected: true
+                });
+              };
+
+              // Add iframe to document
+              document.body.appendChild(testIframe);
+
+              // Check loading status after timeout
+              setTimeout(function() {
+                if (!iframeLoaded && !iframeError) {
+                  window.clickjackingResults.iframe_tests.push({
+                    type: 'iframe_load_timeout',
+                    url: window.location.href,
+                    possible_protection: true
+                  });
+                }
+
+                // Clean up test iframe
+                try {
+                  document.body.removeChild(testIframe);
+                } catch (e) {
+                  // Iframe might already be removed
+                }
+              }, 3000);
+
+            } catch (e) {
+              window.clickjackingResults.test_results.push('iframe_embedding_test_error: ' + e.message);
+            }
+
+            return window.clickjackingResults;
+
+      # Test transparent overlay detection
+      - action: script
+        name: detect_transparent_overlays
+        args:
+          code: |
+            window.clickjackingResults.test_results.push('detecting_transparent_overlays');
+
+            try {
+              // Create transparent overlay for testing
+              var overlay = document.createElement('div');
+              overlay.style.position = 'fixed';
+              overlay.style.top = '0';
+              overlay.style.left = '0';
+              overlay.style.width = '100%';
+              overlay.style.height = '100%';
+              overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+              overlay.style.zIndex = '999999';
+              overlay.style.pointerEvents = 'auto';
+              overlay.id = 'clickjacking-test-overlay';
+
+              document.body.appendChild(overlay);
+
+              // Test if overlay intercepts clicks
+              var clickIntercepted = false;
+              overlay.onclick = function() {
+                clickIntercepted = true;
+                window.clickjackingResults.overlay_detection.push({
+                  type: 'transparent_overlay_click_interception',
+                  detected: true,
+                  severity: 'high'
+                });
+              };
+
+              // Simulate click on overlay
+              var clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+              });
+              overlay.dispatchEvent(clickEvent);
+
+              // Check for existing suspicious overlays
+              var allElements = document.querySelectorAll('*');
+              var suspiciousOverlays = 0;
+
+              for (var i = 0; i < allElements.length; i++) {
+                var element = allElements[i];
+                var styles = window.getComputedStyle(element);
+
+                // Check for potentially malicious overlay characteristics
+                if (styles.position === 'fixed' || styles.position === 'absolute') {
+                  var opacity = parseFloat(styles.opacity);
+                  var zIndex = parseInt(styles.zIndex);
+
+                  if ((opacity < 0.1 || styles.visibility === 'hidden') &&
+                      zIndex > 1000 &&
+                      (styles.width === '100%' || parseInt(styles.width) > 500) &&
+                      (styles.height === '100%' || parseInt(styles.height) > 500)) {
+
+                    suspiciousOverlays++;
+                    window.clickjackingResults.overlay_detection.push({
+                      type: 'suspicious_transparent_overlay',
+                      element: element.tagName + (element.id ? '#' + element.id : '') +
+                              (element.className ? '.' + element.className : ''),
+                      opacity: opacity,
+                      zIndex: zIndex,
+                      width: styles.width,
+                      height: styles.height,
+                      severity: 'medium'
+                    });
+                  }
+                }
+              }
+
+              // Clean up test overlay
+              setTimeout(function() {
+                try {
+                  document.body.removeChild(overlay);
+                } catch (e) {
+                  // Overlay might already be removed
+                }
+              }, 1000);
+
+            } catch (e) {
+              window.clickjackingResults.test_results.push('transparent_overlay_detection_error: ' + e.message);
+            }
+
+            return window.clickjackingResults;
+
+      # Test interaction hijacking potential
+      - action: script
+        name: test_interaction_hijacking
+        args:
+          code: |
+            window.clickjackingResults.test_results.push('testing_interaction_hijacking');
+
+            try {
+              // Hook click events to detect potential hijacking
+              var originalAddEventListener = EventTarget.prototype.addEventListener;
+              var clickListenerCount = 0;
+
+              EventTarget.prototype.addEventListener = function(type, listener, options) {
+                if (type === 'click') {
+                  clickListenerCount++;
+                  window.clickjackingResults.interaction_hijacking.push({
+                    type: 'click_listener_registration',
+                    element: this.tagName || 'unknown',
+                    count: clickListenerCount
+                  });
+                }
+                return originalAddEventListener.call(this, type, listener, options);
+              };
+
+              // Test for elements with suspicious positioning
+              var clickableElements = document.querySelectorAll('button, input[type="submit"], a, [onclick]');
+              for (var i = 0; i < clickableElements.length; i++) {
+                var element = clickableElements[i];
+                var rect = element.getBoundingClientRect();
+                var styles = window.getComputedStyle(element);
+
+                // Check for elements that might be overlaid
+                if (rect.width > 0 && rect.height > 0) {
+                  var elementAtPoint = document.elementFromPoint(
+                    rect.left + rect.width / 2,
+                    rect.top + rect.height / 2
+                  );
+
+                  if (elementAtPoint && elementAtPoint !== element) {
+                    window.clickjackingResults.interaction_hijacking.push({
+                      type: 'element_overlay_detected',
+                      target_element: element.tagName + (element.id ? '#' + element.id : ''),
+                      overlaying_element: elementAtPoint.tagName + (elementAtPoint.id ? '#' + elementAtPoint.id : ''),
+                      severity: 'high'
+                    });
+                  }
+                }
+              }
+
+              // Test for cursor style manipulation
+              var elementsWithCursorPointer = document.querySelectorAll('[style*="cursor"]');
+              for (var j = 0; j < elementsWithCursorPointer.length; j++) {
+                var cursorElement = elementsWithCursorPointer[j];
+                var cursorStyles = window.getComputedStyle(cursorElement);
+
+                if (cursorStyles.cursor === 'pointer' &&
+                    (cursorStyles.opacity === '0' || cursorStyles.visibility === 'hidden')) {
+                  window.clickjackingResults.interaction_hijacking.push({
+                    type: 'hidden_clickable_element',
+                    element: cursorElement.tagName + (cursorElement.id ? '#' + cursorElement.id : ''),
+                    cursor: cursorStyles.cursor,
+                    opacity: cursorStyles.opacity,
+                    visibility: cursorStyles.visibility,
+                    severity: 'high'
+                  });
+                }
+              }
+
+            } catch (e) {
+              window.clickjackingResults.test_results.push('interaction_hijacking_test_error: ' + e.message);
+            }
+
+            return window.clickjackingResults;
+
+      # Test frame navigation and busting bypass
+      - action: script
+        name: test_frame_navigation
+        args:
+          code: |
+            window.clickjackingResults.test_results.push('testing_frame_navigation');
+
+            try {
+              // Test various frame navigation methods
+              var navigationMethods = [
+                {
+                  name: 'top_location_href',
+                  test: function() {
+                    try {
+                      return typeof window.top.location.href === 'string';
+                    } catch (e) {
+                      return false;
+                    }
+                  }
+                },
+                {
+                  name: 'parent_location_href',
+                  test: function() {
+                    try {
+                      return typeof window.parent.location.href === 'string';
+                    } catch (e) {
+                      return false;
+                    }
+                  }
+                },
+                {
+                  name: 'top_location_replace',
+                  test: function() {
+                    try {
+                      return typeof window.top.location.replace === 'function';
+                    } catch (e) {
+                      return false;
+                    }
+                  }
+                }
+              ];
+
+              for (var i = 0; i < navigationMethods.length; i++) {
+                var method = navigationMethods[i];
+                var accessible = method.test();
+
+                window.clickjackingResults.frame_navigation.push({
+                  method: method.name,
+                  accessible: accessible,
+                  security_risk: accessible ? 'high' : 'low'
+                });
+
+                if (accessible) {
+                  window.clickjackingResults.vulnerabilities.push({
+                    type: 'frame_navigation_accessible',
+                    method: method.name,
+                    severity: 'medium',
+                    description: 'Frame navigation method is accessible, indicating weak frame busting',
+                    confirmed: true
+                  });
+                }
+              }
+
+              // Test for double-framing vulnerability
+              try {
+                if (window.top !== window.self && window.parent !== window.self) {
+                  window.clickjackingResults.vulnerabilities.push({
+                    type: 'double_framing_detected',
+                    severity: 'high',
+                    description: 'Page is double-framed, frame busting may be bypassable',
+                    confirmed: true
+                  });
+                }
+              } catch (e) {
+                window.clickjackingResults.test_results.push('double_framing_test_error: ' + e.message);
+              }
+
+            } catch (e) {
+              window.clickjackingResults.test_results.push('frame_navigation_test_error: ' + e.message);
+            }
+
+            return window.clickjackingResults;
+
+      # Final clickjacking assessment
+      - action: script
+        name: final_clickjacking_assessment
+        args:
+          code: |
+            // Calculate comprehensive clickjacking risk score
+            var riskScore = 0;
+            var vulnerabilities = window.clickjackingResults.vulnerabilities;
+
+            // Score vulnerabilities
+            for (var i = 0; i < vulnerabilities.length; i++) {
+              var vuln = vulnerabilities[i];
+              switch (vuln.severity) {
+                case 'critical': riskScore += 35; break;
+                case 'high': riskScore += 25; break;
+                case 'medium': riskScore += 15; break;
+                case 'low': riskScore += 5; break;
+              }
+            }
+
+            // Additional risk factors
+            var frameBustingScripts = window.clickjackingResults.frame_security.frame_busting_scripts.length;
+            var iframeTests = window.clickjackingResults.iframe_tests.length;
+            var overlayDetections = window.clickjackingResults.overlay_detection.length;
+            var interactionHijacking = window.clickjackingResults.interaction_hijacking.length;
+
+            // Adjust score based on protection mechanisms
+            if (frameBustingScripts > 0) {
+              riskScore -= 10; // Frame busting provides some protection
+            }
+
+            // Check if successfully framed
+            var successfullyFramed = false;
+            for (var j = 0; j < window.clickjackingResults.iframe_tests.length; j++) {
+              if (window.clickjackingResults.iframe_tests[j].type === 'iframe_load_success') {
+                successfullyFramed = true;
+                riskScore += 20;
+                break;
+              }
+            }
+
+            window.clickjackingResults.risk_assessment = {
+              total_vulnerabilities: vulnerabilities.length,
+              successfully_framed: successfullyFramed,
+              frame_busting_scripts: frameBustingScripts,
+              overlay_detections: overlayDetections,
+              interaction_hijacking_risks: interactionHijacking,
+              risk_score: Math.min(riskScore, 100),
+              risk_level: riskScore > 70 ? 'Critical' :
+                         riskScore > 50 ? 'High' :
+                         riskScore > 30 ? 'Medium' : 'Low',
+              test_coverage: window.clickjackingResults.test_results.length,
+              recommendations: []
+            };
+
+            // Generate recommendations
+            if (successfullyFramed) {
+              window.clickjackingResults.risk_assessment.recommendations.push(
+                'Implement X-Frame-Options: DENY or SAMEORIGIN header',
+                'Add Content-Security-Policy frame-ancestors directive',
+                'Consider implementing frame-busting JavaScript as defense in depth'
+              );
+            }
+
+            if (overlayDetections > 0) {
+              window.clickjackingResults.risk_assessment.recommendations.push(
+                'Review transparent overlay elements for malicious intent',
+                'Implement click-through protection mechanisms'
+              );
+            }
+
+            if (interactionHijacking > 0) {
+              window.clickjackingResults.risk_assessment.recommendations.push(
+                'Audit element positioning and click event handlers',
+                'Implement interaction confirmation for sensitive actions'
+              );
+            }
+
+            window.clickjackingResults.summary = {
+              scan_completed: true,
+              timestamp: new Date().toISOString(),
+              clickjacking_vulnerable: successfullyFramed || riskScore > 30,
+              frame_embedding_possible: successfullyFramed,
+              overlay_attacks_detected: overlayDetections > 0,
+              interaction_hijacking_possible: interactionHijacking > 0,
+              comprehensive_testing_completed: true
+            };
+
+            return window.clickjackingResults;
+
+    extractors:
+      - type: regex
+        name: clickjacking_summary
+        part: body
+        regex:
+          - '"scan_completed":\s*true'
+
+      - type: regex
+        name: confirmed_clickjacking
+        part: body
+        regex:
+          - '"clickjacking_vulnerable":\s*true'
+
+    matchers:
+      - type: regex
+        name: clickjacking_detected
+        regex:
+          - '"clickjacking_vulnerable":\s*true'
+
+      - type: regex
+        name: high_risk_clickjacking
+        regex:
+          - '"risk_level":\s*"(Critical|High)"'
+
+      - type: regex
+        name: frame_embedding_possible
+        regex:
+          - '"frame_embedding_possible":\s*true'
+
+# Headless template for comprehensive clickjacking vulnerability detection
