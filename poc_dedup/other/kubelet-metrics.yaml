@@ -1,30 +1,26 @@
 id: kubelet-metrics
-
 info:
   name: Kubelet Metrics
-  author: sharath,righettod
+  author: sharath
   severity: info
-  description: |
-    Kube Metrics Server was detected.
-  reference:
-    - https://github.com/kubernetes-sigs/metrics-server
-  metadata:
-    verified: true
-    max-request: 1
-    shodan-query: http.title:"Kube Metrics Server"
+  description: Scans for kubelet metrics
   tags: tech,k8s,kubernetes,devops,kubelet
-
-http:
+requests:
   - method: GET
     path:
-      - "{{BaseURL}}/"
       - "{{BaseURL}}/metrics"
-
-    stop-at-first-match: true
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 200'
-          - 'contains_any(to_lower(body), "<title>kube metrics server</title>", "kube_configmap_", "kube_pod_", "kube_secret_", "kube_deployment_", "kube_namespace_", "kube_service_")'
+      - type: word
+        part: body
+        words:
+          - "# HELP "
+          - "# TYPE "
         condition: and
-# digest: 490a0046304402207c185fb40f0af7626af2f471767431f2792d31017d38c93febb174d320abec2a02202fad1fa4376706d36c870a49c07216b5e39101316307d826628c53475ea6126e:922c64590222798bb761d5b6d8e72950
+      - type: regex
+        part: header
+        regex:
+          - "text/plain"
+      - type: status
+        status:
+          - 200
