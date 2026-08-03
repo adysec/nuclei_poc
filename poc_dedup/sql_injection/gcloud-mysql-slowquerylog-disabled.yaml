@@ -1,0 +1,69 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: sqlInstances
+    type: json
+  source: 'gcloud sql instances list --project $projectId --filter=''DATABASE_VERSION:MYSQL*''
+    --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The slow_query_log flag is disabled for MySQL instance " + sqlInstance + "
+      in project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"off"'
+  source: 'gcloud sql instances describe $sqlInstance --format="json(settings.databaseFlags)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let sqlInstance of iterate(template.sqlInstances)){\n\
+  \    set(\"sqlInstance\", sqlInstance)\n    code(3)\n  }\n}\n"
+id: gcloud-mysql-slowquerylog-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that the "slow_query_log" database flag is enabled for your
+    Google Cloud MySQL database instances in order to simplify the task of finding
+    inefficient or time-consuming SQL queries for your MySQL databases. By default,
+    the "slow_query_log" database flag is not enabled for Google Cloud MySQL instances.
+
+    '
+  impact: 'Disabling the "slow_query_log" flag makes it difficult to identify and
+    optimize slow or inefficient queries, leading to potential database performance
+    degradation and increased costs.
+
+    '
+  name: Slow Query Log Disabled for MySQL Database Servers
+  reference:
+  - https://cloud.google.com/sql/docs/mysql/flags
+  remediation: 'Enable the "slow_query_log" flag for MySQL database instances in Google
+    Cloud to log and analyze slow SQL queries, improving database performance and
+    query efficiency.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,gcp-cloud-config
+self-contained: true

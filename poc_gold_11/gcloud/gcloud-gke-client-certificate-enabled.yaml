@@ -1,0 +1,72 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusters
+    type: json
+  source: 'gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId
+      + " has client certificate authentication enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'True'
+  source: 'gcloud container clusters describe $clusterName --location $location --project
+    $projectId --format="value(masterAuth.clientCertificateConfig.issueClientCertificate)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let cluster of iterate(template.clusters)){\n   \
+  \ cluster = JSON.parse(cluster)\n    set(\"clusterName\", cluster.name)\n    set(\"\
+  location\", cluster.location)\n    code(3)\n  }\n}\n"
+id: gcloud-gke-client-certificate-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that authentication using client certificates is disabled for
+    your Google Kubernetes Engine (GKE) clusters. Client certificates require manual
+    key rotation for authentication and are difficult to revoke. It is highly recommended
+    to use alternative authentication methods like OpenID Connect, which is the default
+    authentication method used by gcloud and handles token management automatically.
+
+    '
+  impact: 'Using client certificate authentication introduces security management
+    challenges as certificates don''t auto-rotate and are difficult to revoke, potentially
+    leading to security risks if certificates are compromised or not properly rotated.
+
+    '
+  name: GKE Clusters With Client Certificate Authentication Enabled
+  reference:
+  - https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/disable-client-certificate.html
+  remediation: 'Re-create your clusters without client certificates using:
+
+    gcloud container clusters create NEW_CLUSTER_NAME --no-issue-client-certificate
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,authentication,gcp-cloud-config
+self-contained: true

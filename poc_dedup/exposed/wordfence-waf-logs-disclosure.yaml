@@ -1,0 +1,57 @@
+flow: http(1) && http(2)
+http:
+- matchers:
+  - internal: true
+    part: body
+    type: word
+    words:
+    - plugins/wordfence
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  redirects: true
+- matchers:
+  - part: body
+    type: word
+    words:
+    - Index of
+  - condition: or
+    part: body
+    type: word
+    words:
+    - /wp-content/wflogs
+    - /wp-content/plugins/wordfence
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/wp-content/wflogs/'
+  - '{{BaseURL}}/wp-content/plugins/wordfence/lib/wflogs/'
+  - '{{BaseURL}}/wp-content/plugins/wordfence/tmp/'
+  stop-at-first-match: true
+id: wordfence-waf-logs-disclosure
+info:
+  author: ritikchaddha
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-538
+  description: 'The Wordfence Security plugin creates various log and data files in
+    the wflogs directory. If directory listing is enabled or files are directly accessible,
+    sensitive information about blocked attacks, IP addresses, and firewall configuration
+    may be exposed.
+
+    '
+  metadata:
+    fofa-query: body="/plugins/wordfence"
+    max-request: 3
+    runzero-match: service["http.body"] matches "(?i)/plugins/wordfence"
+    verified: true
+  name: WordPress Wordfence - WAF Logs and Data Disclosure
+  reference:
+  - https://wordpress.org/support/topic/detect-suspicious-content-in-word-fence-wflogs-in-my-site/
+  - https://wordpress.org/support/topic/syn_sent-in-wflogs-filename-php/
+  severity: low
+  tags: wordpress,wp,wp-plugin,wordfence,logs,exposure

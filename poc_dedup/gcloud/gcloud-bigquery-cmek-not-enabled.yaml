@@ -1,0 +1,67 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[] | .datasetReference.datasetId
+    name: datasets
+    type: json
+  source: 'bq ls --project_id $projectId --format="prettyjson"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Dataset without CMEK: " + datasetId + " in Project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'bq show --format=prettyjson $projectId:$datasetId | jq ''.defaultEncryptionConfiguration.kmsKeyName''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let dataset of iterate(template.datasets)){\n   \
+  \ set(\"datasetId\", dataset)\n    code(3)\n  }\n}\n"
+id: gcloud-bigquery-cmek-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that all your Google Cloud BigQuery datasets are encrypted
+    using Customer-Managed Encryption Keys (CMEKs) in order to have a more granular
+    control over the dataset encryption/decryption process. Datasets not encrypted
+    with CMEKs may expose sensitive data to higher risks.
+
+    '
+  impact: 'Using Google-managed keys for dataset encryption limits control over the
+    encryption process and may not meet compliance requirements that specify encryption
+    key management policies.
+
+    '
+  name: BigQuery Dataset Encryption with Customer-Managed Encryption Keys Not Enabled
+  reference:
+  - https://cloud.google.com/bigquery/docs/customer-managed-encryption
+  remediation: 'Update the encryption configuration of your BigQuery datasets to use
+    Customer-Managed Encryption Keys. This can be done by setting the ''defaultEncryptionConfiguration''
+    property of each dataset to use a ''kmsKeyName'' that you manage.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,bigquery,gcp-cloud-config
+self-contained: true

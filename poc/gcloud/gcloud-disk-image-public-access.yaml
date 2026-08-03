@@ -1,0 +1,68 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: images
+    type: json
+  source: 'gcloud compute images list --project $projectId --no-standard-images --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Disk image " + imageName + " in project " + projectId + " is publicly shared
+      with all Google Cloud users"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"allAuthenticatedUsers"'
+  source: 'gcloud compute images get-iam-policy $imageName --project $projectId --format="json(bindings[].members[])"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let image of iterate(template.images)){\n    image\
+  \ = JSON.parse(image)\n    set(\"imageName\", image.name)\n    code(3)\n  }\n}\n"
+id: gcloud-disk-image-public-access
+info:
+  author: princechaddha
+  description: 'Ensure that your virtual machine disk images are not publicly shared
+    with all other Google Cloud Platform (GCP) accounts in order to avoid exposing
+    sensitive or confidential data. If required, you can share your disk images with
+    specific GCP accounts only, without making them public.
+
+    '
+  impact: 'Publicly shared disk images can expose sensitive application data and configurations
+    to anyone with a Google Cloud account, potentially leading to security breaches.
+
+    '
+  name: Disk Images Publicly Shared
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/publicly-shared-disk-images.html
+  - https://cloud.google.com/compute/docs/images/managing-access-custom-images
+  remediation: 'Remove the "allAuthenticatedUsers" member from the IAM policy of affected
+    disk images using the ''gcloud compute images remove-iam-policy-binding'' command
+    or through the Google Cloud Console.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,compute,security,storage,disk-images,gcp-cloud-config
+self-contained: true

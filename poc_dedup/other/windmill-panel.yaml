@@ -1,0 +1,44 @@
+http:
+- extractors:
+  - group: 0
+    part: body
+    regex:
+    - v[0-9]+\.[0-9]+\.[0-9]+
+    type: regex
+  host-redirects: true
+  matchers:
+  - condition: or
+    dsl:
+    - status_code == 200 && contains(to_lower(body), "<title>windmill</title>")
+    - status_code == 200 && contains(to_lower(body), "windmill_labs")
+    - status_code == 200 && regex("^v[0-9]+\\.[0-9]+\\.[0-9]+", body)
+    type: dsl
+  max-redirects: 2
+  method: GET
+  path:
+  - '{{BaseURL}}'
+  - '{{BaseURL}}/api/version'
+  stop-at-first-match: true
+id: windmill-panel
+info:
+  author: ChrisJr404
+  description: 'Windmill panel was detected. Windmill (windmill.dev) is an open-source
+    developer platform for workflows, scripts and internal apps, often self-hosted
+    as a Postgres-backed UI. Exposed instances may reveal scripts, secrets and connected
+    resources, and provide an authenticated path to script execution.
+
+    '
+  metadata:
+    fofa-query: title="Windmill"
+    max-request: 2
+    product: windmill
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)Windmill"})
+    shodan-query: http.title:"Windmill"
+    vendor: windmill_labs
+    verified: true
+  name: Windmill Panel - Detect
+  reference:
+  - https://github.com/windmill-labs/windmill
+  - https://windmill.dev/
+  severity: info
+  tags: automation,detect,discovery,login,panel,windmill,workflow

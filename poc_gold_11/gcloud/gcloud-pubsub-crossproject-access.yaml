@@ -1,0 +1,68 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: subscriptions
+    type: json
+  source: 'gcloud pubsub subscriptions list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Pub/Sub subscription " + subscriptionName + " in project " + projectId + "
+      has cross-project access configured with one or more untrusted members."'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '@'
+  source: 'gcloud pubsub subscriptions get-iam-policy $subscriptionName --format=json
+    | jq ''.bindings[]''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let pubsubSubscription of iterate(template.subscriptions)){\n\
+  \    set(\"subscriptionName\", pubsubSubscription)\n    code(3)\n  }\n}\n"
+id: gcloud-pubsub-crossproject-access
+info:
+  author: princechaddha
+  description: "Ensure that your Google Cloud Pub/Sub subscriptions are configured\
+    \ to allow access only to trusted GCP projects to protect against unauthorized\
+    \ cross-project access. The list with the trusted GCP projects must be defined\
+    \ in the conformity rule settings, in the Trend Cloud One\u2122 \u2013 Conformity\
+    \ account console.\n"
+  impact: 'Allowing access to Pub/Sub subscriptions from untrusted GCP projects can
+    lead to unauthorized data access, privilege escalation, and potential data exfiltration.
+
+    '
+  name: Pub/Sub Subscription Cross-Project Access
+  reference:
+  - https://cloud.google.com/pubsub/docs/access-control
+  - https://cloudone.trendmicro.com/docs/conformity
+  remediation: 'Restrict access to Pub/Sub subscriptions by configuring IAM policies
+    to include only trusted service accounts or users. Ensure roles such as "roles/pubsub.subscriber",
+    "roles/pubsub.editor", or "roles/pubsub.admin" are only assigned to trusted principals.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,google-cloud-pubsub,gcp-cloud-config
+self-contained: true

@@ -1,0 +1,134 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: metrics
+    type: json
+  source: 'gcloud logging metrics list --project=$projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Missing logs-based metric with required filter in project: " + projectId +
+      ", Metric: " + metricName'
+    type: dsl
+  matchers:
+  - condition: or
+    type: word
+    words:
+    - resource.type=gce_network
+    - protoPayload.methodName=beta.compute.networks.insert
+    - protoPayload.methodName=beta.compute.networks.patch
+    - protoPayload.methodName=v1.compute.networks.delete
+    - protoPayload.methodName=v1.compute.networks.removePeering
+    - protoPayload.methodName=v1.compute.networks.addPeering
+  source: 'gcloud logging metrics describe $metricName --project=$projectId --format="json(filter)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: policies
+    type: json
+  source: 'gcloud alpha monitoring policies list --project=$projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Alerting policy not enabled or missing required condition in project: " +
+      projectId + ", Policy: " + policyName'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"enabled": false'
+  source: 'gcloud alpha monitoring policies describe $policyName --project=$projectId
+    --format="json(conditions,enabled)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: channels
+    type: json
+  source: 'gcloud alpha monitoring channels list --project=$projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Notification channel not enabled or misconfigured in project: " + projectId
+      + ", Channel: " + channelName'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"enabled": false'
+  source: 'gcloud alpha monitoring channels describe $channelName --project=$projectId
+    --format="json(enabled)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let metric of iterate(template.metrics)){\n    set(\"\
+  metricName\", metric)\n    code(3)\n  }\n  for(let policy of iterate(template.policies)){\n\
+  \    set(\"policyName\", policy)\n    code(4)\n    for(let channel of iterate(template.channels)){\n\
+  \      set(\"channelName\", channel)\n      code(5)\n    }\n  }\n}\n"
+id: gcloud-vpc-network-changes-monitoring-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that each Google Cloud Platform (GCP) project has configured
+    an alerting policy that is triggered each time a Virtual Private Cloud (VPC) network
+    change is made. The log filter pattern used to recognize VPC network changes is
+    "resource.type=gce_network AND protoPayload.methodName=beta.compute.networks.insert
+    OR protoPayload.methodName=beta.compute.networks.patch OR protoPayload.methodName=v1.compute.networks.delete
+    OR protoPayload.methodName=v1.compute.networks.removePeering OR protoPayload.methodName=v1.compute.networks.addPeering".
+
+    '
+  impact: 'If VPC network changes monitoring is not enabled, critical network modifications
+    may go undetected, leading to potential security risks and compliance violations.
+
+    '
+  name: Enable VPC Network Changes Monitoring
+  reference:
+  - https://cloud.google.com/monitoring/alerts
+  - https://cloud.google.com/logging/docs/audit
+  remediation: 'Configure a logs-based metric with the specified filter pattern and
+    create an alerting policy to monitor Virtual Private Cloud (VPC) network changes
+    for all GCP projects.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,vpc,google-cloud-monitoring,gcp-cloud-config
+self-contained: true

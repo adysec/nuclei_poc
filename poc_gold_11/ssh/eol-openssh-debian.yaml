@@ -1,0 +1,39 @@
+id: eol-openssh-debian
+info:
+  author: matejsmycka
+  description: 'Detected OpenSSH server banners that indicated End-of-Life (EOL) Debian
+    releases (sarge, etch, lenny, squeeze, wheezy, jessie, stretch, buster). EOL systems
+    no longer received official security updates.
+
+    '
+  metadata:
+    max-request: 1
+    product: debian
+    shodan-query: port:22 "Debian"
+    vendor: debian
+    verified: true
+  name: EOL Debian OpenSSH - Detect
+  reference:
+  - https://endoflife.date/debian
+  severity: medium
+  tags: js,ssh,enum,debian,eol,network,misconfig,vuln
+javascript:
+- args:
+    Host: '{{Host}}'
+    Port: 22
+  code: "let m = require(\"nuclei/ssh\");\nlet c = m.SSHClient();\nlet res = c.ConnectSSHInfoMode(Host,\
+    \ Port);\nlet raw = res.ServerID.Raw;\n\n// EOL Debian version patterns\nconst\
+    \ eolPatterns = [\n  /(squeeze|woody|sarge|etch|deb10|deb9|deb8|deb7)/\n];\n\n\
+    let hasEOL = eolPatterns.some(pattern => pattern.test(raw));\nif (hasEOL) {\n\
+    \  Export(raw);\n}\n"
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+  matchers:
+  - dsl:
+    - success == true
+    type: dsl
+  pre-condition: 'isPortOpen(Host,Port);
+
+    '
