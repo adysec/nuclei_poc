@@ -1,51 +1,56 @@
-http:
-- extractors:
-  - group: 1
-    internal: true
-    name: version
-    part: body
-    regex:
-    - '(?mi)Version: ([0-9.]+)'
-    type: regex
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - '(?mi)Version: ([0-9.]+)'
-    type: regex
-  matchers:
-  - status:
-    - 200
-    type: status
-  - part: body
-    type: word
-    words:
-    - brightbox
-  - dsl:
-    - compare_versions(version, '*')
-    type: dsl
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/wp-content/themes/brightbox/style.css'
-  redirects: true
 id: brightbox-d41d8cd98f00b204e9800998ecf8427e
+
 info:
+  name: "Brightbox <= (Unknown Versions) - Cross-Site Scripting"
   author: topscoder
+  severity: high
+  description: "The Brightbox theme for WordPress is vulnerable to Cross-Site Scripting due to insufficient input sanitization and output escaping. This makes it possible for attackers to inject arbitrary web scripts that execute in a victim's browser. The affected versions are unknown."
+  reference:
+
   classification:
-    cve-id: null
-    cvss-metrics: null
-    cvss-score: null
-  description: The Brightbox theme for WordPress is vulnerable to Cross-Site Scripting
-    due to insufficient input sanitization and output escaping. This makes it possible
-    for attackers to inject arbitrary web scripts that execute in a victim's browser.
-    The affected versions are unknown.
+    cvss-metrics:
+    cvss-score:
+    cve-id:
   metadata:
-    fofa-query: wp-content/unknown/brightbox/
+    fofa-query: "wp-content/unknown/brightbox/"
     google-query: inurl:"/wp-content/unknown/brightbox/"
     shodan-query: 'vuln:'
-  name: Brightbox <= (Unknown Versions) - Cross-Site Scripting
-  reference: null
-  severity: high
   tags: cve,wordpress,wp-theme,brightbox,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/brightbox/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "brightbox"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '*')

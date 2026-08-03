@@ -1,47 +1,48 @@
-id: github-personal-access
-
-info:
-  name: GitHub Personal Access Token
-  author: DhiyaneshDK
-  severity: high
-  reference:
-    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/github.yml
-    - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
-    - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
-    - https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
-  metadata:
-    verified: true
-    max-request: 1
-  tags: github,token,exposure
-
 flow: http(1) && http(2)
-
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
+- extractors:
+  - internal: true
+    name: token
+    part: body
+    regex:
+    - \b(ghp_[a-zA-Z0-9]{36})\b
+    type: regex
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- disable-path-automerge: true
+  extractors:
+  - dsl:
+    - token
+    type: dsl
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"login":'
+    - '"avatar_url":'
+  raw:
+  - '@Host: https://api.github.com:443
 
-    extractors:
-      - type: regex
-        part: body
-        name: token
-        regex:
-          - '\b(ghp_[a-zA-Z0-9]{36})\b'
-        internal: true
+    GET /user HTTP/1.1
 
-  - raw:
-      - |
-        @Host: https://api.github.com:443
-        GET /user HTTP/1.1
-        Host: api.github.com
-        Authorization: Basic {{base64('user:' + token)}}
+    Host: api.github.com
 
-    self-contained: true
+    Authorization: Basic {{base64(''user:'' + token)}}
 
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '"login":'
-          - '"avatar_url":'
-        condition: and
+    '
+id: github-personal-access
+info:
+  author: DhiyaneshDK
+  metadata:
+    max-request: 1
+    verified: true
+  name: GitHub Personal Access Token
+  reference:
+  - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/github.yml
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+  - https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
+  severity: high
+  tags: github,token,exposure,vuln
