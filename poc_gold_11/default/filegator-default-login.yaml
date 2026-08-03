@@ -1,59 +1,60 @@
-http:
-- extractors:
-  - internal: true
-    kval:
-    - x_csrf_token
-    name: csrf_token
-    type: kval
-  host-redirects: true
-  matchers:
-  - condition: and
-    part: body
-    type: word
-    words:
-    - role":"admin
-    - permissions":[
-  - part: header
-    type: word
-    words:
-    - application/json
-  - part: header_2
-    status:
-    - 200
-    type: status
-  matchers-condition: and
-  max-redirects: 2
-  raw:
-  - 'GET /#/ HTTP/1.1
-
-    Host: {{Hostname}}
-
-    '
-  - 'POST /?r=/login HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Content-Type: application/json
-
-    X-Csrf-Token: {{csrf_token}}
-
-
-    {"username":"{{username}}","password":"{{password}}"}
-
-    '
 id: filegator-default-login
+
 info:
-  author: ritikchaddha
-  metadata:
-    max-request: 2
-    runzero-match: any(each(service["html.titles"]), {# matches "FileGator"})
-    shodan-query: title:"FileGator"
-    verified: true
   name: Filegator - Default-Login
-  reference:
-  - https://serverpilot.io/docs/how-to-install-a-file-manager-on-your-server/#:~:text=You%20should%20see%20the%20FileGator,Password%3A%20admin123
+  author: ritikchaddha
   severity: high
-  tags: default-login,filegator,misconfig,vuln
+  reference:
+    - https://serverpilot.io/docs/how-to-install-a-file-manager-on-your-server/#:~:text=You%20should%20see%20the%20FileGator,Password%3A%20admin123
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"FileGator"
+  tags: filegator,default-login,misconfig
+
 variables:
-  password: admin123
-  username: admin
+  username: "admin"
+  password: "admin123"
+
+http:
+  - raw:
+      - |
+        GET /#/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /?r=/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        X-Csrf-Token: {{csrf_token}}
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    host-redirects: true
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'role":"admin'
+          - 'permissions":['
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: status
+        part: header_2
+        status:
+          - 200
+
+    extractors:
+      - type: kval
+        name: csrf_token
+        kval:
+          - 'x_csrf_token'
+        internal: true
+# digest: 4b0a00483046022100a9c390246eb114d52815a665e209cf52be580b5f3d4e66c71b2ee05a9a87ef93022100c03f58ce4361898d92ab9f1c06b106a1a42a95717df8ef7c98f2cd68f57c0f93:922c64590222798bb761d5b6d8e72950
