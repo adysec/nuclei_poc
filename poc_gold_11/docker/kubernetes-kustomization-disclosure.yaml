@@ -1,22 +1,25 @@
 id: kubernetes-kustomization-disclosure
+
 info:
-  name: Kubernetes Kustomization Disclosure
+  name: Kubernetes Kustomize Configuration - Detect
   author: dhiyaneshDk
   severity: medium
-  reference: https://github.com/detectify/ugly-duckling/blob/master/modules/crowdsourced/kubernetes-kustomization-disclosure.json
-  tags: exposure,config
-requests:
-  - payloads:
-      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-    attack: sniper
-    threads: 100
-    raw:
-      - |
-        GET /kustomization.yml HTTP/1.1
-        Host: {{Subdomains}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
-        Accept-Encoding: gzip, deflate
-        Accept: */*
+  description: Kubernetes Kustomize configuration was detected.
+  reference:
+    - https://github.com/detectify/ugly-duckling/blob/master/modules/crowdsourced/kubernetes-kustomization-disclosure.json
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  tags: exposure,config,kubernetes
+  metadata:
+    max-request: 1
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/kustomization.yml"
+
     matchers-condition: and
     matchers:
       - type: word
@@ -28,12 +31,13 @@ requests:
           - "namespace:"
           - "commonLabels:"
           - "Kustomization"
-      - type: word
-        part: body
-        condition: or
-        words:
-          - "yaml"
-          - "yml"
+
+      - type: dsl
+        dsl:
+          - "contains(tolower(header), 'application/yaml')"
+
       - type: status
         status:
           - 200
+
+# Enhanced by md on 2023/02/09
