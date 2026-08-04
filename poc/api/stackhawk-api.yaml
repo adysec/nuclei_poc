@@ -1,46 +1,49 @@
-id: stackhawk-api
-
-info:
-  name: StackHawk API Key
-  author: DhiyaneshDK
-  severity: high
-  reference:
-    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/stackhawk.yml
-    - https://apidocs.stackhawk.com/reference/login
-  metadata:
-    verified: true
-    max-request: 1
-  tags: stackhawk,token,exposure
-
 flow: http(1) && http(2)
-
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
+- matchers:
+  - internal: true
+    name: token
+    part: body
+    regex:
+    - \b(hawk\.[0-9A-Za-z_-]{20}\.[0-9A-Za-z_-]{20})\b
+    type: regex
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- disable-path-automerge: true
+  extractors:
+  - dsl:
+    - token
+    type: dsl
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, "token")
+    - contains(content_type, "application/json")
+    type: dsl
+  raw:
+  - '@Host: https://api.stackhawk.com:443
 
-    extractors:
-      - type: regex
-        part: body
-        name: token
-        regex:
-          - '\b(hawk\.[0-9A-Za-z_-]{20}\.[0-9A-Za-z_-]{20})\b'
-        internal: true
+    GET /api/v1/auth/login HTTP/1.1
 
-  - raw:
-      - |
-        @Host: https://api.stackhawk.com:443
-        GET /api/v1/auth/login HTTP/1.1
-        Host: api.stackhawk.com
-        X-ApiKey: {{token}}
-        Accept: application/json
+    Host: api.stackhawk.com
 
-    self-contained: true
+    X-ApiKey: {{token}}
 
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 200'
-          - 'contains(body, "token")'
-          - 'contains(content_type, "application/json")'
-        condition: and
+    Accept: application/json
+
+    '
+id: stackhawk-api
+info:
+  author: DhiyaneshDK
+  metadata:
+    max-request: 1
+    verified: true
+  name: StackHawk API Key
+  reference:
+  - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/stackhawk.yml
+  - https://apidocs.stackhawk.com/reference/login
+  - https://docs.stackhawk.com/web-app/
+  severity: high
+  tags: stackhawk,token,exposure,vuln
