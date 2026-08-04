@@ -1,5 +1,4 @@
 id: windows-command-injection
-
 info:
   name: Windows Command Injection - Generic Detection
   author: Jaenact
@@ -20,16 +19,14 @@ info:
     cvss-score: 9.8
     cwe-id: CWE-78
   metadata:
-    verified: true
     max-request: 14
-  tags: cmdi,dast,rce,windows,fuzz,vuln
-
+    verified: true
+  tags: cmdi,dast,fuzz,rce,vuln,windows
 http:
   - pre-condition:
       - type: dsl
         dsl:
           - 'method == "GET"'
-
     payloads:
       injection:
         # dir output
@@ -50,14 +47,12 @@ http:
         # time-based
         - "&ping -n 5 127.0.0.1&"
         - "&&ping -n 5 127.0.0.1&&"
-
     fuzzing:
       - part: query
         type: replace
         mode: single
         fuzz:
           - "{{injection}}"
-
     stop-at-first-match: true
     matchers-condition: or
     matchers:
@@ -67,28 +62,24 @@ http:
         regex:
           - '(?mi)Directory of [A-Z]:\\\\'
           - '(?mi)Volume in drive [A-Z]'
-
       - type: regex
         name: systeminfo-output
         part: body
         regex:
           - '(?mi)^OS Name:\s+'
           - '(?mi)^Host Name:\s+'
-
       - type: regex
         name: ipconfig-output
         part: body
         regex:
           - '(?mi)Windows IP Configuration'
-
       - type: regex
         name: whoami-output
         part: body
         regex:
           - '(?mi)^[a-z][-a-z0-9]*\\\\[a-z][-a-z0-9]*$'
-
       - type: dsl
         name: time-based
         dsl:
           - 'duration >= 4'
-# digest: 4b0a00483046022100be5c540b1ed2ddf5d5cd3c6b4beec3d046833f77b6a37ebf25d26259ddacd9b6022100ad9b2b4618589ef59eae4f0de6793fe8a59b1f67db65cdf31cf2a631465a3d91:922c64590222798bb761d5b6d8e72950
+        # digest: 4b0a00483046022100be5c540b1ed2ddf5d5cd3c6b4beec3d046833f77b6a37ebf25d26259ddacd9b6022100ad9b2b4618589ef59eae4f0de6793fe8a59b1f67db65cdf31cf2a631465a3d91:922c64590222798bb761d5b6d8e72950

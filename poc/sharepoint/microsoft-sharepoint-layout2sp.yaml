@@ -1,0 +1,38 @@
+id: microsoft-sharepoint-layout2sp
+
+info:
+  name: Microsoft SharePoint Server - Webshell layout2sp.aspx
+  severity: critical
+  author: darses
+  description: |
+    Detects Microsoft SharePoint Server webshell layout2sp.aspx.
+  metadata:
+    verified: true
+    vendor: microsoft
+    product: sharepoint_server
+  reference:
+    - https://discourse.ifin.network/t/microsoft-sharepoint-cve-2026-50522/678
+  tags: detect,microsoft,sharepoint,webshell,compromised
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_layouts/layout2sp.aspx"
+      - "{{BaseURL}}/_layouts/14/layout2sp.aspx"
+      - "{{BaseURL}}/_layouts/15/layout2sp.aspx"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'len(body) <= 160'
+          - 'status_code == 200'
+          - 'contains(to_lower(header), "microsoftsharepointteamservices")'
+          - 'contains(to_lower(body), "framework")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: machinekey
+        regex:
+          - '^[A-Z0-9]{64}\|[\w\d]+\|[A-Z0-9]{64}\|[\w\d]+\|(Framework45|Framework20SP2|Framework20SP1)$'
