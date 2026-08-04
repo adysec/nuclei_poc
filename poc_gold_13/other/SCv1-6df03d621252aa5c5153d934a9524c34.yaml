@@ -1,52 +1,56 @@
-http:
-- extractors:
-  - group: 1
-    internal: true
-    name: version
-    part: body
-    regex:
-    - '(?mi)Version: ([0-9.]+)'
-    type: regex
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - '(?mi)Version: ([0-9.]+)'
-    type: regex
-  matchers:
-  - status:
-    - 200
-    type: status
-  - part: body
-    type: word
-    words:
-    - SCv1
-  - dsl:
-    - compare_versions(version, '>0')
-    type: dsl
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/wp-content/themes/SCv1/style.css'
-  redirects: true
 id: SCv1-6df03d621252aa5c5153d934a9524c34
+
 info:
+  name: "SCv1 Theme (All Known Versions) - Arbitrary File Download"
   author: topscoder
+  severity: high
+  description: "The SCv1 Theme for WordPress is vulnerable to Arbitrary File Download in all known versions. This is due to insufficient sanitization of user input on the 'file' parameter. This makes it possible for unauthenticated attackers to download arbitrary files, including configuration files."
+  reference:
+    - https://packetstormsecurity.com/files/127022/
   classification:
-    cve-id: null
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
     cvss-score: 7.5
-  description: The SCv1 Theme for WordPress is vulnerable to Arbitrary File Download
-    in all known versions. This is due to insufficient sanitization of user input
-    on the 'file' parameter. This makes it possible for unauthenticated attackers
-    to download arbitrary files, including configuration files.
+    cve-id:
   metadata:
-    fofa-query: wp-content/themes/SCv1/
+    fofa-query: "wp-content/themes/SCv1/"
     google-query: inurl:"/wp-content/themes/SCv1/"
     shodan-query: 'vuln:'
-  name: SCv1 Theme (All Known Versions) - Arbitrary File Download
-  reference:
-  - https://packetstormsecurity.com/files/127022/
-  severity: high
   tags: cve,wordpress,wp-theme,SCv1,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/SCv1/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "SCv1"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '>0')
