@@ -1,0 +1,45 @@
+id: ntp-enum-variables-enabled
+info:
+  author: matejsmycka
+  description: 'Detected an NTP server that had responded to control queries exposing
+    version, processor, and system information through enumerated NTP variables.
+
+    '
+  metadata:
+    max-request: 1
+    shodan-query: 'system: port:123'
+    verified: true
+  name: NTP Enum Variables - Enabled
+  severity: info
+  tags: dns,udp,ntp,enum,js,discovery
+javascript:
+- args:
+    Host: '{{Host}}'
+    Port: 123
+  code: 'let c = require("nuclei/net");
+
+    let conn = c.Open(''udp'', `${Host}:${Port}`);
+
+    let packet = "d60200010000000000000000"
+
+    conn.SendHex(packet);
+
+    let resp = conn.Recv(128);
+
+    resp;
+
+    '
+  extractors:
+  - group: 1
+    regex:
+    - (version="[0-9]+")
+    - (system="[^"]+")
+    - (processor="[^"]+")
+    type: regex
+  matchers:
+  - dsl:
+    - success == true
+    type: dsl
+  pre-condition: 'isUDPPortOpen(Host,Port);
+
+    '

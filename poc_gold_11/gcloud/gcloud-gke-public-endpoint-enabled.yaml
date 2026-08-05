@@ -1,0 +1,72 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusters
+    type: json
+  source: 'gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId
+      + " has public endpoint access enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - endpoint
+  - negative: true
+    type: word
+    words:
+    - enablePrivateEndpoint
+  matchers-condition: and
+  source: 'gcloud container clusters describe $clusterName --location $location --project
+    $projectId --format="json(privateClusterConfig.enablePrivateEndpoint)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let cluster of iterate(template.clusters)){\n   \
+  \ cluster = JSON.parse(cluster)\n    set(\"clusterName\", cluster.name)\n    set(\"\
+  location\", cluster.location)\n    code(3)\n  }\n}\n"
+id: gcloud-gke-public-endpoint-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that your Google Kubernetes Engine (GKE) clusters are configured
+    to use private endpoints only for control plane access, effectively disabling
+    external access to the Kubernetes API. This requires configuring the GKE cluster
+    with private nodes, a private master IP range, and IP aliasing.
+
+    '
+  impact: 'While Kubernetes API requires authentication tokens for sensitive actions,
+    a vulnerability could expose it with unrestricted access. Moreover, attackers
+    could potentially identify the cluster and Kubernetes API version to check for
+    known vulnerabilities.
+
+    '
+  name: GKE Clusters with Public Control Plane Endpoints
+  reference:
+  - https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/clusters-with-private-endpoints.html
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,networking,gcp-cloud-config
+self-contained: true

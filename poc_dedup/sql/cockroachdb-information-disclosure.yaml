@@ -1,0 +1,37 @@
+flow: http(1) && http(2)
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, "<title>Cockroach Console")
+    internal: true
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- matchers:
+  - condition: and
+    dsl:
+    - contains_all(body, "statements", "planLat","keyData","stats")
+    - status_code == 200
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}/_status/statements'
+id: cockroachdb-information-disclosure
+info:
+  author: pussycat0x
+  description: 'CockroachDB exposed the Statements Admin UI page and the HTTP endpoint
+    /_status/statements in ways that let non-admin users (and in some builds, unauthenticated
+    callers) see SQL text executed across the cluster.
+
+    '
+  metadata:
+    shodan-query: product:cockroachdb
+    verified: true
+  name: CockroachDB Information Disclosure
+  reference:
+  - https://github.com/cockroachdb/cockroach/issues/44348
+  severity: medium
+  tags: cockroachdb,exposure,misconfig

@@ -1,0 +1,42 @@
+http:
+- matchers:
+  - condition: and
+    dsl:
+    - status_code >= 200 && status_code < 400
+    - contains(tolower(all_headers), 'text/html')
+    type: dsl
+  - condition: or
+    name: sdk_implementation
+    part: body
+    regex:
+    - static\.openreplay\.com/(?:latest|[0-9.]+)/openreplay\.js
+    - projectKey["']?\s*:\s*["'][A-Za-z0-9]{10,}["']
+    - ingestPoint["']?\s*:\s*["']https?://[^"']+/ingest["']
+    - '[a-z0-9-]+\.openreplay\.cloud/ingest'
+    - window\.OpenReplay\s*=\s*\[
+    - openReplay\s*:\s*\{\s*projectKey
+    - window\.asayer\s*=\s*\[
+    - asayer\.io/ingest
+    type: regex
+  matchers-condition: and
+  max-redirects: 3
+  method: GET
+  path:
+  - '{{BaseURL}}/'
+  redirects: true
+id: openreplay-rum-detect
+info:
+  author: Shivam Kamboj
+  description: 'Detects OpenReplay (formerly Asayer) Session Replay & RUM SDK implementation.
+
+    '
+  metadata:
+    max-request: 1
+    shodan-query: http.html:"static.openreplay.com"
+    verified: true
+  name: OpenReplay RUM - Tech Detect
+  reference:
+  - https://github.com/openreplay/openreplay
+  - https://docs.openreplay.com/en/sdk/
+  severity: info
+  tags: tech,discovery,rum,openreplay

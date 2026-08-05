@@ -1,0 +1,51 @@
+flow: http(1) && http(2)
+http:
+- host-redirects: true
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(to_lower(body), "<title>mealie</title>")
+    internal: true
+    type: dsl
+  max-redirects: 2
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - '"version"\s*:\s*"([^"]+)"'
+    type: regex
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains_all(body, "\"production\"", "\"version\"", "\"demoStatus\"", "\"allowSignup\"")
+    - contains(content_type, "application/json")
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}/api/app/about'
+id: mealie-panel
+info:
+  author: ChrisJr404
+  description: 'Detected Mealie was a self-hosted recipe manager and meal planner
+    with a Vue/Nuxt frontend and FastAPI backend.
+
+    '
+  metadata:
+    fofa-query: title="Mealie"
+    max-request: 2
+    product: mealie
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)Mealie"})
+    shodan-query: http.title:"Mealie"
+    vendor: mealie-recipes
+    verified: true
+  name: Mealie Panel - Detect
+  reference:
+  - https://github.com/mealie-recipes/mealie
+  - https://mealie.io/
+  severity: info
+  tags: detect,discovery,mealie,panel,recipe,selfhosted

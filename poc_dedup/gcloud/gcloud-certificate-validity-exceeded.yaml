@@ -1,0 +1,69 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: certificates
+    type: json
+  source: 'gcloud certificate-manager certificates list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Non-compliant SSL Certificate: " + certificateName + " in Project: " + projectId
+      + " with Expiry beyond 398 days"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'gcloud certificate-manager certificates describe $certificateName --project
+    $projectId --format="json(createTime,expireTime)" | jq ''[(.expireTime | fromdateiso8601)
+    - (.createTime | fromdateiso8601) < 34444800] | any''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let certificate of iterate(template.certificates)){\n\
+  \    set(\"certificateName\", certificate)\n    code(3)\n  }\n}\n"
+id: gcloud-certificate-validity-exceeded
+info:
+  author: princechaddha
+  description: 'Ensure that SSL certificates managed with Google Cloud Certificate
+    Manager don''t have a validity period greater than 398 days (13 months). This
+    is to enhance security by reducing the risk of certificate compromise and misuse,
+    while aligning with industry standards and support from modern web browsers.
+
+    '
+  impact: 'An SSL certificate with a validity period exceeding 398 days poses a higher
+    risk of compromise and misuse. It also fails to comply with industry standards,
+    potentially leading to incompatibilities or security warnings in web browsers.
+
+    '
+  name: Exceeded SSL Certificate Validity Period
+  reference:
+  - https://cloud.google.com/certificate-manager/docs
+  remediation: 'Review and adjust the renewal configurations for SSL certificates
+    to ensure their validity periods do not exceed 398 days.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,certificate-manager,gcp-cloud-config
+self-contained: true

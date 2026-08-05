@@ -1,0 +1,60 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"kube-controller-manager configuration is missing --bind-address or set to
+      unsafe value (expected: 127.0.0.1 or ::1)"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - kube-controller-manager
+  - negative: true
+    type: word
+    words:
+    - --bind-address=127.0.0.1
+    - --bind-address=::1
+  matchers-condition: and
+  source: 'kubectl get pods -n kube-system -l component=kube-controller-manager -o
+    jsonpath="{.items[*].spec.containers[*].command}"
+
+    '
+id: k8s-controller-manager-bind-address
+info:
+  author: songyaeji
+  description: 'Ensure kube-controller-manager is bound to localhost (127.0.0.1 or
+    ::1). If --bind-address is missing or
+
+    set to 0.0.0.0 (::), the controller-manager API may be reachable from all network
+    interfaces, increasing
+
+    exposure of the control-plane component.
+
+    '
+  impact: 'If the kube-controller-manager listens on all interfaces, an attacker with
+    network access may be able to
+
+    interact with the controller-manager API, causing potential information leakage
+    or enabling further attacks
+
+    against the cluster.
+
+    '
+  name: Ensure kube-controller-manager --bind-address is set to localhost
+  reference:
+  - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
+  - Cloud Vulnerability Assessment Guide(2024) by KISA
+  remediation: 'Set --bind-address=127.0.0.1 (or ::1) in the kube-controller-manager
+    startup arguments. For example, edit
+
+    /etc/kubernetes/manifests/kube-controller-manager.yaml and add the argument to
+    the command section.
+
+    '
+  severity: high
+  tags: cloud,devops,kubernetes,devsecops,kube-controller-manager,bind-address,hardening,k8s,k8s-cluster-security
+self-contained: true
+variables:
+  component: kube-controller-manager

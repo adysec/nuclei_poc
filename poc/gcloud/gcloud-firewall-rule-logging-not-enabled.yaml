@@ -1,0 +1,70 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: networks
+    type: json
+  source: 'gcloud compute networks list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"The firewall rule " + name + " in network " + networkName + " in project "
+      + projectId + " does not have logging enabled."'
+    type: dsl
+  matchers:
+  - condition: and
+    type: word
+    words:
+    - '"enable": false'
+    - '"disabled": false'
+  source: 'gcloud compute firewall-rules list --filter="network=$networkName" --sort-by="priority"
+    --format="json(name,disabled,direction,logConfig)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let network of iterate(template.networks)){\n   \
+  \ set(\"networkName\", network)\n    code(3)\n  }\n}\n"
+id: gcloud-firewall-rule-logging-not-enabled
+info:
+  author: princechaddha
+  description: 'Enable Virtual Private Cloud (VPC) firewall rule logging for each
+    firewall rule whose connections you need to log. Firewall rule logging provides
+    valuable insights into the source and destination of traffic, protocols, ports,
+    and actions taken by the rules.
+
+    '
+  impact: 'Without firewall rule logging, it is difficult to analyze and monitor network
+    traffic, making it challenging to troubleshoot and ensure compliance with security
+    policies.
+
+    '
+  name: Enable Logging for VPC Firewall Rules
+  reference:
+  - https://cloud.google.com/vpc/docs/using-firewall-rules-logging
+  remediation: 'Enable logging for your VPC firewall rules to capture connection details,
+    including traffic source, destination, and actions taken by the rules.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-vpc,firewall-logging,security,gcp-cloud-config
+self-contained: true
