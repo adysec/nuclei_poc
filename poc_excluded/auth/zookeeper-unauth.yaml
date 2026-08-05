@@ -11,16 +11,21 @@ info:
   reference:
     - https://zookeeper.apache.org/security.html
   tags: network,zookeeper,unauth
-  created: 2026/01/09
-  requires: [zookeeper]
 
 set:
-  host: request.url.host
+  hostname: request.url.host
+  host: request.url.domain
 rules:
   r0:
     request:
       type: tcp
-      host: "{{host}}"
+      host: "{{hostname}}"
       data: "envi\r\nquit\r\n"
     expression: response.raw.bcontains(b'zookeeper.version') && response.raw.bcontains(b'Environment')
-expression: r0()
+  r1:
+    request:
+      type: tcp
+      host: "{{host}}:2181"
+      data: "envi\r\nquit\r\n"
+    expression: response.raw.bcontains(b'zookeeper.version') && response.raw.bcontains(b'Environment')
+expression: r0() || r1()

