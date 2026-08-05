@@ -1,55 +1,58 @@
-http:
-- extractors:
-  - group: 1
-    internal: true
-    name: version
-    part: body
-    regex:
-    - '(?mi)Version: ([0-9.]+)'
-    type: regex
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - '(?mi)Version: ([0-9.]+)'
-    type: regex
-  matchers:
-  - status:
-    - 200
-    type: status
-  - part: body
-    type: word
-    words:
-    - RedSteel
-  - dsl:
-    - compare_versions(version, '<= *')
-    type: dsl
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/wp-content/themes/RedSteel/style.css'
-  redirects: true
 id: RedSteel-theme-d41d8cd98f00b204e9800998ecf8427e
+
 info:
+  name: >
+    RedSteel (All Versions) - File Disclosure
   author: topscoder
+  severity: high
+  description: >
+    The RedSteel theme for WordPress is vulnerable to Sensitive Data Exposure via the 'file' parameter in the 'download.php' file. This can allow unauthenticated attackers to extract sensitive data that can be used to perform future attacks.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/6a216505-7ab3-4ec7-bb11-e1c6ceaa2aed?source=api-prod
   classification:
-    cve-id: null
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
     cvss-score: 7.5
-  description: 'The RedSteel theme for WordPress is vulnerable to Sensitive Data Exposure
-    via the ''file'' parameter in the ''download.php'' file. This can allow unauthenticated
-    attackers to extract sensitive data that can be used to perform future attacks.
-
-    '
+    cve-id: 
   metadata:
-    fofa-query: wp-content/themes/RedSteel/
+    fofa-query: "wp-content/themes/RedSteel/"
     google-query: inurl:"/wp-content/themes/RedSteel/"
     shodan-query: 'vuln:'
-  name: 'RedSteel (All Versions) - File Disclosure
-
-    '
-  reference:
-  - https://www.wordfence.com/threat-intel/vulnerabilities/id/6a216505-7ab3-4ec7-bb11-e1c6ceaa2aed?source=api-prod
-  severity: high
   tags: cve,wordpress,wp-theme,RedSteel,high
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/themes/RedSteel/style.css"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Version: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "RedSteel"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= *')

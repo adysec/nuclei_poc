@@ -1,0 +1,45 @@
+id: js-subdomain-extractor
+
+info:
+  name: JavaScript Subdomain Extractor
+  author: Caddyshack2175
+  severity: info
+  description: |
+    Fetches JavaScript URLs and extracts hostnames referenced within them,
+    surfacing subdomains that may not have been found through traditional
+    enumeration. Intended for authorized recon use against in-scope targets.
+
+    **Please not this has been tested on Kali with success, however ubuntu
+    seems to have a regex issues which kali does not **
+
+  tags: recon,js,subdomain,osint,dns
+
+variables:
+  # Root domain as a regex fragment. Escape dots: -var 'domain=target.com'
+  domain: "example\\.com"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    redirects: true
+    max-redirects: 3
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        name: in-scope-subdomain
+        dsl:
+          - "regex(concat('(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\\\.)+', domain), body)"
+
+    extractors:
+      - type: regex
+        name: subdomains
+        part: body
+        group: 1
+        regex:
+          - '(?:https?:)?//((?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,})'
