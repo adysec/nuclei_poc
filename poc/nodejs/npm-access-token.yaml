@@ -1,47 +1,52 @@
-id: npm-access-token
-
-info:
-  name: NPM Access Token (fine-grained)
-  author: DhiyaneshDK
-  severity: high
-  reference:
-    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/npm.yml
-    - https://docs.npmjs.com/about-access-tokens
-    - https://github.com/github/roadmap/issues/557
-    - https://github.blog/changelog/2022-12-06-limit-scope-of-npm-tokens-with-the-new-granular-access-tokens/
-  metadata:
-    verified: true
-    max-request: 1
-  tags: npm,token,exposure
-
 flow: http(1) && http(2)
-
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
+- matchers:
+  - internal: true
+    name: token
+    part: body
+    regex:
+    - (npm_[A-Za-z0-9]{36})
+    type: regex
+  method: GET
+  path:
+  - '{{BaseURL}}'
+- disable-path-automerge: true
+  extractors:
+  - dsl:
+    - token
+    type: dsl
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains(body, "username")
+    - contains(content_type, "application/json")
+    type: dsl
+  raw:
+  - '@Host: https://registry.npmjs.org:443
 
-    extractors:
-      - type: regex
-        part: body
-        name: token
-        regex:
-          - "(npm_[A-Za-z0-9]{36})"
-        internal: true
+    GET /-/whoami HTTP/1.1
 
-  - raw:
-      - |
-        @Host: https://registry.npmjs.org:443
-        GET /-/whoami HTTP/1.1
-        Host: registry.npmjs.org
-        Authorization: Bearer {{token}}
+    Host: registry.npmjs.org
 
-    self-contained: true
+    Authorization: Bearer {{token}}
 
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 200'
-          - 'contains(body, "username")'
-          - 'contains(content_type, "application/json")'
-        condition: and
+    '
+id: npm-access-token
+info:
+  author: DhiyaneshDK
+  classification:
+    cwe-id:
+    - CWE-522
+    - CWE-540
+  metadata:
+    max-request: 1
+    verified: true
+  name: NPM Access Token (fine-grained)
+  reference:
+  - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/npm.yml
+  - https://docs.npmjs.com/about-access-tokens
+  - https://github.com/github/roadmap/issues/557
+  - https://github.blog/changelog/2022-12-06-limit-scope-of-npm-tokens-with-the-new-granular-access-tokens/
+  severity: high
+  tags: exposure,npm,token,vuln

