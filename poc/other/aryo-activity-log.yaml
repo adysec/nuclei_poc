@@ -1,49 +1,59 @@
-id: wordpress-aryo-activity-log
+id: aryo-activity-log
 
 info:
-  name: Activity Log – Monitor & Record User Changes Detection
-  author: ricardomaia
-  severity: info
+  name: >
+    Activity Log Plugin < 2.0.4 - Fulle Path Disclosure
+  author: topscoder
+  severity: high
+  description: >
+    The Activity Log plugin for WordPress is vulnerable to Sensitive Data Exposure in versions up to, and including, 2.0.3 via direct calls to the ~/class-aal-integration-woocommerce.php file. This can allow unauthenticated attackers to extract sensitive data including the full path of the WordPress installation.
   reference:
-    - https://wordpress.org/plugins/aryo-activity-log/
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/97677968-9231-4a6b-ad81-ddb9eb9791dd?source=api-prod
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: 
   metadata:
-    plugin_namespace: aryo-activity-log
-    wpscan: https://wpscan.com/plugin/aryo-activity-log
-  tags: tech,wordpress,wp-plugin,top-200,discovery
+    fofa-query: "wp-content/plugins/aryo-activity-log/"
+    google-query: inurl:"/wp-content/plugins/aryo-activity-log/"
+    shodan-query: 'vuln:'
+  tags: cve,wordpress,wp-plugin,aryo-activity-log,high
 
 http:
   - method: GET
+    redirects: true
+    max-redirects: 3
     path:
       - "{{BaseURL}}/wp-content/plugins/aryo-activity-log/readme.txt"
 
-    payloads:
-      last_version: helpers/wordpress/plugins/aryo-activity-log.txt
-
     extractors:
       - type: regex
+        name: version
         part: body
+        group: 1
         internal: true
-        name: internal_detected_version
-        group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
       - type: regex
+        name: version
         part: body
-        name: detected_version
         group: 1
         regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
+          - "(?mi)Stable tag: ([0-9.]+)"
 
-    matchers-condition: or
+    matchers-condition: and
     matchers:
-      - type: dsl
-        name: "outdated_version"
-        dsl:
-          - compare_versions(internal_detected_version, concat("< ", last_version))
+      - type: status
+        status:
+          - 200
 
-      - type: regex
+      - type: word
+        words:
+          - "aryo-activity-log"
         part: body
-        regex:
-          - '(?i)Stable.tag:\s?([\w.]+)'
-# digest: 4a0a0047304502203597753300eac546cfc985ea41978890279a6385e0ef5e9dd0d9c8edd5617915022100ee6494b24fa06bbc43a9f22669506b5c883a0c534af22524d47f762fccff6f38:922c64590222798bb761d5b6d8e72950
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 2.0.4')
