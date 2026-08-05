@@ -1,70 +1,72 @@
-code:
-- engine:
-  - sh
-  - bash
-  extractors:
-  - internal: true
-    json:
-    - .[].projectId
-    name: projectIds
-    type: json
-  source: 'gcloud projects list --format="json(projectId)"
-
-    '
-- engine:
-  - sh
-  - bash
-  extractors:
-  - internal: true
-    json:
-    - .[].name
-    name: sqlInstances
-    type: json
-  source: 'gcloud sql instances list --project $projectId --filter=''DATABASE_VERSION:POSTGRES*''
-    --format="json(name)"
-
-    '
-- engine:
-  - sh
-  - bash
-  extractors:
-  - dsl:
-    - '"PostgreSQL Log Checkpoints flag is disabled in database instance: " + sqlInstance
-      + " in project: " + projectId'
-    type: dsl
-  matchers:
-  - type: word
-    words:
-    - 'off'
-  source: 'gcloud sql instances describe $sqlInstance --format="json(settings.databaseFlags)"
-
-    '
-flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
-  , projectId)\n  code(2)\n  for(let sqlInstance of iterate(template.sqlInstances)){\n\
-  \    set(\"sqlInstance\", sqlInstance)\n    code(3)\n  }\n}\n"
 id: gcloud-postgresql-log-checkpoints-disabled
+
 info:
-  author: princechaddha
-  description: 'Ensure that the "log_checkpoints" database flag is enabled for all
-    PostgreSQL database instances available within your Google Cloud Platform (GCP)
-    account. The "log_checkpoints" flag allows checkpoints and restart points to be
-    logged in the PostgreSQL server log. By default, this flag is disabled, and enabling
-    it ensures better tracking and debugging of database operations.
-
-    '
-  impact: 'Disabling the "log_checkpoints" flag may result in limited visibility into
-    checkpoint operations, making it difficult to troubleshoot and monitor PostgreSQL
-    database activities effectively.
-
-    '
   name: PostgreSQL Log Checkpoints Flag Disabled
-  reference:
-  - https://cloud.google.com/sql/docs/postgres/flags
-  remediation: 'Enable the "log_checkpoints" flag for all PostgreSQL database instances
-    by updating the database configuration using the Google Cloud Console or gcloud
-    CLI.
-
-    '
+  author: princechaddha
   severity: medium
+  description: |
+    Ensure that the "log_checkpoints" database flag is enabled for all PostgreSQL database instances available within your Google Cloud Platform (GCP) account. The "log_checkpoints" flag allows checkpoints and restart points to be logged in the PostgreSQL server log. By default, this flag is disabled, and enabling it ensures better tracking and debugging of database operations.
+  impact: |
+    Disabling the "log_checkpoints" flag may result in limited visibility into checkpoint operations, making it difficult to troubleshoot and monitor PostgreSQL database activities effectively.
+  remediation: |
+    Enable the "log_checkpoints" flag for all PostgreSQL database instances by updating the database configuration using the Google Cloud Console or gcloud CLI.
+  reference:
+    - https://cloud.google.com/sql/docs/postgres/flags
   tags: cloud,devops,gcp,gcloud,google-cloud-sql,postgresql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
 self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:POSTGRES*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --format="json(settings.databaseFlags)"
+
+    matchers:
+      - type: word
+        words:
+          - 'off'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"PostgreSQL Log Checkpoints flag is disabled in database instance: " + sqlInstance + " in project: " + projectId'
+# digest: 4a0a00473045022100e25f6c8c1925b65cd8dd47e4e03a5a28448cdc3d276021098c2d156044e1271102203339363363afa6f0a81053c581d6daaf123ce9704b3a60e3e5fadd9307b3988f:922c64590222798bb761d5b6d8e72950
