@@ -2,8 +2,8 @@ id: gitlab-version-detect
 
 info:
   name: GitLab Enterprise Edition Version Detection
-  author: milo2012
-  severity: info
+  author: metascan
+  severity: low
   description: Obtain GitLab Enterprise Edition Version Information
   reference:
     - https://censys.io/cve-2021-22205-it-was-a-gitlab-smash/
@@ -12,11 +12,29 @@ info:
     shodan-query: 'http.title:"Sign in · GitLab"'
   tags: tech,gitlab
 
-requests:
-  - method: GET
+http:
+  - id: extract-version-gitlab-help
+    method: GET
+    path:
+      - "{{BaseURL}}/gitlab/help"
+      - "{{BaseURL}}/help"
+    extractors:
+      - type: regex
+        name: instance_version
+        internal: true
+        group: 1
+        regex:
+          - '"instance_version":"([0-9]+\.[0-9]+\.[0-9]+)"'
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - '"instance_version":"([0-9]+\.[0-9]+\.[0-9]+)"'
+
+  - id: css-version-check
+    method: GET
     path:
       - "{{BaseURL}}/users/sign_in"
-
     matchers-condition: or
     matchers:
       - type: dsl
@@ -139,8 +157,6 @@ requests:
         dsl:
           - "contains(body,'/assets/application-2bc937bdbf16463139855a4f2d14aa5747dc697192760e8ef459d226474d726f.css.css.css')"
 
-
-
       - type: dsl
         name: "version 15.7.8"
         dsl:
@@ -156,3 +172,7 @@ requests:
         dsl:
           - "contains(body,'/assets/application-c19a43b56f2b869d14e8b8865f2673e99e95a3f9912c95776e2aa44d0de56416.css')"
 
+      - type: dsl
+        name: "version 18.X.X"
+        dsl:
+          - "contains(body,'/assets/application-cf4aa50cbc2dc9eb0c198d2424a0669f5788a487e0b84edbbd5535eb9d362c7d.css')"

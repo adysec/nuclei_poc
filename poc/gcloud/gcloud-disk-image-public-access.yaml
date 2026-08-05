@@ -1,74 +1,68 @@
-id: gcloud-disk-image-public-access
-
-info:
-  name: Disk Images Publicly Shared
-  author: princechaddha
-  severity: medium
-  description: |
-    Ensure that your virtual machine disk images are not publicly shared with all other Google Cloud Platform (GCP) accounts in order to avoid exposing sensitive or confidential data. If required, you can share your disk images with specific GCP accounts only, without making them public.
-  impact: |
-    Publicly shared disk images can expose sensitive application data and configurations to anyone with a Google Cloud account, potentially leading to security breaches.
-  remediation: |
-    Remove the "allAuthenticatedUsers" member from the IAM policy of affected disk images using the 'gcloud compute images remove-iam-policy-binding' command or through the Google Cloud Console.
-  reference:
-    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/publicly-shared-disk-images.html
-    - https://cloud.google.com/compute/docs/images/managing-access-custom-images
-  tags: cloud,devops,gcp,gcloud,compute,security,storage,disk-images,gcp-cloud-config
-
-flow: |
-  code(1)
-  for(let projectId of iterate(template.projectIds)){
-    set("projectId", projectId)
-    code(2)
-    for(let image of iterate(template.images)){
-      image = JSON.parse(image)
-      set("imageName", image.name)
-      code(3)
-    }
-  }
-
-self-contained: true
-
 code:
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud projects list --format="json(projectId)"
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
 
-    extractors:
-      - type: json
-        name: projectIds
-        internal: true
-        json:
-          - '.[].projectId'
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: images
+    type: json
+  source: 'gcloud compute images list --project $projectId --no-standard-images --format="json(name)"
 
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud compute images list --project $projectId --no-standard-images --format="json(name)"
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Disk image " + imageName + " in project " + projectId + " is publicly shared
+      with all Google Cloud users"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"allAuthenticatedUsers"'
+  source: 'gcloud compute images get-iam-policy $imageName --project $projectId --format="json(bindings[].members[])"
 
-    extractors:
-      - type: json
-        name: images
-        internal: true
-        json:
-          - '.[]'
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let image of iterate(template.images)){\n    image\
+  \ = JSON.parse(image)\n    set(\"imageName\", image.name)\n    code(3)\n  }\n}\n"
+id: gcloud-disk-image-public-access
+info:
+  author: princechaddha
+  description: 'Ensure that your virtual machine disk images are not publicly shared
+    with all other Google Cloud Platform (GCP) accounts in order to avoid exposing
+    sensitive or confidential data. If required, you can share your disk images with
+    specific GCP accounts only, without making them public.
 
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud compute images get-iam-policy $imageName --project $projectId --format="json(bindings[].members[])"
+    '
+  impact: 'Publicly shared disk images can expose sensitive application data and configurations
+    to anyone with a Google Cloud account, potentially leading to security breaches.
 
-    matchers:
-      - type: word
-        words:
-          - '"allAuthenticatedUsers"'
+    '
+  name: Disk Images Publicly Shared
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/publicly-shared-disk-images.html
+  - https://cloud.google.com/compute/docs/images/managing-access-custom-images
+  remediation: 'Remove the "allAuthenticatedUsers" member from the IAM policy of affected
+    disk images using the ''gcloud compute images remove-iam-policy-binding'' command
+    or through the Google Cloud Console.
 
-    extractors:
-      - type: dsl
-        dsl:
-          - '"Disk image " + imageName + " in project " + projectId + " is publicly shared with all Google Cloud users"'
-# digest: 4a0a0047304502204f5fe6175038d8ae8f9ca04d4526a5b544ff323d1f60083d6a23c8369645a21502210097538dc98d9dc851d60cbc0f2f4c5987dcbb2d045ee56f3af740f364acc6ccc7:922c64590222798bb761d5b6d8e72950
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,compute,security,storage,disk-images,gcp-cloud-config
+self-contained: true

@@ -1,92 +1,79 @@
-id: gcloud-approved-external-lb
-
-info:
-  name: Unapproved External Load Balancers in Google Cloud Projects
-  author: princechaddha
-  severity: medium
-  description: |
-    Ensure that your web applications are using only approved external load balancers to comply with your organization's security and industry requirements. Using unapproved load balancers could expose your applications to vulnerabilities. The approved load balancers must be defined in the conformity rule settings, in the Trend Cloud One™ – Conformity account console.
-  impact: |
-    Using unapproved load balancers can expose web applications to potential security vulnerabilities.
-  remediation: |
-    Ensure all used external load balancers are approved in the Trend Cloud One™ – Conformity account console. Replace unapproved load balancers with approved ones.
-  reference:
-    - https://cloud.google.com/load-balancing/docs
-  tags: cloud,devops,gcp,gcloud,google-cloud-load-balancing,gcp-cloud-config
-
-flow: |
-  code(1)
-  for(let projectId of iterate(template.projectIds)){
-    set("projectId", projectId)
-    code(2)
-    for(let urlMap of iterate(template.urlMaps)){
-      set("urlMap", urlMap)
-      code(3)
-      for(let targetHttpProxy of iterate(template.targetHttpProxies)){
-        set("targetHttpProxy", targetHttpProxy)
-        code(4)
-        for(let forwardingRule of iterate(template.forwardingRules)){
-          code(5)
-        }
-      }
-    }
-  }
-
-self-contained: true
-
 code:
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud projects list --format="json(projectId)"
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
 
-    extractors:
-      - type: json
-        name: projectIds
-        internal: true
-        json:
-          - '.[].projectId'
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: urlMaps
+    type: json
+  source: 'gcloud compute url-maps list --project $projectId --format="json(name)"
 
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud compute url-maps list --project $projectId --format="json(name)"
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - '.[] | {name: .name, urlMap: .urlMap}'
+    name: targetHttpProxies
+    type: json
+  source: 'gcloud compute target-http-proxies list --project $projectId --format="json(name,urlMap)"
 
-    extractors:
-      - type: json
-        name: urlMaps
-        internal: true
-        json:
-          - '.[].name'
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Unapproved External Load Balancer in project: " + projectId + ", Load Balancer:
+      " + name'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - EXTERNAL_MANAGED
+  source: 'gcloud compute forwarding-rules list --project $projectId --format="json(name,loadBalancingScheme,target)"
 
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud compute target-http-proxies list --project $projectId --format="json(name,urlMap)"
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let urlMap of iterate(template.urlMaps)){\n    set(\"\
+  urlMap\", urlMap)\n    code(3)\n    for(let targetHttpProxy of iterate(template.targetHttpProxies)){\n\
+  \      set(\"targetHttpProxy\", targetHttpProxy)\n      code(4)\n      for(let forwardingRule\
+  \ of iterate(template.forwardingRules)){\n        code(5)\n      }\n    }\n  }\n\
+  }\n"
+id: gcloud-approved-external-lb
+info:
+  author: princechaddha
+  description: "Ensure that your web applications are using only approved external\
+    \ load balancers to comply with your organization's security and industry requirements.\
+    \ Using unapproved load balancers could expose your applications to vulnerabilities.\
+    \ The approved load balancers must be defined in the conformity rule settings,\
+    \ in the Trend Cloud One\u2122 \u2013 Conformity account console.\n"
+  impact: 'Using unapproved load balancers can expose web applications to potential
+    security vulnerabilities.
 
-    extractors:
-      - type: json
-        name: targetHttpProxies
-        internal: true
-        json:
-          - '.[] | {name: .name, urlMap: .urlMap}'
-
-  - engine:
-      - sh
-      - bash
-    source: |
-      gcloud compute forwarding-rules list --project $projectId --format="json(name,loadBalancingScheme,target)"
-
-    matchers:
-      - type: word
-        words:
-          - 'EXTERNAL_MANAGED'
-
-    extractors:
-      - type: dsl
-        dsl:
-          - '"Unapproved External Load Balancer in project: " + projectId + ", Load Balancer: " + name'
-# digest: 490a0046304402202401bdf94f9f0a0cc821d3357a418a63ac6b9f0c3df3465abd39b2e77735334202200e58b2372d24827da28cb6609997e0b799b1ee123cf6fee492753da907c2b096:922c64590222798bb761d5b6d8e72950
+    '
+  name: Unapproved External Load Balancers in Google Cloud Projects
+  reference:
+  - https://cloud.google.com/load-balancing/docs
+  remediation: "Ensure all used external load balancers are approved in the Trend\
+    \ Cloud One\u2122 \u2013 Conformity account console. Replace unapproved load balancers\
+    \ with approved ones.\n"
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-load-balancing,gcp-cloud-config
+self-contained: true
