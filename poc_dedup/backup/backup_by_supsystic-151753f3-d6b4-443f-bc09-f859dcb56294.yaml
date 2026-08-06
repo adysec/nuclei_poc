@@ -1,0 +1,51 @@
+id: backup_by_supsystic-151753f3-d6b4-443f-bc09-f859dcb56294
+
+info:
+  name: >
+    Backup by Supsystic <= 2.3.9 - Unauthenticated Local File Inclusion
+  author: topscoder
+  severity: critical
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/151753f3-d6b4-443f-bc09-f859dcb56294?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/backup-by-supsystic/"
+    google-query: inurl:"/wp-content/plugins/backup-by-supsystic/"
+    shodan-query: 'http.html:"wp-content/plugins/backup-by-supsystic/"'
+  tags: cve,wordpress,wp-plugin,backup-by-supsystic,critical,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/backup-by-supsystic/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "backup-by-supsystic"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.3.9')

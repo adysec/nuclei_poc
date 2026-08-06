@@ -1,0 +1,51 @@
+id: askeet-b95af878-f324-44ae-a4bf-0c1e994bb3c1
+
+info:
+  name: >
+    Askeet <= 3.0 - Authenticated (Administrator+) SQL Injection via 'sql_query' Parameter
+  author: topscoder
+  severity: low
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b95af878-f324-44ae-a4bf-0c1e994bb3c1?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/askeet/"
+    google-query: inurl:"/wp-content/plugins/askeet/"
+    shodan-query: 'http.html:"wp-content/plugins/askeet/"'
+  tags: cve,wordpress,wp-plugin,askeet,low,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/askeet/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "askeet"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 3.0')

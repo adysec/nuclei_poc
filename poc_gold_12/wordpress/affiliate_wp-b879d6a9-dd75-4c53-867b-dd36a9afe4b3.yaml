@@ -1,0 +1,51 @@
+id: affiliate_wp-b879d6a9-dd75-4c53-867b-dd36a9afe4b3
+
+info:
+  name: >
+    AffiliateWP <= 2.34.0 - Reflected Cross-Site Scripting
+  author: topscoder
+  severity: medium
+  description: >
+    
+  reference:
+    - https://github.com/topscoder/nuclei-wordfence-cve
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/b879d6a9-dd75-4c53-867b-dd36a9afe4b3?source=api-scan
+  classification:
+    cvss-metrics: 
+    cvss-score: 
+    cve-id: 
+  metadata:
+    fofa-query: "wp-content/plugins/affiliate-wp/"
+    google-query: inurl:"/wp-content/plugins/affiliate-wp/"
+    shodan-query: 'http.html:"wp-content/plugins/affiliate-wp/"'
+  tags: cve,wordpress,wp-plugin,affiliate-wp,medium,candidate
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/wp-content/plugins/affiliate-wp/readme.txt"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?mi)Stable tag:\\s*([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "affiliate-wp"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '<= 2.34.0')
