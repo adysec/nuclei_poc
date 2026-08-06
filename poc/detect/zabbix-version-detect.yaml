@@ -1,29 +1,57 @@
-id: zabbix-version-detect
+id: zabbix-detect-version
 
 info:
-  name: Zabbix Version Detect
+  name: Zabbix Web Interface Detection and Version Extraction
   author: milo2012
   severity: info
-  tags: tech,zabbix
+  description: |
+    Detects Zabbix web interface and extracts version using API endpoint.
+  reference:
+    - https://www.zabbix.com/documentation
+  tags: zabbix,panel,tech
 
 requests:
   - method: GET
     path:
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/zabbix/"
+      - "{{BaseURL}}/index.php"
 
     matchers-condition: and
     matchers:
       - type: word
-        part: body
         words:
-          - '<title>Zabbix</title>'
+          - 'href="https://www.zabbix.com/documentation'
+        part: body
+      - type: word
+        words:
+          - '<form'
+          - 'index.php'
+        part: body
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api_jsonrpc.php"
+
+    headers:
+      Content-Type: application/json-rpc
+
+    body: |
+      {
+        "jsonrpc": "2.0",
+        "method": "apiinfo.version",
+        "params": [],
+        "id": 1
+      }
+
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '"result"\s*:\s*"([0-9.]+(?:rc|alpha|beta)?[0-9]*)"'
 
     extractors:
       - type: regex
+        name: version
         part: body
-        group: 1  
         regex:
-          - ' href="http://www.zabbix.com/documentation/(.*?)/">'
-          - ' href="https://www.zabbix.com/documentation/(.*?)/">'
+          - '"result"\s*:\s*"([0-9.]+(?:rc|alpha|beta)?[0-9]*)"'
 
