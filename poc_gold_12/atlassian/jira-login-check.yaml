@@ -1,48 +1,46 @@
-http:
-- attack: pitchfork
-  extractors:
-  - dsl:
-    - username
-    - password
-    type: dsl
-  matchers:
-  - part: body
-    type: word
-    words:
-    - '"loginSucceeded":true'
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  raw:
-  - 'POST /rest/gadget/1.0/login HTTP/1.1
-
-    Host: {{Hostname}}
-
-    User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
-    (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
-
-    Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-
-    Connection: close
-
-
-    os_username={{username}}&os_password={{password}}
-
-    '
 id: jira-login-check
+
 info:
-  author: parthmalhotra,pdresearch
-  description: Checks for a valid login on self hosted Jira instance.
-  metadata:
-    fofa-query: product="JIRA"
-    max-request: 1
-    shodan-query: http.component:"Atlassian Jira"
   name: Jira Login Check
-  reference:
-  - https://owasp.org/www-community/attacks/Credential_stuffing
+  author: parthmalhotra,pdresearch
   severity: critical
-  tags: creds-stuffing,login-check,self-hosted,jira
+  description: Checks for a valid login on self hosted Jira instance.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  metadata:
+    shodan-query: http.component:"Atlassian Jira"
+    fofa-query: product="JIRA"
+  tags: login-check,jira,creds-stuffing,self-hosted
+
 variables:
-  password: '{{password}}'
-  username: '{{username}}'
+  username: "{{username}}"
+  password: "{{password}}"
+
+http:
+  - raw:
+      - |
+        POST /rest/gadget/1.0/login HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        Connection: close
+
+        os_username={{username}}&os_password={{password}}
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username
+          - password
+
+    attack: pitchfork
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"loginSucceeded":true'
+
+      - type: status
+        status:
+          - 200

@@ -1,330 +1,745 @@
-headless:
-- extractors:
-  - name: postmessage_vuln_summary
-    part: body
-    regex:
-    - '"scan_completed":\s*true'
-    type: regex
-  - name: critical_postmessage_vulns
-    part: body
-    regex:
-    - '"critical_vulnerabilities":\s*[1-9]'
-    type: regex
-  matchers:
-  - name: postmessage_vulnerabilities_detected
-    regex:
-    - '"postmessage_vulnerabilities_found":\s*true'
-    type: regex
-  - name: critical_postmessage_vulnerabilities
-    regex:
-    - '"severity":\s*"critical"'
-    type: regex
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitload
-  - action: script
-    args:
-      code: "window.postMessageResults = {\n  listeners: [],\n  vulnerabilities: [],\n\
-        \  test_results: [],\n  origin_validations: [],\n  data_handlers: [],\n  iframes_detected:\
-        \ [],\n  risk_assessment: {}\n};\n\n// Detect existing postMessage listeners\n\
-        const originalAddEventListener = window.addEventListener;\nconst originalOnMessage\
-        \ = window.onmessage;\n\n// Store original handlers\nwindow.postMessageResults.original_handlers\
-        \ = {\n  addEventListener: originalAddEventListener,\n  onmessage: originalOnMessage\n\
-        };\n\n// Hook addEventListener to detect postMessage listeners\nwindow.addEventListener\
-        \ = function(type, listener, options) {\n  if (type === 'message') {\n   \
-        \ window.postMessageResults.listeners.push({\n      type: 'addEventListener',\n\
-        \      listener: listener.toString(),\n      options: options,\n      timestamp:\
-        \ Date.now()\n    });\n  }\n  return originalAddEventListener.call(this, type,\
-        \ listener, options);\n};\n\n// Check for existing onmessage handlers\nif\
-        \ (window.onmessage) {\n  window.postMessageResults.listeners.push({\n   \
-        \ type: 'onmessage',\n    listener: window.onmessage.toString(),\n    timestamp:\
-        \ Date.now()\n  });\n}\n\n// Scan for iframes and frames\nconst iframes =\
-        \ document.querySelectorAll('iframe, frame');\niframes.forEach((frame, index)\
-        \ => {\n  window.postMessageResults.iframes_detected.push({\n    index: index,\n\
-        \    src: frame.src || frame.getAttribute('src'),\n    id: frame.id,\n   \
-        \ name: frame.name,\n    sandbox: frame.sandbox ? frame.sandbox.toString()\
-        \ : null,\n    allow: frame.allow || null\n  });\n});\n\n// Analyze existing\
-        \ postMessage listeners in page scripts\nconst scripts = Array.from(document.scripts);\n\
-        scripts.forEach((script, scriptIndex) => {\n  if (script.textContent) {\n\
-        \    const content = script.textContent;\n\n    // Look for postMessage listener\
-        \ patterns\n    const patterns = [\n      /addEventListener\\s*\\(\\s*['\"\
-        ]message['\"].*?\\)/gi,\n      /onmessage\\s*=.*?function/gi,\n      /window\\\
-        .onmessage/gi,\n      /postMessage\\s*\\(/gi\n    ];\n\n    patterns.forEach((pattern,\
-        \ patternIndex) => {\n      const matches = content.match(pattern);\n    \
-        \  if (matches) {\n        matches.forEach(match => {\n          window.postMessageResults.listeners.push({\n\
-        \            type: 'script_analysis',\n            script_index: scriptIndex,\n\
-        \            pattern_index: patternIndex,\n            match: match,\n   \
-        \         context: content.substring(\n              Math.max(0, content.indexOf(match)\
-        \ - 50),\n              Math.min(content.length, content.indexOf(match) +\
-        \ 150)\n            )\n          });\n        });\n      }\n    });\n  }\n\
-        });\n\nreturn window.postMessageResults;\n"
-    name: initialize_postmessage_testing
-  - action: script
-    args:
-      code: "window.postMessageResults.test_results.push('origin_validation_testing');\n\
-        \n// Test various origin bypass techniques\nconst maliciousOrigins = [\n \
-        \ null,\n  'null',\n  '',\n  'data:',\n  'about:blank',\n  'javascript:',\n\
-        \  window.location.origin + '.evil.com',\n  'evil.com' + window.location.origin,\n\
-        \  window.location.protocol + '//evil.com',\n  '*'\n];\n\n// Test data injection\
-        \ payloads\nconst injectionPayloads = [\n  { type: 'xss', data: '<script>window.postMessageXSSTest=true</script>'\
-        \ },\n  { type: 'html_injection', data: '<img src=x onerror=window.postMessageHTMLTest=true>'\
-        \ },\n  { type: 'javascript', data: 'javascript:window.postMessageJSTest=true'\
-        \ },\n  { type: 'eval_injection', data: 'eval(\"window.postMessageEvalTest=true\"\
-        )' },\n  { type: 'dom_manipulation', data: { innerHTML: '<svg onload=window.postMessageDOMTest=true>'\
-        \ } },\n  { type: 'prototype_pollution', data: { '__proto__': { 'postMessageProtoPolluted':\
-        \ true } } }\n];\n\n// Set up test result tracking\nwindow.postMessageTestResults\
-        \ = {\n  originBypass: false,\n  xssExecution: false,\n  htmlInjection: false,\n\
-        \  jsExecution: false,\n  evalInjection: false,\n  domManipulation: false,\n\
-        \  prototypePollution: false\n};\n\n// Create a temporary postMessage listener\
-        \ for testing\nwindow.testPostMessageListener = function(event) {\n  try {\n\
-        \    window.postMessageResults.origin_validations.push({\n      origin: event.origin,\n\
-        \      source: event.source ? 'present' : 'null',\n      data: event.data,\n\
-        \      timestamp: Date.now(),\n      test_context: true\n    });\n\n    //\
-        \ Test for unsafe origin handling\n    if (!event.origin ||\n        event.origin\
-        \ === 'null' ||\n        event.origin === '' ||\n        event.origin.includes('data:')\
-        \ ||\n        event.origin.includes('javascript:')) {\n\n      window.postMessageResults.vulnerabilities.push({\n\
-        \        type: 'unsafe_origin_handling',\n        severity: 'high',\n    \
-        \    origin: event.origin,\n        description: 'PostMessage listener accepts\
-        \ unsafe origins',\n        confirmed: true\n      });\n\n      window.postMessageTestResults.originBypass\
-        \ = true;\n    }\n\n    // Test for unsafe data handling\n    if (typeof event.data\
-        \ === 'string') {\n      // Test for direct HTML injection\n      if (event.data.includes('<script>')\
-        \ || event.data.includes('<img')) {\n        window.postMessageResults.data_handlers.push({\n\
-        \          type: 'html_content_received',\n          data: event.data,\n \
-        \         risk: 'high'\n        });\n      }\n\n      // Simulate unsafe data\
-        \ handling patterns\n      if (event.data.includes('innerHTML') || event.data.includes('<svg'))\
-        \ {\n        window.postMessageTestResults.htmlInjection = true;\n      }\n\
-        \n      if (event.data.includes('eval(') || event.data.includes('javascript:'))\
-        \ {\n        window.postMessageTestResults.jsExecution = true;\n      }\n\
-        \    }\n\n    // Test for object-based data handling\n    if (typeof event.data\
-        \ === 'object' && event.data !== null) {\n      // Check for prototype pollution\n\
-        \      if (event.data.__proto__ || event.data.constructor) {\n        window.postMessageTestResults.prototypePollution\
-        \ = true;\n        window.postMessageResults.vulnerabilities.push({\n    \
-        \      type: 'prototype_pollution_via_postmessage',\n          severity: 'high',\n\
-        \          data: event.data,\n          description: 'PostMessage data contains\
-        \ prototype pollution payload',\n          confirmed: true\n        });\n\
-        \      }\n\n      // Check for DOM manipulation payloads\n      if (event.data.innerHTML\
-        \ || event.data.outerHTML) {\n        window.postMessageTestResults.domManipulation\
-        \ = true;\n      }\n    }\n\n  } catch (e) {\n    window.postMessageResults.test_results.push('postmessage_listener_error:\
-        \ ' + e.message);\n  }\n};\n\n// Add our test listener\nwindow.addEventListener('message',\
-        \ window.testPostMessageListener, false);\n\n// Test different origin bypass\
-        \ scenarios\nmaliciousOrigins.forEach((testOrigin, index) => {\n  setTimeout(()\
-        \ => {\n    try {\n      // Create a temporary iframe to send postMessage\
-        \ from different contexts\n      const testFrame = document.createElement('iframe');\n\
-        \      testFrame.style.display = 'none';\n      testFrame.src = 'about:blank';\n\
-        \      document.body.appendChild(testFrame);\n\n      testFrame.onload = ()\
-        \ => {\n        try {\n          // Send test message with various origins\n\
-        \          window.postMessage({\n            test: 'origin_bypass',\n    \
-        \        origin_test: testOrigin,\n            payload: injectionPayloads[index\
-        \ % injectionPayloads.length]\n          }, testOrigin === '*' ? '*' : window.location.origin);\n\
-        \n        } catch (e) {\n          window.postMessageResults.test_results.push(`origin_test_${index}_error:\
-        \ ${e.message}`);\n        }\n\n        // Clean up\n        setTimeout(()\
-        \ => {\n          try {\n            document.body.removeChild(testFrame);\n\
-        \          } catch (e) {\n            // Ignore cleanup errors\n         \
-        \ }\n        }, 500);\n      };\n\n    } catch (e) {\n      window.postMessageResults.test_results.push(`origin_bypass_test_${index}_error:\
-        \ ${e.message}`);\n    }\n  }, index * 200);\n});\n\nreturn window.postMessageResults;\n"
-    name: test_origin_validation
-  - action: script
-    args:
-      code: "window.postMessageResults.test_results.push('postmessage_injection_testing');\n\
-        \n// Advanced injection payloads\nconst advancedPayloads = [\n  {\n    name:\
-        \ 'dom_xss_via_postmessage',\n    data: {\n      action: 'updateContent',\n\
-        \      content: '<img src=x onerror=\"window.postMessageDOMXSS=true\">',\n\
-        \      target: 'innerHTML'\n    }\n  },\n  {\n    name: 'javascript_execution',\n\
-        \    data: {\n      action: 'executeScript',\n      script: 'window.postMessageScriptExec=true',\n\
-        \      method: 'eval'\n    }\n  },\n  {\n    name: 'url_manipulation',\n \
-        \   data: {\n      action: 'navigate',\n      url: 'javascript:window.postMessageURLManip=true'\n\
-        \    }\n  },\n  {\n    name: 'storage_manipulation',\n    data: {\n      action:\
-        \ 'setStorage',\n      key: 'malicious',\n      value: '<script>window.postMessageStorageXSS=true</script>'\n\
-        \    }\n  },\n  {\n    name: 'function_call_injection',\n    data: {\n   \
-        \   action: 'callFunction',\n      function: 'eval',\n      args: ['window.postMessageFuncCall=true']\n\
-        \    }\n  }\n];\n\n// Send injection payloads\nadvancedPayloads.forEach((payload,\
-        \ index) => {\n  setTimeout(() => {\n    try {\n      window.postMessage(payload.data,\
-        \ window.location.origin);\n\n      // Check for execution after delay\n \
-        \     setTimeout(() => {\n        let executed = false;\n        let executionType\
-        \ = '';\n\n        switch (payload.name) {\n          case 'dom_xss_via_postmessage':\n\
-        \            executed = window.postMessageDOMXSS === true;\n            executionType\
-        \ = 'DOM XSS';\n            break;\n          case 'javascript_execution':\n\
-        \            executed = window.postMessageScriptExec === true;\n         \
-        \   executionType = 'JavaScript Execution';\n            break;\n        \
-        \  case 'url_manipulation':\n            executed = window.postMessageURLManip\
-        \ === true;\n            executionType = 'URL Manipulation';\n           \
-        \ break;\n          case 'storage_manipulation':\n            executed = window.postMessageStorageXSS\
-        \ === true;\n            executionType = 'Storage XSS';\n            break;\n\
-        \          case 'function_call_injection':\n            executed = window.postMessageFuncCall\
-        \ === true;\n            executionType = 'Function Call Injection';\n    \
-        \        break;\n        }\n\n        if (executed) {\n          window.postMessageResults.vulnerabilities.push({\n\
-        \            type: 'postmessage_code_execution',\n            subtype: payload.name,\n\
-        \            severity: 'critical',\n            payload: payload.data,\n \
-        \           execution_type: executionType,\n            confirmed: true,\n\
-        \            description: `Code execution via postMessage ${executionType}`\n\
-        \          });\n        }\n\n      }, 300);\n\n    } catch (e) {\n      window.postMessageResults.test_results.push(`injection_test_${index}_error:\
-        \ ${e.message}`);\n    }\n  }, index * 400);\n});\n\nreturn window.postMessageResults;\n"
-    name: test_postmessage_injection
-  - action: script
-    args:
-      code: "window.postMessageResults.test_results.push('cross_frame_communication_testing');\n\
-        \nif (window.postMessageResults.iframes_detected.length > 0) {\n\n  // Test\
-        \ communication with existing iframes\n  window.postMessageResults.iframes_detected.forEach((frameInfo,\
-        \ index) => {\n    try {\n      const frame = document.querySelectorAll('iframe,\
-        \ frame')[index];\n      if (frame && frame.contentWindow) {\n\n        //\
-        \ Test sending messages to iframe\n        const testPayloads = [\n      \
-        \    { action: 'test', data: 'cross_frame_test' },\n          { action: 'eval',\
-        \ code: 'window.crossFrameTest=true' },\n          { innerHTML: '<script>window.crossFrameXSS=true</script>'\
-        \ },\n          { __proto__: { crossFramePolluted: true } }\n        ];\n\n\
-        \        testPayloads.forEach((payload, payloadIndex) => {\n          setTimeout(()\
-        \ => {\n            try {\n              frame.contentWindow.postMessage(payload,\
-        \ '*');\n\n              window.postMessageResults.data_handlers.push({\n\
-        \                type: 'cross_frame_message_sent',\n                iframe_index:\
-        \ index,\n                payload: payload,\n                target_origin:\
-        \ '*',\n                timestamp: Date.now()\n              });\n\n     \
-        \       } catch (e) {\n              window.postMessageResults.test_results.push(\n\
-        \                `cross_frame_send_${index}_${payloadIndex}_error: ${e.message}`\n\
-        \              );\n            }\n          }, payloadIndex * 200);\n    \
-        \    });\n      }\n\n    } catch (e) {\n      window.postMessageResults.test_results.push(`cross_frame_test_${index}_error:\
-        \ ${e.message}`);\n    }\n  });\n\n  // Check iframe sandbox restrictions\n\
-        \  window.postMessageResults.iframes_detected.forEach((frameInfo, index) =>\
-        \ {\n    if (frameInfo.sandbox) {\n      const sandboxFlags = frameInfo.sandbox.split('\
-        \ ');\n      const dangerousFlags = [\n        'allow-scripts',\n        'allow-same-origin',\n\
-        \        'allow-top-navigation',\n        'allow-forms'\n      ];\n\n    \
-        \  const presentDangerousFlags = dangerousFlags.filter(flag =>\n        sandboxFlags.includes(flag)\n\
-        \      );\n\n      if (presentDangerousFlags.length > 0) {\n        window.postMessageResults.vulnerabilities.push({\n\
-        \          type: 'iframe_sandbox_bypass_risk',\n          severity: 'medium',\n\
-        \          iframe_index: index,\n          dangerous_flags: presentDangerousFlags,\n\
-        \          description: 'Iframe sandbox allows potentially dangerous operations',\n\
-        \          confirmed: true\n        });\n      }\n    } else {\n      // No\
-        \ sandbox at all\n      window.postMessageResults.vulnerabilities.push({\n\
-        \        type: 'iframe_no_sandbox',\n        severity: 'medium',\n       \
-        \ iframe_index: index,\n        iframe_src: frameInfo.src,\n        description:\
-        \ 'Iframe lacks sandbox restrictions',\n        confirmed: true\n      });\n\
-        \    }\n  });\n\n} else {\n  // Create test iframe for communication testing\n\
-        \  try {\n    const testIframe = document.createElement('iframe');\n    testIframe.style.display\
-        \ = 'none';\n    testIframe.src = 'data:text/html,<script>window.addEventListener(\"\
-        message\", function(e) { if(e.data.eval) eval(e.data.eval); });</script>';\n\
-        \    document.body.appendChild(testIframe);\n\n    testIframe.onload = ()\
-        \ => {\n      // Test communication with dynamically created iframe\n    \
-        \  setTimeout(() => {\n        try {\n          testIframe.contentWindow.postMessage({\n\
-        \            eval: 'window.parent.dynamicIframeTest=true'\n          }, '*');\n\
-        \n          setTimeout(() => {\n            if (window.dynamicIframeTest ===\
-        \ true) {\n              window.postMessageResults.vulnerabilities.push({\n\
-        \                type: 'dynamic_iframe_code_execution',\n                severity:\
-        \ 'high',\n                description: 'Code execution via dynamically created\
-        \ iframe postMessage',\n                confirmed: true\n              });\n\
-        \            }\n\n            // Clean up\n            document.body.removeChild(testIframe);\n\
-        \          }, 500);\n\n        } catch (e) {\n          window.postMessageResults.test_results.push('dynamic_iframe_test_error:\
-        \ ' + e.message);\n        }\n      }, 500);\n    };\n\n  } catch (e) {\n\
-        \    window.postMessageResults.test_results.push('dynamic_iframe_creation_error:\
-        \ ' + e.message);\n  }\n}\n\nreturn window.postMessageResults;\n"
-    name: test_cross_frame_communication
-  - action: script
-    args:
-      code: "window.postMessageResults.test_results.push('postmessage_listener_analysis');\n\
-        \n// Analyze detected listeners for security issues\nwindow.postMessageResults.listeners.forEach((listener,\
-        \ index) => {\n  try {\n    const listenerCode = listener.listener || listener.match\
-        \ || '';\n\n    // Check for unsafe patterns in listener code\n    const unsafePatterns\
-        \ = [\n      {\n        pattern: /event\\.origin\\s*[!=]==?\\s*['\"]?\\*['\"\
-        ]?/gi,\n        issue: 'wildcard_origin_check',\n        severity: 'high',\n\
-        \        description: 'Listener accepts messages from any origin'\n      },\n\
-        \      {\n        pattern: /event\\.data.*innerHTML/gi,\n        issue: 'unsafe_html_injection',\n\
-        \        severity: 'critical',\n        description: 'Direct innerHTML assignment\
-        \ from postMessage data'\n      },\n      {\n        pattern: /eval\\s*\\\
-        (\\s*event\\.data/gi,\n        issue: 'eval_postmessage_data',\n        severity:\
-        \ 'critical',\n        description: 'eval() called with postMessage data'\n\
-        \      },\n      {\n        pattern: /Function\\s*\\(\\s*event\\.data/gi,\n\
-        \        issue: 'function_constructor_postmessage',\n        severity: 'critical',\n\
-        \        description: 'Function constructor called with postMessage data'\n\
-        \      },\n      {\n        pattern: /document\\.write\\s*\\(\\s*event\\.data/gi,\n\
-        \        issue: 'document_write_postmessage',\n        severity: 'high',\n\
-        \        description: 'document.write() called with postMessage data'\n  \
-        \    },\n      {\n        pattern: /location\\s*=\\s*event\\.data/gi,\n  \
-        \      issue: 'location_assignment_postmessage',\n        severity: 'high',\n\
-        \        description: 'Location assignment from postMessage data'\n      },\n\
-        \      {\n        pattern: /\\.src\\s*=\\s*event\\.data/gi,\n        issue:\
-        \ 'src_assignment_postmessage',\n        severity: 'medium',\n        description:\
-        \ 'src attribute assignment from postMessage data'\n      }\n    ];\n\n  \
-        \  unsafePatterns.forEach(patternObj => {\n      const matches = listenerCode.match(patternObj.pattern);\n\
-        \      if (matches) {\n        window.postMessageResults.vulnerabilities.push({\n\
-        \          type: 'unsafe_postmessage_listener',\n          subtype: patternObj.issue,\n\
-        \          severity: patternObj.severity,\n          listener_index: index,\n\
-        \          listener_type: listener.type,\n          description: patternObj.description,\n\
-        \          matches: matches,\n          confirmed: true,\n          code_snippet:\
-        \ listenerCode.substring(0, 200)\n        });\n      }\n    });\n\n    //\
-        \ Check for missing origin validation\n    if (!listenerCode.includes('event.origin')\
-        \ &&\n        !listenerCode.includes('e.origin') &&\n        !listenerCode.includes('message.origin'))\
-        \ {\n      window.postMessageResults.vulnerabilities.push({\n        type:\
-        \ 'missing_origin_validation',\n        severity: 'medium',\n        listener_index:\
-        \ index,\n        listener_type: listener.type,\n        description: 'PostMessage\
-        \ listener lacks origin validation',\n        confirmed: true,\n        code_snippet:\
-        \ listenerCode.substring(0, 200)\n      });\n    }\n\n  } catch (e) {\n  \
-        \  window.postMessageResults.test_results.push(`listener_analysis_${index}_error:\
-        \ ${e.message}`);\n  }\n});\n\nreturn window.postMessageResults;\n"
-    name: analyze_postmessage_listeners
-  - action: script
-    args:
-      code: "// Remove test listener\ntry {\n  window.removeEventListener('message',\
-        \ window.testPostMessageListener, false);\n} catch (e) {\n  // Ignore cleanup\
-        \ errors\n}\n\n// Calculate comprehensive postMessage vulnerability risk score\n\
-        let riskScore = 0;\nconst confirmedVulns = window.postMessageResults.vulnerabilities.filter(v\
-        \ => v.confirmed);\n\nconfirmedVulns.forEach(vuln => {\n  switch (vuln.severity)\
-        \ {\n    case 'critical': riskScore += 40; break;\n    case 'high': riskScore\
-        \ += 25; break;\n    case 'medium': riskScore += 15; break;\n    case 'low':\
-        \ riskScore += 5; break;\n  }\n});\n\n// Additional risk factors\nconst listenersCount\
-        \ = window.postMessageResults.listeners.length;\nconst iframesCount = window.postMessageResults.iframes_detected.length;\n\
-        \nriskScore += listenersCount * 5;\nriskScore += iframesCount * 3;\n\nwindow.postMessageResults.risk_assessment\
-        \ = {\n  total_vulnerabilities: confirmedVulns.length,\n  listeners_analyzed:\
-        \ listenersCount,\n  iframes_detected: iframesCount,\n  cross_frame_communications:\
-        \ window.postMessageResults.data_handlers.length,\n  risk_score: Math.min(riskScore,\
-        \ 100),\n  risk_level: riskScore > 70 ? 'Critical' :\n             riskScore\
-        \ > 50 ? 'High' :\n             riskScore > 30 ? 'Medium' : 'Low',\n  test_coverage:\
-        \ window.postMessageResults.test_results.length,\n  recommendations: []\n\
-        };\n\n// Generate specific recommendations\nif (confirmedVulns.some(v => v.subtype\
-        \ === 'wildcard_origin_check')) {\n  window.postMessageResults.risk_assessment.recommendations.push(\n\
-        \    'Implement strict origin validation in postMessage listeners',\n    'Use\
-        \ allowlist of trusted origins instead of wildcard (*)'\n  );\n}\n\nif (confirmedVulns.some(v\
-        \ => v.subtype === 'unsafe_html_injection')) {\n  window.postMessageResults.risk_assessment.recommendations.push(\n\
-        \    'Sanitize all postMessage data before DOM insertion',\n    'Use textContent\
-        \ instead of innerHTML for untrusted data'\n  );\n}\n\nif (confirmedVulns.some(v\
-        \ => v.subtype === 'eval_postmessage_data')) {\n  window.postMessageResults.risk_assessment.recommendations.push(\n\
-        \    'Never use eval() with postMessage data',\n    'Implement secure message\
-        \ parsing and validation'\n  );\n}\n\nif (confirmedVulns.some(v => v.type\
-        \ === 'iframe_no_sandbox')) {\n  window.postMessageResults.risk_assessment.recommendations.push(\n\
-        \    'Implement iframe sandbox restrictions',\n    'Use minimal required sandbox\
-        \ permissions'\n  );\n}\n\nif (confirmedVulns.some(v => v.type === 'missing_origin_validation'))\
-        \ {\n  window.postMessageResults.risk_assessment.recommendations.push(\n \
-        \   'Add origin validation to all postMessage listeners',\n    'Implement\
-        \ message type validation and allowlisting'\n  );\n}\n\nif (confirmedVulns.length\
-        \ > 0) {\n  window.postMessageResults.risk_assessment.recommendations.push(\n\
-        \    'Regular security review of cross-frame communication',\n    'Implement\
-        \ Content Security Policy frame-ancestors directive',\n    'Consider using\
-        \ more secure alternatives to postMessage when possible'\n  );\n}\n\nwindow.postMessageResults.summary\
-        \ = {\n  scan_completed: true,\n  timestamp: new Date().toISOString(),\n \
-        \ postmessage_vulnerabilities_found: confirmedVulns.length > 0,\n  critical_vulnerabilities:\
-        \ confirmedVulns.filter(v => v.severity === 'critical').length,\n  listeners_with_issues:\
-        \ confirmedVulns.filter(v => v.type === 'unsafe_postmessage_listener').length,\n\
-        \  cross_frame_security_assessed: true\n};\n\nreturn window.postMessageResults;\n"
-    name: final_postmessage_assessment
 id: headless-postmessage-vuln
+
 info:
-  author: geeknik
-  description: 'Advanced postMessage vulnerability detection using Headless Protocol
-    for
-
-    comprehensive cross-origin communication analysis. This template performs
-
-    postMessage listener analysis, origin validation testing, data sanitization
-
-    assessment, and cross-frame communication security evaluation to identify
-
-    postMessage vulnerabilities including origin bypass, data injection, and
-
-    privilege escalation while maintaining defensive research principles.
-
-    '
   name: PostMessage Vulnerability Detector
-  reference:
-  - https://portswigger.net/research/postmessage-vulnerabilities
-  - https://owasp.org/www-community/attacks/DOM_Based_XSS
-  - https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
+  author: geeknik
   severity: high
+  description: |
+    Advanced postMessage vulnerability detection using Headless Protocol for
+    comprehensive cross-origin communication analysis. This template performs
+    postMessage listener analysis, origin validation testing, data sanitization
+    assessment, and cross-frame communication security evaluation to identify
+    postMessage vulnerabilities including origin bypass, data injection, and
+    privilege escalation while maintaining defensive research principles.
+  reference:
+    - https://portswigger.net/research/postmessage-vulnerabilities
+    - https://owasp.org/www-community/attacks/DOM_Based_XSS
+    - https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
   tags: postmessage,cross-origin,iframe,headless,client-side,defensive
+
+headless:
+  - steps:
+      # Navigate to target page
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      # Wait for page to fully load
+      - action: waitload
+
+      # Initialize postMessage vulnerability testing framework
+      - action: script
+        name: initialize_postmessage_testing
+        args:
+          code: |
+            window.postMessageResults = {
+              listeners: [],
+              vulnerabilities: [],
+              test_results: [],
+              origin_validations: [],
+              data_handlers: [],
+              iframes_detected: [],
+              risk_assessment: {}
+            };
+
+            // Detect existing postMessage listeners
+            const originalAddEventListener = window.addEventListener;
+            const originalOnMessage = window.onmessage;
+
+            // Store original handlers
+            window.postMessageResults.original_handlers = {
+              addEventListener: originalAddEventListener,
+              onmessage: originalOnMessage
+            };
+
+            // Hook addEventListener to detect postMessage listeners
+            window.addEventListener = function(type, listener, options) {
+              if (type === 'message') {
+                window.postMessageResults.listeners.push({
+                  type: 'addEventListener',
+                  listener: listener.toString(),
+                  options: options,
+                  timestamp: Date.now()
+                });
+              }
+              return originalAddEventListener.call(this, type, listener, options);
+            };
+
+            // Check for existing onmessage handlers
+            if (window.onmessage) {
+              window.postMessageResults.listeners.push({
+                type: 'onmessage',
+                listener: window.onmessage.toString(),
+                timestamp: Date.now()
+              });
+            }
+
+            // Scan for iframes and frames
+            const iframes = document.querySelectorAll('iframe, frame');
+            iframes.forEach((frame, index) => {
+              window.postMessageResults.iframes_detected.push({
+                index: index,
+                src: frame.src || frame.getAttribute('src'),
+                id: frame.id,
+                name: frame.name,
+                sandbox: frame.sandbox ? frame.sandbox.toString() : null,
+                allow: frame.allow || null
+              });
+            });
+
+            // Analyze existing postMessage listeners in page scripts
+            const scripts = Array.from(document.scripts);
+            scripts.forEach((script, scriptIndex) => {
+              if (script.textContent) {
+                const content = script.textContent;
+
+                // Look for postMessage listener patterns
+                const patterns = [
+                  /addEventListener\s*\(\s*['"]message['"].*?\)/gi,
+                  /onmessage\s*=.*?function/gi,
+                  /window\.onmessage/gi,
+                  /postMessage\s*\(/gi
+                ];
+
+                patterns.forEach((pattern, patternIndex) => {
+                  const matches = content.match(pattern);
+                  if (matches) {
+                    matches.forEach(match => {
+                      window.postMessageResults.listeners.push({
+                        type: 'script_analysis',
+                        script_index: scriptIndex,
+                        pattern_index: patternIndex,
+                        match: match,
+                        context: content.substring(
+                          Math.max(0, content.indexOf(match) - 50),
+                          Math.min(content.length, content.indexOf(match) + 150)
+                        )
+                      });
+                    });
+                  }
+                });
+              }
+            });
+
+            return window.postMessageResults;
+
+      # Test origin validation bypass
+      - action: script
+        name: test_origin_validation
+        args:
+          code: |
+            window.postMessageResults.test_results.push('origin_validation_testing');
+
+            // Test various origin bypass techniques
+            const maliciousOrigins = [
+              null,
+              'null',
+              '',
+              'data:',
+              'about:blank',
+              'javascript:',
+              window.location.origin + '.evil.com',
+              'evil.com' + window.location.origin,
+              window.location.protocol + '//evil.com',
+              '*'
+            ];
+
+            // Test data injection payloads
+            const injectionPayloads = [
+              { type: 'xss', data: '<script>window.postMessageXSSTest=true</script>' },
+              { type: 'html_injection', data: '<img src=x onerror=window.postMessageHTMLTest=true>' },
+              { type: 'javascript', data: 'javascript:window.postMessageJSTest=true' },
+              { type: 'eval_injection', data: 'eval("window.postMessageEvalTest=true")' },
+              { type: 'dom_manipulation', data: { innerHTML: '<svg onload=window.postMessageDOMTest=true>' } },
+              { type: 'prototype_pollution', data: { '__proto__': { 'postMessageProtoPolluted': true } } }
+            ];
+
+            // Set up test result tracking
+            window.postMessageTestResults = {
+              originBypass: false,
+              xssExecution: false,
+              htmlInjection: false,
+              jsExecution: false,
+              evalInjection: false,
+              domManipulation: false,
+              prototypePollution: false
+            };
+
+            // Create a temporary postMessage listener for testing
+            window.testPostMessageListener = function(event) {
+              try {
+                window.postMessageResults.origin_validations.push({
+                  origin: event.origin,
+                  source: event.source ? 'present' : 'null',
+                  data: event.data,
+                  timestamp: Date.now(),
+                  test_context: true
+                });
+
+                // Test for unsafe origin handling
+                if (!event.origin ||
+                    event.origin === 'null' ||
+                    event.origin === '' ||
+                    event.origin.includes('data:') ||
+                    event.origin.includes('javascript:')) {
+
+                  window.postMessageResults.vulnerabilities.push({
+                    type: 'unsafe_origin_handling',
+                    severity: 'high',
+                    origin: event.origin,
+                    description: 'PostMessage listener accepts unsafe origins',
+                    confirmed: true
+                  });
+
+                  window.postMessageTestResults.originBypass = true;
+                }
+
+                // Test for unsafe data handling
+                if (typeof event.data === 'string') {
+                  // Test for direct HTML injection
+                  if (event.data.includes('<script>') || event.data.includes('<img')) {
+                    window.postMessageResults.data_handlers.push({
+                      type: 'html_content_received',
+                      data: event.data,
+                      risk: 'high'
+                    });
+                  }
+
+                  // Simulate unsafe data handling patterns
+                  if (event.data.includes('innerHTML') || event.data.includes('<svg')) {
+                    window.postMessageTestResults.htmlInjection = true;
+                  }
+
+                  if (event.data.includes('eval(') || event.data.includes('javascript:')) {
+                    window.postMessageTestResults.jsExecution = true;
+                  }
+                }
+
+                // Test for object-based data handling
+                if (typeof event.data === 'object' && event.data !== null) {
+                  // Check for prototype pollution
+                  if (event.data.__proto__ || event.data.constructor) {
+                    window.postMessageTestResults.prototypePollution = true;
+                    window.postMessageResults.vulnerabilities.push({
+                      type: 'prototype_pollution_via_postmessage',
+                      severity: 'high',
+                      data: event.data,
+                      description: 'PostMessage data contains prototype pollution payload',
+                      confirmed: true
+                    });
+                  }
+
+                  // Check for DOM manipulation payloads
+                  if (event.data.innerHTML || event.data.outerHTML) {
+                    window.postMessageTestResults.domManipulation = true;
+                  }
+                }
+
+              } catch (e) {
+                window.postMessageResults.test_results.push('postmessage_listener_error: ' + e.message);
+              }
+            };
+
+            // Add our test listener
+            window.addEventListener('message', window.testPostMessageListener, false);
+
+            // Test different origin bypass scenarios
+            maliciousOrigins.forEach((testOrigin, index) => {
+              setTimeout(() => {
+                try {
+                  // Create a temporary iframe to send postMessage from different contexts
+                  const testFrame = document.createElement('iframe');
+                  testFrame.style.display = 'none';
+                  testFrame.src = 'about:blank';
+                  document.body.appendChild(testFrame);
+
+                  testFrame.onload = () => {
+                    try {
+                      // Send test message with various origins
+                      window.postMessage({
+                        test: 'origin_bypass',
+                        origin_test: testOrigin,
+                        payload: injectionPayloads[index % injectionPayloads.length]
+                      }, testOrigin === '*' ? '*' : window.location.origin);
+
+                    } catch (e) {
+                      window.postMessageResults.test_results.push(`origin_test_${index}_error: ${e.message}`);
+                    }
+
+                    // Clean up
+                    setTimeout(() => {
+                      try {
+                        document.body.removeChild(testFrame);
+                      } catch (e) {
+                        // Ignore cleanup errors
+                      }
+                    }, 500);
+                  };
+
+                } catch (e) {
+                  window.postMessageResults.test_results.push(`origin_bypass_test_${index}_error: ${e.message}`);
+                }
+              }, index * 200);
+            });
+
+            return window.postMessageResults;
+
+      # Test injection payloads via postMessage
+      - action: script
+        name: test_postmessage_injection
+        args:
+          code: |
+            window.postMessageResults.test_results.push('postmessage_injection_testing');
+
+            // Advanced injection payloads
+            const advancedPayloads = [
+              {
+                name: 'dom_xss_via_postmessage',
+                data: {
+                  action: 'updateContent',
+                  content: '<img src=x onerror="window.postMessageDOMXSS=true">',
+                  target: 'innerHTML'
+                }
+              },
+              {
+                name: 'javascript_execution',
+                data: {
+                  action: 'executeScript',
+                  script: 'window.postMessageScriptExec=true',
+                  method: 'eval'
+                }
+              },
+              {
+                name: 'url_manipulation',
+                data: {
+                  action: 'navigate',
+                  url: 'javascript:window.postMessageURLManip=true'
+                }
+              },
+              {
+                name: 'storage_manipulation',
+                data: {
+                  action: 'setStorage',
+                  key: 'malicious',
+                  value: '<script>window.postMessageStorageXSS=true</script>'
+                }
+              },
+              {
+                name: 'function_call_injection',
+                data: {
+                  action: 'callFunction',
+                  function: 'eval',
+                  args: ['window.postMessageFuncCall=true']
+                }
+              }
+            ];
+
+            // Send injection payloads
+            advancedPayloads.forEach((payload, index) => {
+              setTimeout(() => {
+                try {
+                  window.postMessage(payload.data, window.location.origin);
+
+                  // Check for execution after delay
+                  setTimeout(() => {
+                    let executed = false;
+                    let executionType = '';
+
+                    switch (payload.name) {
+                      case 'dom_xss_via_postmessage':
+                        executed = window.postMessageDOMXSS === true;
+                        executionType = 'DOM XSS';
+                        break;
+                      case 'javascript_execution':
+                        executed = window.postMessageScriptExec === true;
+                        executionType = 'JavaScript Execution';
+                        break;
+                      case 'url_manipulation':
+                        executed = window.postMessageURLManip === true;
+                        executionType = 'URL Manipulation';
+                        break;
+                      case 'storage_manipulation':
+                        executed = window.postMessageStorageXSS === true;
+                        executionType = 'Storage XSS';
+                        break;
+                      case 'function_call_injection':
+                        executed = window.postMessageFuncCall === true;
+                        executionType = 'Function Call Injection';
+                        break;
+                    }
+
+                    if (executed) {
+                      window.postMessageResults.vulnerabilities.push({
+                        type: 'postmessage_code_execution',
+                        subtype: payload.name,
+                        severity: 'critical',
+                        payload: payload.data,
+                        execution_type: executionType,
+                        confirmed: true,
+                        description: `Code execution via postMessage ${executionType}`
+                      });
+                    }
+
+                  }, 300);
+
+                } catch (e) {
+                  window.postMessageResults.test_results.push(`injection_test_${index}_error: ${e.message}`);
+                }
+              }, index * 400);
+            });
+
+            return window.postMessageResults;
+
+      # Test cross-frame communication vulnerabilities
+      - action: script
+        name: test_cross_frame_communication
+        args:
+          code: |
+            window.postMessageResults.test_results.push('cross_frame_communication_testing');
+
+            if (window.postMessageResults.iframes_detected.length > 0) {
+
+              // Test communication with existing iframes
+              window.postMessageResults.iframes_detected.forEach((frameInfo, index) => {
+                try {
+                  const frame = document.querySelectorAll('iframe, frame')[index];
+                  if (frame && frame.contentWindow) {
+
+                    // Test sending messages to iframe
+                    const testPayloads = [
+                      { action: 'test', data: 'cross_frame_test' },
+                      { action: 'eval', code: 'window.crossFrameTest=true' },
+                      { innerHTML: '<script>window.crossFrameXSS=true</script>' },
+                      { __proto__: { crossFramePolluted: true } }
+                    ];
+
+                    testPayloads.forEach((payload, payloadIndex) => {
+                      setTimeout(() => {
+                        try {
+                          frame.contentWindow.postMessage(payload, '*');
+
+                          window.postMessageResults.data_handlers.push({
+                            type: 'cross_frame_message_sent',
+                            iframe_index: index,
+                            payload: payload,
+                            target_origin: '*',
+                            timestamp: Date.now()
+                          });
+
+                        } catch (e) {
+                          window.postMessageResults.test_results.push(
+                            `cross_frame_send_${index}_${payloadIndex}_error: ${e.message}`
+                          );
+                        }
+                      }, payloadIndex * 200);
+                    });
+                  }
+
+                } catch (e) {
+                  window.postMessageResults.test_results.push(`cross_frame_test_${index}_error: ${e.message}`);
+                }
+              });
+
+              // Check iframe sandbox restrictions
+              window.postMessageResults.iframes_detected.forEach((frameInfo, index) => {
+                if (frameInfo.sandbox) {
+                  const sandboxFlags = frameInfo.sandbox.split(' ');
+                  const dangerousFlags = [
+                    'allow-scripts',
+                    'allow-same-origin',
+                    'allow-top-navigation',
+                    'allow-forms'
+                  ];
+
+                  const presentDangerousFlags = dangerousFlags.filter(flag =>
+                    sandboxFlags.includes(flag)
+                  );
+
+                  if (presentDangerousFlags.length > 0) {
+                    window.postMessageResults.vulnerabilities.push({
+                      type: 'iframe_sandbox_bypass_risk',
+                      severity: 'medium',
+                      iframe_index: index,
+                      dangerous_flags: presentDangerousFlags,
+                      description: 'Iframe sandbox allows potentially dangerous operations',
+                      confirmed: true
+                    });
+                  }
+                } else {
+                  // No sandbox at all
+                  window.postMessageResults.vulnerabilities.push({
+                    type: 'iframe_no_sandbox',
+                    severity: 'medium',
+                    iframe_index: index,
+                    iframe_src: frameInfo.src,
+                    description: 'Iframe lacks sandbox restrictions',
+                    confirmed: true
+                  });
+                }
+              });
+
+            } else {
+              // Create test iframe for communication testing
+              try {
+                const testIframe = document.createElement('iframe');
+                testIframe.style.display = 'none';
+                testIframe.src = 'data:text/html,<script>window.addEventListener("message", function(e) { if(e.data.eval) eval(e.data.eval); });</script>';
+                document.body.appendChild(testIframe);
+
+                testIframe.onload = () => {
+                  // Test communication with dynamically created iframe
+                  setTimeout(() => {
+                    try {
+                      testIframe.contentWindow.postMessage({
+                        eval: 'window.parent.dynamicIframeTest=true'
+                      }, '*');
+
+                      setTimeout(() => {
+                        if (window.dynamicIframeTest === true) {
+                          window.postMessageResults.vulnerabilities.push({
+                            type: 'dynamic_iframe_code_execution',
+                            severity: 'high',
+                            description: 'Code execution via dynamically created iframe postMessage',
+                            confirmed: true
+                          });
+                        }
+
+                        // Clean up
+                        document.body.removeChild(testIframe);
+                      }, 500);
+
+                    } catch (e) {
+                      window.postMessageResults.test_results.push('dynamic_iframe_test_error: ' + e.message);
+                    }
+                  }, 500);
+                };
+
+              } catch (e) {
+                window.postMessageResults.test_results.push('dynamic_iframe_creation_error: ' + e.message);
+              }
+            }
+
+            return window.postMessageResults;
+
+      # Test postMessage listener analysis
+      - action: script
+        name: analyze_postmessage_listeners
+        args:
+          code: |
+            window.postMessageResults.test_results.push('postmessage_listener_analysis');
+
+            // Analyze detected listeners for security issues
+            window.postMessageResults.listeners.forEach((listener, index) => {
+              try {
+                const listenerCode = listener.listener || listener.match || '';
+
+                // Check for unsafe patterns in listener code
+                const unsafePatterns = [
+                  {
+                    pattern: /event\.origin\s*[!=]==?\s*['"]?\*['"]?/gi,
+                    issue: 'wildcard_origin_check',
+                    severity: 'high',
+                    description: 'Listener accepts messages from any origin'
+                  },
+                  {
+                    pattern: /event\.data.*innerHTML/gi,
+                    issue: 'unsafe_html_injection',
+                    severity: 'critical',
+                    description: 'Direct innerHTML assignment from postMessage data'
+                  },
+                  {
+                    pattern: /eval\s*\(\s*event\.data/gi,
+                    issue: 'eval_postmessage_data',
+                    severity: 'critical',
+                    description: 'eval() called with postMessage data'
+                  },
+                  {
+                    pattern: /Function\s*\(\s*event\.data/gi,
+                    issue: 'function_constructor_postmessage',
+                    severity: 'critical',
+                    description: 'Function constructor called with postMessage data'
+                  },
+                  {
+                    pattern: /document\.write\s*\(\s*event\.data/gi,
+                    issue: 'document_write_postmessage',
+                    severity: 'high',
+                    description: 'document.write() called with postMessage data'
+                  },
+                  {
+                    pattern: /location\s*=\s*event\.data/gi,
+                    issue: 'location_assignment_postmessage',
+                    severity: 'high',
+                    description: 'Location assignment from postMessage data'
+                  },
+                  {
+                    pattern: /\.src\s*=\s*event\.data/gi,
+                    issue: 'src_assignment_postmessage',
+                    severity: 'medium',
+                    description: 'src attribute assignment from postMessage data'
+                  }
+                ];
+
+                unsafePatterns.forEach(patternObj => {
+                  const matches = listenerCode.match(patternObj.pattern);
+                  if (matches) {
+                    window.postMessageResults.vulnerabilities.push({
+                      type: 'unsafe_postmessage_listener',
+                      subtype: patternObj.issue,
+                      severity: patternObj.severity,
+                      listener_index: index,
+                      listener_type: listener.type,
+                      description: patternObj.description,
+                      matches: matches,
+                      confirmed: true,
+                      code_snippet: listenerCode.substring(0, 200)
+                    });
+                  }
+                });
+
+                // Check for missing origin validation
+                if (!listenerCode.includes('event.origin') &&
+                    !listenerCode.includes('e.origin') &&
+                    !listenerCode.includes('message.origin')) {
+                  window.postMessageResults.vulnerabilities.push({
+                    type: 'missing_origin_validation',
+                    severity: 'medium',
+                    listener_index: index,
+                    listener_type: listener.type,
+                    description: 'PostMessage listener lacks origin validation',
+                    confirmed: true,
+                    code_snippet: listenerCode.substring(0, 200)
+                  });
+                }
+
+              } catch (e) {
+                window.postMessageResults.test_results.push(`listener_analysis_${index}_error: ${e.message}`);
+              }
+            });
+
+            return window.postMessageResults;
+
+      # Final postMessage vulnerability assessment
+      - action: script
+        name: final_postmessage_assessment
+        args:
+          code: |
+            // Remove test listener
+            try {
+              window.removeEventListener('message', window.testPostMessageListener, false);
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+
+            // Calculate comprehensive postMessage vulnerability risk score
+            let riskScore = 0;
+            const confirmedVulns = window.postMessageResults.vulnerabilities.filter(v => v.confirmed);
+
+            confirmedVulns.forEach(vuln => {
+              switch (vuln.severity) {
+                case 'critical': riskScore += 40; break;
+                case 'high': riskScore += 25; break;
+                case 'medium': riskScore += 15; break;
+                case 'low': riskScore += 5; break;
+              }
+            });
+
+            // Additional risk factors
+            const listenersCount = window.postMessageResults.listeners.length;
+            const iframesCount = window.postMessageResults.iframes_detected.length;
+
+            riskScore += listenersCount * 5;
+            riskScore += iframesCount * 3;
+
+            window.postMessageResults.risk_assessment = {
+              total_vulnerabilities: confirmedVulns.length,
+              listeners_analyzed: listenersCount,
+              iframes_detected: iframesCount,
+              cross_frame_communications: window.postMessageResults.data_handlers.length,
+              risk_score: Math.min(riskScore, 100),
+              risk_level: riskScore > 70 ? 'Critical' :
+                         riskScore > 50 ? 'High' :
+                         riskScore > 30 ? 'Medium' : 'Low',
+              test_coverage: window.postMessageResults.test_results.length,
+              recommendations: []
+            };
+
+            // Generate specific recommendations
+            if (confirmedVulns.some(v => v.subtype === 'wildcard_origin_check')) {
+              window.postMessageResults.risk_assessment.recommendations.push(
+                'Implement strict origin validation in postMessage listeners',
+                'Use allowlist of trusted origins instead of wildcard (*)'
+              );
+            }
+
+            if (confirmedVulns.some(v => v.subtype === 'unsafe_html_injection')) {
+              window.postMessageResults.risk_assessment.recommendations.push(
+                'Sanitize all postMessage data before DOM insertion',
+                'Use textContent instead of innerHTML for untrusted data'
+              );
+            }
+
+            if (confirmedVulns.some(v => v.subtype === 'eval_postmessage_data')) {
+              window.postMessageResults.risk_assessment.recommendations.push(
+                'Never use eval() with postMessage data',
+                'Implement secure message parsing and validation'
+              );
+            }
+
+            if (confirmedVulns.some(v => v.type === 'iframe_no_sandbox')) {
+              window.postMessageResults.risk_assessment.recommendations.push(
+                'Implement iframe sandbox restrictions',
+                'Use minimal required sandbox permissions'
+              );
+            }
+
+            if (confirmedVulns.some(v => v.type === 'missing_origin_validation')) {
+              window.postMessageResults.risk_assessment.recommendations.push(
+                'Add origin validation to all postMessage listeners',
+                'Implement message type validation and allowlisting'
+              );
+            }
+
+            if (confirmedVulns.length > 0) {
+              window.postMessageResults.risk_assessment.recommendations.push(
+                'Regular security review of cross-frame communication',
+                'Implement Content Security Policy frame-ancestors directive',
+                'Consider using more secure alternatives to postMessage when possible'
+              );
+            }
+
+            window.postMessageResults.summary = {
+              scan_completed: true,
+              timestamp: new Date().toISOString(),
+              postmessage_vulnerabilities_found: confirmedVulns.length > 0,
+              critical_vulnerabilities: confirmedVulns.filter(v => v.severity === 'critical').length,
+              listeners_with_issues: confirmedVulns.filter(v => v.type === 'unsafe_postmessage_listener').length,
+              cross_frame_security_assessed: true
+            };
+
+            return window.postMessageResults;
+
+    extractors:
+      - type: regex
+        name: postmessage_vuln_summary
+        part: body
+        regex:
+          - '"scan_completed":\s*true'
+
+      - type: regex
+        name: critical_postmessage_vulns
+        part: body
+        regex:
+          - '"critical_vulnerabilities":\s*[1-9]'
+
+    matchers:
+      - type: regex
+        name: postmessage_vulnerabilities_detected
+        regex:
+          - '"postmessage_vulnerabilities_found":\s*true'
+
+      - type: regex
+        name: critical_postmessage_vulnerabilities
+        regex:
+          - '"severity":\s*"critical"'
+
+# Headless template for comprehensive postMessage vulnerability detection
