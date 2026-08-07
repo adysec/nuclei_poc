@@ -1,54 +1,57 @@
-id: git-exposed
-
-info:
-  name: Exposed Git Repository
-  author: kaks3c
-  severity: high
-  description: |
-    Checks for exposed Git repositories by making requests to potential Git repository paths.
-  tags: p3,logs,git
-
 http:
-  - raw:
-      - |
-        GET {{BaseURL}}{{path}} HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:119.0) Gecko/20100101 Firefox/119.0
-        Accept: */*
-        Accept-Language: en-US,en;q=0.5
-        Connection: close
+- attack: pitchfork
+  matchers:
+  - type: word
+    words:
+    - 'commit (initial): Initial commit'
+    - 'ref: refs/heads/'
+    - logallrefupdates = true
+    - repositoryformatversion = 0
+    - Index of /
+    - You do not have permission to access /.git/
+    - Unnamed repository; edit this file 'description' to name the repository
+  - regex:
+    - info/\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}
+    - pack/\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}
+    - master/\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}
+    - origin/\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}
+    - refs/\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}
+    type: regex
+  matchers-condition: or
+  payloads:
+    path:
+    - /.git/
+    - /.git/HEAD
+    - /.git/config
+    - /.git/logs/HEAD
+    - /.git/logs/
+    - /.git/description
+    - /.git/refs/heads/
+    - /.git/refs/remotes/
+    - /.git/objects/
+  raw:
+  - 'GET {{BaseURL}}{{path}} HTTP/1.1
 
-    attack: pitchfork
-    payloads:
-      path:
-        - /.git/
-        - /.git/HEAD
-        - /.git/config
-        - /.git/logs/HEAD
-        - /.git/logs/
-        - /.git/description
-        - /.git/refs/heads/
-        - /.git/refs/remotes/
-        - /.git/objects/
+    Host: {{Hostname}}
 
-    matchers-condition: or
-    matchers:
-      - type: word
-        words:
-          - "commit (initial): Initial commit" #/.git/logs/HEAD
-          - "ref: refs/heads/" #/.git/HEAD
-          - "logallrefupdates = true" #/.git/config
-          - "repositoryformatversion = 0" #/.git/config
-          - "Index of /" #/.git/
-          - "You do not have permission to access /.git/" #403_/.git
-          - "Unnamed repository; edit this file 'description' to name the repository" #/.git/description
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:119.0) Gecko/20100101
+    Firefox/119.0
 
-      - type: regex
-        regex:
-          - "info/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}" #/.git/objects/
-          - "pack/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}" #/.git/objects/
-          - "master/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}" #/.git/refs/heads/
-          - "origin/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}" #/.git/refs/remotes/
-          - "refs/\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}"  #/.git/logs/
+    Accept: */*
 
-    stop-at-first-match: true
+    Accept-Language: en-US,en;q=0.5
+
+    Connection: close
+
+    '
+  stop-at-first-match: true
+id: git-exposed
+info:
+  author: kaks3c
+  description: 'Checks for exposed Git repositories by making requests to potential
+    Git repository paths.
+
+    '
+  name: Exposed Git Repository
+  severity: medium
+  tags: p3,logs,git

@@ -1,46 +1,48 @@
-id: application-yaml 3
+id: application-yaml
+
 info:
-  author: Cristi vlad (@cristivlad25)
-  description: Finds Application YAML files which often contain sensitive information.
   name: application.yaml detection
+  author: Cristi vlad (@cristivlad25)
   severity: info
-requests:
-- attack: sniper
-  matchers:
-  - condition: or
-    type: word
-    words:
-    - 'runtime:'
-    - 'spring:'
-    - 'datasource:'
-    - 'platform:'
-    - 'server:'
-    - 'job:'
-  - status:
-    - 200
-    type: status
-  - condition: or
-    dsl:
-    - '!contains(tolower(body), ''<html'')'
-    - '!contains(tolower(body), ''<body'')'
-    - '!contains(tolower(body), ''</h1>'')'
-    - '!contains(tolower(body), ''</h2>'')'
-    - '!contains(tolower(body), ''</h3>'')'
-    - '!contains(tolower(body), ''<?xml'')'
-    type: dsl
-  matchers-condition: and
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /application.yaml HTTP/1.1
+  description: Finds Application YAML files which often contain sensitive information.
+  metadata:
+    max-request: 4
+  tags: misconfig
 
-    Host: {{Subdomains}}
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/app.yaml"
+      - "{{BaseURL}}/app.yml"
+      - "{{BaseURL}}/application.yaml"
+      - "{{BaseURL}}/application.yml"
 
-    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+    stop-at-first-match: true
 
-    Accept-Encoding: gzip, deflate
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: or
+        words:
+          - "runtime:"
+          - "spring:"
+          - "datasource:"
+          - "platform:"
+          - "server:"
+          - "job:"
 
-    Accept: */*
+      - type: status
+        status:
+          - 200
 
-    '
-  threads: 100
+      - type: dsl
+        condition: or
+        dsl:
+          - "!contains(tolower(body), '<html')"
+          - "!contains(tolower(body), '<body')"
+          - "!contains(tolower(body), '</h1>')"
+          - "!contains(tolower(body), '</h2>')"
+          - "!contains(tolower(body), '</h3>')"
+          - "!contains(tolower(body), '<?xml')"
+
+# digest: 4a0a004730450221008579bdb011d8a9e6bbf942ffd972f269d3ec4c82206acc520c7aebdfef5c9251022031dc6ee745d5998b0a57769639a364df8cfba212bbc295817d205320a7ff9cd5:922c64590222798bb761d5b6d8e72950

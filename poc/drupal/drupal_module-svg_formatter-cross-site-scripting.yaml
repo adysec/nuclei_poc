@@ -1,55 +1,56 @@
-http:
-- extractors:
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - dsl:
-    - compare_versions(version, '8.x-1.05')
-    - compare_versions(version, '8.x-1.04')
-    - compare_versions(version, '8.x-1.03')
-    - compare_versions(version, '8.x-1.02')
-    - compare_versions(version, '8.x-1.01')
-    - compare_versions(version, '8.x-1.0')
-    type: dsl
-  matchers:
-  - part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - status:
-    - 200
-    type: status
-  - part: body
-    type: word
-    words:
-    - svg_formatter
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/sites/all/modules/svg_formatter/svg_formatter.info'
-  redirects: true
+
 id: drupal_module-svg_formatter-cross-site-scripting
 info:
-  author: Bishopfox
-  description: This module adds a new formatter for the file fields, which allows
-    any file extension to be uploaded. The module doesnt sufficiently handle sanitization
-    under the scenario uploaded SVG files. This vulnerability is mitigated by the
-    fact that an attacker must have a role with the permission create or edit on certain
-    content types that allows SVG files to be uploaded.
-  metadata:
-    created_at: '0001-01-01T00:00:00Z'
-    fofa-query: /sites/all/modules/svg_formatter/
-    google-query: inurl:'/sites/all/modules/svg_formatter/
-    impact: medium
-    security-risk: "Critical 15\u221525 AC:Basic/A:User/CI:Some/II:Some/E:Proof/TD:All"
-    type: indicator
-    vulnerability: cross-site-scripting
   name: drupal_module-svg_formatter-cross-site-scripting
-  reference:
-  - https://www.drupal.org/sa-contrib-2018-027
+  author: me
   severity: medium
+  description: "SVG Formatter module provides support for using SVG images on your website. Our dependency library enshrined/svg-sanitize has a cross-site scripting vulnerability. This vulnerability is mitigated by the fact that an attacker must have a role with permission that enables them to upload SVG images."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-028
+  metadata:
+    security-risk: "Critical 15 ∕ 25 AC:Basic/A:User/CI:Some/II:Some/E:Proof/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/svg_formatter/"
+    google-query: "inurl:'/sites/all/modules/svg_formatter/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
   tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/svg_formatter/svg_formatter.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'svg_formatter'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 1.17.0 || =2.0.0')

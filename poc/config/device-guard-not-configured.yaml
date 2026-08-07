@@ -1,35 +1,37 @@
-id: device-guard-not-configured
-
-info:
-  name: Device Guard Not Configured
-  author: princechaddha
-  severity: high
-  description: Verifies if Device Guard is not configured, reducing protection against unauthorized code execution.
-  impact: |
-    Not configuring Device Guard reduces the system's ability to block unauthorized code execution.
-  remediation: |
-    Configure Device Guard to enhance system protection.
-  tags: device-guard,code,windows-audit
-
-self-contained: true
-
 code:
-  - pre-condition: |
-      IsWindows();
-    engine:
-      - powershell
-      - powershell.exe
-    args:
-      - -ExecutionPolicy
-      - Bypass
-    pattern: "*.ps1"
-    source: |
-      Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard
+- args:
+  - -ExecutionPolicy
+  - Bypass
+  engine:
+  - powershell
+  - powershell.exe
+  matchers:
+  - condition: or
+    regex:
+    - SecurityServicesConfigured\s+:\s+\{0\}
+    - SecurityServicesRunning\s+:\s+\{0\}
+    - VirtualizationBasedSecurityStatus\s+:\s+0
+    type: regex
+  pattern: '*.ps1'
+  pre-condition: 'IsWindows();
 
-    matchers:
-      - type: regex
-        regex:
-          - 'SecurityServicesConfigured\s+:\s+\{0\}'
-          - 'SecurityServicesRunning\s+:\s+\{0\}'
-          - 'VirtualizationBasedSecurityStatus\s+:\s+0'
-        condition: or
+    '
+  source: 'Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard
+
+    '
+id: device-guard-not-configured
+info:
+  author: princechaddha
+  description: Verifies if Device Guard is not configured, reducing protection against
+    unauthorized code execution.
+  impact: 'Not configuring Device Guard reduces the system''s ability to block unauthorized
+    code execution.
+
+    '
+  name: Device Guard Not Configured
+  remediation: 'Configure Device Guard to enhance system protection.
+
+    '
+  severity: high
+  tags: device-guard,code,windows-audit
+self-contained: true

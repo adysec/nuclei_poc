@@ -1,0 +1,51 @@
+
+id: drupal_module-dynamic_banner-cross-site-scripting
+info:
+  name: drupal_module-dynamic_banner-cross-site-scripting
+  author: Bishopfox
+  severity: medium
+  description: "This module enables a site to display different banners (via blocks) on different pages depending upon specific criteria. The module doesnt sufficiently filter output of banner data. This vulnerability is mitigated by the fact that an attacker must have a role with the permission administer dynamic_banner."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-011
+  metadata:
+    security-risk: "Less critical 7∕25 AC:Basic/A:Admin/CI:None/II:None/E:Theoretical/TD:All"
+    vulnerability: "cross-site-scripting"
+    fofa-query: "/sites/all/modules/dynamic_banner/"
+    google-query: "inurl:'/sites/all/modules/dynamic_banner/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/dynamic_banner/dynamic_banner.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'dynamic_banner'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

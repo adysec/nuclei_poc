@@ -1,0 +1,55 @@
+
+id: drupal_module-embed-cross-site-request-forgery
+info:
+  name: drupal_module-embed-cross-site-request-forgery
+  author: Bishopfox
+  severity: medium
+  description: "The Drupal Embed module provides a filter to allow embedding various embeddable items like entities in content fields.  In certain circumstances, the filter could allow an unprivileged user to inject HTML into a page when it is accessed by a trusted user with permission to embed items. In some cases, this could lead to Cross-Site Request Forgery."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-042
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    vulnerability: "cross-site-request-forgery"
+    fofa-query: "/sites/all/modules/embed/"
+    google-query: "inurl:'/sites/all/modules/embed/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/embed/embed.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'embed'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '8.x-1.4')
+         - compare_versions(version, '8.x-1.3')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

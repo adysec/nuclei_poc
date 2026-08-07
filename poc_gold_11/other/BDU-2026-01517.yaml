@@ -1,58 +1,63 @@
-http:
-- extractors:
-  - group: 1
-    internal: true
-    name: version_extracted
-    part: body
-    regex:
-    - \{version:\s*([\d.]+)
-    type: regex
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - \{version:\s*([\d.]+)
-    type: regex
-  - group: 1
-    name: release
-    part: body
-    regex:
-    - release:\s*(\d+)
-    type: regex
-  matchers:
-  - part: body
-    regex:
-    - \{version:\s*[\d.]+,\s*release:\s*\d+
-    type: regex
-  - status:
-    - 200
-    type: status
-  - dsl:
-    - compare_versions(version_extracted, "< 8.6")
-    type: dsl
-  matchers-condition: and
-  method: GET
-  path:
-  - '{{BaseURL}}/version'
 id: BDU-2026-01517
+
 info:
+  name: MFlash < 8.6 - Remote Code Execution (version detection)
   author: metascan
+  severity: critical
+  description: |
+    A vulnerable version of MFlash was detected which allows to remotely execute
+    arbitrary code. Versions prior to 8.6 are affected.
+  reference:
+    - https://bdu.fstec.ru/vul/2026-01517
   classification:
-    cve-id: BDU-2026-01517
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
     cvss-score: 10.0
+    cve-id: BDU-2026-01517
     cwe-id: CWE-78
-  description: 'A vulnerable version of MFlash was detected which allows to remotely
-    execute
-
-    arbitrary code. Versions prior to 8.6 are affected.
-
-    '
   metadata:
-    max-request: 1
     verified: true
-  name: MFlash < 8.6 - Remote Code Execution (version detection)
-  reference:
-  - https://bdu.fstec.ru/vul/2026-01517
-  severity: critical
+    max-request: 1
   tags: mflash,rce,version,bdu
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/version"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '\{version:\s*[\d.]+,\s*release:\s*\d+'
+
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        dsl:
+          - 'compare_versions(version_extracted, "< 8.6")'
+
+    extractors:
+      - type: regex
+        name: version_extracted
+        part: body
+        regex:
+          - '\{version:\s*([\d.]+)'
+        group: 1
+        internal: true
+
+      - type: regex
+        name: version
+        part: body
+        regex:
+          - '\{version:\s*([\d.]+)'
+        group: 1
+
+      - type: regex
+        name: release
+        part: body
+        regex:
+          - 'release:\s*(\d+)'
+        group: 1

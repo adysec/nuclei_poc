@@ -1,70 +1,68 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: keyVaultNames
+    type: json
+  source: 'az keyvault list --query ''[*].name'' --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: certificateIds
+    type: json
+  source: 'az keyvault certificate list --vault-name $vaultName --query ''[?(attributes.enabled==`true`)].id''
+    --output json
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - vaultName + " SSL certificate " + certificateId + " does not have auto-renewal
+      enabled"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - '"EmailContacts"'
+  source: 'az keyvault certificate show --id $certificateId --query ''policy.lifetimeActions[*].action.actionType''
+    --output json
+
+    '
+flow: "code(1);\nfor (let KeyVaultName of iterate(template.keyVaultNames)) {\n  set(\"\
+  vaultName\", KeyVaultName)\n  code(2);\n  for (let CertificateId of iterate(template.certificateIds))\
+  \ {\n    set(\"certificateId\", CertificateId)\n    code(3)\n  }\n}\n"
 id: azure-keyvault-ssl-autorenewal-missing
 info:
-  name: Missing SSL Certificate Auto-Renewal in Azure Key Vaults
   author: princechaddha
-  severity: high
-  description: |
-    Microsoft Azure Key Vault service can renew your SSL certificates automatically to prevent application or service outages, credential leaks, or process violations that can disrupt your business. Ensure that your SSL certificates in Azure Key Vaults are set to auto-renew.
-  impact: |
-    Not enabling auto-renewal for SSL certificates can lead to expired certificates, potentially causing outages and security risks.
-  remediation: |
-    Configure SSL certificates in Azure Key Vaults to automatically renew by setting the correct policies in the Azure portal or through Azure CLI.
+  description: 'Microsoft Azure Key Vault service can renew your SSL certificates
+    automatically to prevent application or service outages, credential leaks, or
+    process violations that can disrupt your business. Ensure that your SSL certificates
+    in Azure Key Vaults are set to auto-renew.
+
+    '
+  impact: 'Not enabling auto-renewal for SSL certificates can lead to expired certificates,
+    potentially causing outages and security risks.
+
+    '
+  name: Missing SSL Certificate Auto-Renewal in Azure Key Vaults
   reference:
-    - https://docs.microsoft.com/en-us/azure/key-vault/certificates/how-to-renew-certificate
+  - https://docs.microsoft.com/en-us/azure/key-vault/certificates/how-to-renew-certificate
+  remediation: 'Configure SSL certificates in Azure Key Vaults to automatically renew
+    by setting the correct policies in the Azure portal or through Azure CLI.
+
+    '
+  severity: high
   tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
-
-flow: |
-  code(1);
-  for (let KeyVaultName of iterate(template.keyVaultNames)) {
-    set("vaultName", KeyVaultName)
-    code(2);
-    for (let CertificateId of iterate(template.certificateIds)) {
-      set("certificateId", CertificateId)
-      code(3)
-    }
-  }
-
 self-contained: true
-code:
-  - engine:
-      - sh
-      - bash
-    source: |
-      az keyvault list --query '[*].name' --output json
-
-    extractors:
-      - type: json
-        name: keyVaultNames
-        internal: true
-        json:
-          - '.[]'
-
-  - engine:
-      - sh
-      - bash
-    source: |
-      az keyvault certificate list --vault-name $vaultName --query '[?(attributes.enabled==`true`)].id' --output json
-
-    extractors:
-      - type: json
-        name: certificateIds
-        internal: true
-        json:
-          - '.[]'
-
-  - engine:
-      - sh
-      - bash
-    source: |
-      az keyvault certificate show --id $certificateId --query 'policy.lifetimeActions[*].action.actionType' --output json
-
-    matchers:
-      - type: word
-        words:
-          - '"EmailContacts"'
-
-    extractors:
-      - type: dsl
-        dsl:
-          - 'vaultName + " SSL certificate " + certificateId + " does not have auto-renewal enabled"'
-# digest: 4a0a00473045022100eaba9b1cb737bcc10c37e0da3c356e2bf155516a76425048ac340133e16ac7d8022000b4b3e984331557c9bcd70aad8ab518dda91a5bcda644e9f564eabea6beef15:922c64590222798bb761d5b6d8e72950

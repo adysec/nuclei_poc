@@ -1,0 +1,51 @@
+
+id: drupal_module-genpass-insecure-randomness
+info:
+  name: drupal_module-genpass-insecure-randomness
+  author: Bishopfox
+  severity: medium
+  description: "The Genpass module makes the password field optional (or hidden) on the add new user page (admin & registration). If the password field is not set during registration, the system generates a password.  The module doesnt use a strong source of randomness, creating weak and predictable passwords. This vulnerability is mitigated by the fact that the site must be configured to reveal the password to the attacker which is a common configuration.  CVE identifier(s) issued  A CVE identifier will be requested, and added upon issuance, in accordance with Drupal Security Team processes."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-042
+  metadata:
+    security-risk: "Less critical 9∕25 AC:Complex/A:User/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "insecure-randomness"
+    fofa-query: "/sites/all/modules/genpass/"
+    google-query: "inurl:'/sites/all/modules/genpass/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/genpass/genpass.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'genpass'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.0')

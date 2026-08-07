@@ -1,0 +1,54 @@
+
+id: drupal_module-twig_field_value-access-bypass
+info:
+  name: drupal_module-twig_field_value-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module enables themers to get partial data from field render arrays. It gives them more control over the output without drilling deep into the render array or using preprocess functions. The module doesnt sufficiently apply access restrictions when using the filters field_label, field_value, field_raw and field_target_entity. This vulnerability is mitigated by the fact that these filters must be used in combination with either unpublished content or access control modules."
+  reference:
+    - https://www.drupal.org/sa-contrib-2022-058
+  metadata:
+    security-risk: "Moderately critical 12∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Default"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/twig_field_value/"
+    google-query: "inurl:'/sites/all/modules/twig_field_value/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/twig_field_value/twig_field_value.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'twig_field_value'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '2.0.0')
+         - compare_versions(version, '8.x-1.2')
+         - compare_versions(version, '8.x-1.1')
+         - compare_versions(version, '8.x-1.0')

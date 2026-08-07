@@ -1,49 +1,49 @@
-id: development-logs 1
+id: development-logs
+
 info:
-  author: geeknik
   name: Discover development log files
+  author: geeknik
   severity: info
+  metadata:
+    max-request: 3
   tags: logs,exposure,rails
-requests:
-- attack: sniper
-  extractors:
-  - name: last_modified
-    part: header
-    regex:
-    - Last-Modified:.*
-    type: regex
-  matchers:
-  - condition: or
-    type: word
-    words:
-    - Connecting to database specified by database.yml
-    - Started GET
-  - condition: or
-    type: word
-    words:
-    - DEPRECATION WARNING
-    - CREATE TABLE
-  - negative: true
-    part: header
-    type: word
-    words:
-    - text/html
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  payloads:
-    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
-  raw:
-  - 'GET /log/development.log HTTP/1.1
 
-    Host: {{Subdomains}}
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/log/development.log"
+      - "{{BaseURL}}/logs/development.log"
+      - "{{BaseURL}}/development.log"
 
-    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Connecting to database specified by database.yml"
+          - "Started GET"
+        condition: or
 
-    Accept-Encoding: gzip, deflate
+      - type: word
+        words:
+          - "DEPRECATION WARNING"
+          - "CREATE TABLE"
+        condition: or
 
-    Accept: */*
+      - type: word
+        part: header
+        words:
+          - "text/html"
+        negative: true
 
-    '
-  threads: 100
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: last_modified
+        part: header
+        regex:
+          - 'Last-Modified:.*'
+
+# digest: 4b0a00483046022100ec0cab19e41834dbd98b3fad6f39e1e84ae68fda70aa02cfc0493041062fc9b1022100d427db1cb48ea9829c9d0dfe80fb9d19aff6ea0d86f868d72ca1df917d330835:922c64590222798bb761d5b6d8e72950

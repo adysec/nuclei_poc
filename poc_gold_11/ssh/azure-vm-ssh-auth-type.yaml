@@ -1,0 +1,52 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: vmList
+    type: json
+  source: 'az vm list --query ''[*].id''
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - ids + " is configured with password-based SSH authentication, which is insecure"
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'false'
+  source: 'az vm show --ids "$ids" --query ''osProfile.linuxConfiguration.disablePasswordAuthentication''
+
+    '
+flow: "code(1);\nfor (let vmData of iterate(template.vmList)) {\n  set(\"ids\", vmData);\n\
+  \  code(2);\n}\n"
+id: azure-vm-ssh-auth-type
+info:
+  author: princechaddha
+  description: 'Ensure that your production Microsoft Azure virtual machines are configured
+    to use SSH keys instead of username/password credentials for SSH authentication.
+    Using SSH keys enhances security by eliminating the risks associated with password-based
+    authentication.
+
+    '
+  impact: 'Using password-based SSH authentication can expose virtual machines to
+    unauthorized access if the passwords are weak or compromised.
+
+    '
+  name: Azure VM SSH Authentication Type Not Using Keys
+  reference:
+  - https://docs.microsoft.com/en-us/azure/virtual-machines/linux/ssh-from-windows
+  remediation: 'Configure all Azure virtual machines to use SSH keys for authentication.
+    Disable password authentication to enhance the security of your virtual machines.
+
+    '
+  severity: high
+  tags: cloud,devops,azure,microsoft,vm,azure-cloud-config
+self-contained: true

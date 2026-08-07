@@ -1,37 +1,42 @@
-http:
-- extractors:
-  - group: 1
-    regex:
-    - <p>Version ([0-9.]+)
-    type: regex
-  host-redirects: true
-  matchers:
-  - condition: or
-    part: body
-    type: word
-    words:
-    - content="SOGo Web Interface"
-    - sg-default="SOGo
-  - status:
-    - 200
-    type: status
-  matchers-condition: and
-  max-redirects: 2
-  method: GET
-  path:
-  - '{{BaseURL}}'
-  - '{{BaseURL}}/SOGo'
-  stop-at-first-match: true
 id: sogo-version
+
 info:
+  name: SOGo Version
   author: righettod, gtrrnr, mikhailevtikhov
+  severity: info
   description: This template will extract a running SOGo instance version
+  reference:
+    - https://www.sogo.nu/
   metadata:
     max-request: 2
-    shodan-query: http.title:"SOGo"
     verified: true
-  name: SOGo Version
-  reference:
-  - https://www.sogo.nu/
-  severity: info
+    shodan-query: http.title:"SOGo"
   tags: sogo,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/SOGo"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'content="SOGo Web Interface"'
+          - 'sg-default="SOGo'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "<p>Version ([0-9.]+)"

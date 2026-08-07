@@ -1,51 +1,53 @@
-http:
-- extractors:
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - dsl:
-    - compare_versions(version, '<= 1.2.0')
-    type: dsl
-  matchers:
-  - condition: and
-    part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - status:
-    - 200
-    type: status
-  - condition: and
-    part: body
-    type: word
-    words:
-    - xsendfile
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/sites/all/modules/xsendfile/xsendfile.info'
-  redirects: true
+
 id: drupal_module-xsendfile-access-bypass
 info:
-  author: me
-  description: The Xsendfile module enables fast transfer for private files in Drupal.
-    In order to control private file downloads, the module overrides ImageStyleDownloadController,
-    for which a vulnerability was disclosed in SA-CORE-2023-005. The Xsendfile module
-    was still based on an insecure version of ImageStyleDownloadController.
-  metadata:
-    created_at: '0001-01-01T00:00:00Z'
-    fofa-query: /sites/all/modules/xsendfile/
-    google-query: inurl:'/sites/all/modules/xsendfile/
-    impact: medium
-    security-risk: "Moderately critical 13\u221525 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:All"
-    type: indicator
-    vulnerability: access-bypass
   name: drupal_module-xsendfile-access-bypass
-  reference:
-  - https://www.drupal.org/sa-contrib-2023-053
+  author: me
   severity: medium
+  description: "The Xsendfile module enables fast transfer for private files in Drupal. In order to control private file downloads, the module overrides ImageStyleDownloadController, for which a vulnerability was disclosed in SA-CORE-2023-005. The Xsendfile module was still based on an insecure version of ImageStyleDownloadController."
+  reference:
+    - https://www.drupal.org/sa-contrib-2023-053
+  metadata:
+    security-risk: "Moderately critical 13∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/xsendfile/"
+    google-query: "inurl:'/sites/all/modules/xsendfile/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
   tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/xsendfile/xsendfile.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'xsendfile'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '<= 1.2.0')

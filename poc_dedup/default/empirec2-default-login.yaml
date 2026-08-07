@@ -1,14 +1,17 @@
 id: empirec2-default-login
 
 info:
-  name: Empire C2 / Starkiller Interface - Default Login
-  author: parzival
+  name: Empire C2 Default Admin Login - Detect
+  author: clem9669
   severity: high
-  description: |
-    Empire C2 / Starkiller Default Administrator Credentials Discovered.
+  description: Empire C2 contains a default admin login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
   reference:
     - https://github.com/BC-SECURITY/Empire
-    - https://github.com/BC-SECURITY/empire-docs/blob/main/restful-api/README.md
+    - https://bc-security.gitbook.io/empire-wiki/quickstart/configuration/server
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
   metadata:
     max-request: 1
     verified: true
@@ -17,41 +20,33 @@ info:
 http:
   - raw:
       - |
-        POST /token HTTP/1.1
+        POST /api/admin/login HTTP/1.1
         Host: {{Hostname}}
-        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoZwyedGcQU4FrcFV
-        Accept: application/json, text/plain, */*
+        Content-Type: application/json
 
-        ------WebKitFormBoundaryoZwyedGcQU4FrcFV
-        Content-Disposition: form-data; name="username"
-
-        {{username}}
-        ------WebKitFormBoundaryoZwyedGcQU4FrcFV
-        Content-Disposition: form-data; name="password"
-
-        {{password}}
-        ------WebKitFormBoundaryoZwyedGcQU4FrcFV--
+        {"username":"{{user}}","password":"{{pass}}"}
 
     attack: pitchfork
     payloads:
-      username:
+      user:
         - empireadmin
-      password:
-        - 'password123'
+      pass:
+        - password123
 
     matchers-condition: and
     matchers:
-      - type: word
+      - type: regex
         part: body
-        words:
-          - 'access_token'
-          - 'token_type'
+        regex:
+          - '{"token":".*"}'
 
       - type: word
         part: header
         words:
-          - application/json
+          - 'application/json'
 
       - type: status
         status:
           - 200
+
+# Enhanced by md on 2023/04/20

@@ -1,0 +1,56 @@
+
+id: drupal_module-renderkit-access-bypass
+info:
+  name: drupal_module-renderkit-access-bypass
+  author: Bishopfox
+  severity: medium
+  description: "This module, typically in combination with cfr:cfrplugin, allows to compose behaviors from granular components. One of such behaviors is to display a list of related entities, for a given source entity and a given entity relation (e.g. an entity reference field). The components that display related content do not check if the user has access to view the related entities. This way e.g. unpublished nodes may be displayed to anonymous visitors. This vulnerability is mitigated by the facts that - a site builder must have used the component that displays related entities for a source entity, using cfr:cfrplugin, OR a programmer has used one of the affected components in code. - a source entity displayed this way must reference access-restricted content."
+  reference:
+    - https://www.drupal.org/sa-contrib-2018-060
+  metadata:
+    security-risk: "Moderately critical 11∕25 AC:Basic/A:None/CI:Some/II:None/E:Theoretical/TD:Uncommon"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/renderkit/"
+    google-query: "inurl:'/sites/all/modules/renderkit/"
+    impact: medium
+    type: indicator
+    created_at: '0001-01-01T00:00:00Z'
+  tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/renderkit/renderkit.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - 'renderkit'
+        part: body
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '7.x-1.5')
+         - compare_versions(version, '7.x-1.4')
+         - compare_versions(version, '7.x-1.3')
+         - compare_versions(version, '7.x-1.2')
+         - compare_versions(version, '7.x-1.1')
+         - compare_versions(version, '7.x-1.0')

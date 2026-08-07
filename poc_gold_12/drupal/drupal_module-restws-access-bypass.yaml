@@ -1,54 +1,56 @@
-http:
-- extractors:
-  - group: 1
-    name: version
-    part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - dsl:
-    - compare_versions(version, '7.x-2.7')
-    - compare_versions(version, '7.x-2.6')
-    - compare_versions(version, '7.x-2.5')
-    - compare_versions(version, '7.x-2.4')
-    - compare_versions(version, '7.x-2.3')
-    - compare_versions(version, '7.x-2.2')
-    - compare_versions(version, '7.x-2.1')
-    - compare_versions(version, '7.x-2.0')
-    type: dsl
-  matchers:
-  - part: body
-    regex:
-    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
-    type: regex
-  - status:
-    - 200
-    type: status
-  - part: body
-    type: word
-    words:
-    - restws
-  matchers-condition: and
-  max-redirects: 3
-  method: GET
-  path:
-  - '{{BaseURL}}/sites/all/modules/restws/restws.info'
-  redirects: true
+
 id: drupal_module-restws-access-bypass
 info:
-  author: Bishopfox
-  description: This resolves issues described in SA-CORE-2019-003 for this module.
-    Not all configurations are affected. See SA-CORE-2019-003 for details.
-  metadata:
-    created_at: '0001-01-01T00:00:00Z'
-    fofa-query: /sites/all/modules/restws/
-    google-query: inurl:'/sites/all/modules/restws/
-    impact: medium
-    security-risk: "Critical 19\u221525 AC:None/A:User/CI:All/II:All/E:Theoretical/TD:Default"
-    type: indicator
-    vulnerability: access-bypass
   name: drupal_module-restws-access-bypass
-  reference:
-  - https://www.drupal.org/sa-contrib-2019-018
+  author: me
   severity: medium
+  description: "This module exposes Drupal resources (e.g. entities) as RESTful web services. The module doesnt sufficiently restrict access for user resources."
+  reference:
+    - https://www.drupal.org/sa-contrib-2024-019
+  metadata:
+    security-risk: "Critical 16 ∕ 25 AC:None/A:None/CI:Some/II:None/E:Proof/TD:All"
+    vulnerability: "access-bypass"
+    fofa-query: "/sites/all/modules/restws/"
+    google-query: "inurl:'/sites/all/modules/restws/"
+    impact: medium
+    type: indicator
+    created_at: '2025-01-09'
   tags: drupal
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    path:
+      - "{{BaseURL}}/sites/all/modules/restws/restws.info"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+        condition: and
+        
+      - type: status
+        status:
+          - 200
+        condition: and
+        
+      - type: word
+        words:
+          - 'restws'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
+
+      - type: dsl
+        dsl:
+         - compare_versions(version, '9.x-99.99')
