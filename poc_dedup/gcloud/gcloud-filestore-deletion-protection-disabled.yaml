@@ -1,0 +1,69 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'gcloud filestore instances list --project $projectId --format="json"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Filestore instance " + instanceName + " in project " + projectId + " does
+      not have deletion protection enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud filestore instances describe $instanceName --format="json(deletionProtectionEnabled)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let instance of iterate(template.instances)){\n \
+  \   set(\"instanceName\", instance.name)\n    code(3)\n  }\n}\n"
+id: gcloud-filestore-deletion-protection-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that your Google Cloud Filestore instances have Deletion Protection
+    feature enabled in order to protect them from being accidentally deleted. With
+    the Deletion Protection safety feature enabled, your Filestore instances are guaranteed
+    to be protected from accidental deletion, ensuring your data remains safe.
+
+    '
+  impact: 'Without deletion protection, Filestore instances could be accidentally
+    or maliciously deleted through the console, CLI, or API calls, leading to data
+    loss and service disruption.
+
+    '
+  name: Filestore Instance Deletion Protection Not Enabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/enable-deletion-protection.html
+  - https://cloud.google.com/filestore/docs/prevent-deletion
+  remediation: 'Enable deletion protection for your Filestore instances using the
+    ''gcloud filestore instances update'' command with the ''--deletion-protection''
+    flag or through the Google Cloud Console.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,filestore,security,deletion-protection,gcp-cloud-config
+self-contained: true

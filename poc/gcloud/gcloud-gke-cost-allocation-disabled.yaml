@@ -1,0 +1,72 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: clusters
+    type: json
+  source: 'gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId
+      + " does not have cost allocation enabled"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud container clusters describe $clusterName --location $location --project
+    $projectId --format="json(costManagementConfig.enabled)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let cluster of iterate(template.clusters)){\n   \
+  \ cluster = JSON.parse(cluster)\n    set(\"clusterName\", cluster.name)\n    set(\"\
+  location\", cluster.location)\n    code(3)\n  }\n}\n"
+id: gcloud-gke-cost-allocation-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that cost allocation is enabled for your Google Kubernetes
+    Engine (GKE) clusters to gain detailed insights into resource usage. This feature
+    allows you to break down resource consumption by Kubernetes namespaces and labels,
+    making it easier to associate costs with specific entities and access detailed
+    cost reports through billing data exported to BigQuery.
+
+    '
+  impact: 'Without cost allocation enabled, you lack detailed visibility into resource
+    consumption and cost distribution across Kubernetes components, making it difficult
+    to make informed decisions for cost optimization, budgeting, and chargeback allocation.
+
+    '
+  name: GKE Clusters Without Cost Allocation Enabled
+  reference:
+  - https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-usage-metering
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-cost-allocation.html
+  remediation: 'Enable cost allocation for your GKE clusters using:
+
+    gcloud container clusters update CLUSTER_NAME --region=REGION --enable-cost-allocation
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,cost,monitoring,gcp-cloud-config
+self-contained: true

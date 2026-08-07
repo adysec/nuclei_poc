@@ -1,56 +1,50 @@
-
+http:
+- extractors:
+  - group: 1
+    name: version
+    part: body
+    regex:
+    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
+    type: regex
+  - dsl:
+    - compare_versions(version, '^1 <= = 1.0.0')
+    type: dsl
+  matchers:
+  - part: body
+    regex:
+    - version = "([0-9]+\.x-[0-9]+\.[0-9]+)"
+    type: regex
+  - status:
+    - 200
+    type: status
+  - part: body
+    type: word
+    words:
+    - tfa
+  matchers-condition: and
+  max-redirects: 3
+  method: GET
+  path:
+  - '{{BaseURL}}/sites/all/modules/tfa/tfa.info'
+  redirects: true
 id: drupal_module-tfa-access-bypass
 info:
-  name: drupal_module-tfa-access-bypass
-  author: me
-  severity: medium
-  description: "This module enables you to allow and/or require users to use a second authentication method in addition to password authentication. In some cases, the module allows users to log in with an authentication plugin that an administrator has disabled. This vulnerability is mitigated by the fact that an attacker must obtain a valid first-factor login credential, that an administrator must enable and then disable an authentication plugin, and that an attacker must obtain the valid second factor credential for the disabled plugin."
-  reference:
-    - https://www.drupal.org/sa-contrib-2024-003
+  author: Bishopfox
+  description: This module enables you to allow and/or require users to use a second
+    authentication method in addition to password authentication. The module doesnt
+    sufficiently ensure all core login routes, including the password reset page,
+    require a second factor credential.  This vulnerability is mitigated by the fact
+    that an attacker must obtain a first-factor login credential.
   metadata:
-    security-risk: "Moderately critical 14 ∕ 25 AC:Complex/A:None/CI:Some/II:Some/E:Proof/TD:Uncommon"
-    vulnerability: "access-bypass"
-    fofa-query: "/sites/all/modules/tfa/"
-    google-query: "inurl:'/sites/all/modules/tfa/"
+    created_at: '0001-01-01T00:00:00Z'
+    fofa-query: /sites/all/modules/tfa/
+    google-query: inurl:'/sites/all/modules/tfa/
     impact: medium
+    security-risk: "Critical 17\u221525 AC:Basic/A:None/CI:Some/II:Some/E:Proof/TD:All"
     type: indicator
-    created_at: '2025-01-09'
+    vulnerability: access-bypass
+  name: drupal_module-tfa-access-bypass
+  reference:
+  - https://www.drupal.org/sa-contrib-2023-030
+  severity: medium
   tags: drupal
-
-http:
-  - method: GET
-    redirects: true
-    max-redirects: 3
-    path:
-      - "{{BaseURL}}/sites/all/modules/tfa/tfa.info"
-
-    matchers-condition: and
-    matchers:
-      - type: regex
-        part: body
-        regex:
-          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
-        condition: and
-        
-      - type: status
-        status:
-          - 200
-        condition: and
-        
-      - type: word
-        words:
-          - 'tfa'
-        part: body
-        condition: and
-
-    extractors:
-      - type: regex
-        name: version
-        part: body
-        group: 1
-        regex:
-          - 'version = "([0-9]+\.x-[0-9]+\.[0-9]+)"'
-
-      - type: dsl
-        dsl:
-         - compare_versions(version, '<= 1.5.0')

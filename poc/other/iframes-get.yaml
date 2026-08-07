@@ -1,26 +1,29 @@
-headless:
-- extractors:
-  - kval:
-    - extract
-    part: extract
-    type: kval
-  steps:
-  - action: navigate
-    args:
-      url: '{{BaseURL}}'
-  - action: waitload
-  - action: sleep
-    args:
-      duration: 5
-  - action: script
-    args:
-      code: "() => {\n return [...new Set(Array.from(document.querySelectorAll('iframe')).map(i=>{try{return(new\
-        \ URL(i.src,window.location.href)).hostname}catch(e){console.error('Error\
-        \ accessing iframe:',e.message)}}))].join(',')\n}\n"
-    name: extract
 id: iframes-get
+
 info:
-  author: elmehdi
   name: Extract iframes ( for postmessage testing )
+  author: elmehdi
   severity: info
-  tags: headless,extractor
+  tags: 'headless,extractor'
+
+headless:
+  - steps:
+      - args:
+          url: '{{BaseURL}}'
+        action: navigate
+      - action: waitload
+      - action: sleep
+        args:
+          duration: 5
+      - action: script
+        name: extract
+        args:
+          code: |
+            () => {
+             return [...new Set(Array.from(document.querySelectorAll('iframe')).map(i=>{try{return(new URL(i.src,window.location.href)).hostname}catch(e){console.error('Error accessing iframe:',e.message)}}))].join(',')
+            }
+    extractors:
+      - type: kval
+        part: extract
+        kval:
+          - extract

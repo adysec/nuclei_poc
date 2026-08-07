@@ -1,0 +1,66 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .bindings[]
+    name: bindings
+    type: json
+  source: 'gcloud projects get-iam-policy $projectId --format=json
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let binding of iterate(template.bindings)){\n   \
+  \   set(\"binding\", binding)\n      javascript(1);\n  }\n}\n"
+id: gcloud-iam-service-roles-project-level
+info:
+  author: princechaddha
+  description: 'Ensure that the Service Account User and Service Account Token Creator
+    roles are assigned to a user for a specific GCP service account rather than to
+    a user at the GCP project level, in order to implement the principle of least
+    privilege (POLP). The principle of least privilege (also known as the principle
+    of minimal privilege) is the practice of providing every user the minimal amount
+    of access required to perform its tasks. The Service Account User (iam.serviceAccountUser)
+    role allows an IAM user to attach a service account to a long-running job service
+    such as an App Engine App or Dataflow Job, whereas the Service Account Token Creator
+    (iam.serviceAccountTokenCreator) role allows a user to directly impersonate the
+    identity of a service account.
+
+    '
+  impact: 'Assigning critical roles such as Service Account User and Token Creator
+    at the project level can lead to excessive permissions that can be exploited.
+
+    '
+  name: Service Account Roles at Project Level
+  reference:
+  - https://cloud.google.com/iam/docs/understanding-roles
+  remediation: 'Ensure these roles are assigned directly to service accounts and not
+    at the project level to enforce the principle of least privilege.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-iam,gcp-cloud-config
+javascript:
+- code: "let binding = JSON.parse(template.binding);\nlet projectId = template.projectId;\n\
+    if (binding.role == \"roles/iam.serviceAccountUser\" && binding.role == \"roles/iam.serviceAccountTokenCreator\"\
+    ){\n  Export(\"Service Role Misconfiguration for role \" + binding.role + \" for\
+    \ member \" + binding.members + \" in Project \" + projectId);\n}\n"
+  extractors:
+  - dsl:
+    - response
+    type: dsl
+self-contained: true

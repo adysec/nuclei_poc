@@ -1,0 +1,54 @@
+id: nats-server-enum
+info:
+  author: pussycat0x
+  description: 'Extracts key information from exposed NATS (Neural Autonomic Transport
+    System) servers by connecting directly and retrieving configuration details such
+    as server ID, version, cluster name, and authentication requirements. Useful for
+    network enumeration and assessing the security posture of NATS messaging infrastructure.
+
+    '
+  metadata:
+    max-request: 1
+    shodan-query: product:"NATS Server"
+    verfied: true
+  name: NATS Server - Detect
+  severity: info
+  tags: js,network,nats,tcp,enum,discovery
+javascript:
+- args:
+    Host: '{{Host}}'
+    Port: 80
+  code: "let packet = bytes.NewBuffer();\nlet prob = \"\\n\"\ndata = packet.Write(prob)\n\
+    const c = require(\"nuclei/net\");\nlet conn = c.Open('tcp', `${Host}:${Port}`);\n\
+    conn.Send(data);\nlet resp = conn.RecvFullString();\n\n// Extract JSON from the\
+    \ response (between INFO and the error message)\nlet jsonStart = resp.indexOf('{');\n\
+    let jsonEnd = resp.lastIndexOf('}') + 1;\nlet jsonStr = resp.substring(jsonStart,\
+    \ jsonEnd);\n\ntry {\n  let natsInfo = JSON.parse(jsonStr);\n  let formatted =\
+    \ `NATS Server: Server ID: ${natsInfo.server_id} Server Name: ${natsInfo.server_name}\
+    \ Version: ${natsInfo.version} Proto: ${natsInfo.proto} Git Commit: ${natsInfo.git_commit}\
+    \ Go: ${natsInfo.go} Host: ${natsInfo.host} Port: ${natsInfo.port} Headers: ${natsInfo.headers}\
+    \ Auth Required: ${natsInfo.auth_required} Max Payload: ${natsInfo.max_payload}\
+    \ Jetstream: ${natsInfo.jetstream} Client ID: ${natsInfo.client_id} Client IP:\
+    \ ${natsInfo.ip} Cluster: ${natsInfo.cluster} Domain: ${natsInfo.domain}`;\n\n\
+    \  if (natsInfo.compression) {\n    formatted += ` Compression: ${natsInfo.compression}`;\n\
+    \  }\n  if (natsInfo.info_on_connect) {\n    formatted += ` Info On Connect: ${natsInfo.info_on_connect}`;\n\
+    \  }\n  if (natsInfo.leafnode_urls && natsInfo.leafnode_urls.length > 0) {\n \
+    \   formatted += ` Leafnode URLs: ${natsInfo.leafnode_urls.join(', ')}`;\n  }\n\
+    \n  formatted;\n} catch (e) {\n  resp; // Return original response if JSON parsing\
+    \ fails\n}\n"
+  extractors:
+  - regex:
+    - Server Name:\s*\S+\s+Version:\s*[0-9]+\.[0-9]+\.[0-9]+
+    type: regex
+  matchers:
+  - negative: true
+    type: word
+    words:
+    - HTTP/1.1
+  - regex:
+    - Server Name:\s*\S+\s+Version:\s*[0-9]+\.[0-9]+\.[0-9]+
+    type: regex
+  matchers-condition: and
+  pre-condition: 'isPortOpen(Host,Port);
+
+    '

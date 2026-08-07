@@ -1,40 +1,28 @@
+id: django-debug-enabled
+
 info:
-  id: django-debug-enabled
-  name: Django Debug Enabled
-  author: OpenAI
-  description: Template to detect if Django Debug mode is enabled
-  severity: Medium
-  classification:
-    country: any
-    tags:
-      - django
-      - security
-      - debugging
+  name: Django Debug mode enabled
+  author: zan8in
+  severity: high
+  verified: true
+  description: |-
+    在生产环境中启用 Django 的 DEBUG 模式，确实是一个非常严重的高危漏洞。这主要不是 Django 框架本身的代码缺陷，而是一个极其危险的配置错误，会让你的应用完全暴露在风险之下。当 DEBUG = True 时，如果应用发生任何未处理的异常，Django 会向用户展示一个包含大量敏感信息的详细错误页面。这些信息足以让攻击者彻底了解你的系统内部结构。在生产环境务必设置 DEBUG = False，这是所有 Django 安全部署中最基本也最关键的一步。
+    fofa: body="because you have <code>DEBUG = True</code>"
+  tags: django,debug,debug-enabled
+  created: 2023/08/09
 
-  reference:
-    - https://docs.djangoproject.com/en/3.2/ref/settings/#debug
-
-  matcher-condition: or
-
-  requests:
-    method: GET
-    path:
-      - "/non-exists"
-    description: Attempt to retrieve the website
-    condition: or
-
-  matchers:
-    - pattern: "Welcome to Django"
-    - pattern: "Page not found (404)"
-    - pattern: "DEBUG = True in your Django settings file"
-      type: body
-      description: Django welcome page found in response body
-    - pattern: "Internal Server Error"
-      type: body
-      description: Internal Server Error message found in response body when Debug mode is enabled
-
-  response:
-    - status:
-        - 200
-        - 500
-      description: Successful or Internal Server Error response status
+rules:
+  r0:
+    brute:
+      p:
+        - /
+        - /NON_EXISTING_PATH/
+    request:
+      method: GET
+      path: "{{p}}"
+      follow_redirects: true
+    expression: |
+      response.body.bcontains(b'<code>DEBUG = True</code>') &&
+      response.body.bcontains(b'<code>False</code>') &&
+      response.body.bcontains(b'your Django settings file')
+expression: r0()

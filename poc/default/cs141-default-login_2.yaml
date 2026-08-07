@@ -1,56 +1,40 @@
-id: cs141-default-login
-
+id: cs141-default-login 2
 info:
-  name: UPS Adapter CS141 SNMP Module Default Login
   author: socketz
+  name: CS141 SNMP Module Default Credentials
+  reference: https://www.generex.de/media/pages/packages/documents/manuals/f65348d5b6-1628841637/manual_CS141_en.pdf
   severity: medium
-  description: UPS Adapter CS141 SNMP Module default login credentials were discovered.
-  reference:
-    - https://www.generex.de/media/pages/packages/documents/manuals/f65348d5b6-1628841637/manual_CS141_en.pdf
-  classification:
-    cwe-id: CWE-798
-  metadata:
-    shodan-query: http.html:"CS141"
   tags: hiawatha,iot,default-login
+requests:
+- attack: sniper
+  extractors:
+  - kval:
+    - accessToken
+    type: kval
+  matchers:
+  - condition: and
+    part: header
+    type: word
+    words:
+    - accessToken
+    - application/json
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  payloads:
+    Subdomains: /home/mahmoud/Wordlist/AllSubdomains.txt
+  raw:
+  - 'POST /api/login HTTP/1.1
 
-http:
-  - raw:
-      - |
-        POST /api/login HTTP/1.1
-        Host: {{Hostname}}
-        Accept: application/json, text/plain, */*
-        Content-Type: application/json
+    Host: {{Subdomains}}
 
-        {"userName":"{{user}}","password":"{{pass}}"}
+    Accept: application/json, text/plain, */*
 
-    attack: pitchfork
-    payloads:
-      user:
-        - admin
-        - engineer
-        - guest
-      pass:
-        - cs141-snmp
-        - engineer
-        - guest
+    Content-Type: application/json
 
-    stop-at-first-match: true
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - 'accessToken'
-          - 'application/json'
-        condition: and
-        part: header
 
-      - type: status
-        status:
-          - 200
+    {"userName":"engineer","password":"engineer"}
 
-    extractors:
-      - type: kval
-        kval:
-          - accessToken
-
-# Enhanced by mp on 2022/03/07
+    '
+  threads: 100

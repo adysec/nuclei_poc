@@ -1,0 +1,73 @@
+id: swagger-api-disclosure
+
+info:
+  name: Public Swagger API Desclosure
+  author: pdteam
+  severity: high
+  verified: true
+  tags: swagger,disclosure
+  created: 2023/07/01
+
+rules:
+  r0:
+    stop_if_match: true
+    brute:
+      mode: sniper
+      commit: winner
+      continue: false
+      p:
+        - /swagger-ui.html
+        - /swagger/ui/index
+        - /swagger/index.html
+        - /swagger/swagger-ui.html
+        - /api-docs/swagger.json
+        - /api-docs/swagger.yaml
+        - /swagger.json
+        - /swagger.yaml
+        - /swagger/v1/swagger.json
+        - /swagger/v1/swagger.yaml
+        - /api/index.html
+        - /api/docs/
+        - /webjars/swagger-ui/index.html
+        - /api/swagger-ui.html
+    request:
+      method: GET
+      path: "{{p}}"
+    expression: |
+      response.status == 200 && 
+      (response.body.bcontains(b'swagger:') ||
+      response.body.bcontains(b'Swagger 2.0') ||
+      response.body.bcontains(b"\"swagger\":") ||
+      response.body.bcontains(b'Swagger UI') ||
+      response.body.bcontains(b'**token**:'))
+  r1:
+    stop_if_match: true
+    brute:
+      mode: sniper
+      commit: winner
+      continue: false
+      p:
+        - /v2/api-docs
+        - /jeecg-boot/v2/api-docs
+        - /jeecg-boot/v3/api-docs
+        - /v3/api-docs
+        - /api_docs
+        - /api-docs
+        - ;/v2/api-docs
+        - ;/v2/api-docs;.css
+        - ;/v3/api-docs
+        - ;/v3/api-docs;.css
+        - ;;/v2/api-docs
+        - ;;/v2/api-docs;.css
+        - ;;/v3/api-docs
+        - ;;/v3/api-docs;.css
+    request:
+      method: GET
+      path: "{{p}}"
+    expression: |
+      response.status == 200 && 
+      response.body.bcontains(b'"info":') &&
+      response.body.bcontains(b'"description":')  &&
+      response.body.bcontains(b'"version":') &&
+      response.body.bcontains(b'"title":')
+expression: r0() || r1()

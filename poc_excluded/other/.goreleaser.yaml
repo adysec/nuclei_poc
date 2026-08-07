@@ -1,46 +1,32 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
-
-# The lines below are called `modelines`. See `:help modeline`
-# Feel free to remove those if you don't want/need to use them.
-# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
-# vim: set ts=2 sw=2 tw=0 fo=cnqoj
-
-version: 1
+version: 2
 
 before:
   hooks:
-    # You may remove this if you don't use go modules.
-    - go mod tidy
-    # you may remove this if you don't need go generate
-    - go generate ./...
+    - go mod download
+    - go mod verify
 
 builds:
-  - env:
+  - main: cmd/afrog/main.go
+    binary: afrog
+    id: afrog
+    env:
       - CGO_ENABLED=0
-    goos:
-      - linux
-      - windows
-      - darwin
+    goos: [windows, linux, darwin]
+    goarch: [amd64, arm64]
+
+    flags:
+      - -trimpath
+      - -pgo=auto
+    ldflags:
+      - -s
+      - -w
 
 archives:
-  - format: tar.gz
-    # this name template makes the OS and Arch compatible with the results of `uname`.
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
-    # use zip for windows archives
-    format_overrides:
-      - goos: windows
-        format: zip
+  - formats:
+      - zip
+    id: afrog
+    ids: [afrog]
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ if eq .Os "darwin" }}macOS{{ else }}{{ .Os }}{{ end }}_{{ .Arch }}'
 
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+checksum:
+  algorithm: sha256

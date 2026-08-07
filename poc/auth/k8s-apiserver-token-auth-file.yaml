@@ -1,0 +1,46 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"kube-apiserver is configured with " + argument + ". Review and remove if unnecessary."'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - kube-apiserver
+  - type: word
+    words:
+    - '{{argument}}'
+  matchers-condition: and
+  source: 'kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    '
+id: k8s-apiserver-token-auth-file
+info:
+  author: songyaeji
+  description: Detects whether kube-apiserver includes the --token-auth-file startup
+    argument.
+  impact: 'If the API server is started with --token-auth-file, static token file
+    authentication may be allowed, which can enable long-lived or poorly managed tokens
+    and weaken cluster authentication posture.
+
+    '
+  name: Detect kube-apiserver --token-auth-file usage
+  reference:
+  - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+  remediation: 'Remove the --token-auth-file argument from the kube-apiserver startup
+    flags (e.g., edit
+
+    /etc/kubernetes/manifests/kube-apiserver.yaml) or ensure any tokens in that file
+    are rotated
+
+    and managed securely. Prefer dynamic, short-lived service account tokens and RBAC.
+
+    '
+  severity: high
+  tags: cloud,devops,kubernetes,security,devsecops,api-server,k8s,k8s-cluster-security
+self-contained: true
+variables:
+  argument: --token-auth-file

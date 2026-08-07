@@ -1,0 +1,30 @@
+id: xss-detector
+info:
+  name: Cross-Site Scripting (XSS) Detection
+  author: Reksy
+  severity: medium
+
+requests:
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/search.php?query=<script>alert('XSS')</script>"
+      - "{{BaseURL}}/search.php?query=<img src=x onerror=alert('XSS')>"
+      - "{{BaseURL}}/search.php?query=<body onload=alert('XSS')>"
+
+    matchers-condition: or
+
+    matchers:
+      - type: word
+        words:
+          - "<script>alert('XSS')</script>"
+          - "<img src=x onerror=alert('XSS')>"
+          - "<body onload=alert('XSS')>"
+        part: body
+
+      - type: status
+        status:
+          - 200
+          - 302
+          - 403
+          - 500

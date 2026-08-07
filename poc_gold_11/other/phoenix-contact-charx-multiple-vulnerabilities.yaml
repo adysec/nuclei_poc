@@ -1,0 +1,36 @@
+http:
+- extractors:
+  - json:
+    - .charging_controllers | .[].info._v_.firmware_version | capture("V(?<version>\\d+(?:\\.\\d+)*)";
+      "i") | .version | split(".") | map(tonumber) | if . < ("1.7.3" | split(".")
+      | map(tonumber)) then true else false end
+    name: is_vulnerable_version
+    part: body
+    type: json
+  matchers:
+  - condition: and
+    dsl:
+    - status_code == 200
+    - contains_all(body, "charging_controllers", "system")
+    type: dsl
+  method: GET
+  path:
+  - '{{BaseURL}}/api/v1.0/web/retained-data'
+id: phoenix-contact-charx-multiple-vulnerabilities
+info:
+  author: inokii
+  description: 'Multiple vulnerabilities exist in Phoenix Contact CHARX SEC-3XXX AC
+    Controller versions prior to 1.7.3. Successful exploitation may allow attackers
+    to bypass authentication, disclose sensitive information, or execute arbitrary
+    code.
+
+    '
+  metadata:
+    max-request: 1
+    runzero-match: any(each(service["html.titles"]), {# matches "(?i)Phoenix Contact
+      - CHARX"})
+    shodan-query: title:"Phoenix Contact - CHARX"
+    verified: true
+  name: Phoenix Contact CHARX SEC-3XXX AC Controller < 1.7.3 - Multiple Vulnerabilities
+  severity: critical
+  tags: charx,phoenix-contact,vuln

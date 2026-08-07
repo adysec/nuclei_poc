@@ -1,0 +1,45 @@
+code:
+- args:
+  - -ExecutionPolicy
+  - Bypass
+  engine:
+  - powershell
+  - powershell.exe
+  matchers:
+  - type: word
+    words:
+    - FTP_HOME_DIRECTORY_EVERYONE_FOUND
+  pattern: '*.ps1'
+  pre-condition: 'IsWindows();
+
+    '
+  source: "# Define the FTP home directory path (adjust if necessary)\n$ftpHome =\
+    \ \"C:\\inetpub\\ftproot\"\nif (!(Test-Path $ftpHome)) {\n    \"FTP_HOME_DIRECTORY_NOT_FOUND\"\
+    \n    exit\n}\n# Retrieve the ACL for the FTP home directory\n$acl = Get-Acl $ftpHome\n\
+    $vulnerable = $false\nforeach ($ace in $acl.Access) {\n    if ($ace.IdentityReference.ToString()\
+    \ -like \"*Everyone*\") {\n        $vulnerable = $true\n        break\n    }\n\
+    }\nif ($vulnerable) {\n    \"FTP_HOME_DIRECTORY_EVERYONE_FOUND\"\n} else {\n \
+    \   \"FTP_HOME_DIRECTORY_NO_EVERYONE\"\n}\n"
+id: ftp-directory-permission-check
+info:
+  author: nukunga[SungHyunJeon]
+  description: 'Ensure that the FTP home directory does not include the "Everyone"
+    group in its access permissions. Granting access to this group may allow unauthorized
+    users to view, modify, or tamper with FTP files.
+
+    '
+  impact: 'Assigning access to the "Everyone" group for the FTP home directory can
+    result in information exposure, file tampering, or unauthorized changes.
+
+    '
+  name: FTP Directory Access Permission Check
+  reference:
+  - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  remediation: "Remove the \"Everyone\" group from FTP home directory permissions\
+    \ using the following methods:\n- IIS Manager: Review and adjust the FTP site's\
+    \ home directory settings.\n- File Explorer: Right-click the directory, select\
+    \ \"Properties\" \u2192 go to the \"Security\" tab, and remove the \"Everyone\"\
+    \ group.\n"
+  severity: medium
+  tags: ftp,iis,security,windows,code,windows-audit,kisa
+self-contained: true

@@ -1,0 +1,68 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: sqlInstances
+    type: json
+  source: 'gcloud sql instances list --project $projectId --filter=''DATABASE_VERSION:MYSQL*''
+    --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Skip Show Database Flag is not enabled for MySQL instance " + sqlInstance
+      + " in project " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'off'
+  source: 'gcloud sql instances describe $sqlInstance --format="json(settings.databaseFlags)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let sqlInstance of iterate(template.sqlInstances)){\n\
+  \    set(\"sqlInstance\", sqlInstance)\n    code(3)\n  }\n}\n"
+id: gcloud-sql-skip-show-database-disabled
+info:
+  author: princechaddha
+  description: 'Ensure that the "skip_show_database" database flag is enabled for
+    your Google Cloud MySQL database instances in order to prevent users from using
+    the SHOW DATABASES statement if they don''t have this privilege.
+
+    '
+  impact: 'If the "skip_show_database" flag is not enabled, unauthorized users may
+    view a list of all databases, leading to potential data exposure and compliance
+    violations.
+
+    '
+  name: Skip Show Database Flag Not Enabled for MySQL Instances
+  reference:
+  - https://cloud.google.com/sql/docs/mysql/configure-database-flags
+  remediation: 'Enable the "skip_show_database" flag for MySQL database instances
+    in Google Cloud. This can be configured in the database settings under the databaseFlags
+    section or through the gcloud CLI.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,mysql-database,gcp-cloud-config
+self-contained: true

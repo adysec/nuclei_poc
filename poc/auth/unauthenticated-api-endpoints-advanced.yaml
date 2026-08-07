@@ -1,0 +1,219 @@
+alerts:
+- body: 'An unauthenticated API endpoint was detected at {{url}}.
+
+    Findings: {{findings}}
+
+    Timestamp: {{timestamp}}
+
+    '
+  condition: found
+  message: Unauthenticated API Endpoint detected at {{url}}
+  method: email
+  recipient: security-team@example.com
+  subject: 'Alert: Unauthenticated API Endpoint Detected'
+external-reporting:
+  body: "{\n  \"reportType\": \"Unauthenticated API Endpoints\",\n  \"findings\":\
+    \ \"{{findings}}\",\n  \"timestamp\": \"{{timestamp}}\",\n  \"target\": \"{{url}}\"\
+    \n}\n"
+  headers:
+    Authorization: Bearer YOUR_API_KEY
+    Content-Type: application/json
+  method: POST
+  url: '{{external_service_url}}'
+id: unauthenticated-api-endpoints-advanced
+info:
+  author: Unrealisedd
+  description: This template performs an exhaustive and sophisticated detection of
+    unauthenticated API endpoints. It uses dynamic payloads, multi-step validation,
+    extensive response analysis, error handling, and integrates with external services
+    for detailed reporting and automated alerts. The template employs advanced logic
+    and adaptive testing to discover various types of unauthenticated API endpoints
+    and vulnerabilities.
+  name: Ultra Advanced Unauthenticated API Endpoints Detection
+  severity: critical
+  tags: api, unauthenticated, security, advanced, automation, external-integration,
+    multi-step
+log-to: advanced-api-endpoints-log.txt
+rate-limit: 2
+requests:
+- concurrency: 5
+  delay: 2
+  extractors:
+  - group: 1
+    part: body
+    regex:
+    - Unauthorized access to (.+)
+    - Public endpoint at (.+)
+    - 'Error: (.+)'
+    - Access denied for (.+)
+    type: regex
+  headers:
+    Content-Type: application/json
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    - 401
+    - 403
+    type: status
+  - part: body
+    type: word
+    words:
+    - Unauthorized
+    - Access denied
+    - Not found
+    - Error
+    - Public
+  matchers-condition: and
+  method: '{{method}}'
+  path:
+  - '{{url}}{{api_paths}}'
+  timeout: 10
+- body: "{\n  \"test\": \"payload\"\n}\n"
+  extractors:
+  - group: 1
+    part: body
+    regex:
+    - Unauthorized access to (.+)
+    - Public endpoint at (.+)
+    - 'Error: (.+)'
+    - Access denied for (.+)
+    type: regex
+  headers:
+    Content-Type: application/json
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    - 401
+    - 403
+    type: status
+  - part: body
+    type: word
+    words:
+    - Unauthorized
+    - Access denied
+    - Not found
+    - Error
+    - Public
+  method: POST
+  path:
+  - '{{url}}{{api_paths}}'
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - Public API status at (.+)
+    - Health endpoint responds with (.+)
+    - 'Status: (.+)'
+    type: regex
+  headers:
+    Accept: application/json
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    - 401
+    - 403
+    type: status
+  - part: body
+    type: word
+    words:
+    - Status
+    - Health
+    - Public API
+  method: GET
+  path:
+  - '{{url}}{{api_paths}}/health'
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - Admin access at (.+)
+    - 'Publicly accessible admin endpoint: (.+)'
+    - 'Restricted area: (.+)'
+    type: regex
+  headers:
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    - 401
+    - 403
+    type: status
+  - part: body
+    type: word
+    words:
+    - Admin
+    - Public
+    - Restricted
+  method: GET
+  path:
+  - '{{url}}{{api_paths}}/admin'
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - Allowed methods for (.+)
+    - 'Public endpoint with CORS policy: (.+)'
+    - CORS headers include (.+)
+    type: regex
+  headers:
+    Accept: '*/*'
+    User-Agent: '{{user_agents}}'
+  matchers:
+  - status:
+    - 200
+    - 401
+    - 403
+    type: status
+  - part: body
+    type: word
+    words:
+    - Allowed Methods
+    - Public
+    - CORS
+  method: OPTIONS
+  path:
+  - '{{url}}{{api_paths}}'
+variables:
+  api_paths:
+  - /api/v1/
+  - /api/v2/
+  - /api/v3/
+  - /endpoint/
+  - /service/
+  - /public/
+  - /admin/
+  - /dev/
+  - /test/
+  cleanup_script: '#!/bin/bash
+
+    echo "Starting cleanup..."
+
+    # Your cleanup commands here
+
+    echo "Cleanup complete."
+
+    '
+  dynamic_payloads:
+  - Cmd:
+    - 'curl -s -X {{method}} {{url}}{{path}} -H ''Content-Type: application/json''
+      -d ''{{random_payload()}}'''
+  - Cmd:
+    - 'curl -s -X {{method}} {{url}}{{path}} -H ''Accept: application/json'' -d ''{{random_payload()}}'''
+  external_service_url: https://example-external-service.com/api
+  http_methods:
+  - GET
+  - POST
+  - PUT
+  - DELETE
+  - PATCH
+  - OPTIONS
+  user_agents:
+  - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
+    Chrome/91.0.4472.124 Safari/537.36
+  - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like
+    Gecko) Version/14.0.3 Safari/605.1.15
+  - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114
+    Safari/537.36

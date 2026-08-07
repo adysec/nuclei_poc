@@ -1,0 +1,98 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: vpcNetworks
+    type: json
+  source: 'gcloud compute networks list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: routers
+    type: json
+  source: 'gcloud compute routers list --project $projectId --filter="network:($vpcNetwork)"
+    --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: natGateways
+    type: json
+  source: 'gcloud compute routers nats list --router=$router --project=$projectId
+    --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"NAT gateway " + natGateway + " under router " + router + " in project " +
+      projectId + " is associated with unrestricted subnets."'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - ALL_IP_RANGES
+  source: 'gcloud compute routers nats describe $natGateway --router=$router --project=$projectId
+    --format="json(subnetworks)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let vpcNetwork of iterate(template.vpcNetworks)){\n\
+  \    set(\"vpcNetwork\", vpcNetwork)\n    code(3)\n    for(let router of iterate(template.routers)){\n\
+  \      set(\"router\", router)\n      code(4)\n      for(let natGateway of iterate(template.natGateways)){\n\
+  \        set(\"natGateway\", natGateway)\n        code(5)\n      }\n    }\n  }\n\
+  }\n"
+id: gcloud-nat-subnet-unrestricted
+info:
+  author: princechaddha
+  description: 'Ensure that your Google Cloud NAT gateways are mapped only to specific
+    VPC subnets to maintain controlled and secure outbound Internet access, minimize
+    unintended traffic exposure, and optimize resource usage within your network design.
+    This promotes network isolation and ensures adherence to your organization''s
+    stringent compliance requirements.
+
+    '
+  impact: 'NAT gateways associated with unrestricted subnets can result in unauthorized
+    network access, unintended traffic exposure, and compliance violations.
+
+    '
+  name: NAT Gateway Subnets Not Restricted to Specific VPCs
+  reference:
+  - https://cloud.google.com/nat/docs/using-nat
+  remediation: 'Restrict your Cloud NAT gateways to specific VPC subnets by defining
+    subnet mappings in the NAT configuration settings. Review and update your network
+    configurations to ensure adherence to your organization''s security policies.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,google-cloud-nat,gcp-cloud-config
+self-contained: true

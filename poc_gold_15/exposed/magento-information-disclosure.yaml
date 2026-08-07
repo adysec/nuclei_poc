@@ -1,0 +1,45 @@
+id: magento-information-disclosure
+info:
+  author: ptonewreckin,danigoland
+  description: 'Misconfigured instances of Magento may disclose usernames, passwords,
+    and database configurations via /app/etc/local.xml
+
+    '
+  metadata:
+    verified: true
+  name: Magento - Information Disclosure
+  reference:
+  - https://github.com/ptonewreckin/cmsDetector/blob/master/signatures/magento.py
+  severity: high
+  tags: magento,exposure,credential,config
+requests:
+- extractors:
+  - group: 1
+    part: body
+    regex:
+    - <host><!\[CDATA\[(.+)\]\]><\/host>
+    - <username><!\[CDATA\[(.+)\]\]><\/username>
+    - <password><!\[CDATA\[(.+)\]\]><\/password>
+    - <dbname><!\[CDATA\[(.+)\]\]><\/dbname>
+    type: regex
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '* Magento'
+    - <dbname>
+  - part: header
+    type: word
+    words:
+    - application/xml
+  - status:
+    - 200
+    type: status
+  matchers-condition: and
+  method: GET
+  path:
+  - '{{BaseURL}}/app/etc/local.xml'
+  - '{{BaseURL}}/app/etc/local.xml.additional'
+  - '{{BaseURL}}/store/app/etc/local.xml'
+  stop-at-first-match: true

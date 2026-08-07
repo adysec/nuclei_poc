@@ -1,0 +1,55 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Access Approval not enabled in Project: " + projectId'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud access-approval settings get --project $projectId --format="json(enrolledServices)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n}\n"
+id: gcloud-access-approval-not-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that Access Approval is enabled within your Google Cloud Platform
+    (GCP) account to allow your explicit approval whenever Google personnel need to
+    access your GCP projects. Once enabled, you can delegate users within your organization
+    to approve access requests through IAM. Requests will show the requester''s name/ID
+    via email or Pub/Sub message for approval.
+
+    '
+  impact: 'If Access Approval is not enabled, unauthorized access by Google personnel
+    may occur without your knowledge, leading to potential security risks and data
+    breaches.
+
+    '
+  name: Access Approval Not Enabled in GCP Projects
+  reference:
+  - https://cloud.google.com/access-approval/docs/quickstart
+  remediation: 'Enable Access Approval in your GCP projects to create a new control
+    and logging layer that reveals who in your organization approved or denied access
+    requests.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,google-cloud-platform,gcp-cloud-config
+self-contained: true

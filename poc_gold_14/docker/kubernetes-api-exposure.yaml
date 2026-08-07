@@ -1,0 +1,79 @@
+id: kubernetes-api-exposure
+info:
+  name: Kubernetes API Server Exposure Detection
+  author: geeknik
+  severity: critical
+  description: |
+    Detects exposed Kubernetes API servers that may allow unauthorized access
+    to cluster resources, secrets, and potential container escape paths.
+  reference:
+    - https://kubernetes.io/docs/reference/access-authn-authz/
+    - https://www.microsoft.com/security/blog/2021/03/23/secure-containerized-environments-with-updated-threat-matrix-for-kubernetes/
+  classification:
+    cwe-id: CWE-284
+  tags: kubernetes,k8s,cloud,api,exposure,critical
+  metadata:
+    max-request: 8
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api"
+      - "{{BaseURL}}/api/v1"
+      - "{{BaseURL}}/apis"
+      - "{{BaseURL}}/api/v1/namespaces"
+      - "{{BaseURL}}/api/v1/namespaces/default/pods"
+      - "{{BaseURL}}/api/v1/namespaces/default/secrets"
+      - "{{BaseURL}}/api/v1/nodes"
+      - "{{BaseURL}}/version"
+
+    headers:
+      User-Agent: kubectl/v1.25.0
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"kind":'
+          - '"apiVersion":'
+          - '"kubernetes"'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - '"major":'
+          - '"minor":'
+          - '"gitVersion":'
+          - '"resourceVersion":'
+          - '"selfLink":'
+          - '"items":'
+          - '"metadata":'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+          - 403
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '"gitVersion":\s*"v([0-9]+\.[0-9]+\.[0-9]+)"'
+          - '"name":\s*"([^"]+)"'
+          - '"namespace":\s*"([^"]+)"'
+
+      - type: json
+        json:
+          - '.items[].metadata.name'
+          - '.items[].spec.nodeName'
+          - '.items[].spec.serviceAccountName'

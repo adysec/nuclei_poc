@@ -1,0 +1,73 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[]
+    name: instances
+    type: json
+  source: 'gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId
+      + " is not configured to block project-wide SSH keys"'
+    type: dsl
+  matchers:
+  - type: word
+    words:
+    - 'null'
+  source: 'gcloud compute instances describe $instanceName --zone $zone --project
+    $projectId --format="json(metadata.items)"
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let instance of iterate(template.instances)){\n \
+  \   instance = JSON.parse(instance)\n    set(\"instanceName\", instance.name)\n\
+  \    set(\"zone\", instance.zone)\n    code(3)\n  }\n}\n"
+id: gcloud-vm-project-ssh-keys-enabled
+info:
+  author: princechaddha
+  description: 'Ensure that your Google Compute Engine instances are configured to
+    ignore GCP project-wide (shared) public SSH keys and use instance-level SSH keys
+    instead. Project-wide SSH keys can be used to log in to all the VM instances running
+    inside a GCP project. While project-wide SSH keys can ease SSH key management,
+    if compromised, they pose a security risk which can impact all VM instances within
+    the project.
+
+    '
+  impact: 'Using project-wide SSH keys increases the attack surface - if compromised,
+    an attacker could gain access to all VM instances in the project instead of just
+    a single instance.
+
+    '
+  name: Block Project-Wide SSH Keys Not Enabled
+  reference:
+  - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/enable-block-project-wide-ssh-keys.html
+  - https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys
+  remediation: 'Enable "Block Project-Wide SSH Keys" feature for your VM instances
+    and configure instance-specific SSH keys instead. This limits the impact if any
+    single key is compromised.
+
+    '
+  severity: medium
+  tags: cloud,devops,gcp,gcloud,compute,security,ssh,gcp-cloud-config
+self-contained: true

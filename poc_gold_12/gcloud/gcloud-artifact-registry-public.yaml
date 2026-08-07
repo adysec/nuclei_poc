@@ -1,0 +1,73 @@
+code:
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].projectId
+    name: projectIds
+    type: json
+  source: 'gcloud projects list --format="json(projectId)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - internal: true
+    json:
+    - .[].name
+    name: repositories
+    type: json
+  source: 'gcloud artifacts repositories list --project $projectId --format="json(name)"
+
+    '
+- engine:
+  - sh
+  - bash
+  extractors:
+  - dsl:
+    - '"Publicly Accessible Artifact Repository: " + repositoryName + " in Project:
+      " + projectId'
+    type: dsl
+  matchers:
+  - condition: or
+    type: word
+    words:
+    - allUsers
+    - allAuthenticatedUsers
+  source: 'gcloud artifacts repositories get-iam-policy $repositoryName --project
+    $projectId --format=json | jq ''.bindings[].members[]''
+
+    '
+flow: "code(1)\nfor(let projectId of iterate(template.projectIds)){\n  set(\"projectId\"\
+  , projectId)\n  code(2)\n  for(let repository of iterate(template.repositories)){\n\
+  \    set(\"repositoryName\", repository)\n    code(3)\n  }\n}\n"
+id: gcloud-artifact-registry-public
+info:
+  author: princechaddha
+  description: 'Identify any publicly accessible Artifact Registry repositories within
+    your Google Cloud account and update their IAM policy in order to protect against
+    unauthorized access. To deny access from anonymous and public users, remove the
+    bindings for "allUsers" and "allAuthenticatedUsers" members from the IAM policy
+    associated with your repository.
+
+    '
+  impact: 'Public accessibility of Artifact Registry repositories can lead to unauthorized
+    data access or data leaks. Restricting access ensures that only authorized entities
+    can view or manipulate the repositories.
+
+    '
+  name: Publicly Accessible Artifact Registry Repositories
+  reference:
+  - https://cloud.google.com/artifact-registry/docs/managing/access-control
+  remediation: 'Update the IAM policies for each Artifact Registry repository to remove
+    "allUsers" and "allAuthenticatedUsers". This action will ensure that repositories
+    are not exposed to any user on the internet or authenticated users not explicitly
+    granted permission.
+
+    '
+  severity: high
+  tags: cloud,devops,gcp,gcloud,artifact-registry,gcp-cloud-config
+self-contained: true
